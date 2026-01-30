@@ -240,6 +240,126 @@
             50% { box-shadow: 0 4px 25px rgba(255,107,53,0.7); }
             100% { box-shadow: 0 4px 15px rgba(255,107,53,0.4); }
         }
+        /* Simulated EMR Styles */
+        .emr-tab {
+            padding: 10px 20px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .emr-tab:hover { background: #e0e0e0; }
+        .emr-tab.active { background: #0d9488; color: white; }
+        .emr-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+        }
+        .emr-vitals-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .emr-vitals-table th {
+            background: #0d9488;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .emr-vitals-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .emr-vitals-table tr:nth-child(even) { background: #f0fdfa; }
+        .emr-value-high { color: #dc2626; font-weight: bold; }
+        .emr-value-low { color: #2563eb; font-weight: bold; }
+        .emr-value-critical { color: #dc2626; font-weight: bold; background: #fef2f2; padding: 2px 6px; border-radius: 4px; }
+        .emr-med-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .emr-med-table th {
+            background: #0d9488;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        .emr-med-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .emr-med-high-alert {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+        }
+        .emr-med-prn {
+            background: #eff6ff;
+            font-style: italic;
+        }
+        .emr-lab-panel {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .emr-lab-header {
+            background: #0d9488;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+        }
+        .emr-lab-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1px;
+            background: #e0e0e0;
+        }
+        .emr-lab-item {
+            background: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .emr-demographics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .emr-demo-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .emr-demo-card h4 {
+            color: #0d9488;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        .emr-demo-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 13px;
+        }
+        .emr-demo-label { color: #666; }
+        .emr-demo-value { font-weight: 500; }
+        @media (max-width: 768px) {
+            .emr-tab { padding: 8px 12px; font-size: 12px; flex: 1; text-align: center; }
+            .emr-vitals-table th, .emr-vitals-table td { padding: 6px 4px; font-size: 11px; }
+            .emr-demographics-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -440,6 +560,10 @@
                 <div class="note-type-card" onclick="selectNoteType('narrative')">
                     <h3>Narrative</h3>
                     <p>Free-form Note</p>
+                </div>
+                <div class="note-type-card" onclick="selectNoteType('simemr')" style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; border-color: #0d9488;">
+                    <h3>Sim EMR</h3>
+                    <p>Practice Chart Review</p>
                 </div>
             </div>
 
@@ -832,6 +956,93 @@
                 <div class="form-group" style="margin-top:15px;">
                     <label>Psychosocial/Additional Notes</label>
                     <textarea id="h2tPsych" placeholder="Mood, behavior, support system, safety concerns, plan..."></textarea>
+                </div>
+            </div>
+
+            <!-- Simulated EMR Section -->
+            <div id="simemrFields" class="note-fields">
+                <!-- Education Disclaimer Banner -->
+                <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 12px 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+                    <strong style="font-size: 15px;">SIMULATED EMR - FOR EDUCATION ONLY</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">All patient data is fictional. Not for clinical use.</p>
+                </div>
+
+                <!-- Patient Selector -->
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
+                    <select id="simPatientSelect" style="flex: 1; min-width: 200px; padding: 12px; border-radius: 8px; border: 2px solid #0d9488; font-size: 14px;">
+                        <option value="">-- Select a Patient Scenario --</option>
+                        <optgroup label="Pre-Built Scenarios">
+                            <option value="chest-pain">Chest Pain / Rule Out MI - Robert Johnson, 66yo M</option>
+                            <option value="chf">CHF Exacerbation - Margaret Williams, 79yo F</option>
+                            <option value="sepsis">Sepsis (UTI source) - James Thompson, 54yo M</option>
+                            <option value="dka">Diabetic Ketoacidosis - Maria Garcia, 28yo F</option>
+                            <option value="postop-hip">Post-Op Hip Replacement - William Davis, 72yo M</option>
+                            <option value="copd">COPD Exacerbation - Patricia Brown, 68yo F</option>
+                        </optgroup>
+                        <optgroup label="Custom Patients" id="customPatientsGroup">
+                        </optgroup>
+                    </select>
+                    <button onclick="loadEmrPatient()" style="padding: 12px 24px; background: #0d9488; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Load Patient</button>
+                    <button onclick="openPatientEditor()" style="padding: 12px 24px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">+ New Patient</button>
+                </div>
+
+                <!-- EMR Content (hidden until patient loaded) -->
+                <div id="simEmrContent" style="display: none;">
+                    <!-- Patient Banner -->
+                    <div id="emrPatientBanner" style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div id="emrPatientName" style="font-size: 22px; font-weight: bold;"></div>
+                            <div style="font-size: 13px; opacity: 0.9;">
+                                <span id="emrMRN"></span> | <span id="emrAge"></span> | <span id="emrRoom"></span>
+                            </div>
+                        </div>
+                        <div id="emrCodeStatus" style="padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 12px;"></div>
+                    </div>
+
+                    <!-- Allergy Banner -->
+                    <div id="emrAllergyBanner" style="background: #fef2f2; border: 2px solid #dc2626; border-radius: 8px; padding: 10px 15px; margin-bottom: 15px; display: none;">
+                        <strong style="color: #dc2626;">ALLERGIES:</strong>
+                        <span id="emrAllergies"></span>
+                    </div>
+
+                    <!-- EMR Tab Navigation -->
+                    <div style="display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; flex-wrap: wrap;">
+                        <button class="emr-tab active" onclick="showEmrPanel('demographics', this)">Demographics</button>
+                        <button class="emr-tab" onclick="showEmrPanel('vitals', this)">Vitals</button>
+                        <button class="emr-tab" onclick="showEmrPanel('mar', this)">MAR</button>
+                        <button class="emr-tab" onclick="showEmrPanel('labs', this)">Labs</button>
+                    </div>
+
+                    <!-- Demographics Panel -->
+                    <div id="emrDemographicsPanel" class="emr-panel" style="display: block;">
+                        <div id="emrDemographicsContent"></div>
+                    </div>
+
+                    <!-- Vitals Panel -->
+                    <div id="emrVitalsPanel" class="emr-panel" style="display: none;">
+                        <h3 style="color: #0d9488; margin-bottom: 15px;">Vital Signs Flowsheet</h3>
+                        <div id="emrVitalsContent" style="overflow-x: auto;"></div>
+                    </div>
+
+                    <!-- MAR Panel -->
+                    <div id="emrMarPanel" class="emr-panel" style="display: none;">
+                        <h3 style="color: #0d9488; margin-bottom: 15px;">Medication Administration Record</h3>
+                        <div id="emrMarContent"></div>
+                    </div>
+
+                    <!-- Labs Panel -->
+                    <div id="emrLabsPanel" class="emr-panel" style="display: none;">
+                        <h3 style="color: #0d9488; margin-bottom: 15px;">Laboratory Results</h3>
+                        <div id="emrLabsContent"></div>
+                    </div>
+
+                    <!-- Integration Buttons -->
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #e0e0e0; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="pullVitalsToNote()" style="padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Pull Latest Vitals</button>
+                        <button onclick="pullMedsToNote()" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Pull Active Meds</button>
+                        <button onclick="pullLabsToNote()" style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Pull Recent Labs</button>
+                        <button onclick="editCurrentPatient()" style="padding: 10px 20px; background: #d97706; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Edit Patient</button>
+                    </div>
                 </div>
             </div>
 
@@ -2433,6 +2644,24 @@ Important guidelines:
             document.querySelectorAll('.note-fields').forEach(f => f.classList.remove('active'));
             document.getElementById(type + 'Fields').classList.add('active');
             document.getElementById('focusGroup').style.display = ['dar', 'darp'].includes(type) ? 'block' : 'none';
+
+            // Hide documentation controls when EMR is selected
+            const btnContainer = document.querySelector('.btn-container');
+            const nandaSection = document.querySelector('.nanda-section');
+            const quickEntryTitle = document.querySelectorAll('.section-title')[1];
+            if (type === 'simemr') {
+                if (btnContainer) btnContainer.style.display = 'none';
+                if (nandaSection) nandaSection.style.display = 'none';
+                if (quickEntryTitle) quickEntryTitle.style.display = 'none';
+                document.querySelector('.vitals-panel').style.display = 'none';
+                document.querySelector('.med-panel').style.display = 'none';
+            } else {
+                if (btnContainer) btnContainer.style.display = 'flex';
+                if (nandaSection) nandaSection.style.display = 'block';
+                if (quickEntryTitle) quickEntryTitle.style.display = 'block';
+                document.querySelector('.vitals-panel').style.display = 'block';
+                document.querySelector('.med-panel').style.display = 'block';
+            }
         }
 
         function searchNanda() {
@@ -2781,6 +3010,550 @@ Important guidelines:
         document.addEventListener('click', e => {
             if (!e.target.closest('.nanda-search')) document.getElementById('nandaDropdown').classList.remove('show');
         });
+
+        // ============================================
+        // SIMULATED EMR SYSTEM
+        // ============================================
+
+        let currentEmrPatient = null;
+        let customEmrPatients = JSON.parse(localStorage.getItem('sim_emr_patients') || '[]');
+
+        // Pre-built patient scenarios
+        const emrScenarios = {
+            'chest-pain': {
+                demographics: {
+                    name: 'Robert Johnson',
+                    mrn: 'MRN-78542163',
+                    dob: '1958-03-15',
+                    age: 66,
+                    gender: 'Male',
+                    height: '5\'11"',
+                    weight: '210 lbs',
+                    codeStatus: 'Full Code',
+                    allergies: [{ allergen: 'Aspirin', reaction: 'GI upset', severity: 'Mild' }],
+                    admitDate: '2024-01-15',
+                    admitDiagnosis: 'Chest pain, rule out acute MI',
+                    pmh: ['HTN', 'Hyperlipidemia', 'Type 2 DM', 'Former smoker'],
+                    room: 'ICU-4',
+                    unit: 'Cardiac ICU',
+                    attendingMD: 'Dr. Sarah Chen (Cardiology)'
+                },
+                vitals: [
+                    { time: '0600', bp: '162/94', hr: 102, rr: 22, temp: 98.9, spo2: 93, o2: '2L NC', pain: 8 },
+                    { time: '0800', bp: '158/92', hr: 98, rr: 20, temp: 98.8, spo2: 94, o2: '2L NC', pain: 7 },
+                    { time: '1000', bp: '145/88', hr: 88, rr: 18, temp: 98.6, spo2: 96, o2: '2L NC', pain: 4 },
+                    { time: '1200', bp: '138/82', hr: 78, rr: 16, temp: 98.4, spo2: 98, o2: 'RA', pain: 2 }
+                ],
+                medications: [
+                    { name: 'Metoprolol', dose: '25mg', route: 'PO', freq: 'BID', indication: 'Rate control', times: '0800, 2000', highAlert: false },
+                    { name: 'Atorvastatin', dose: '80mg', route: 'PO', freq: 'Daily', indication: 'Hyperlipidemia', times: '2100', highAlert: false },
+                    { name: 'Clopidogrel', dose: '75mg', route: 'PO', freq: 'Daily', indication: 'Antiplatelet', times: '0800', highAlert: false },
+                    { name: 'Heparin drip', dose: '18 units/kg/hr', route: 'IV', freq: 'Continuous', indication: 'Anticoagulation', times: 'Continuous', highAlert: true },
+                    { name: 'Morphine', dose: '2-4mg', route: 'IV', freq: 'Q2H PRN', indication: 'Chest pain', times: 'PRN', highAlert: false, prn: true }
+                ],
+                labs: [
+                    { panel: 'Cardiac Markers', date: '01/15 0930', results: [
+                        { test: 'Troponin I', value: '2.8', unit: 'ng/mL', ref: '0-0.04', flag: 'C' },
+                        { test: 'BNP', value: '450', unit: 'pg/mL', ref: '0-100', flag: 'H' },
+                        { test: 'CK-MB', value: '18', unit: 'ng/mL', ref: '0-5', flag: 'H' }
+                    ]},
+                    { panel: 'BMP', date: '01/15 0600', results: [
+                        { test: 'Na', value: '139', unit: 'mEq/L', ref: '136-145', flag: '' },
+                        { test: 'K', value: '4.2', unit: 'mEq/L', ref: '3.5-5.0', flag: '' },
+                        { test: 'Glucose', value: '186', unit: 'mg/dL', ref: '70-100', flag: 'H' },
+                        { test: 'BUN', value: '22', unit: 'mg/dL', ref: '7-20', flag: 'H' },
+                        { test: 'Creatinine', value: '1.2', unit: 'mg/dL', ref: '0.7-1.3', flag: '' }
+                    ]}
+                ]
+            },
+            'chf': {
+                demographics: {
+                    name: 'Margaret Williams',
+                    mrn: 'MRN-45823167',
+                    dob: '1945-08-22',
+                    age: 79,
+                    gender: 'Female',
+                    height: '5\'4"',
+                    weight: '165 lbs (dry wt 155)',
+                    codeStatus: 'DNR/DNI',
+                    allergies: [
+                        { allergen: 'Penicillin', reaction: 'Anaphylaxis', severity: 'Severe' },
+                        { allergen: 'Sulfa drugs', reaction: 'Rash', severity: 'Moderate' }
+                    ],
+                    admitDate: '2024-01-14',
+                    admitDiagnosis: 'CHF exacerbation with pulmonary edema',
+                    pmh: ['CHF (EF 25%)', 'A-fib', 'CKD Stage 3', 'HTN', 'Type 2 DM'],
+                    room: '3B-412',
+                    unit: 'Telemetry',
+                    attendingMD: 'Dr. Michael Roberts (Internal Medicine)'
+                },
+                vitals: [
+                    { time: '0600', bp: '168/98', hr: 112, rr: 26, temp: 98.2, spo2: 88, o2: '4L NC', pain: 3 },
+                    { time: '0800', bp: '158/92', hr: 104, rr: 24, temp: 98.4, spo2: 91, o2: '4L NC', pain: 2 },
+                    { time: '1000', bp: '148/86', hr: 94, rr: 20, temp: 98.2, spo2: 94, o2: '3L NC', pain: 1 },
+                    { time: '1200', bp: '142/82', hr: 86, rr: 18, temp: 98.4, spo2: 96, o2: '2L NC', pain: 0 }
+                ],
+                medications: [
+                    { name: 'Furosemide', dose: '40mg', route: 'IV', freq: 'BID', indication: 'Diuresis', times: '0800, 2000', highAlert: false },
+                    { name: 'Lisinopril', dose: '10mg', route: 'PO', freq: 'Daily', indication: 'CHF/HTN', times: '0800', highAlert: false },
+                    { name: 'Carvedilol', dose: '12.5mg', route: 'PO', freq: 'BID', indication: 'CHF', times: '0800, 2000', highAlert: false },
+                    { name: 'Digoxin', dose: '0.125mg', route: 'PO', freq: 'Daily', indication: 'A-fib rate control', times: '0800', highAlert: true },
+                    { name: 'Warfarin', dose: '5mg', route: 'PO', freq: 'Daily', indication: 'A-fib anticoag', times: '1700', highAlert: true }
+                ],
+                labs: [
+                    { panel: 'BMP', date: '01/14 0600', results: [
+                        { test: 'Na', value: '132', unit: 'mEq/L', ref: '136-145', flag: 'L' },
+                        { test: 'K', value: '3.2', unit: 'mEq/L', ref: '3.5-5.0', flag: 'L' },
+                        { test: 'BUN', value: '38', unit: 'mg/dL', ref: '7-20', flag: 'H' },
+                        { test: 'Creatinine', value: '1.8', unit: 'mg/dL', ref: '0.7-1.3', flag: 'H' }
+                    ]},
+                    { panel: 'BNP', date: '01/14 0600', results: [
+                        { test: 'BNP', value: '1850', unit: 'pg/mL', ref: '0-100', flag: 'C' }
+                    ]}
+                ]
+            },
+            'sepsis': {
+                demographics: {
+                    name: 'James Thompson',
+                    mrn: 'MRN-91547823',
+                    dob: '1970-11-30',
+                    age: 54,
+                    gender: 'Male',
+                    height: '5\'9"',
+                    weight: '245 lbs',
+                    codeStatus: 'Full Code',
+                    allergies: [],
+                    admitDate: '2024-01-15',
+                    admitDiagnosis: 'Sepsis secondary to UTI',
+                    pmh: ['Type 2 DM', 'BPH', 'Obesity', 'Recurrent UTIs'],
+                    room: 'ICU-2',
+                    unit: 'Medical ICU',
+                    attendingMD: 'Dr. Amanda Foster (Critical Care)'
+                },
+                vitals: [
+                    { time: '0600', bp: '85/52', hr: 118, rr: 26, temp: 102.8, spo2: 91, o2: '6L NC', pain: 5 },
+                    { time: '0800', bp: '92/58', hr: 112, rr: 24, temp: 101.6, spo2: 93, o2: '4L NC', pain: 4 },
+                    { time: '1000', bp: '98/62', hr: 104, rr: 22, temp: 100.4, spo2: 95, o2: '3L NC', pain: 3 },
+                    { time: '1200', bp: '106/68', hr: 96, rr: 20, temp: 99.8, spo2: 97, o2: '2L NC', pain: 2 }
+                ],
+                medications: [
+                    { name: 'Piperacillin-Tazobactam', dose: '4.5g', route: 'IV', freq: 'Q6H', indication: 'Sepsis/UTI', times: '0600, 1200, 1800, 0000', highAlert: false },
+                    { name: 'Vancomycin', dose: '1g', route: 'IV', freq: 'Q12H', indication: 'Broad spectrum coverage', times: '0800, 2000', highAlert: true },
+                    { name: 'Norepinephrine', dose: '0.1mcg/kg/min', route: 'IV', freq: 'Continuous', indication: 'Vasopressor support', times: 'Titrate to MAP>65', highAlert: true },
+                    { name: 'NS bolus', dose: '1000mL', route: 'IV', freq: 'PRN', indication: 'Fluid resuscitation', times: 'PRN', prn: true, highAlert: false },
+                    { name: 'Acetaminophen', dose: '650mg', route: 'PO', freq: 'Q4H PRN', indication: 'Fever', times: 'PRN', prn: true, highAlert: false }
+                ],
+                labs: [
+                    { panel: 'Sepsis Panel', date: '01/15 0600', results: [
+                        { test: 'WBC', value: '18.5', unit: 'K/uL', ref: '4.5-11', flag: 'H' },
+                        { test: 'Lactate', value: '4.2', unit: 'mmol/L', ref: '0.5-2.0', flag: 'C' },
+                        { test: 'Procalcitonin', value: '8.5', unit: 'ng/mL', ref: '0-0.5', flag: 'C' }
+                    ]},
+                    { panel: 'BMP', date: '01/15 0600', results: [
+                        { test: 'Glucose', value: '242', unit: 'mg/dL', ref: '70-100', flag: 'H' },
+                        { test: 'BUN', value: '42', unit: 'mg/dL', ref: '7-20', flag: 'H' },
+                        { test: 'Creatinine', value: '2.1', unit: 'mg/dL', ref: '0.7-1.3', flag: 'H' }
+                    ]}
+                ]
+            },
+            'dka': {
+                demographics: {
+                    name: 'Maria Garcia',
+                    mrn: 'MRN-33254891',
+                    dob: '1996-05-12',
+                    age: 28,
+                    gender: 'Female',
+                    height: '5\'5"',
+                    weight: '135 lbs',
+                    codeStatus: 'Full Code',
+                    allergies: [{ allergen: 'Latex', reaction: 'Hives', severity: 'Moderate' }],
+                    admitDate: '2024-01-15',
+                    admitDiagnosis: 'Diabetic Ketoacidosis',
+                    pmh: ['Type 1 DM (diagnosed age 12)', 'Previous DKA x2'],
+                    room: 'ICU-6',
+                    unit: 'Medical ICU',
+                    attendingMD: 'Dr. Kevin Park (Endocrinology)'
+                },
+                vitals: [
+                    { time: '0600', bp: '98/62', hr: 124, rr: 28, temp: 99.2, spo2: 98, o2: 'RA', pain: 6 },
+                    { time: '0800', bp: '102/66', hr: 116, rr: 26, temp: 98.8, spo2: 99, o2: 'RA', pain: 4 },
+                    { time: '1000', bp: '108/70', hr: 104, rr: 22, temp: 98.6, spo2: 99, o2: 'RA', pain: 2 },
+                    { time: '1200', bp: '112/72', hr: 94, rr: 18, temp: 98.4, spo2: 99, o2: 'RA', pain: 1 }
+                ],
+                medications: [
+                    { name: 'Regular Insulin drip', dose: '0.1 units/kg/hr', route: 'IV', freq: 'Continuous', indication: 'DKA', times: 'Titrate per protocol', highAlert: true },
+                    { name: 'NS + 20mEq KCl', dose: '250mL/hr', route: 'IV', freq: 'Continuous', indication: 'Fluid/K replacement', times: 'Continuous', highAlert: true },
+                    { name: 'D5 NS', dose: '150mL/hr', route: 'IV', freq: 'Continuous', indication: 'When BG <250', times: 'Per protocol', highAlert: false },
+                    { name: 'Ondansetron', dose: '4mg', route: 'IV', freq: 'Q6H PRN', indication: 'Nausea', times: 'PRN', prn: true, highAlert: false }
+                ],
+                labs: [
+                    { panel: 'DKA Panel', date: '01/15 0600', results: [
+                        { test: 'Glucose', value: '486', unit: 'mg/dL', ref: '70-100', flag: 'C' },
+                        { test: 'pH', value: '7.18', unit: '', ref: '7.35-7.45', flag: 'C' },
+                        { test: 'Anion Gap', value: '24', unit: 'mEq/L', ref: '8-12', flag: 'H' },
+                        { test: 'Beta-hydroxybutyrate', value: '5.8', unit: 'mmol/L', ref: '0-0.6', flag: 'C' }
+                    ]},
+                    { panel: 'BMP', date: '01/15 0600', results: [
+                        { test: 'K', value: '5.8', unit: 'mEq/L', ref: '3.5-5.0', flag: 'H' },
+                        { test: 'Na', value: '128', unit: 'mEq/L', ref: '136-145', flag: 'L' },
+                        { test: 'HCO3', value: '12', unit: 'mEq/L', ref: '22-28', flag: 'L' }
+                    ]}
+                ]
+            },
+            'postop-hip': {
+                demographics: {
+                    name: 'William Davis',
+                    mrn: 'MRN-67891234',
+                    dob: '1952-09-08',
+                    age: 72,
+                    gender: 'Male',
+                    height: '5\'10"',
+                    weight: '185 lbs',
+                    codeStatus: 'Full Code',
+                    allergies: [{ allergen: 'Codeine', reaction: 'Nausea/vomiting', severity: 'Moderate' }],
+                    admitDate: '2024-01-14',
+                    admitDiagnosis: 'S/P Right Total Hip Arthroplasty (POD 1)',
+                    pmh: ['Osteoarthritis', 'HTN', 'Hyperlipidemia', 'GERD'],
+                    room: '4A-218',
+                    unit: 'Orthopedics',
+                    attendingMD: 'Dr. Jennifer Walsh (Orthopedic Surgery)'
+                },
+                vitals: [
+                    { time: '0600', bp: '142/84', hr: 78, rr: 16, temp: 99.2, spo2: 96, o2: '2L NC', pain: 6 },
+                    { time: '0800', bp: '138/82', hr: 74, rr: 16, temp: 98.8, spo2: 97, o2: 'RA', pain: 4 },
+                    { time: '1000', bp: '132/78', hr: 72, rr: 14, temp: 98.6, spo2: 98, o2: 'RA', pain: 3 },
+                    { time: '1200', bp: '128/76', hr: 70, rr: 14, temp: 98.4, spo2: 99, o2: 'RA', pain: 2 }
+                ],
+                medications: [
+                    { name: 'Enoxaparin', dose: '40mg', route: 'SubQ', freq: 'Daily', indication: 'DVT prophylaxis', times: '0800', highAlert: true },
+                    { name: 'Oxycodone', dose: '5-10mg', route: 'PO', freq: 'Q4H PRN', indication: 'Pain', times: 'PRN', prn: true, highAlert: false },
+                    { name: 'Acetaminophen', dose: '1000mg', route: 'PO', freq: 'Q6H', indication: 'Pain (multimodal)', times: '0600, 1200, 1800, 0000', highAlert: false },
+                    { name: 'Docusate', dose: '100mg', route: 'PO', freq: 'BID', indication: 'Constipation prevention', times: '0800, 2000', highAlert: false },
+                    { name: 'Cefazolin', dose: '1g', route: 'IV', freq: 'Q8H x24hr', indication: 'Surgical prophylaxis', times: '0600, 1400, 2200', highAlert: false }
+                ],
+                labs: [
+                    { panel: 'CBC', date: '01/15 0600', results: [
+                        { test: 'Hgb', value: '10.2', unit: 'g/dL', ref: '12-16', flag: 'L' },
+                        { test: 'Hct', value: '30.6', unit: '%', ref: '36-48', flag: 'L' },
+                        { test: 'Platelets', value: '198', unit: 'K/uL', ref: '150-400', flag: '' }
+                    ]},
+                    { panel: 'BMP', date: '01/15 0600', results: [
+                        { test: 'Na', value: '140', unit: 'mEq/L', ref: '136-145', flag: '' },
+                        { test: 'K', value: '4.0', unit: 'mEq/L', ref: '3.5-5.0', flag: '' },
+                        { test: 'Creatinine', value: '1.0', unit: 'mg/dL', ref: '0.7-1.3', flag: '' }
+                    ]}
+                ]
+            },
+            'copd': {
+                demographics: {
+                    name: 'Patricia Brown',
+                    mrn: 'MRN-24681357',
+                    dob: '1956-12-03',
+                    age: 68,
+                    gender: 'Female',
+                    height: '5\'3"',
+                    weight: '128 lbs',
+                    codeStatus: 'Full Code',
+                    allergies: [{ allergen: 'Erythromycin', reaction: 'GI upset', severity: 'Mild' }],
+                    admitDate: '2024-01-15',
+                    admitDiagnosis: 'COPD exacerbation with acute bronchitis',
+                    pmh: ['COPD (GOLD Stage 3)', '40 pack-year smoking hx (quit 2 yrs)', 'Anxiety', 'Osteoporosis'],
+                    room: '2C-305',
+                    unit: 'Pulmonary',
+                    attendingMD: 'Dr. Robert Kim (Pulmonology)'
+                },
+                vitals: [
+                    { time: '0600', bp: '148/88', hr: 108, rr: 28, temp: 100.2, spo2: 86, o2: '4L NC', pain: 2 },
+                    { time: '0800', bp: '142/84', hr: 100, rr: 24, temp: 99.8, spo2: 89, o2: '3L NC', pain: 1 },
+                    { time: '1000', bp: '136/80', hr: 94, rr: 22, temp: 99.2, spo2: 91, o2: '2L NC', pain: 0 },
+                    { time: '1200', bp: '132/78', hr: 88, rr: 20, temp: 98.8, spo2: 92, o2: '2L NC', pain: 0 }
+                ],
+                medications: [
+                    { name: 'Albuterol neb', dose: '2.5mg', route: 'INH', freq: 'Q4H', indication: 'Bronchodilation', times: '0600, 1000, 1400, 1800, 2200, 0200', highAlert: false },
+                    { name: 'Ipratropium neb', dose: '0.5mg', route: 'INH', freq: 'Q6H', indication: 'Bronchodilation', times: '0600, 1200, 1800, 0000', highAlert: false },
+                    { name: 'Prednisone', dose: '40mg', route: 'PO', freq: 'Daily', indication: 'COPD exacerbation', times: '0800', highAlert: false },
+                    { name: 'Azithromycin', dose: '500mg', route: 'PO', freq: 'Daily x5 days', indication: 'Acute bronchitis', times: '0800', highAlert: false },
+                    { name: 'Guaifenesin', dose: '400mg', route: 'PO', freq: 'Q4H PRN', indication: 'Expectoration', times: 'PRN', prn: true, highAlert: false }
+                ],
+                labs: [
+                    { panel: 'ABG', date: '01/15 0600', results: [
+                        { test: 'pH', value: '7.32', unit: '', ref: '7.35-7.45', flag: 'L' },
+                        { test: 'pCO2', value: '58', unit: 'mmHg', ref: '35-45', flag: 'H' },
+                        { test: 'pO2', value: '62', unit: 'mmHg', ref: '80-100', flag: 'L' },
+                        { test: 'HCO3', value: '28', unit: 'mEq/L', ref: '22-26', flag: 'H' }
+                    ]},
+                    { panel: 'CBC', date: '01/15 0600', results: [
+                        { test: 'WBC', value: '12.4', unit: 'K/uL', ref: '4.5-11', flag: 'H' },
+                        { test: 'Hgb', value: '14.2', unit: 'g/dL', ref: '12-16', flag: '' }
+                    ]}
+                ]
+            }
+        };
+
+        // Load patient into EMR view
+        function loadEmrPatient() {
+            const select = document.getElementById('simPatientSelect');
+            const patientId = select.value;
+
+            if (!patientId) {
+                alert('Please select a patient scenario.');
+                return;
+            }
+
+            if (emrScenarios[patientId]) {
+                currentEmrPatient = JSON.parse(JSON.stringify(emrScenarios[patientId]));
+                currentEmrPatient.id = patientId;
+            } else {
+                currentEmrPatient = customEmrPatients.find(p => p.id === patientId);
+            }
+
+            if (currentEmrPatient) {
+                renderEmrContent();
+                document.getElementById('simEmrContent').style.display = 'block';
+            }
+        }
+
+        // Render all EMR content
+        function renderEmrContent() {
+            if (!currentEmrPatient) return;
+            const d = currentEmrPatient.demographics;
+
+            // Patient Banner
+            document.getElementById('emrPatientName').textContent = d.name;
+            document.getElementById('emrMRN').textContent = d.mrn;
+            document.getElementById('emrAge').textContent = d.age + 'yo ' + d.gender;
+            document.getElementById('emrRoom').textContent = 'Room ' + d.room;
+
+            const codeEl = document.getElementById('emrCodeStatus');
+            codeEl.textContent = d.codeStatus;
+            codeEl.style.background = d.codeStatus === 'Full Code' ? '#16a34a' :
+                                      d.codeStatus.includes('DNR') ? '#dc2626' : '#7c3aed';
+
+            // Allergies
+            const allergyBanner = document.getElementById('emrAllergyBanner');
+            if (d.allergies && d.allergies.length > 0 && d.allergies[0].allergen !== 'NKDA') {
+                document.getElementById('emrAllergies').innerHTML = d.allergies.map(a =>
+                    `<span style="display: inline-block; background: #dc2626; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; margin: 2px;">${a.allergen} (${a.reaction})</span>`
+                ).join(' ');
+                allergyBanner.style.display = 'block';
+            } else {
+                allergyBanner.style.display = 'none';
+            }
+
+            renderDemographicsPanel();
+            renderVitalsPanel();
+            renderMarPanel();
+            renderLabsPanel();
+        }
+
+        // Render Demographics Panel
+        function renderDemographicsPanel() {
+            const d = currentEmrPatient.demographics;
+            let html = '<div class="emr-demographics-grid">';
+
+            html += `<div class="emr-demo-card">
+                <h4>Patient Information</h4>
+                <div class="emr-demo-row"><span class="emr-demo-label">Full Name:</span><span class="emr-demo-value">${d.name}</span></div>
+                <div class="emr-demo-row"><span class="emr-demo-label">DOB:</span><span class="emr-demo-value">${d.dob}</span></div>
+                <div class="emr-demo-row"><span class="emr-demo-label">Age/Gender:</span><span class="emr-demo-value">${d.age}yo ${d.gender}</span></div>
+                <div class="emr-demo-row"><span class="emr-demo-label">Height/Weight:</span><span class="emr-demo-value">${d.height} / ${d.weight}</span></div>
+            </div>`;
+
+            html += `<div class="emr-demo-card">
+                <h4>Admission Information</h4>
+                <div class="emr-demo-row"><span class="emr-demo-label">Admit Date:</span><span class="emr-demo-value">${d.admitDate}</span></div>
+                <div class="emr-demo-row"><span class="emr-demo-label">Diagnosis:</span><span class="emr-demo-value">${d.admitDiagnosis}</span></div>
+                <div class="emr-demo-row"><span class="emr-demo-label">Room/Unit:</span><span class="emr-demo-value">${d.room} - ${d.unit}</span></div>
+                <div class="emr-demo-row"><span class="emr-demo-label">Attending:</span><span class="emr-demo-value">${d.attendingMD}</span></div>
+            </div>`;
+
+            html += `<div class="emr-demo-card">
+                <h4>Medical History</h4>
+                <div style="font-size: 13px;">${d.pmh.map(h => `<span style="display: inline-block; background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 4px; margin: 2px; font-size: 12px;">${h}</span>`).join('')}</div>
+            </div>`;
+
+            html += `<div class="emr-demo-card">
+                <h4>Code Status & Allergies</h4>
+                <div class="emr-demo-row"><span class="emr-demo-label">Code Status:</span><span class="emr-demo-value" style="color: ${d.codeStatus === 'Full Code' ? '#16a34a' : '#dc2626'}; font-weight: bold;">${d.codeStatus}</span></div>
+                <div class="emr-demo-row"><span class="emr-demo-label">Allergies:</span><span class="emr-demo-value">${d.allergies.length ? d.allergies.map(a => a.allergen).join(', ') : 'NKDA'}</span></div>
+            </div>`;
+
+            html += '</div>';
+            document.getElementById('emrDemographicsContent').innerHTML = html;
+        }
+
+        // Render Vitals Panel
+        function renderVitalsPanel() {
+            const vitals = currentEmrPatient.vitals;
+            let html = '<table class="emr-vitals-table"><thead><tr>';
+            html += '<th>Time</th><th>BP</th><th>HR</th><th>RR</th><th>Temp</th><th>SpO2</th><th>O2</th><th>Pain</th>';
+            html += '</tr></thead><tbody>';
+
+            vitals.forEach(v => {
+                html += `<tr>
+                    <td>${v.time}</td>
+                    <td class="${getBPClass(v.bp)}">${v.bp}</td>
+                    <td class="${v.hr > 100 || v.hr < 60 ? 'emr-value-high' : ''}">${v.hr}</td>
+                    <td class="${v.rr > 20 || v.rr < 12 ? 'emr-value-high' : ''}">${v.rr}</td>
+                    <td class="${v.temp > 100.4 ? 'emr-value-high' : ''}">${v.temp}°F</td>
+                    <td class="${v.spo2 < 92 ? 'emr-value-critical' : v.spo2 < 95 ? 'emr-value-low' : ''}">${v.spo2}%</td>
+                    <td>${v.o2}</td>
+                    <td class="${v.pain >= 7 ? 'emr-value-high' : ''}">${v.pain}/10</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('emrVitalsContent').innerHTML = html;
+        }
+
+        function getBPClass(bp) {
+            const parts = bp.split('/');
+            const sys = parseInt(parts[0]);
+            const dia = parseInt(parts[1]);
+            if (sys < 90 || sys > 160 || dia < 60 || dia > 100) return 'emr-value-high';
+            return '';
+        }
+
+        // Render MAR Panel
+        function renderMarPanel() {
+            const meds = currentEmrPatient.medications;
+            let html = '<table class="emr-med-table"><thead><tr>';
+            html += '<th>Medication</th><th>Dose</th><th>Route</th><th>Frequency</th><th>Times</th><th>Indication</th>';
+            html += '</tr></thead><tbody>';
+
+            meds.forEach(m => {
+                const rowClass = m.highAlert ? 'emr-med-high-alert' : (m.prn ? 'emr-med-prn' : '');
+                const alertBadge = m.highAlert ? '<span style="background:#f97316;color:white;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:5px;">HIGH ALERT</span>' : '';
+                const prnBadge = m.prn ? '<span style="background:#3b82f6;color:white;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:5px;">PRN</span>' : '';
+
+                html += `<tr class="${rowClass}">
+                    <td><strong>${m.name}</strong>${alertBadge}${prnBadge}</td>
+                    <td>${m.dose}</td>
+                    <td>${m.route}</td>
+                    <td>${m.freq}</td>
+                    <td>${m.times}</td>
+                    <td>${m.indication}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('emrMarContent').innerHTML = html;
+        }
+
+        // Render Labs Panel
+        function renderLabsPanel() {
+            const labs = currentEmrPatient.labs;
+            let html = '';
+
+            labs.forEach(panel => {
+                html += `<div class="emr-lab-panel">
+                    <div class="emr-lab-header">${panel.panel} - ${panel.date}</div>
+                    <div class="emr-lab-grid">`;
+
+                panel.results.forEach(r => {
+                    const flagClass = r.flag === 'C' ? 'emr-value-critical' : r.flag === 'H' ? 'emr-value-high' : r.flag === 'L' ? 'emr-value-low' : '';
+                    const flagText = r.flag === 'C' ? ' CRITICAL' : r.flag === 'H' ? ' H' : r.flag === 'L' ? ' L' : '';
+
+                    html += `<div class="emr-lab-item">
+                        <span>${r.test}</span>
+                        <span class="${flagClass}">${r.value} ${r.unit}${flagText}</span>
+                    </div>`;
+                });
+
+                html += '</div></div>';
+            });
+
+            document.getElementById('emrLabsContent').innerHTML = html;
+        }
+
+        // Show EMR Panel (tab switching)
+        function showEmrPanel(panelName, btn) {
+            document.querySelectorAll('.emr-panel').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.emr-tab').forEach(t => t.classList.remove('active'));
+
+            document.getElementById('emr' + panelName.charAt(0).toUpperCase() + panelName.slice(1) + 'Panel').style.display = 'block';
+            btn.classList.add('active');
+        }
+
+        // Pull data to documentation notes
+        function pullVitalsToNote() {
+            if (!currentEmrPatient || !currentEmrPatient.vitals.length) {
+                alert('No patient loaded or no vitals available.');
+                return;
+            }
+            if (!lastActiveTextarea) {
+                alert('Please click in a text field first.');
+                return;
+            }
+
+            const v = currentEmrPatient.vitals[currentEmrPatient.vitals.length - 1];
+            const text = `VS @ ${v.time}: BP ${v.bp} | HR ${v.hr} | RR ${v.rr} | T ${v.temp}°F | SpO2 ${v.spo2}% on ${v.o2} | Pain ${v.pain}/10. `;
+            insertAtCursor(text);
+        }
+
+        function pullMedsToNote() {
+            if (!currentEmrPatient || !currentEmrPatient.medications.length) {
+                alert('No patient loaded or no medications available.');
+                return;
+            }
+            if (!lastActiveTextarea) {
+                alert('Please click in a text field first.');
+                return;
+            }
+
+            const meds = currentEmrPatient.medications.filter(m => !m.prn);
+            const text = 'Active Meds: ' + meds.map(m => `${m.name} ${m.dose} ${m.route} ${m.freq}`).join('; ') + '. ';
+            insertAtCursor(text);
+        }
+
+        function pullLabsToNote() {
+            if (!currentEmrPatient || !currentEmrPatient.labs.length) {
+                alert('No patient loaded or no labs available.');
+                return;
+            }
+            if (!lastActiveTextarea) {
+                alert('Please click in a text field first.');
+                return;
+            }
+
+            const recentLab = currentEmrPatient.labs[0];
+            const abnormals = recentLab.results.filter(r => r.flag);
+            const text = abnormals.length ?
+                `Notable labs (${recentLab.date}): ` + abnormals.map(r => `${r.test} ${r.value} ${r.unit} [${r.flag}]`).join(', ') + '. ' :
+                `Labs WNL (${recentLab.date}). `;
+            insertAtCursor(text);
+        }
+
+        function insertAtCursor(text) {
+            const start = lastActiveTextarea.selectionStart;
+            const end = lastActiveTextarea.selectionEnd;
+            const current = lastActiveTextarea.value;
+            lastActiveTextarea.value = current.substring(0, start) + text + current.substring(end);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + text.length;
+            lastActiveTextarea.focus();
+        }
+
+        // Patient Editor placeholder
+        function openPatientEditor() {
+            alert('Patient Editor coming soon! For now, use the pre-built scenarios.');
+        }
+
+        function editCurrentPatient() {
+            alert('Edit functionality coming soon!');
+        }
+
+        // Load custom patients into dropdown on page load
+        function loadCustomPatientsDropdown() {
+            const group = document.getElementById('customPatientsGroup');
+            group.innerHTML = '';
+            customEmrPatients.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.demographics.name + ', ' + p.demographics.age + 'yo ' + p.demographics.gender;
+                group.appendChild(opt);
+            });
+        }
+        loadCustomPatientsDropdown();
     </script>
 </body>
 </html>
