@@ -409,35 +409,35 @@
 
             <h2 class="section-title">Documentation Format</h2>
             <div class="note-type-grid">
-                <div class="note-type-card active" onclick="selectNoteType('dar')">
+                <div class="note-type-card active" onclick="selectNoteType('dar', this)">
                     <h3>DAR</h3>
                     <p>Data, Action, Response</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('darp')">
+                <div class="note-type-card" onclick="selectNoteType('darp', this)">
                     <h3>DARP</h3>
                     <p>DAR + Plan</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('soap')">
+                <div class="note-type-card" onclick="selectNoteType('soap', this)">
                     <h3>SOAP</h3>
                     <p>Subj, Obj, Assess, Plan</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('sbar')">
+                <div class="note-type-card" onclick="selectNoteType('sbar', this)">
                     <h3>SBAR</h3>
                     <p>Situation, Background</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('pie')">
+                <div class="note-type-card" onclick="selectNoteType('pie', this)">
                     <h3>PIE</h3>
                     <p>Problem, Intervention</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('h2t')">
+                <div class="note-type-card" onclick="selectNoteType('h2t', this)">
                     <h3>H2T</h3>
                     <p>Head-to-Toe Assessment</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('soapie')">
+                <div class="note-type-card" onclick="selectNoteType('soapie', this)">
                     <h3>SOAPIE</h3>
                     <p>SOAP + I, E</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('narrative')">
+                <div class="note-type-card" onclick="selectNoteType('narrative', this)">
                     <h3>Narrative</h3>
                     <p>Free-form Note</p>
                 </div>
@@ -2562,10 +2562,14 @@ Important guidelines:
         document.getElementById('noteDate').valueAsDate = new Date();
         document.getElementById('noteTime').value = new Date().toTimeString().slice(0, 5);
 
-        function selectNoteType(type) {
+        function selectNoteType(type, el) {
             currentNoteType = type;
             document.querySelectorAll('.note-type-card').forEach(c => c.classList.remove('active'));
-            event.target.closest('.note-type-card').classList.add('active');
+            if (el) {
+                el.closest('.note-type-card').classList.add('active');
+            } else if (event && event.target) {
+                event.target.closest('.note-type-card').classList.add('active');
+            }
             document.querySelectorAll('.note-fields').forEach(f => f.classList.remove('active'));
             document.getElementById(type + 'Fields').classList.add('active');
             document.getElementById('focusGroup').style.display = ['dar', 'darp'].includes(type) ? 'block' : 'none';
