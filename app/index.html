@@ -10,18 +10,8 @@
     <meta http-equiv="Expires" content="0">
     <title>BSN9B Nursing Documentation</title>
     <script>
-        try {
-            var authVal = localStorage.getItem('bsn9b_auth');
-            console.log('=== APP PAGE LOAD ===');
-            console.log('Auth value:', authVal, 'Type:', typeof authVal);
-            if (authVal !== 'true') {
-                console.log('REDIRECTING - auth not true');
-                window.location.href = '/';
-            } else {
-                console.log('Auth OK - staying on app page');
-            }
-        } catch(e) {
-            console.error('Auth check error:', e);
+        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+            window.location.href = '/';
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -3222,14 +3212,8 @@ Important guidelines:
             }
         }
 
-        // Auto-logout when user closes tab/window
-        window.addEventListener('beforeunload', function() {
-            auth.signOut();
-            localStorage.removeItem('bsn9b_auth');
-            localStorage.removeItem('bsn9b_user');
-            localStorage.removeItem('bsn9b_displayName');
-            localStorage.removeItem('bsn9b_uid');
-        });
+        // Persistent login - users stay logged in until they click logout
+        // (removed beforeunload auto-logout to enable persistent sessions)
 
         // Fetch all users from Google Sheet
         async function fetchAllUsers() {
