@@ -1895,35 +1895,65 @@ Important guidelines:
 
         async function searchDrugs(query) {
             try {
-                const response = await fetch(`https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(query)}`);
-                const data = await response.json();
+                // Use drugs endpoint for better brand/generic pairing
+                const drugsResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(query)}`);
+                const drugsData = await drugsResponse.json();
 
-                let suggestions = [];
-                if (data.suggestionGroup && data.suggestionGroup.suggestionList && data.suggestionGroup.suggestionList.suggestion) {
-                    suggestions = data.suggestionGroup.suggestionList.suggestion.slice(0, 10);
-                }
+                let drugMap = new Map(); // Use map to store unique drugs with their info
 
-                // Also try approximate match for better results
-                const approxResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(query)}&maxEntries=10`);
-                const approxData = await approxResponse.json();
-
-                if (approxData.approximateGroup && approxData.approximateGroup.candidate) {
-                    approxData.approximateGroup.candidate.forEach(c => {
-                        if (c.name && !suggestions.includes(c.name)) {
-                            suggestions.push(c.name);
+                // Process drug group data
+                if (drugsData.drugGroup && drugsData.drugGroup.conceptGroup) {
+                    drugsData.drugGroup.conceptGroup.forEach(group => {
+                        if (group.conceptProperties) {
+                            group.conceptProperties.forEach(prop => {
+                                const name = prop.name;
+                                const tty = prop.tty; // IN=ingredient, BN=brand, SBD=branded drug, etc.
+                                if (name && !drugMap.has(name.toLowerCase())) {
+                                    drugMap.set(name.toLowerCase(), {
+                                        name: name,
+                                        type: tty === 'BN' ? 'brand' : tty === 'IN' ? 'generic' : 'drug'
+                                    });
+                                }
+                            });
                         }
                     });
                 }
 
-                // Remove duplicates and limit to 10
-                suggestions = [...new Set(suggestions)].slice(0, 10);
+                // Also try spelling suggestions for better matching
+                const spellResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(query)}`);
+                const spellData = await spellResponse.json();
+                if (spellData.suggestionGroup?.suggestionList?.suggestion) {
+                    spellData.suggestionGroup.suggestionList.suggestion.slice(0, 5).forEach(s => {
+                        if (!drugMap.has(s.toLowerCase())) {
+                            drugMap.set(s.toLowerCase(), { name: s, type: 'drug' });
+                        }
+                    });
+                }
+
+                // Convert to array and clean up
+                let suggestions = Array.from(drugMap.values());
+
+                // Sort: exact matches first, then by length
+                const queryLower = query.toLowerCase();
+                suggestions.sort((a, b) => {
+                    const aStartsWith = a.name.toLowerCase().startsWith(queryLower);
+                    const bStartsWith = b.name.toLowerCase().startsWith(queryLower);
+                    if (aStartsWith && !bStartsWith) return -1;
+                    if (!aStartsWith && bStartsWith) return 1;
+                    return a.name.length - b.name.length;
+                });
+
+                // Limit to 12 results
+                suggestions = suggestions.slice(0, 12);
 
                 if (suggestions.length === 0) {
                     drugDropdown.innerHTML = '<div class="drug-loading">No matches found. You can still type manually.</div>';
                 } else {
-                    drugDropdown.innerHTML = suggestions.map(drug =>
-                        `<div class="drug-item" onclick="selectDrug('${drug.replace(/'/g, "\\'")}')">${drug}</div>`
-                    ).join('');
+                    drugDropdown.innerHTML = suggestions.map(drug => {
+                        const typeLabel = drug.type === 'brand' ? ' <span style="color:#1976d2;font-size:10px;">(Brand)</span>' :
+                                         drug.type === 'generic' ? ' <span style="color:#388e3c;font-size:10px;">(Generic)</span>' : '';
+                        return `<div class="drug-item" onclick="selectDrug('${drug.name.replace(/'/g, "\\'")}')">${drug.name}${typeLabel}</div>`;
+                    }).join('');
                 }
                 drugDropdown.classList.add('show');
             } catch (error) {
