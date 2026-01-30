@@ -245,6 +245,73 @@
             'instructor': 'sumnerinstructor'
         };
 
+        // Pre-approved contacts list - auto-approve if name/email/phone matches
+        const PRE_APPROVED = [
+            { name: 'Rylee Butterfield', email: '', phone: '5412136861' },
+            { name: 'Nicole Stodghill', email: 'nicoleashley2380@gmail.com', phone: '5412790959' },
+            { name: 'Naomi Steele', email: '', phone: '5414204186' },
+            { name: 'Madisyn Johnson', email: '22johnsonmk@gmail.com', phone: '5414608263' },
+            { name: 'Leanne Stewart', email: 'leanne.french@gmail.com', phone: '5039394502' },
+            { name: 'Laura Boehm', email: 'laura.boehm@freseniusmedicalcare.com', phone: '5416392004' },
+            { name: 'Kim Poulakis', email: 'kpoulakis@sumnercollege.edu', phone: '8435098679' },
+            { name: 'Kallyan Smith', email: 'kallyansmith@gmail.com', phone: '9073153447' },
+            { name: 'Hope La Fave', email: '', phone: '9162478037' },
+            { name: 'Cassie Simonson', email: 'cassiesimonson8@gmail.com', phone: '5412131589' },
+            { name: 'Caitlin Ward', email: '', phone: '2083406739' },
+            { name: 'Brittany Brunke', email: 'bbelcherghm@gmail.com', phone: '5416102503' },
+            { name: 'Ashley Salmond', email: 'ashleysalmondgyn@gmail.com', phone: '5416781202' },
+            { name: 'Ann Ottessen', email: 'aottesen@sumnercollege.edu', phone: '5037848387' },
+        ];
+
+        // Normalize phone number (remove all non-digits)
+        function normalizePhone(phone) {
+            if (!phone) return '';
+            return phone.replace(/\D/g, '').replace(/^1/, ''); // Remove non-digits and leading 1
+        }
+
+        // Check if a name fuzzy matches any pre-approved name
+        function fuzzyNameMatch(inputName, approvedName) {
+            const input = inputName.toLowerCase().trim();
+            const approved = approvedName.toLowerCase();
+            const approvedParts = approved.split(' ');
+
+            // Check if input matches first name, last name, or nickname
+            for (const part of approvedParts) {
+                if (part.length >= 3) {
+                    // Check if input starts with this part or vice versa
+                    if (part.startsWith(input) || input.startsWith(part)) return true;
+                    // Check if input contains this part or vice versa
+                    if (part.includes(input) || input.includes(part)) return true;
+                }
+            }
+            // Check full name match
+            if (approved.includes(input) || input.includes(approved)) return true;
+            return false;
+        }
+
+        // Check if user should be auto-approved
+        function checkAutoApproval(name, email, phone) {
+            const normalizedPhone = normalizePhone(phone);
+            const normalizedEmail = email.toLowerCase().trim();
+            const normalizedName = name.toLowerCase().trim();
+
+            for (const approved of PRE_APPROVED) {
+                // Email match (exact, case-insensitive)
+                if (normalizedEmail && approved.email && normalizedEmail === approved.email.toLowerCase()) {
+                    return { matched: true, matchedOn: 'email', matchedPerson: approved.name };
+                }
+                // Phone match (normalized digits)
+                if (normalizedPhone && approved.phone && normalizedPhone === approved.phone) {
+                    return { matched: true, matchedOn: 'phone', matchedPerson: approved.name };
+                }
+                // Name fuzzy match
+                if (normalizedName && fuzzyNameMatch(normalizedName, approved.name)) {
+                    return { matched: true, matchedOn: 'name', matchedPerson: approved.name };
+                }
+            }
+            return { matched: false };
+        }
+
         let usersCache = null;
 
         // Check if already logged in
@@ -372,12 +439,16 @@
             }
 
             try {
-                // Add to Google Sheet as pending
+                // Check if user should be auto-approved
+                const autoApproval = checkAutoApproval(name, email, '');
+                const status = autoApproval.matched ? 'approved' : 'pending';
+
+                // Add to Google Sheet
                 const params = new URLSearchParams({
                     action: 'addUser',
                     username: username,
                     password: password,
-                    status: 'pending',
+                    status: status,
                     name: name,
                     email: email
                 });
@@ -385,9 +456,13 @@
                 await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
                 // Send email notification
-                await sendEmailNotification(name, email, username, 'new_registration');
+                await sendEmailNotification(name, email, username, autoApproval.matched ? 'auto_approved' : 'new_registration');
 
-                successMsg.textContent = 'Registration submitted! You will receive an email once approved.';
+                if (autoApproval.matched) {
+                    successMsg.textContent = 'Account approved! Matched: ' + autoApproval.matchedPerson + '. You can now log in.';
+                } else {
+                    successMsg.textContent = 'Registration submitted! You will receive an email once approved.';
+                }
                 successMsg.classList.add('show');
 
                 // Clear form
@@ -436,12 +511,16 @@
             }
 
             try {
-                // Add to Google Sheet as pending
+                // Check if user should be auto-approved
+                const autoApproval = checkAutoApproval(name, email, '');
+                const status = autoApproval.matched ? 'approved' : 'pending';
+
+                // Add to Google Sheet
                 const params = new URLSearchParams({
                     action: 'addUser',
                     username: username,
                     password: password,
-                    status: 'pending',
+                    status: status,
                     name: name,
                     email: email
                 });
@@ -449,9 +528,13 @@
                 await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
                 // Send email notification
-                await sendEmailNotification(name, email, username, 'account_creation');
+                await sendEmailNotification(name, email, username, autoApproval.matched ? 'auto_approved' : 'account_creation');
 
-                successMsg.textContent = 'Account request submitted! Continuing to app...';
+                if (autoApproval.matched) {
+                    successMsg.textContent = 'Account approved! Welcome, ' + autoApproval.matchedPerson + '!';
+                } else {
+                    successMsg.textContent = 'Account request submitted! Continuing to app...';
+                }
                 successMsg.classList.add('show');
 
                 setTimeout(() => {
@@ -475,9 +558,14 @@
 
         async function sendEmailNotification(name, email, username, type) {
             const adminUrl = 'https://bendbsn.com/app.html?admin=true';
-            const subject = type === 'new_registration'
-                ? 'New BendBSN Registration Request'
-                : 'New BendBSN Account Request';
+            let subject;
+            if (type === 'auto_approved') {
+                subject = 'BendBSN: Auto-Approved - ' + name;
+            } else if (type === 'new_registration') {
+                subject = 'BendBSN: Needs Approval - ' + name;
+            } else {
+                subject = 'BendBSN: Account Request - ' + name;
+            }
 
             // Use FormSubmit to send email
             const formData = new FormData();
@@ -485,16 +573,29 @@
             formData.append('email', email);
             formData.append('username', username);
             formData.append('_subject', subject);
-            formData.append('message', `
-New account request:
+
+            let message;
+            if (type === 'auto_approved') {
+                message = `AUTO-APPROVED (matched pre-approved list)
+
+Name: ${name}
+Email: ${email}
+Username: ${username}
+
+This user was automatically approved because they matched someone on your pre-approved contacts list. No action needed.
+
+View all users at: ${adminUrl}`;
+            } else {
+                message = `NEEDS APPROVAL
 
 Name: ${name}
 Email: ${email}
 Requested Username: ${username}
-Type: ${type}
 
-Approve or deny at: ${adminUrl}
-            `);
+This user was NOT found on your pre-approved list. Please review and approve/deny at:
+${adminUrl}`;
+            }
+            formData.append('message', message);
 
             try {
                 await fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, {
