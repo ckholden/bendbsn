@@ -249,15 +249,6 @@
             <div id="userDisplayContainer" style="position: absolute; top: 15px; right: 20px;">
                 <span id="userDisplay" style="color: rgba(255,255,255,0.8); font-size: 12px;"></span>
             </div>
-            <!-- Alert/FYI Banners - Inside Header -->
-            <div id="alertBanner" class="header-banner alert-banner" style="display: none;">
-                <span id="alertText"></span>
-                <span class="banner-label">⚠️ ALERT</span>
-            </div>
-            <div id="fyiBanner" class="header-banner fyi-banner" style="display: none;">
-                <span id="fyiText"></span>
-                <span class="banner-label">ℹ️ FYI</span>
-            </div>
             <h1>Sumner BSN9B Nursing Documentation</h1>
             <p>Progress Notes | Head-to-Toe | NANDA Diagnoses</p>
             <a href="/resources/" style="display: inline-block; margin-top: 15px; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; text-decoration: none; padding: 14px 30px; border-radius: 25px; font-size: 16px; font-weight: 700; transition: all 0.3s; box-shadow: 0 4px 15px rgba(255,107,53,0.4); animation: pulse-btn 2s infinite;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(255,107,53,0.6)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255,107,53,0.4)'">📚 RN Resources - Click Here!</a>
@@ -857,55 +848,27 @@
                     </div>
     </div>
 
-    <!-- Banner Styles -->
+    <!-- Alert/FYI Banners - Fixed at top -->
+    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: softFlashAlert 2s ease-in-out infinite;">
+        <span id="alertText"></span>
+        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.8;">⚠️ ALERT</span>
+    </div>
+    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); animation: softFlashFyi 2s ease-in-out infinite;">
+        <span id="fyiText"></span>
+        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
+    </div>
     <style>
-        /* Ensure logout is ALWAYS visible above banners */
-        #logoutContainer {
-            z-index: 99999 !important;
-            position: fixed !important;
-        }
-        .header-banner {
-            margin: 10px auto 15px auto;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 14px;
-            max-width: 90%;
-            position: relative;
-            z-index: 9998 !important;
-        }
-        #alertBanner, #fyiBanner {
-            z-index: 9998 !important;
-        }
-        .header-banner .banner-label {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 11px;
-            opacity: 0.8;
-        }
-        .alert-banner {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            color: white;
-            box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4);
-            animation: softFlashAlert 2s ease-in-out infinite;
-        }
-        .fyi-banner {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: #1a1a2e;
-            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
-            animation: softFlashFyi 2s ease-in-out infinite;
-        }
         @keyframes softFlashAlert {
-            0%, 100% { opacity: 1; box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4); }
-            50% { opacity: 0.85; box-shadow: 0 2px 15px rgba(220, 38, 38, 0.6); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
         }
         @keyframes softFlashFyi {
-            0%, 100% { opacity: 1; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3); }
-            50% { opacity: 0.85; box-shadow: 0 2px 15px rgba(245, 158, 11, 0.5); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
         }
+        body.has-alert { padding-top: 50px; }
+        body.has-fyi { padding-top: 50px; }
+        body.has-alert.has-fyi { padding-top: 100px; }
     </style>
 
     <footer style="text-align: center; padding: 20px; color: rgba(255,255,255,0.6); font-size: 12px;">
@@ -1041,16 +1004,21 @@
                 if (data.alert && data.alert.message) {
                     alertText.textContent = data.alert.message;
                     alertBanner.style.display = 'block';
+                    document.body.classList.add('has-alert');
                 } else {
                     alertBanner.style.display = 'none';
+                    document.body.classList.remove('has-alert');
                 }
 
-                // Handle FYI banner
+                // Handle FYI banner (offset if alert is showing)
                 if (data.fyi && data.fyi.message) {
                     fyiText.textContent = data.fyi.message;
                     fyiBanner.style.display = 'block';
+                    fyiBanner.style.top = (data.alert && data.alert.message) ? '50px' : '0';
+                    document.body.classList.add('has-fyi');
                 } else {
                     fyiBanner.style.display = 'none';
+                    document.body.classList.remove('has-fyi');
                 }
             });
         }
