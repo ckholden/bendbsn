@@ -308,6 +308,16 @@
             'test': 'test'
         };
 
+        // Display names for fallback users
+        const FALLBACK_DISPLAY_NAMES = {
+            'admin': 'Admin',
+            'holdenc': 'Christian',
+            'sumner': 'Student',
+            'np': 'NP Student',
+            'instructor': 'Instructor',
+            'test': 'Test User'
+        };
+
         // Pre-approved contacts list - auto-approve if name/email/phone matches
         const PRE_APPROVED = [
             { name: 'Rylee Butterfield', email: '', phone: '5412136861' },
@@ -439,11 +449,24 @@
             if (!isValid && FALLBACK_USERS[username] === password) {
                 isValid = true;
                 isGeneric = GENERIC_USERNAMES.includes(username);
+                // Set display name for fallback users
+                if (FALLBACK_DISPLAY_NAMES[username]) {
+                    sessionStorage.setItem('bsn9b_displayName', FALLBACK_DISPLAY_NAMES[username]);
+                }
             }
 
             if (isValid) {
                 sessionStorage.setItem('bsn9b_auth', 'true');
                 sessionStorage.setItem('bsn9b_user', username);
+
+                // Store display name (first name) for chat
+                if (users) {
+                    const userRecord = users.find(u => u.username.toLowerCase() === username);
+                    if (userRecord && userRecord.name) {
+                        const firstName = userRecord.name.split(' ')[0];
+                        sessionStorage.setItem('bsn9b_displayName', firstName);
+                    }
+                }
 
                 // If generic login, prompt to create account
                 if (isGeneric) {

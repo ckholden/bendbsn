@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>BSN9B Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #0f3460 0%, #533483 50%, #e94560 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 24px; }
+        .header-actions { display: flex; gap: 10px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #e94560; color: white; }
+        .btn-primary:hover { background: #d63850; transform: translateY(-2px); }
+        .btn-secondary { background: rgba(255,255,255,0.2); color: white; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.3); }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body { padding: 20px; max-height: 400px; overflow-y: auto; }
+        .card-body.tall { max-height: 600px; }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        .user-item:hover { background: #f8f9fa; }
+        .user-item:last-child { border-bottom: none; }
+        .user-info { flex: 1; }
+        .user-name { font-weight: 600; color: #333; }
+        .user-email { font-size: 12px; color: #666; }
+        .user-status { font-size: 11px; margin-top: 3px; }
+        .status-approved { color: #28a745; }
+        .status-pending { color: #ffc107; }
+        .status-banned { color: #dc3545; }
+        .user-actions { display: flex; gap: 5px; }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .message-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .message-content { flex: 1; }
+        .message-user { font-weight: 600; font-size: 12px; color: #1f4e79; }
+        .message-text { font-size: 14px; color: #333; margin: 5px 0; }
+        .message-time { font-size: 10px; color: #999; }
+
+        .stat-box {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        .stat-number { font-size: 36px; font-weight: 700; color: #1f4e79; }
+        .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .login-box h2 { margin-bottom: 20px; color: #1f4e79; }
+        .login-box input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .login-box input:focus { outline: none; border-color: #1f4e79; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .refresh-btn:hover { opacity: 1; }
+
+        .action-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .action-bar label { font-weight: 600; color: #333; }
+    </style>
+</head>
+<body>
+    <!-- Admin Login -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <h2>Admin Access</h2>
+            <p style="color: #666; margin-bottom: 20px;">Enter admin password to continue</p>
+            <input type="password" id="adminPassword" placeholder="Admin Password" onkeypress="if(event.key==='Enter')checkAdminPassword()">
+            <button class="btn btn-primary" style="width: 100%;" onclick="checkAdminPassword()">Access Admin Panel</button>
+            <p id="loginError" style="color: #dc3545; margin-top: 15px; display: none;">Invalid password</p>
+            <a href="index.html" style="display: block; margin-top: 20px; color: #666; font-size: 14px;">Back to Login</a>
+        </div>
+    </div>
+
+    <div class="container" id="adminContent" style="display: none;">
+        <div class="header">
+            <div>
+                <h1>BSN9B Admin Panel</h1>
+                <p style="opacity: 0.8; font-size: 14px;">Manage users, chat, and site settings</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="window.location.href='app.html'">Back to App</button>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid" style="margin-bottom: 20px;">
+            <div class="card">
+                <div class="card-body" style="display: flex; gap: 15px;">
+                    <div class="stat-box" style="flex: 1;">
+                        <div class="stat-number" id="statOnline">0</div>
+                        <div class="stat-label">Online Now</div>
+                    </div>
+                    <div class="stat-box" style="flex: 1;">
+                        <div class="stat-number" id="statRegistered">0</div>
+                        <div class="stat-label">Registered Users</div>
+                    </div>
+                    <div class="stat-box" style="flex: 1;">
+                        <div class="stat-number" id="statBanned">0</div>
+                        <div class="stat-label">Banned</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <label>Quick Actions:</label>
+            <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
+            <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
+            <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
+        </div>
+
+        <div class="grid">
+            <!-- Online Users -->
+            <div class="card">
+                <div class="card-header">
+                    <span>Online Users</span>
+                    <button class="refresh-btn" onclick="loadOnlineUsers()">&#x21bb;</button>
+                </div>
+                <div class="card-body" id="onlineUsersList">
+                    <div class="empty-state">
+                        <div class="icon">&#128274;</div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banned Users -->
+            <div class="card">
+                <div class="card-header">
+                    <span>Banned Users</span>
+                    <button class="refresh-btn" onclick="loadBannedUsers()">&#x21bb;</button>
+                </div>
+                <div class="card-body" id="bannedUsersList">
+                    <div class="empty-state">
+                        <div class="icon">&#128683;</div>
+                        <p>No banned users</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registered Users -->
+            <div class="card">
+                <div class="card-header">
+                    <span>Registered Users</span>
+                    <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
+                </div>
+                <div class="card-body tall" id="registeredUsersList">
+                    <div class="empty-state">
+                        <div class="icon">&#128100;</div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="card">
+                <div class="card-header">
+                    <span>Recent Chat Messages</span>
+                    <button class="refresh-btn" onclick="loadMessages()">&#x21bb;</button>
+                </div>
+                <div class="card-body tall" id="messagesList">
+                    <div class="empty-state">
+                        <div class="icon">&#128172;</div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Admin password - change this!
+        const ADMIN_PASSWORD = 'admin1374';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+
+        // Firebase setup
+        const firebaseConfig = {
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const chatRef = database.ref('chat/messages');
+        const presenceRef = database.ref('chat/presence');
+        const bannedRef = database.ref('banned');
+
+        function checkAdminPassword() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                sessionStorage.setItem('bsn9b_admin', 'true');
+                initAdmin();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        // Check if already logged in as admin
+        if (sessionStorage.getItem('bsn9b_admin') === 'true') {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            initAdmin();
+        }
+
+        function initAdmin() {
+            loadOnlineUsers();
+            loadBannedUsers();
+            loadRegisteredUsers();
+            loadMessages();
+
+            // Real-time updates
+            presenceRef.on('value', () => loadOnlineUsers());
+            bannedRef.on('value', () => loadBannedUsers());
+            chatRef.limitToLast(50).on('value', () => loadMessages());
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // Load online users
+        function loadOnlineUsers() {
+            presenceRef.once('value', (snapshot) => {
+                const container = document.getElementById('onlineUsersList');
+                const count = snapshot.numChildren();
+                document.getElementById('statOnline').textContent = count;
+
+                if (!snapshot.exists() || count === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128564;</div><p>No users online</p></div>';
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    const key = child.key;
+                    html += `
+                        <div class="user-item">
+                            <div class="user-info">
+                                <span class="online-dot"></span>
+                                <span class="user-name">${user.user || 'Anonymous'}</span>
+                            </div>
+                            <div class="user-actions">
+                                <button class="btn btn-warning btn-sm" onclick="kickUser('${key}', '${user.user}')">Kick</button>
+                                <button class="btn btn-danger btn-sm" onclick="banUser('${user.user}')">Ban</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        // Load banned users
+        function loadBannedUsers() {
+            bannedRef.once('value', (snapshot) => {
+                const container = document.getElementById('bannedUsersList');
+                const count = snapshot.numChildren();
+                document.getElementById('statBanned').textContent = count;
+
+                if (!snapshot.exists() || count === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#9989;</div><p>No banned users</p></div>';
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    const key = child.key;
+                    html += `
+                        <div class="user-item">
+                            <div class="user-info">
+                                <span class="user-name">${data.username}</span>
+                                <div class="user-status status-banned">Banned: ${data.reason || 'No reason given'}</div>
+                                <div class="user-email">Banned on: ${new Date(data.timestamp).toLocaleString()}</div>
+                            </div>
+                            <div class="user-actions">
+                                <button class="btn btn-success btn-sm" onclick="unbanUser('${key}')">Unban</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        // Load registered users from Google Sheets
+        async function loadRegisteredUsers() {
+            const container = document.getElementById('registeredUsersList');
+            try {
+                const response = await fetch(API_URL + '?action=getUsers');
+                const data = await response.json();
+
+                if (data.success && data.users) {
+                    const users = data.users;
+                    document.getElementById('statRegistered').textContent = users.length;
+
+                    if (users.length === 0) {
+                        container.innerHTML = '<div class="empty-state"><div class="icon">&#128100;</div><p>No registered users</p></div>';
+                        return;
+                    }
+
+                    let html = '';
+                    users.forEach((user) => {
+                        const statusClass = user.status === 'approved' ? 'status-approved' :
+                                           user.status === 'banned' ? 'status-banned' : 'status-pending';
+                        html += `
+                            <div class="user-item">
+                                <div class="user-info">
+                                    <div class="user-name">${user.name || user.username}</div>
+                                    <div class="user-email">${user.email || ''} | @${user.username}</div>
+                                    <div class="user-status ${statusClass}">${user.status || 'pending'}</div>
+                                </div>
+                                <div class="user-actions">
+                                    ${user.status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveUser('${user.username}')">Approve</button>` : ''}
+                                    <button class="btn btn-danger btn-sm" onclick="banUser('${user.username}')">Ban</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128679;</div><p>Could not load users</p></div>';
+                }
+            } catch (e) {
+                console.error('Error loading users:', e);
+                container.innerHTML = '<div class="empty-state"><div class="icon">&#128679;</div><p>Error loading users</p></div>';
+            }
+        }
+
+        // Load chat messages
+        function loadMessages() {
+            chatRef.limitToLast(50).once('value', (snapshot) => {
+                const container = document.getElementById('messagesList');
+
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128172;</div><p>No messages</p></div>';
+                    return;
+                }
+
+                let html = '';
+                const messages = [];
+                snapshot.forEach((child) => {
+                    messages.push({ key: child.key, ...child.val() });
+                });
+
+                // Sort by timestamp descending (newest first)
+                messages.sort((a, b) => b.timestamp - a.timestamp);
+
+                messages.forEach((msg) => {
+                    html += `
+                        <div class="message-item">
+                            <div class="message-content">
+                                <div class="message-user">${msg.user}</div>
+                                <div class="message-text">${msg.text}</div>
+                                <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+                            </div>
+                            <button class="btn btn-danger btn-sm" onclick="deleteMessage('${msg.key}')">Delete</button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        // Kick user from chat
+        function kickUser(presenceKey, username) {
+            if (confirm(`Kick ${username} from chat?`)) {
+                presenceRef.child(presenceKey).remove()
+                    .then(() => alert(`${username} has been kicked from chat`))
+                    .catch((e) => alert('Error: ' + e.message));
+            }
+        }
+
+        // Kick all users
+        function kickAllUsers() {
+            if (confirm('Kick ALL users from chat? They will need to refresh to reconnect.')) {
+                presenceRef.remove()
+                    .then(() => alert('All users have been kicked from chat'))
+                    .catch((e) => alert('Error: ' + e.message));
+            }
+        }
+
+        // Ban user
+        function banUser(username) {
+            const reason = prompt(`Ban ${username}? Enter reason (optional):`, 'Rule violation');
+            if (reason !== null) {
+                bannedRef.push({
+                    username: username,
+                    reason: reason,
+                    timestamp: Date.now(),
+                    bannedBy: 'admin'
+                }).then(() => {
+                    alert(`${username} has been banned`);
+                    // Also kick them from chat
+                    presenceRef.once('value', (snapshot) => {
+                        snapshot.forEach((child) => {
+                            if (child.val().user === username) {
+                                child.ref.remove();
+                            }
+                        });
+                    });
+                }).catch((e) => alert('Error: ' + e.message));
+            }
+        }
+
+        // Unban user
+        function unbanUser(banKey) {
+            if (confirm('Unban this user?')) {
+                bannedRef.child(banKey).remove()
+                    .then(() => alert('User has been unbanned'))
+                    .catch((e) => alert('Error: ' + e.message));
+            }
+        }
+
+        // Approve user (update Google Sheets)
+        async function approveUser(username) {
+            if (confirm(`Approve ${username}?`)) {
+                try {
+                    const params = new URLSearchParams({
+                        action: 'updateStatus',
+                        username: username,
+                        status: 'approved'
+                    });
+                    await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                    alert(`${username} has been approved`);
+                    loadRegisteredUsers();
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                }
+            }
+        }
+
+        // Delete message
+        function deleteMessage(messageKey) {
+            if (confirm('Delete this message?')) {
+                chatRef.child(messageKey).remove()
+                    .then(() => loadMessages())
+                    .catch((e) => alert('Error: ' + e.message));
+            }
+        }
+
+        // Clear all messages
+        function clearAllMessages() {
+            if (confirm('Delete ALL chat messages? This cannot be undone.')) {
+                chatRef.remove()
+                    .then(() => {
+                        alert('All messages have been deleted');
+                        loadMessages();
+                    })
+                    .catch((e) => alert('Error: ' + e.message));
+            }
+        }
+
+        // Refresh all data
+        function refreshAll() {
+            loadOnlineUsers();
+            loadBannedUsers();
+            loadRegisteredUsers();
+            loadMessages();
+        }
+    </script>
+</body>
+</html>

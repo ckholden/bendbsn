@@ -954,7 +954,37 @@
         const database = firebase.database();
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
+        const bannedRef = database.ref('banned');
         console.log('Firebase initialized, chatRef path:', chatRef.toString());
+
+        // Get display name (first name) - stored when user logs in
+        const currentUsername = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
+        const displayName = sessionStorage.getItem('bsn9b_displayName') || currentUsername;
+
+        // Check if current user is banned
+        function checkIfBanned() {
+            bannedRef.once('value', (snapshot) => {
+                snapshot.forEach((child) => {
+                    const banned = child.val();
+                    if (banned.username === currentUsername || banned.username === displayName) {
+                        alert('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'));
+                        sessionStorage.clear();
+                        window.location.href = 'index.html';
+                    }
+                });
+            });
+        }
+        checkIfBanned();
+
+        // Listen for bans in real-time
+        bannedRef.on('child_added', (snapshot) => {
+            const banned = snapshot.val();
+            if (banned.username === currentUsername || banned.username === displayName) {
+                alert('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'));
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
 
         // Chat state
         let chatOpen = false;
@@ -988,10 +1018,9 @@
 
             if (!message) return;
 
-            const username = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
-
             chatRef.push({
-                user: username,
+                user: displayName,
+                username: currentUsername,
                 text: message,
                 timestamp: Date.now()
             });
@@ -1046,77 +1075,117 @@
         cleanupOldMessages();
         setInterval(cleanupOldMessages, 60 * 60 * 1000);
 
-        // Listen for messages (simplified query - no orderByChild to avoid index requirement)
-        chatRef.limitToLast(50).on('value', (snapshot) => {
-            console.log('Chat listener fired, snapshot exists:', snapshot.exists());
-            console.log('Snapshot data:', JSON.stringify(snapshot.val()));
-            const container = document.getElementById('chatMessages');
-            const currentUser = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
-
-            if (!snapshot.exists()) {
-                container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
-                return;
-            }
-
-            // Get messages and sort by timestamp
-            const messages = [];
-            const cutoff = Date.now() - MESSAGE_RETENTION_MS;
-            snapshot.forEach((child) => {
-                const msg = child.val();
-                // Only show messages from last 48 hours
-                if (msg.timestamp && msg.timestamp >= cutoff) {
-                    messages.push(msg);
+        // Debug function - call from console: testChat()
+        window.testChat = function() {
+            console.log('Testing chat connection...');
+            chatRef.once('value').then((snap) => {
+                console.log('Test read success!');
+                console.log('Data exists:', snap.exists());
+                console.log('Data:', snap.val());
+                if (snap.exists()) {
+                    const container = document.getElementById('chatMessages');
+                    let html = '<div style="padding: 10px; background: #d4edda; margin-bottom: 10px; border-radius: 8px;">Test read successful! Found ' + snap.numChildren() + ' messages.</div>';
+                    snap.forEach((child) => {
+                        const msg = child.val();
+                        html += '<div style="padding: 8px; border-bottom: 1px solid #eee;"><strong>' + (msg.user || 'Unknown') + ':</strong> ' + (msg.text || 'No text') + '</div>';
+                    });
+                    container.innerHTML = html;
                 }
+            }).catch((err) => {
+                console.error('Test read failed:', err);
             });
+        };
 
-            // Sort by timestamp
-            messages.sort((a, b) => a.timestamp - b.timestamp);
+        // Listen for messages
+        function setupChatListener() {
+            console.log('Setting up chat listener...');
+            chatRef.on('value', (snapshot) => {
+                console.log('=== CHAT LISTENER FIRED ===');
+                console.log('Snapshot exists:', snapshot.exists());
+                console.log('Snapshot numChildren:', snapshot.numChildren());
 
-            console.log('Messages to display:', messages.length);
+                const container = document.getElementById('chatMessages');
+                if (!container) {
+                    console.error('chatMessages container not found!');
+                    return;
+                }
 
-            if (messages.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
-                return;
-            }
+                if (!snapshot.exists() || snapshot.numChildren() === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
+                    return;
+                }
 
-            let html = '';
-            let newMessages = 0;
+                // Get ALL messages first, then filter
+                const allMessages = [];
+                snapshot.forEach((child) => {
+                    const msg = child.val();
+                    console.log('Message found:', msg);
+                    allMessages.push(msg);
+                });
 
-            messages.forEach((msg) => {
-                const isMe = msg.user === currentUser;
-                const isNew = msg.timestamp > lastReadTimestamp;
+                console.log('Total messages found:', allMessages.length);
 
-                if (isNew && !chatOpen) newMessages++;
+                // Filter by 48 hours
+                const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+                const messages = allMessages.filter(msg => msg.timestamp && msg.timestamp >= cutoff);
 
-                html += `
-                    <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                        <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.user}</div>
-                        <div style="background: ${isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
-                            ${msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                console.log('Messages after 48h filter:', messages.length);
+
+                // Sort by timestamp
+                messages.sort((a, b) => a.timestamp - b.timestamp);
+
+                if (messages.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
+                    return;
+                }
+
+                let html = '';
+                let newMessages = 0;
+
+                messages.forEach((msg) => {
+                    const isMe = msg.user === displayName || msg.username === currentUsername;
+                    const isNew = msg.timestamp > lastReadTimestamp;
+
+                    if (isNew && !chatOpen) newMessages++;
+
+                    html += `
+                        <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.user}</div>
+                            <div style="background: ${isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
+                                ${msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
+                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">${formatTime(msg.timestamp)}</div>
                         </div>
-                        <div style="font-size: 9px; color: #aaa; margin-top: 3px;">${formatTime(msg.timestamp)}</div>
-                    </div>
-                `;
+                    `;
+                });
+
+                console.log('Setting innerHTML with', html.length, 'chars');
+                container.innerHTML = html;
+                scrollToBottom();
+
+                // Update unread badge
+                if (newMessages > 0 && !chatOpen) {
+                    unreadCount = newMessages;
+                    const badge = document.getElementById('chatBadge');
+                    badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                    badge.style.display = 'flex';
+                }
+            }, (error) => {
+                console.error('Chat listener error:', error);
+                document.getElementById('chatMessages').innerHTML = '<p style="color: red; padding: 20px;">Chat error: ' + error.message + '</p>';
             });
+        }
 
-            console.log('Setting innerHTML, html length:', html.length);
-            container.innerHTML = html;
-            scrollToBottom();
+        // Initialize chat listener
+        setupChatListener();
 
-            // Update unread badge
-            if (newMessages > 0 && !chatOpen) {
-                unreadCount = newMessages;
-                const badge = document.getElementById('chatBadge');
-                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-                badge.style.display = 'flex';
-            }
-        }, (error) => {
-            console.error('Chat listener error:', error);
-        });
-
-        // Track online presence
+        // Track online presence - use display name (first name)
         const myPresence = presenceRef.push();
-        myPresence.set({ user: sessionStorage.getItem('bsn9b_user') || 'Anonymous', online: true });
+        myPresence.set({
+            user: displayName,
+            username: currentUsername,
+            online: true
+        });
         myPresence.onDisconnect().remove();
 
         let userListVisible = false;
