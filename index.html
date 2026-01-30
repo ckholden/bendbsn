@@ -713,9 +713,9 @@
             if (type === 'auto_approved') {
                 subject = 'BendBSN: Auto-Approved - ' + name;
             } else if (type === 'new_registration') {
-                subject = 'BendBSN: Needs Approval - ' + name;
+                subject = 'BendBSN: New Registration - ' + name;
             } else if (type === 'account_creation') {
-                subject = 'BendBSN: Needs Approval - ' + name;
+                subject = 'BendBSN: New Registration - ' + name;
             } else {
                 subject = 'BendBSN: Account Request - ' + name;
             }
@@ -740,17 +740,15 @@ This user was automatically approved. No action needed.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 View all users: ${adminUrl}`;
             } else {
-                message = `🔔 NEW USER NEEDS APPROVAL
+                message = `✅ NEW USER REGISTERED
 
 Name: ${name}
 Email: ${email}
-Requested Username: ${username}
+
+This user has been auto-approved and can now log in.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-👉 APPROVE/DENY HERE:
-${adminUrl}
-
-(Log in as admin or holdenc, scroll to Admin panel)`;
+Review users anytime: ${adminUrl}`;
             }
             formData.append('message', message);
 
@@ -779,15 +777,30 @@ ${adminUrl}
         const database = firebase.database();
 
         function logLoginEvent(username, displayName, success) {
+            const timestamp = Date.now();
+
+            // Log to Firebase (existing)
             const loginRef = database.ref('loginHistory');
             loginRef.push({
                 username: username,
                 displayName: displayName || username,
-                timestamp: Date.now(),
+                timestamp: timestamp,
                 date: new Date().toLocaleString(),
                 success: success,
                 userAgent: navigator.userAgent.substring(0, 100)
             });
+
+            // Also log to Google Sheet LoginHistory tab
+            try {
+                fetch(API_URL + '?action=logLogin&email=' + encodeURIComponent(username) +
+                    '&name=' + encodeURIComponent(displayName || username) +
+                    '&success=' + success + '&timestamp=' + timestamp, {
+                    method: 'POST',
+                    mode: 'no-cors'
+                });
+            } catch (e) {
+                console.log('Sheet login log may have failed');
+            }
         }
 
         // Focus username field on load

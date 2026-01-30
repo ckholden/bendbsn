@@ -201,6 +201,96 @@
             .form-row, .form-row.three-col, .h2t-grid { grid-template-columns: 1fr; }
             .btn-container { flex-direction: column; }
         }
+
+        /* Mobile: Large phones (max-width: 640px) */
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .container { border-radius: 12px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 22px; }
+            .form-container { padding: 20px; }
+
+            /* Chat widget - nearly full width on mobile */
+            #chatBox, #aiBox {
+                width: calc(100vw - 20px) !important;
+                height: calc(100vh - 120px) !important;
+                max-height: 500px !important;
+                left: 10px !important;
+                right: 10px !important;
+                bottom: 70px !important;
+                border-radius: 12px !important;
+            }
+
+            /* Larger touch targets for toggle buttons */
+            #chatToggle, #aiToggle {
+                width: 56px !important;
+                height: 56px !important;
+            }
+
+            /* Modal adjustments */
+            #phrasesModal > div,
+            #feedbackModal > div {
+                max-width: calc(100vw - 30px) !important;
+                max-height: calc(100vh - 40px) !important;
+                margin: 15px !important;
+            }
+        }
+
+        /* Mobile: Standard phones (max-width: 480px) */
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .header { padding: 15px; }
+            .header h1 { font-size: 20px; }
+            .header p { font-size: 11px; }
+            .form-container { padding: 15px; }
+
+            .note-type-grid { grid-template-columns: 1fr !important; gap: 8px; }
+            .note-type-card { padding: 12px; }
+            .note-type-card h3 { font-size: 14px; }
+
+            /* Prevent iOS zoom on input focus */
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+
+            .btn { padding: 16px !important; font-size: 15px !important; }
+
+            /* Widget toggle buttons */
+            #chatToggle, #aiToggle {
+                width: 50px !important;
+                height: 50px !important;
+                font-size: 20px !important;
+            }
+
+            /* Chat input area */
+            #chatInput, #aiInput {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Mobile: Small phones (max-width: 320px) */
+        @media (max-width: 320px) {
+            body { padding: 5px; }
+            .header h1 { font-size: 18px; }
+            .form-container { padding: 12px; }
+
+            .section-title { font-size: 14px; }
+            label { font-size: 12px; }
+
+            #chatToggle, #aiToggle {
+                width: 46px !important;
+                height: 46px !important;
+                font-size: 18px !important;
+            }
+        }
+
+        /* Prevent widget overlap on narrow screens */
+        @media (max-width: 400px) {
+            #aiWidget {
+                bottom: 80px !important;
+            }
+        }
+
         /* Drug Autocomplete */
         .drug-autocomplete-wrapper {
             position: relative;
@@ -950,7 +1040,11 @@
                     <strong style="font-size: 16px;">BSN9B Chat</strong>
                     <div id="onlineCount" onclick="toggleUserList()" style="font-size: 11px; opacity: 0.8; cursor: pointer;">Connecting...</div>
                 </div>
-                <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button id="soundToggleBtn" onclick="toggleChatSound()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;" title="Toggle sound">🔔</button>
+                    <button id="notificationToggleBtn" onclick="toggleBrowserNotifications()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;" title="Toggle browser notifications">📵</button>
+                    <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+                </div>
             </div>
 
             <!-- Online Users List (toggleable) -->
@@ -1067,6 +1161,126 @@
         let unreadCount = 0;
         let lastReadTimestamp = parseInt(localStorage.getItem('chatLastRead') || '0');
 
+        // Notification preferences (sound ON by default, browser notifications OFF by default)
+        let soundEnabled = localStorage.getItem('chatSoundEnabled') !== 'false';
+        let notificationsEnabled = localStorage.getItem('chatNotificationsEnabled') === 'true';
+
+        // Audio notification using Web Audio API
+        function playNotificationSound() {
+            if (!soundEnabled) return;
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.log('Audio notification not available:', e);
+            }
+        }
+
+        // Toggle sound notifications
+        function toggleChatSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('chatSoundEnabled', soundEnabled.toString());
+            updateSoundToggleUI();
+        }
+
+        function updateSoundToggleUI() {
+            const btn = document.getElementById('soundToggleBtn');
+            if (btn) {
+                btn.innerHTML = soundEnabled ? '🔔' : '🔕';
+                btn.title = soundEnabled ? 'Sound ON (click to mute)' : 'Sound OFF (click to unmute)';
+            }
+        }
+
+        // Browser Notifications
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('Browser does not support notifications');
+                return false;
+            }
+
+            if (Notification.permission === 'granted') {
+                notificationsEnabled = true;
+                localStorage.setItem('chatNotificationsEnabled', 'true');
+                updateNotificationToggleUI();
+                return true;
+            }
+
+            if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    notificationsEnabled = true;
+                    localStorage.setItem('chatNotificationsEnabled', 'true');
+                    updateNotificationToggleUI();
+                    return true;
+                }
+            }
+
+            notificationsEnabled = false;
+            localStorage.setItem('chatNotificationsEnabled', 'false');
+            updateNotificationToggleUI();
+            return false;
+        }
+
+        function sendBrowserNotification(message) {
+            if (!notificationsEnabled || Notification.permission !== 'granted') return;
+            if (document.hasFocus() && chatOpen) return;
+
+            try {
+                const notification = new Notification('BSN9B Chat', {
+                    body: `${message.user}: ${message.text.substring(0, 100)}${message.text.length > 100 ? '...' : ''}`,
+                    tag: 'bsn9b-chat',
+                    requireInteraction: false
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    if (!chatOpen) toggleChat();
+                    notification.close();
+                };
+
+                setTimeout(() => notification.close(), 5000);
+            } catch (e) {
+                console.log('Notification error:', e);
+            }
+        }
+
+        function toggleBrowserNotifications() {
+            if (notificationsEnabled) {
+                notificationsEnabled = false;
+                localStorage.setItem('chatNotificationsEnabled', 'false');
+                updateNotificationToggleUI();
+            } else {
+                requestNotificationPermission();
+            }
+        }
+
+        function updateNotificationToggleUI() {
+            const btn = document.getElementById('notificationToggleBtn');
+            if (btn) {
+                btn.innerHTML = notificationsEnabled ? '📲' : '📵';
+                btn.title = notificationsEnabled ? 'Browser notifications ON' : 'Browser notifications OFF (click to enable)';
+            }
+        }
+
+        // Initialize notification UI on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSoundToggleUI();
+            updateNotificationToggleUI();
+        });
+
         // Toggle chat
         function toggleChat() {
             chatOpen = !chatOpen;
@@ -1171,8 +1385,8 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // 48-hour threshold in milliseconds
-        const MESSAGE_RETENTION_MS = 48 * 60 * 60 * 1000;
+        // 7-day threshold in milliseconds
+        const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
         // Debug: Direct test read of messages
         chatRef.once('value').then((snapshot) => {
@@ -1292,12 +1506,25 @@
                 container.innerHTML = html;
                 scrollToBottom();
 
-                // Update unread badge
+                // Update unread badge and send notifications
                 if (newMessages > 0 && !chatOpen) {
+                    // Only notify if this is a genuinely new message (not page load)
+                    const shouldNotify = unreadCount < newMessages;
+
                     unreadCount = newMessages;
                     const badge = document.getElementById('chatBadge');
                     badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
                     badge.style.display = 'flex';
+
+                    // Play sound and send browser notification for new messages
+                    if (shouldNotify && messages.length > 0) {
+                        const latestMessage = messages[messages.length - 1];
+                        // Don't notify for your own messages
+                        if (latestMessage.username !== currentUsername) {
+                            playNotificationSound();
+                            sendBrowserNotification(latestMessage);
+                        }
+                    }
                 }
             }, (error) => {
                 console.error('Chat listener error:', error);
