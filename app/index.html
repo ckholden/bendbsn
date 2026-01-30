@@ -1133,6 +1133,22 @@
         const currentUsername = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
         const displayName = sessionStorage.getItem('bsn9b_displayName') || currentUsername;
 
+        // Verify Firebase Auth state and re-authenticate if needed
+        let firebaseAuthReady = false;
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Firebase Auth: Logged in as', user.email);
+                firebaseAuthReady = true;
+            } else {
+                console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
+                // If we have session but no Firebase auth, redirect to login
+                // This can happen if Firebase auth expired
+                if (sessionStorage.getItem('bsn9b_auth') === 'true') {
+                    console.warn('Session exists but Firebase auth lost - may need to re-login');
+                }
+            }
+        });
+
         // Check if current user is banned
         function checkIfBanned() {
             bannedRef.once('value', (snapshot) => {
@@ -1343,6 +1359,15 @@
                 }
             }
 
+            // Check Firebase Auth status
+            const currentUser = auth.currentUser;
+            console.log('Sending message, Firebase auth user:', currentUser ? currentUser.email : 'NOT AUTHENTICATED');
+
+            if (!currentUser) {
+                alert('Chat requires authentication. Please refresh the page or log in again.');
+                return;
+            }
+
             chatRef.push({
                 user: displayName,
                 username: currentUsername,
@@ -1352,7 +1377,7 @@
                 console.log('Message sent successfully');
             }).catch((error) => {
                 console.error('Failed to send message:', error);
-                alert('Failed to send message: ' + error.message);
+                alert('Failed to send message: ' + error.message + '\n\nYou may need to log in again.');
             });
 
             input.value = '';
