@@ -795,13 +795,7 @@ Review users anytime: ${adminUrl}`;
 
         // Send welcome email to new user
         async function sendWelcomeEmail(name, email) {
-            console.log('sendWelcomeEmail called for:', name, email);
-
-            // Skip if EmailJS not configured
-            if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
-                console.log('EmailJS not configured - skipping welcome email');
-                return;
-            }
+            if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') return;
 
             try {
                 const templateParams = {
@@ -812,13 +806,9 @@ Review users anytime: ${adminUrl}`;
                     message: `Your BSN9B account has been successfully created!\n\nPlease use your email address (${email}) and the password you created to login.\n\nClick the link below to login to your account.`
                 };
 
-                console.log('Sending email with params:', templateParams);
-                // Pass public key in send call as well for v4 compatibility
-                const response = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
-                console.log('Welcome email sent successfully!', response);
+                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
             } catch (error) {
                 console.error('Failed to send welcome email:', error);
-                alert('Note: Welcome email could not be sent. Error: ' + (error.text || error.message || error));
             }
         }
 
