@@ -231,6 +231,23 @@
             <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
             <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
             <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
+            <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
+        </div>
+
+        <!-- Login History Modal -->
+        <div id="loginHistoryModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 900px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
+                <div style="background: #1f4e79; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">Login History</h2>
+                    <div>
+                        <button onclick="exportLoginHistory()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-right: 10px;">Export CSV</button>
+                        <button onclick="closeLoginHistory()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+                <div id="loginHistoryContent" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+                    <p>Loading...</p>
+                </div>
+            </div>
         </div>
 
         <div class="grid">
@@ -587,6 +604,85 @@
             loadBannedUsers();
             loadRegisteredUsers();
             loadMessages();
+        }
+
+        // Login History - use correct Firebase URL
+        const loginHistoryRef = firebase.database().ref('loginHistory');
+        let loginHistoryData = [];
+
+        function showLoginHistory() {
+            document.getElementById('loginHistoryModal').style.display = 'block';
+            loadLoginHistory();
+        }
+
+        function closeLoginHistory() {
+            document.getElementById('loginHistoryModal').style.display = 'none';
+        }
+
+        function loadLoginHistory() {
+            const container = document.getElementById('loginHistoryContent');
+            container.innerHTML = '<p>Loading...</p>';
+
+            loginHistoryRef.orderByChild('timestamp').limitToLast(200).once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p style="color: #666; text-align: center;">No login history found</p>';
+                    return;
+                }
+
+                loginHistoryData = [];
+                snapshot.forEach((child) => {
+                    loginHistoryData.push(child.val());
+                });
+
+                // Sort newest first
+                loginHistoryData.sort((a, b) => b.timestamp - a.timestamp);
+
+                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
+                html += '<thead><tr style="background: #f0f0f0;">';
+                html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Date/Time</th>';
+                html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Username</th>';
+                html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Display Name</th>';
+                html += '<th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Status</th>';
+                html += '</tr></thead><tbody>';
+
+                loginHistoryData.forEach((login) => {
+                    const date = new Date(login.timestamp).toLocaleString();
+                    const statusColor = login.success ? '#28a745' : '#dc3545';
+                    const statusText = login.success ? 'Success' : 'Failed';
+                    html += `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px 10px;">${date}</td>
+                        <td style="padding: 8px 10px; font-weight: 500;">${login.username || 'N/A'}</td>
+                        <td style="padding: 8px 10px;">${login.displayName || 'N/A'}</td>
+                        <td style="padding: 8px 10px; text-align: center;"><span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${statusText}</span></td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            });
+        }
+
+        function exportLoginHistory() {
+            if (loginHistoryData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            let csv = 'Date/Time,Username,Display Name,Status,User Agent\n';
+            loginHistoryData.forEach((login) => {
+                const date = new Date(login.timestamp).toLocaleString();
+                const status = login.success ? 'Success' : 'Failed';
+                const userAgent = (login.userAgent || '').replace(/,/g, ';');
+                csv += `"${date}","${login.username || ''}","${login.displayName || ''}","${status}","${userAgent}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'login-history-' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>

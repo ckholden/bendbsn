@@ -8,6 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>BSN9B Nursing Documentation</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -460,13 +462,18 @@
                 sessionStorage.setItem('bsn9b_user', username);
 
                 // Store display name (first name) for chat
+                let displayName = username;
                 if (users) {
                     const userRecord = users.find(u => u.username.toLowerCase() === username);
                     if (userRecord && userRecord.name) {
                         const firstName = userRecord.name.split(' ')[0];
                         sessionStorage.setItem('bsn9b_displayName', firstName);
+                        displayName = firstName;
                     }
                 }
+
+                // Log successful login to Firebase
+                logLoginEvent(username, displayName, true);
 
                 // If generic login, prompt to create account
                 if (isGeneric) {
@@ -545,29 +552,25 @@
                 await sendEmailNotification(name, email, username, autoApproval.matched ? 'auto_approved' : 'new_registration');
 
                 if (autoApproval.matched) {
-                    successMsg.textContent = 'Account approved! Matched: ' + autoApproval.matchedPerson + '. You can now log in.';
-                    successMsg.classList.add('show');
-
-                    // Clear form
+                    // Clear form and close modal
                     document.getElementById('regName').value = '';
                     document.getElementById('regEmail').value = '';
                     document.getElementById('regUsername').value = '';
                     document.getElementById('regPassword').value = '';
-
                     regBtn.disabled = false;
                     regBtn.innerHTML = 'Submit Registration';
-
-                    // Close modal after a moment so they can log in
-                    setTimeout(() => {
-                        hideRegisterModal();
-                    }, 3000);
-                } else {
-                    // Not recognized - show pending modal
                     hideRegisterModal();
-                    showPendingModal(name);
 
+                    // Show browser confirmation
+                    alert('Registration Successful!\n\nYour account has been approved. You can now log in with your username and password.');
+                } else {
+                    // Not recognized - close modal and show pending alert
                     regBtn.disabled = false;
                     regBtn.innerHTML = 'Submit Registration';
+                    hideRegisterModal();
+
+                    // Show browser confirmation for pending
+                    alert('Registration Submitted!\n\nYour account is pending approval. You will be notified when an administrator approves your account.');
                 }
 
                 // Refresh users cache
@@ -808,6 +811,25 @@ ${adminUrl}
             } catch (e) {
                 console.log('Email notification may have failed');
             }
+        }
+
+        // Firebase for login history
+        const firebaseConfig = {
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function logLoginEvent(username, displayName, success) {
+            const loginRef = database.ref('loginHistory');
+            loginRef.push({
+                username: username,
+                displayName: displayName || username,
+                timestamp: Date.now(),
+                date: new Date().toLocaleString(),
+                success: success,
+                userAgent: navigator.userAgent.substring(0, 100)
+            });
         }
 
         // Focus username field on load
