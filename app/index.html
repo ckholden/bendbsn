@@ -451,16 +451,20 @@
             <button onclick="logout()" style="position: fixed; right: 0; top: 20%; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
                 🚪 LOGOUT
             </button>
+            <!-- Floating Lock Screen Button -->
+            <button onclick="lockScreen()" style="position: fixed; right: 0; top: 29%; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;" title="Quick lock - returns to login screen">
+                🔒 LOCK
+            </button>
             <!-- Floating Smart Phrases Button -->
-            <button onclick="document.getElementById('phrasesModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 38%; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed; animation: pulse 2s infinite;">
+            <button onclick="document.getElementById('phrasesModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 40%; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed; animation: pulse 2s infinite;">
                 📝 PHRASES
             </button>
             <!-- Floating Feedback Button -->
-            <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 56%; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
+            <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 51%; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
                 💡 FEEDBACK
             </button>
             <!-- Dark Mode Toggle Button -->
-            <button id="themeToggle" onclick="toggleDarkMode()" class="theme-toggle">
+            <button id="themeToggle" onclick="toggleDarkMode()" class="theme-toggle" style="top: 62%;">
                 <span id="themeIcon">🌙</span> DARK
             </button>
             <style>
@@ -3160,6 +3164,16 @@ Important guidelines:
                 sessionStorage.removeItem('bsn9b_uid');
                 window.location.href = '/';
             });
+        }
+
+        // Quick lock screen - returns to login without confirmation
+        function lockScreen() {
+            // Clear session but keep Firebase auth (user can log back in easily)
+            sessionStorage.removeItem('bsn9b_auth');
+            sessionStorage.removeItem('bsn9b_user');
+            sessionStorage.removeItem('bsn9b_displayName');
+            sessionStorage.removeItem('bsn9b_uid');
+            window.location.href = '/';
         }
 
         // Auto-logout when user closes tab/window
