@@ -261,8 +261,12 @@
                 <strong>Quick Start:</strong> Enter info → Select format → Document → Export PDF/Word. Use <strong>Smart Phrases</strong> (📝 button on right) for quick text shortcuts.
             </div>
             <!-- Floating Smart Phrases Button - More Visible -->
-            <button onclick="document.getElementById('phrasesModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, #ff9800, #f57c00); color: white; border: none; padding: 15px 12px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 13px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed; animation: pulse 2s infinite;">
+            <button onclick="document.getElementById('phrasesModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 45%; transform: translateY(-50%); background: linear-gradient(135deg, #ff9800, #f57c00); color: white; border: none; padding: 15px 12px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 13px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed; animation: pulse 2s infinite;">
                 📝 SMART PHRASES
+            </button>
+            <!-- Floating Feedback Button -->
+            <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 62%; transform: translateY(-50%); background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; padding: 15px 12px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 13px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
+                💡 FEEDBACK
             </button>
             <style>
                 @keyframes pulse {
@@ -323,17 +327,40 @@
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.dc</code> Discharge<span class="tooltip">Discharge instructions reviewed with patient. Patient verbalized understanding.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.tcdb</code> TCDB<span class="tooltip">Encouraged to turn, cough, and deep breathe.</span></div>
                     </div>
-                    <!-- Suggestion Box -->
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-                        <p style="font-size: 11px; color: #1f4e79; font-weight: 600; margin-bottom: 8px;">💬 Feedback, Issues, or Phrase Suggestions</p>
-                        <form id="suggestionForm" action="https://formsubmit.co/christiankholden@gmail.com" method="POST" target="_blank" style="margin: 0;">
-                            <input type="hidden" name="_subject" value="BSN9B Nursing App Feedback">
-                            <input type="hidden" name="_captcha" value="false">
-                            <input type="hidden" name="_template" value="table">
-                            <textarea name="message" placeholder="Report an issue, suggest a smart phrase, or share feedback..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; resize: none; height: 60px;" required></textarea>
-                            <button type="submit" style="margin-top: 8px; background: #1f4e79; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%;">Submit</button>
-                        </form>
+                </div>
+            </div>
+
+            <!-- Feedback Modal -->
+            <div id="feedbackModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="if(event.target === this) this.classList.add('hidden')">
+                <div style="background: white; border-radius: 16px; padding: 25px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #4caf50; padding-bottom: 15px;">
+                        <h3 style="color: #388e3c; margin: 0;">💡 Feedback & Suggestions</h3>
+                        <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #888;">×</button>
                     </div>
+                    <p style="color: #555; font-size: 14px; margin-bottom: 20px;">Help us improve! Report issues, suggest new features, or request new smart phrases.</p>
+                    <form action="https://formsubmit.co/christiankholden@gmail.com" method="POST" target="_blank">
+                        <input type="hidden" name="_subject" value="BendBSN Feedback/Suggestion">
+                        <input type="hidden" name="_captcha" value="false">
+                        <input type="hidden" name="_template" value="table">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: 600; color: #333; margin-bottom: 6px; font-size: 13px;">Type</label>
+                            <select name="type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                                <option value="Bug/Issue">Bug or Issue</option>
+                                <option value="Feature Request">Feature Request</option>
+                                <option value="Smart Phrase Suggestion">Smart Phrase Suggestion</option>
+                                <option value="General Feedback">General Feedback</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: 600; color: #333; margin-bottom: 6px; font-size: 13px;">Your Name (optional)</label>
+                            <input type="text" name="name" placeholder="Your name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: 600; color: #333; margin-bottom: 6px; font-size: 13px;">Message</label>
+                            <textarea name="message" placeholder="Describe the issue, feature, or suggestion..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical;" required></textarea>
+                        </div>
+                        <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Submit Feedback</button>
+                    </form>
                 </div>
             </div>
 
@@ -872,6 +899,167 @@
     <footer style="text-align: center; padding: 20px; color: rgba(255,255,255,0.6); font-size: 12px;">
         BSN9B Nursing Documentation Tool
     </footer>
+
+    <!-- Chat Widget -->
+    <div id="chatWidget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Segoe UI', sans-serif;">
+        <!-- Chat Toggle Button -->
+        <button id="chatToggle" onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
+            💬
+        </button>
+        <span id="chatBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
+
+        <!-- Chat Box -->
+        <div id="chatBox" style="display: none; position: absolute; bottom: 70px; right: 0; width: 350px; height: 450px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; flex-direction: column;">
+            <!-- Chat Header -->
+            <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="font-size: 16px;">BSN9B Chat</strong>
+                    <div id="onlineCount" style="font-size: 11px; opacity: 0.8;">Connecting...</div>
+                </div>
+                <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
+                <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
+            </div>
+
+            <!-- Chat Input -->
+            <div style="padding: 12px; border-top: 1px solid #e2e8f0; background: white;">
+                <form onsubmit="sendMessage(event)" style="display: flex; gap: 8px;">
+                    <input type="text" id="chatInput" placeholder="Type a message..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none;" maxlength="500">
+                    <button type="submit" style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px;">➤</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const chatRef = database.ref('chat/messages');
+        const presenceRef = database.ref('chat/presence');
+
+        // Chat state
+        let chatOpen = false;
+        let unreadCount = 0;
+        let lastReadTimestamp = parseInt(localStorage.getItem('chatLastRead') || '0');
+
+        // Toggle chat
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            document.getElementById('chatBox').style.display = chatOpen ? 'flex' : 'none';
+            document.getElementById('chatToggle').style.transform = chatOpen ? 'scale(0.9)' : 'scale(1)';
+
+            if (chatOpen) {
+                unreadCount = 0;
+                document.getElementById('chatBadge').style.display = 'none';
+                lastReadTimestamp = Date.now();
+                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                document.getElementById('chatInput').focus();
+                scrollToBottom();
+            }
+        }
+
+        // Send message
+        function sendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            const username = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
+
+            chatRef.push({
+                user: username,
+                text: message,
+                timestamp: Date.now()
+            });
+
+            input.value = '';
+        }
+
+        // Format timestamp
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const isToday = date.toDateString() === now.toDateString();
+
+            if (isToday) {
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else {
+                return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Listen for messages
+        chatRef.orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
+            const container = document.getElementById('chatMessages');
+            const currentUser = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
+
+            if (!snapshot.exists()) {
+                container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
+                return;
+            }
+
+            let html = '';
+            let newMessages = 0;
+
+            snapshot.forEach((child) => {
+                const msg = child.val();
+                const isMe = msg.user === currentUser;
+                const isNew = msg.timestamp > lastReadTimestamp;
+
+                if (isNew && !chatOpen) newMessages++;
+
+                html += `
+                    <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
+                        <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.user}</div>
+                        <div style="background: ${isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
+                            ${msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                        </div>
+                        <div style="font-size: 9px; color: #aaa; margin-top: 3px;">${formatTime(msg.timestamp)}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            scrollToBottom();
+
+            // Update unread badge
+            if (newMessages > 0 && !chatOpen) {
+                unreadCount = newMessages;
+                const badge = document.getElementById('chatBadge');
+                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                badge.style.display = 'flex';
+            }
+        });
+
+        // Track online presence
+        const myPresence = presenceRef.push();
+        myPresence.set({ user: sessionStorage.getItem('bsn9b_user') || 'Anonymous', online: true });
+        myPresence.onDisconnect().remove();
+
+        presenceRef.on('value', (snapshot) => {
+            const count = snapshot.numChildren();
+            document.getElementById('onlineCount').textContent = count + ' online';
+        });
+    </script>
 
     <script>
         const { jsPDF } = window.jspdf;
