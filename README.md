@@ -204,6 +204,17 @@ bendbsn/
 3. For AI/user management changes, redeploy Google Apps Script:
    - Deploy > Manage deployments > Edit > New version > Deploy
 
+### DNS Configuration (Porkbun)
+| Type | Host | Answer |
+|------|------|--------|
+| A | bendbsn.com | 185.199.108.153 |
+| A | bendbsn.com | 185.199.109.153 |
+| A | bendbsn.com | 185.199.110.153 |
+| A | bendbsn.com | 185.199.111.153 |
+| CNAME | www | ckholden.github.io |
+
+**Note:** Do not use wildcard CNAME (`*.bendbsn.com`) - it interferes with GitHub SSL certificate issuance.
+
 ### Google Apps Script Functions
 - `doGet(e)` - Handle GET requests (getUsers)
 - `doPost(e)` - Handle POST requests (addUser, updateStatus, AI chat)
@@ -250,7 +261,7 @@ Or double-click: `BENDBSN-Claude.bat` on Desktop
 
 If you find this tool helpful, consider supporting its development:
 
-**[Buy me a coffee via Venmo](https://venmo.com/ChristianKSHolden)**
+**[Donate via Venmo](https://venmo.com/ChristianKSHolden)** to help keep it running.
 
 ---
 
