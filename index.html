@@ -423,8 +423,30 @@
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
 
-                // Get display name from Firebase user profile or email
-                let displayName = user.displayName || email.split('@')[0];
+                // Get display name from Firebase user profile
+                let displayName = user.displayName;
+
+                // If no displayName in Firebase, try to get from Google Sheet
+                if (!displayName) {
+                    try {
+                        const users = await fetchUsers();
+                        if (users) {
+                            const userRecord = users.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
+                            if (userRecord && userRecord.name) {
+                                displayName = userRecord.name.split(' ')[0]; // First name
+                                // Update Firebase profile for next time
+                                await user.updateProfile({ displayName: userRecord.name.split(' ')[0] });
+                            }
+                        }
+                    } catch (e) {
+                        console.log('Could not fetch user profile from sheet');
+                    }
+                }
+
+                // Fallback to email username
+                if (!displayName) {
+                    displayName = email.split('@')[0];
+                }
 
                 // Store session info
                 sessionStorage.setItem('bsn9b_auth', 'true');
