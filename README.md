@@ -46,6 +46,12 @@ A comprehensive web-based nursing documentation tool with real-time collaboratio
   - Advanced (HFNC, CPAP, BiPAP, Trach Collar, T-Piece, Ventilator)
 - One-click insert into any text field
 
+### Medication Administration Panel
+- Drug name autocomplete via RxNav API
+- Shows Generic (Brand) or Brand (Generic) labels
+- Dose, route, frequency, and time fields
+- One-click insert into documentation
+
 ### Smart Phrases
 Type a shortcut followed by space to auto-expand text. Examples:
 - `.vs` - Vital signs template
@@ -86,16 +92,50 @@ Pre-built phrases for rapid documentation:
 
 ---
 
+## Site Structure (Clean URLs)
+
+| URL | Description |
+|-----|-------------|
+| bendbsn.com | Login page |
+| bendbsn.com/app/ | Main documentation app |
+| bendbsn.com/admin/ | Admin control panel |
+| bendbsn.com/resources/ | Study resources (redirects) |
+
+---
+
 ## Admin Panel
 
-Access at [bendbsn.com/admin.html](https://bendbsn.com/admin.html)
+Access at [bendbsn.com/admin/](https://bendbsn.com/admin/)
 
-### Moderator Controls
-- **Kick Users** - Remove users from current session
-- **Ban/Unban Users** - Permanent bans with real-time enforcement
-- **Delete Messages** - Remove individual chat messages
-- **View Online Users** - Real-time presence monitoring
-- **View Registered Users** - Full user list from Google Sheets
+**Password:** `admin1374`
+
+### Features
+- **Login History** - View all login attempts (success/failed) with CSV export
+- **Registered Users** - Full user list from Google Sheets with approve/ban controls
+- **Online Users** - Real-time presence monitoring with kick/ban options
+- **Banned Users** - Manage bans with unban capability
+- **Chat Messages** - View and delete recent messages
+- **Manage Smart Phrases** - Add global smart phrases for all users
+- **Add User** - Directly add new users to the system
+
+### Quick Actions
+- Kick All from Chat
+- Clear All Messages
+- Refresh All Data
+- Export Login History to CSV
+
+---
+
+## User Accounts
+
+### Default Users (Sumner College BSN9B)
+| Name | Username | Password |
+|------|----------|----------|
+| Holden C (Admin) | holdenc | admin |
+| Ann Ottessen (Instructor) | anno | instructor2025 |
+| All Students | firstnamelastinit | sumner2025 |
+
+Example student logins: `ryleeb`, `nicoles`, `naomis`, etc.
 
 ---
 
@@ -108,54 +148,101 @@ Access at [bendbsn.com/admin.html](https://bendbsn.com/admin.html)
 - **FileSaver.js** - File download handling
 
 ### Backend Services
-- **Firebase Realtime Database** - Chat, presence, bans
+- **Firebase Realtime Database** - Chat, presence, bans, login history, global phrases
 - **Google Apps Script** - User management API, AI proxy
-- **Groq API** - AI chat (free tier)
-- **GitHub Pages** - Static hosting
+- **Google Sheets** - User database (Sheet ID: `1q0zoGH8r4m6QbMvE3288d5jTf62t6IoKhtBKNRBMk2w`)
+- **Groq API** - AI chat (free tier, Llama 3.3 70B)
+- **RxNav API** - Drug name autocomplete
+- **GitHub Pages** - Static hosting with custom domain
 
 ### File Structure
 ```
 bendbsn/
 ├── index.html              # Login page
-├── app.html                # Main application
-├── admin.html              # Admin/moderator panel
-├── resources.html          # Study resources
-├── complete-apps-script.js # Google Apps Script code
+├── app/
+│   └── index.html          # Main application
+├── admin/
+│   └── index.html          # Admin control panel
+├── resources/
+│   └── index.html          # Resources redirect
+├── complete-apps-script.js # Google Apps Script code (gitignored)
 ├── ai-proxy-script.js      # AI proxy reference
 ├── approved-contacts.csv   # Authorized users list
 ├── CNAME                   # Custom domain config
+├── robots.txt              # Search engine config
 └── README.md               # This documentation
 ```
 
 ### Data Storage
-- **Firebase:** Chat messages, online presence, banned users
-- **Google Sheets:** User accounts (via Apps Script)
+- **Firebase:** Chat messages, online presence, banned users, login history, global smart phrases
+- **Google Sheets:** User accounts (name, email, username, password, status, date)
 - **Session:** Login state (sessionStorage)
 - **Local:** Custom smart phrases (localStorage)
+
+---
+
+## Security Features
+
+- HTTPS enforcement (GitHub Pages SSL)
+- HTTPS redirect on all pages
+- Failed login attempt tracking
+- Real-time ban enforcement
+- HIPAA notice (no real patient data)
+- Session-based authentication
 
 ---
 
 ## Development Notes
 
 ### API Endpoints
-- **Apps Script:** `https://script.google.com/macros/s/[DEPLOYMENT_ID]/exec`
-- **Firebase:** `bendbsn-c3da9-default-rtdb.firebaseio.com`
+- **Apps Script:** `https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec`
+- **Firebase:** `bendbsn-17377-default-rtdb.firebaseio.com`
 
 ### Deployment
 1. Push to `main` branch on GitHub
 2. GitHub Pages auto-deploys to bendbsn.com
-3. For AI/user management changes, redeploy Google Apps Script
+3. For AI/user management changes, redeploy Google Apps Script:
+   - Deploy > Manage deployments > Edit > New version > Deploy
+
+### Google Apps Script Functions
+- `doGet(e)` - Handle GET requests (getUsers)
+- `doPost(e)` - Handle POST requests (addUser, updateStatus, AI chat)
+- `getUsers()` - Fetch all users from sheet
+- `addUser(params)` - Add new user to sheet
+- `updateStatus(params)` - Update user status
+- `handleAIRequest(data)` - Proxy AI requests to Groq
+- `setupUsersSheet()` - One-time setup to create Users tab
+
+---
+
+## Changelog
+
+### January 2025
+- Initial release with all documentation formats
+- AI Nursing Companion integration
+- Real-time chat system
+- Admin panel with user management
+- Clean URLs (removed .html extensions)
+- HTTPS redirect on all pages
+- Login history tracking with failed attempts
+- Medication administration panel with RxNav autocomplete
+- Global smart phrases (admin-managed via Firebase)
+- Scrollable admin panel cards
+- CSV export for login history
 
 ---
 
 ## Claude CLI Development
 
-To continue development, run from project directory:
+**Project Location:** `C:\Users\chris\Desktop\projects\projects\`
+
+To continue development:
 ```bash
+cd C:\Users\chris\Desktop\projects\projects
 claude
 ```
 
-Or use the desktop shortcut: `BENDBSN-Claude.bat`
+Or double-click: `BENDBSN-Claude.bat` on Desktop
 
 ---
 
