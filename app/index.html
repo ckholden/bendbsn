@@ -2974,14 +2974,14 @@ Important guidelines:
             renderDiagnoses();
         }
 
-        function formatTime(t) { return t.replace(':', ''); }
+        function formatTimeForFilename(t) { return t ? t.replace(':', '') : ''; }
 
         function getFormData() {
             return {
                 nurseName: document.getElementById('nurseName').value || 'N/A',
                 credentials: document.getElementById('credentials').value,
                 noteDate: new Date(document.getElementById('noteDate').value + 'T00:00:00').toLocaleDateString('en-US', {month:'numeric',day:'numeric',year:'2-digit'}),
-                noteTime: formatTime(document.getElementById('noteTime').value),
+                noteTime: formatTimeForFilename(document.getElementById('noteTime').value),
                 unit: document.getElementById('unit').value || '',
                 patientId: document.getElementById('patientId').value || 'N/A',
                 patientDemo: document.getElementById('patientDemo').value || '',
