@@ -233,6 +233,8 @@
             <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
             <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
             <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
+            <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
+            <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showAddUser()">Add User</button>
         </div>
 
         <!-- Login History Modal -->
@@ -247,6 +249,57 @@
                 </div>
                 <div id="loginHistoryContent" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
                     <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Smart Phrases Modal -->
+        <div id="smartPhrasesModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 700px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
+                <div style="background: #ff9800; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">Manage Smart Phrases</h2>
+                    <button onclick="closeSmartPhrases()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="color: #666; margin-bottom: 15px;">Add custom smart phrases that all users can use. Shortcuts start with a period (e.g., .custom)</p>
+                    <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; margin-bottom: 20px;">
+                        <input type="text" id="newPhraseShortcut" placeholder=".shortcut" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" id="newPhraseText" placeholder="Expansion text..." style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <button onclick="addGlobalPhrase()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Add</button>
+                    </div>
+                    <div id="globalPhrasesList" style="max-height: 300px; overflow-y: auto;">
+                        <p style="color: #888;">Custom phrases will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add User Modal -->
+        <div id="addUserModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 500px; margin: 50px auto; background: white; border-radius: 12px; overflow: hidden;">
+                <div style="background: #9c27b0; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">Add New User</h2>
+                    <button onclick="closeAddUser()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="color: #666; margin-bottom: 15px;">Add a new user directly to the system.</p>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Full Name</label>
+                        <input type="text" id="newUserName" placeholder="John Doe" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Username</label>
+                        <input type="text" id="newUsername" placeholder="johnd" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Password</label>
+                        <input type="text" id="newUserPassword" placeholder="password123" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Email (optional)</label>
+                        <input type="email" id="newUserEmail" placeholder="john@email.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <button onclick="addNewUser()" style="width: 100%; background: #9c27b0; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Add User</button>
                 </div>
             </div>
         </div>
@@ -684,6 +737,125 @@
             a.download = 'login-history-' + new Date().toISOString().split('T')[0] + '.csv';
             a.click();
             URL.revokeObjectURL(url);
+        }
+
+        // Smart Phrases Management
+        const globalPhrasesRef = database.ref('globalPhrases');
+
+        function showSmartPhrases() {
+            document.getElementById('smartPhrasesModal').style.display = 'block';
+            loadGlobalPhrases();
+        }
+
+        function closeSmartPhrases() {
+            document.getElementById('smartPhrasesModal').style.display = 'none';
+        }
+
+        function loadGlobalPhrases() {
+            const container = document.getElementById('globalPhrasesList');
+            container.innerHTML = '<p style="color: #888;">Loading...</p>';
+
+            globalPhrasesRef.once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p style="color: #888;">No custom phrases added yet.</p>';
+                    return;
+                }
+
+                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
+                html += '<tr style="background: #fff3e0;"><th style="padding: 8px; text-align: left;">Shortcut</th><th style="padding: 8px; text-align: left;">Expansion</th><th style="padding: 8px; width: 60px;"></th></tr>';
+
+                snapshot.forEach((child) => {
+                    const phrase = child.val();
+                    const key = child.key;
+                    html += `<tr style="border-bottom: 1px solid #ffe0b2;">
+                        <td style="padding: 8px;"><code style="background: #e65100; color: white; padding: 2px 6px; border-radius: 4px;">${phrase.shortcut}</code></td>
+                        <td style="padding: 8px;">${phrase.text.substring(0, 50)}${phrase.text.length > 50 ? '...' : ''}</td>
+                        <td style="padding: 8px;"><button onclick="deleteGlobalPhrase('${key}')" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">X</button></td>
+                    </tr>`;
+                });
+                html += '</table>';
+                container.innerHTML = html;
+            });
+        }
+
+        function addGlobalPhrase() {
+            let shortcut = document.getElementById('newPhraseShortcut').value.trim().toLowerCase();
+            const text = document.getElementById('newPhraseText').value.trim();
+
+            if (!shortcut || !text) {
+                alert('Please enter both shortcut and expansion text.');
+                return;
+            }
+
+            if (!shortcut.startsWith('.')) {
+                shortcut = '.' + shortcut;
+            }
+
+            globalPhrasesRef.push({
+                shortcut: shortcut,
+                text: text,
+                addedBy: 'admin',
+                timestamp: Date.now()
+            }).then(() => {
+                document.getElementById('newPhraseShortcut').value = '';
+                document.getElementById('newPhraseText').value = '';
+                loadGlobalPhrases();
+                alert('Smart phrase added: ' + shortcut);
+            }).catch((e) => alert('Error: ' + e.message));
+        }
+
+        function deleteGlobalPhrase(key) {
+            if (confirm('Delete this smart phrase?')) {
+                globalPhrasesRef.child(key).remove()
+                    .then(() => loadGlobalPhrases())
+                    .catch((e) => alert('Error: ' + e.message));
+            }
+        }
+
+        // Add User Management
+        function showAddUser() {
+            document.getElementById('addUserModal').style.display = 'block';
+        }
+
+        function closeAddUser() {
+            document.getElementById('addUserModal').style.display = 'none';
+        }
+
+        async function addNewUser() {
+            const name = document.getElementById('newUserName').value.trim();
+            const username = document.getElementById('newUsername').value.trim().toLowerCase();
+            const password = document.getElementById('newUserPassword').value;
+            const email = document.getElementById('newUserEmail').value.trim();
+
+            if (!username || !password) {
+                alert('Username and password are required.');
+                return;
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    action: 'addUser',
+                    name: name,
+                    username: username,
+                    password: password,
+                    email: email,
+                    status: 'approved'
+                });
+
+                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+
+                // Clear form
+                document.getElementById('newUserName').value = '';
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newUserPassword').value = '';
+                document.getElementById('newUserEmail').value = '';
+
+                alert('User "' + username + '" added successfully!');
+                closeAddUser();
+                setTimeout(loadRegisteredUsers, 1000);
+            } catch (e) {
+                alert('Error adding user: ' + e.message);
+            }
         }
     </script>
 </body>

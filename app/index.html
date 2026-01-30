@@ -1926,13 +1926,25 @@ Important guidelines:
             }
         });
 
-        // Load custom phrases from localStorage
+        // Load custom phrases from localStorage and global phrases from Firebase
         function loadCustomPhrases() {
+            // Load local custom phrases
             const custom = localStorage.getItem('bsn9b_custom_phrases');
             if (custom) {
                 const customPhrases = JSON.parse(custom);
                 Object.assign(smartPhrases, customPhrases);
             }
+
+            // Load global phrases from Firebase (admin-managed)
+            const globalPhrasesRef = database.ref('globalPhrases');
+            globalPhrasesRef.once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        const phrase = child.val();
+                        smartPhrases[phrase.shortcut] = phrase.text;
+                    });
+                }
+            });
         }
 
         // Save custom phrases to localStorage
