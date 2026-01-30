@@ -18,84 +18,155 @@
     <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
+        /* CSS Variables for theming */
+        :root {
+            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #fafafa;
+            --bg-input: #fafafa;
+            --bg-input-focus: #ffffff;
+            --text-primary: #1a1a2e;
+            --text-secondary: #666666;
+            --text-muted: #888888;
+            --accent: #1f4e79;
+            --accent-light: #2d5a87;
+            --accent-hover: #f8fafc;
+            --border: #e0e0e0;
+            --border-light: #ddd;
+            --border-focus: #1f4e79;
+            --shadow: rgba(0,0,0,0.4);
+            --shadow-light: rgba(0,0,0,0.15);
+            --warning-bg: #fff5f5;
+            --warning-border: #e53e3e;
+            --warning-text: #c53030;
+            --info-bg: #fffbeb;
+            --info-border: #d69e2e;
+            --btn-clear-bg: #f0f0f0;
+            --btn-clear-text: #333333;
+            --card-active-bg: #1f4e79;
+            --card-active-text: #ffffff;
+            --nanda-bg: #f8fafc;
+            --nanda-border: #e2e8f0;
+            --chat-msg-other-bg: #e2e8f0;
+            --chat-msg-other-text: #333333;
+        }
+
+        [data-theme="dark"] {
+            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #1e2a3a;
+            --bg-input: #16213e;
+            --bg-input-focus: #1e2a3a;
+            --text-primary: #e6e6e6;
+            --text-secondary: #aaaaaa;
+            --text-muted: #888888;
+            --accent: #4a90d9;
+            --accent-light: #5a9fe8;
+            --accent-hover: #1e2a3a;
+            --border: #2d3748;
+            --border-light: #3d4758;
+            --border-focus: #4a90d9;
+            --shadow: rgba(0,0,0,0.6);
+            --shadow-light: rgba(0,0,0,0.3);
+            --warning-bg: #2d1f1f;
+            --warning-border: #e53e3e;
+            --warning-text: #fc8181;
+            --info-bg: #2d2a1f;
+            --info-border: #d69e2e;
+            --btn-clear-bg: #2d3748;
+            --btn-clear-text: #e6e6e6;
+            --card-active-bg: #4a90d9;
+            --card-active-text: #ffffff;
+            --nanda-bg: #16213e;
+            --nanda-border: #2d3748;
+            --chat-msg-other-bg: #2d3748;
+            --chat-msg-other-text: #e6e6e6;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         .hidden { display: none !important; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: var(--bg-page);
             min-height: 100vh;
             padding: 20px;
+            transition: background 0.3s ease;
         }
         .container {
             max-width: 950px;
             margin: 0 auto;
-            background: white;
+            background: var(--bg-primary);
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 60px var(--shadow);
             overflow: hidden;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
         }
         .header {
-            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
         .header h1 { font-size: 28px; margin-bottom: 5px; }
         .header p { opacity: 0.9; font-size: 13px; }
-        .form-container { padding: 30px; }
+        .form-container { padding: 30px; background: var(--bg-primary); transition: background 0.3s ease; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .form-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; font-size: 13px; }
+        label { display: block; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; font-size: 13px; transition: color 0.3s ease; }
         input, select, textarea {
             width: 100%;
             padding: 12px 14px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-light);
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
             transition: all 0.2s;
-            background: #fafafa;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #1f4e79;
+            border-color: var(--border-focus);
             box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.1);
-            background: white;
+            background: var(--bg-input-focus);
         }
         textarea { min-height: 80px; resize: vertical; }
         textarea.large { min-height: 120px; }
         .note-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
         .note-type-card {
             padding: 14px 8px;
-            border: 2px solid #e0e0e0;
-            background: white;
+            border: 2px solid var(--border);
+            background: var(--bg-primary);
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
+            color: var(--text-primary);
         }
-        .note-type-card:hover { border-color: #1f4e79; background: #f8fafc; }
+        .note-type-card:hover { border-color: var(--accent); background: var(--accent-hover); }
         .note-type-card.active {
-            border-color: #1f4e79;
-            background: #1f4e79;
-            color: white;
+            border-color: var(--accent);
+            background: var(--card-active-bg);
+            color: var(--card-active-text);
         }
         .note-type-card h3 { font-size: 15px; margin-bottom: 3px; }
         .note-type-card p { font-size: 9px; opacity: 0.8; }
         .section-title {
             font-size: 16px;
-            color: #1f4e79;
+            color: var(--accent);
             margin: 25px 0 15px 0;
             padding-bottom: 8px;
-            border-bottom: 2px solid #1f4e79;
+            border-bottom: 2px solid var(--accent);
         }
         .note-fields { display: none; }
         .note-fields.active { display: block; }
         .field-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .field-letter {
             width: 28px; height: 28px;
-            background: #1f4e79;
+            background: var(--accent);
             color: white;
             border-radius: 50%;
             display: flex;
@@ -104,8 +175,8 @@
             font-weight: bold;
             font-size: 13px;
         }
-        .field-info h4 { font-size: 13px; color: #1a1a2e; }
-        .field-info p { font-size: 11px; color: #666; }
+        .field-info h4 { font-size: 13px; color: var(--text-primary); }
+        .field-info p { font-size: 11px; color: var(--text-secondary); }
         .btn-container { display: flex; gap: 12px; margin-top: 25px; }
         .btn {
             flex: 1;
@@ -117,31 +188,32 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-pdf { background: #1f4e79; color: white; }
-        .btn-word { background: #2b5797; color: white; }
-        .btn-clear { background: #f0f0f0; color: #333; flex: 0.4; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.15); }
+        .btn-pdf { background: var(--accent); color: white; }
+        .btn-word { background: var(--accent-light); color: white; }
+        .btn-clear { background: var(--btn-clear-bg); color: var(--btn-clear-text); flex: 0.4; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--shadow-light); }
         .warning-box {
-            background: #fff5f5;
-            border: 1px solid #e53e3e;
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
             border-radius: 8px;
             padding: 12px 15px;
             margin-bottom: 15px;
             font-size: 12px;
-            color: #c53030;
+            color: var(--warning-text);
         }
         .info-box {
-            background: #fffbeb;
-            border: 1px solid #d69e2e;
+            background: var(--info-bg);
+            border: 1px solid var(--info-border);
             border-radius: 8px;
             padding: 12px 15px;
             margin-bottom: 15px;
             font-size: 12px;
+            color: var(--text-primary);
         }
         .info-box ul { margin: 8px 0 0 18px; }
         .info-box li { margin-bottom: 3px; }
         /* NANDA Search */
-        .nanda-section { margin: 20px 0; padding: 15px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .nanda-section { margin: 20px 0; padding: 15px; background: var(--nanda-bg); border-radius: 10px; border: 1px solid var(--nanda-border); transition: background 0.3s ease, border-color 0.3s ease; }
         .nanda-search { position: relative; }
         .nanda-search input { padding-right: 35px; }
         .nanda-dropdown {
@@ -151,10 +223,10 @@
             right: 0;
             max-height: 250px;
             overflow-y: auto;
-            background: white;
-            border: 1px solid #ddd;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px var(--shadow-light);
             z-index: 100;
             display: none;
         }
@@ -162,14 +234,15 @@
         .nanda-item {
             padding: 10px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border);
             font-size: 13px;
+            color: var(--text-primary);
         }
-        .nanda-item:hover { background: #f0f7ff; }
-        .nanda-item .category { font-size: 10px; color: #1f4e79; font-weight: 600; }
+        .nanda-item:hover { background: var(--accent-hover); }
+        .nanda-item .category { font-size: 10px; color: var(--accent); font-weight: 600; }
         .selected-diagnoses { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .diagnosis-tag {
-            background: #1f4e79;
+            background: var(--accent);
             color: white;
             padding: 6px 12px;
             border-radius: 20px;
@@ -182,20 +255,44 @@
         .diagnosis-tag .remove:hover { opacity: 1; }
         /* H2T Assessment */
         .h2t-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .h2t-section { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .h2t-section h4 { font-size: 13px; color: #1f4e79; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+        .h2t-section { background: var(--nanda-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--nanda-border); transition: background 0.3s ease, border-color 0.3s ease; }
+        .h2t-section h4 { font-size: 13px; color: var(--accent); margin-bottom: 8px; border-bottom: 1px solid var(--nanda-border); padding-bottom: 5px; }
         .quick-fills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
         .quick-fill {
-            background: #e8f4fd;
-            border: 1px solid #bee3f8;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             padding: 3px 8px;
             border-radius: 4px;
             font-size: 10px;
             cursor: pointer;
             transition: all 0.2s;
+            color: var(--text-primary);
         }
-        .quick-fill:hover { background: #1f4e79; color: white; border-color: #1f4e79; }
+        .quick-fill:hover { background: var(--accent); color: white; border-color: var(--accent); }
         .h2t-section textarea { min-height: 60px; font-size: 12px; }
+
+        /* Dark Mode Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            right: 0;
+            top: 74%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 10px;
+            border-radius: 10px 0 0 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            box-shadow: -4px 4px 15px rgba(0,0,0,0.4);
+            z-index: 100;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transition: all 0.3s ease;
+        }
+        .theme-toggle:hover {
+            transform: translateX(-3px);
+        }
         @media (max-width: 768px) {
             .note-type-grid { grid-template-columns: repeat(2, 1fr); }
             .form-row, .form-row.three-col, .h2t-grid { grid-template-columns: 1fr; }
@@ -361,6 +458,10 @@
             <!-- Floating Feedback Button -->
             <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 56%; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
                 💡 FEEDBACK
+            </button>
+            <!-- Dark Mode Toggle Button -->
+            <button id="themeToggle" onclick="toggleDarkMode()" class="theme-toggle">
+                <span id="themeIcon">🌙</span> DARK
             </button>
             <style>
                 @keyframes pulse {
@@ -935,7 +1036,45 @@
                 <button class="btn btn-pdf" onclick="generatePDF()">Export PDF</button>
             </div>
 
+            <!-- Document History Section -->
+            <div style="margin-top: 20px; padding: 15px; background: var(--nanda-bg); border-radius: 10px; border: 1px solid var(--nanda-border); transition: background 0.3s ease, border-color 0.3s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="color: var(--accent); margin: 0; font-size: 14px;">📁 Document History</h3>
+                        <p style="color: var(--text-secondary); font-size: 11px; margin-top: 4px;">Save notes to your account for later retrieval</p>
                     </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="saveToHistory()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;">
+                            💾 Save to History
+                        </button>
+                        <button onclick="openHistoryModal()" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;">
+                            📂 View History
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+                    </div>
+    </div>
+
+    <!-- Document History Modal -->
+    <div id="historyModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="if(event.target === this) this.classList.add('hidden')">
+        <div style="background: var(--bg-primary); border-radius: 16px; padding: 25px; max-width: 700px; width: 90%; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px var(--shadow);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--accent); padding-bottom: 15px;">
+                <h3 style="color: var(--accent); margin: 0;">📂 Saved Documents</h3>
+                <button onclick="document.getElementById('historyModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">×</button>
+            </div>
+
+            <!-- Search/Filter -->
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="historySearch" placeholder="Search by patient name or note type..." oninput="filterHistory()" style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; background: var(--bg-input); color: var(--text-primary);">
+            </div>
+
+            <!-- Documents List -->
+            <div id="historyList" style="flex: 1; overflow-y: auto; min-height: 200px;">
+                <p style="text-align: center; color: var(--text-secondary); padding: 40px;">Loading saved documents...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Alert/FYI Banners - Fixed at top -->
@@ -967,6 +1106,122 @@
             If you'd like to contribute to the cost of this service, please <a href="https://venmo.com/ChristianKSHolden" target="_blank" style="color: #3d95ce; text-decoration: none;">donate here</a>.
         </div>
     </footer>
+
+    <style>
+        /* Dark mode support for modals and dynamic elements */
+        [data-theme="dark"] #phrasesModal > div,
+        [data-theme="dark"] #feedbackModal > div {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] #phrasesModal input,
+        [data-theme="dark"] #phrasesModal select,
+        [data-theme="dark"] #phrasesModal textarea,
+        [data-theme="dark"] #feedbackModal input,
+        [data-theme="dark"] #feedbackModal select,
+        [data-theme="dark"] #feedbackModal textarea {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border-color: var(--border-light);
+        }
+        [data-theme="dark"] .phrase-item:hover {
+            background: var(--accent-hover);
+        }
+        [data-theme="dark"] .phrase-item .tooltip {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] #chatMessages {
+            background: var(--bg-secondary) !important;
+        }
+        [data-theme="dark"] #aiMessages {
+            background: var(--bg-secondary) !important;
+        }
+        [data-theme="dark"] #chatBox,
+        [data-theme="dark"] #aiBox {
+            background: var(--bg-primary) !important;
+        }
+        [data-theme="dark"] #chatInput,
+        [data-theme="dark"] #aiInput {
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-light) !important;
+        }
+        [data-theme="dark"] #userList {
+            background: var(--bg-secondary) !important;
+        }
+        [data-theme="dark"] #mentionDropdown {
+            background: var(--bg-primary) !important;
+            border-color: var(--border-light) !important;
+        }
+        [data-theme="dark"] .mention-item:hover {
+            background: var(--accent-hover) !important;
+        }
+        [data-theme="dark"] .vitals-panel,
+        [data-theme="dark"] .med-panel {
+            background: var(--bg-secondary) !important;
+            border-color: var(--border) !important;
+        }
+        [data-theme="dark"] .vitals-panel input,
+        [data-theme="dark"] .vitals-panel select,
+        [data-theme="dark"] .med-panel input,
+        [data-theme="dark"] .med-panel select {
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-light) !important;
+        }
+        [data-theme="dark"] .drug-dropdown {
+            background: var(--bg-primary) !important;
+            border-color: var(--accent) !important;
+        }
+        [data-theme="dark"] .drug-item {
+            color: var(--text-primary) !important;
+            border-color: var(--border) !important;
+        }
+        [data-theme="dark"] .drug-item:hover {
+            background: var(--accent-hover) !important;
+        }
+        /* DM View dark mode */
+        [data-theme="dark"] #dmConversationList,
+        [data-theme="dark"] #dmConversations > div,
+        [data-theme="dark"] #dmUserList > div {
+            background: var(--bg-secondary) !important;
+            border-color: var(--border) !important;
+            color: var(--text-primary) !important;
+        }
+        [data-theme="dark"] #dmConversations > div div,
+        [data-theme="dark"] #dmUserList > div div {
+            color: var(--text-primary) !important;
+        }
+        [data-theme="dark"] #dmHeader {
+            background: var(--bg-secondary) !important;
+            border-color: var(--border) !important;
+        }
+        [data-theme="dark"] #dmPartnerName {
+            color: var(--accent) !important;
+        }
+        [data-theme="dark"] #dmMessages {
+            background: var(--bg-secondary) !important;
+        }
+        [data-theme="dark"] #dmInput,
+        [data-theme="dark"] #dmUserSearch {
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-light) !important;
+        }
+        [data-theme="dark"] #historyModal > div {
+            background: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+        }
+        [data-theme="dark"] #historyList > div {
+            background: var(--bg-secondary) !important;
+            border-color: var(--border) !important;
+        }
+        [data-theme="dark"] #historySearch {
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+        }
+    </style>
 
     <!-- AI Nursing Companion Widget -->
     <div id="aiWidget" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999; font-family: 'Segoe UI', sans-serif;">
@@ -1031,19 +1286,32 @@
             💬
         </button>
         <span id="chatBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
+        <!-- DM Badge (separate from group chat) -->
+        <span id="dmBadge" style="display: none; position: absolute; top: -5px; left: -5px; background: #8b5cf6; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
 
         <!-- Chat Box -->
-        <div id="chatBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; right: 0; width: 350px; height: 450px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
+        <div id="chatBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; right: 0; width: 350px; height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
             <!-- Chat Header -->
-            <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong style="font-size: 16px;">BSN9B Chat</strong>
-                    <div id="onlineCount" onclick="toggleUserList()" style="font-size: 11px; opacity: 0.8; cursor: pointer;">Connecting...</div>
+            <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 12px 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong id="chatTitle" style="font-size: 16px;">BSN9B Chat</strong>
+                        <div id="onlineCount" onclick="toggleUserList()" style="font-size: 11px; opacity: 0.8; cursor: pointer;">Connecting...</div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button id="soundToggleBtn" onclick="toggleChatSound()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;" title="Toggle sound">🔔</button>
+                        <button id="notificationToggleBtn" onclick="toggleBrowserNotifications()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;" title="Toggle browser notifications">📵</button>
+                        <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 6px; align-items: center;">
-                    <button id="soundToggleBtn" onclick="toggleChatSound()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;" title="Toggle sound">🔔</button>
-                    <button id="notificationToggleBtn" onclick="toggleBrowserNotifications()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;" title="Toggle browser notifications">📵</button>
-                    <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+                <!-- Chat Mode Tabs -->
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button id="tabGroupChat" onclick="switchChatMode('group')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.3); color: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                        👥 Group
+                    </button>
+                    <button id="tabDM" onclick="switchChatMode('dm')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                        ✉️ Direct <span id="dmTabBadge" style="display: none; background: #8b5cf6; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px;">0</span>
+                    </button>
                 </div>
             </div>
 
@@ -1053,19 +1321,70 @@
                 <div id="userListNames"></div>
             </div>
 
-            <!-- Chat Messages -->
-            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
-                <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
+            <!-- GROUP CHAT VIEW -->
+            <div id="groupChatView" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- Chat Messages -->
+                <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
+                    <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
+                </div>
+
+                <!-- Chat Input -->
+                <div style="padding: 12px; border-top: 1px solid #e2e8f0; background: white; position: relative;">
+                    <!-- @Mention Autocomplete Dropdown -->
+                    <div id="mentionDropdown" style="display: none; position: absolute; bottom: 100%; left: 12px; right: 60px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; z-index: 100;"></div>
+                    <form onsubmit="sendMessage(event)" style="display: flex; gap: 8px;">
+                        <input type="text" id="chatInput" placeholder="Type @ to mention someone..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none;" maxlength="500" autocomplete="off">
+                        <button type="submit" style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px;">➤</button>
+                    </form>
+                </div>
             </div>
 
-            <!-- Chat Input -->
-            <div style="padding: 12px; border-top: 1px solid #e2e8f0; background: white; position: relative;">
-                <!-- @Mention Autocomplete Dropdown -->
-                <div id="mentionDropdown" style="display: none; position: absolute; bottom: 100%; left: 12px; right: 60px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; z-index: 100;"></div>
-                <form onsubmit="sendMessage(event)" style="display: flex; gap: 8px;">
-                    <input type="text" id="chatInput" placeholder="Type @ to mention someone..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none;" maxlength="500" autocomplete="off">
-                    <button type="submit" style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px;">➤</button>
-                </form>
+            <!-- DM VIEW -->
+            <div id="dmView" style="flex: 1; display: none; flex-direction: column; overflow: hidden;">
+                <!-- DM Conversation List (shows when no conversation selected) -->
+                <div id="dmConversationList" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
+                    <div style="margin-bottom: 15px;">
+                        <button onclick="showNewDMSelector()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                            ✏️ New Message
+                        </button>
+                    </div>
+                    <div id="dmConversations" style="color: #888; font-size: 12px; text-align: center;">
+                        Loading conversations...
+                    </div>
+                </div>
+
+                <!-- DM Messages View (shows when conversation selected) -->
+                <div id="dmMessageView" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+                    <!-- DM Header with back button -->
+                    <div id="dmHeader" style="padding: 10px 15px; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                        <button onclick="closeDMConversation()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px;">←</button>
+                        <span id="dmPartnerName" style="font-weight: 600; color: #1f4e79;">Partner Name</span>
+                        <span id="dmPartnerStatus" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #666;">offline</span>
+                    </div>
+                    <!-- DM Messages -->
+                    <div id="dmMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
+                    </div>
+                    <!-- DM Input -->
+                    <div style="padding: 12px; border-top: 1px solid #e2e8f0; background: white;">
+                        <form onsubmit="sendDM(event)" style="display: flex; gap: 8px;">
+                            <input type="text" id="dmInput" placeholder="Type a message..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none;" maxlength="500" autocomplete="off">
+                            <button type="submit" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px;">➤</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- New DM User Selector -->
+                <div id="newDMSelector" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+                    <div style="padding: 10px 15px; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                        <button onclick="hideNewDMSelector()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px;">←</button>
+                        <span style="font-weight: 600; color: #1f4e79;">New Message</span>
+                    </div>
+                    <div style="padding: 15px;">
+                        <input type="text" id="dmUserSearch" placeholder="Search users..." oninput="filterDMUsers()" style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; margin-bottom: 15px;">
+                    </div>
+                    <div id="dmUserList" style="flex: 1; overflow-y: auto; padding: 0 15px 15px 15px;">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1076,6 +1395,359 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
+        // ========== DARK MODE ==========
+        function initTheme() {
+            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon();
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('bsn9b_theme', newTheme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const themeIcon = document.getElementById('themeIcon');
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeIcon && themeToggle) {
+                themeIcon.textContent = isDark ? '☀️' : '🌙';
+                themeToggle.innerHTML = `<span id="themeIcon">${isDark ? '☀️' : '🌙'}</span> ${isDark ? 'LIGHT' : 'DARK'}`;
+            }
+        }
+
+        // Initialize theme immediately before page renders
+        initTheme();
+
+        // ========== DOCUMENT HISTORY ==========
+        let savedDocuments = [];
+
+        // Sanitize email for Firebase path
+        function sanitizeEmail(email) {
+            return email.replace(/[.@]/g, '_');
+        }
+
+        // Save current form to history
+        async function saveToHistory() {
+            const user = sessionStorage.getItem('bsn9b_user');
+            if (!user) {
+                alert('Please log in to save documents.');
+                return;
+            }
+
+            const formData = getFormData();
+            const noteContent = getNoteContent();
+
+            if (noteContent.length === 0) {
+                alert('Please fill in some documentation before saving.');
+                return;
+            }
+
+            // Get all form field values for the current note type
+            const fullContent = {};
+            const t = currentNoteType;
+            if (t === 'dar') {
+                fullContent.darData = document.getElementById('darData').value;
+                fullContent.darAction = document.getElementById('darAction').value;
+                fullContent.darResponse = document.getElementById('darResponse').value;
+            } else if (t === 'darp') {
+                fullContent.darpData = document.getElementById('darpData').value;
+                fullContent.darpAction = document.getElementById('darpAction').value;
+                fullContent.darpResponse = document.getElementById('darpResponse').value;
+                fullContent.darpPlan = document.getElementById('darpPlan').value;
+            } else if (t === 'soap') {
+                fullContent.soapSubjective = document.getElementById('soapSubjective').value;
+                fullContent.soapObjective = document.getElementById('soapObjective').value;
+                fullContent.soapAssessment = document.getElementById('soapAssessment').value;
+                fullContent.soapPlan = document.getElementById('soapPlan').value;
+            } else if (t === 'soapie') {
+                fullContent.soapieSubjective = document.getElementById('soapieSubjective').value;
+                fullContent.soapieObjective = document.getElementById('soapieObjective').value;
+                fullContent.soapieAssessment = document.getElementById('soapieAssessment').value;
+                fullContent.soapiePlan = document.getElementById('soapiePlan').value;
+                fullContent.soapieIntervention = document.getElementById('soapieIntervention').value;
+                fullContent.soapieEvaluation = document.getElementById('soapieEvaluation').value;
+            } else if (t === 'sbar') {
+                fullContent.sbarSituation = document.getElementById('sbarSituation').value;
+                fullContent.sbarBackground = document.getElementById('sbarBackground').value;
+                fullContent.sbarAssessment = document.getElementById('sbarAssessment').value;
+                fullContent.sbarRecommendation = document.getElementById('sbarRecommendation').value;
+            } else if (t === 'pie') {
+                fullContent.pieProblem = document.getElementById('pieProblem').value;
+                fullContent.pieIntervention = document.getElementById('pieIntervention').value;
+                fullContent.pieEvaluation = document.getElementById('pieEvaluation').value;
+            } else if (t === 'narrative') {
+                fullContent.narrativeText = document.getElementById('narrativeText').value;
+            } else if (t === 'h2t') {
+                fullContent.h2tNeuro = document.getElementById('h2tNeuro').value;
+                fullContent.h2tCardio = document.getElementById('h2tCardio').value;
+                fullContent.h2tResp = document.getElementById('h2tResp').value;
+                fullContent.h2tGI = document.getElementById('h2tGI').value;
+                fullContent.h2tGU = document.getElementById('h2tGU').value;
+                fullContent.h2tSkin = document.getElementById('h2tSkin').value;
+                fullContent.h2tMSK = document.getElementById('h2tMSK').value;
+                fullContent.h2tPain = document.getElementById('h2tPain').value;
+                fullContent.h2tPsych = document.getElementById('h2tPsych').value;
+            }
+
+            // Also save header info
+            fullContent.nurseName = formData.nurseName;
+            fullContent.credentials = document.getElementById('credentials').value;
+            fullContent.noteDate = document.getElementById('noteDate').value;
+            fullContent.noteTime = document.getElementById('noteTime').value;
+            fullContent.unit = formData.unit;
+            fullContent.patientId = formData.patientId;
+            fullContent.patientDemo = formData.patientDemo;
+            fullContent.focus = formData.focus;
+            fullContent.selectedDiagnoses = selectedDiagnoses;
+
+            const docData = {
+                noteType: currentNoteType,
+                content: fullContent,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                patientName: formData.patientId || 'Unknown Patient'
+            };
+
+            try {
+                const userDocsRef = database.ref('userDocuments/' + sanitizeEmail(user));
+                await userDocsRef.push(docData);
+                alert('Document saved successfully!');
+            } catch (error) {
+                console.error('Error saving document:', error);
+                alert('Failed to save document: ' + error.message);
+            }
+        }
+
+        // Open history modal and load documents
+        function openHistoryModal() {
+            document.getElementById('historyModal').classList.remove('hidden');
+            loadDocumentHistory();
+        }
+
+        // Load document history list
+        async function loadDocumentHistory() {
+            const user = sessionStorage.getItem('bsn9b_user');
+            if (!user) {
+                document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Please log in to view saved documents.</p>';
+                return;
+            }
+
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Loading...</p>';
+
+            try {
+                const userDocsRef = database.ref('userDocuments/' + sanitizeEmail(user));
+                const snapshot = await userDocsRef.orderByChild('createdAt').once('value');
+
+                if (!snapshot.exists()) {
+                    historyList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">No saved documents yet. Save a document to see it here!</p>';
+                    return;
+                }
+
+                savedDocuments = [];
+                snapshot.forEach((child) => {
+                    savedDocuments.push({
+                        id: child.key,
+                        ...child.val()
+                    });
+                });
+
+                // Sort by most recent first
+                savedDocuments.sort((a, b) => b.createdAt - a.createdAt);
+
+                renderHistoryList(savedDocuments);
+            } catch (error) {
+                console.error('Error loading history:', error);
+                historyList.innerHTML = '<p style="text-align: center; color: var(--warning-text); padding: 40px;">Error loading documents: ' + error.message + '</p>';
+            }
+        }
+
+        // Render the history list
+        function renderHistoryList(docs) {
+            const historyList = document.getElementById('historyList');
+            const noteTypeNames = {dar:'DAR', darp:'DARP', soap:'SOAP', soapie:'SOAPIE', sbar:'SBAR', pie:'PIE', h2t:'Head-to-Toe', narrative:'Narrative'};
+
+            if (docs.length === 0) {
+                historyList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">No documents match your search.</p>';
+                return;
+            }
+
+            let html = '';
+            docs.forEach((doc) => {
+                const date = new Date(doc.createdAt);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                html += `
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 15px; margin-bottom: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                    <span style="background: var(--accent); color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${noteTypeNames[doc.noteType] || doc.noteType}</span>
+                                    <span style="color: var(--text-secondary); font-size: 12px;">${dateStr} at ${timeStr}</span>
+                                </div>
+                                <div style="color: var(--text-primary); font-weight: 600; font-size: 14px; margin-bottom: 4px;">
+                                    ${doc.patientName || 'Unknown Patient'}
+                                </div>
+                                ${doc.content && doc.content.unit ? `<div style="color: var(--text-secondary); font-size: 12px;">Unit: ${doc.content.unit}</div>` : ''}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="loadDocument('${doc.id}')" style="background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                    📥 Load
+                                </button>
+                                <button onclick="deleteDocument('${doc.id}')" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            historyList.innerHTML = html;
+        }
+
+        // Filter history by search term
+        function filterHistory() {
+            const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+            const filtered = savedDocuments.filter(doc => {
+                const patientName = (doc.patientName || '').toLowerCase();
+                const noteType = (doc.noteType || '').toLowerCase();
+                const unit = (doc.content && doc.content.unit || '').toLowerCase();
+                return patientName.includes(searchTerm) || noteType.includes(searchTerm) || unit.includes(searchTerm);
+            });
+            renderHistoryList(filtered);
+        }
+
+        // Load a specific document into the form
+        function loadDocument(docId) {
+            try {
+                const doc = savedDocuments.find(d => d.id === docId);
+                if (!doc || !doc.content) {
+                    alert('Document not found.');
+                    return;
+                }
+
+                // Confirm before overwriting current form
+                if (!confirm('This will replace your current form data. Continue?')) {
+                    return;
+                }
+
+                const content = doc.content;
+
+                // Set the note type first - need to simulate click for proper activation
+                const noteTypeCard = document.querySelector(`.note-type-card[onclick*="${doc.noteType}"]`);
+                if (noteTypeCard) {
+                    noteTypeCard.click();
+                } else {
+                    // Fallback: manually set the note type
+                    currentNoteType = doc.noteType;
+                    document.querySelectorAll('.note-type-card').forEach(c => c.classList.remove('active'));
+                    document.querySelectorAll('.note-fields').forEach(f => f.classList.remove('active'));
+                    const fields = document.getElementById(doc.noteType + 'Fields');
+                    if (fields) fields.classList.add('active');
+                    document.getElementById('focusGroup').style.display = ['dar', 'darp'].includes(doc.noteType) ? 'block' : 'none';
+                }
+
+            // Load header info
+            if (content.nurseName) document.getElementById('nurseName').value = content.nurseName;
+            if (content.credentials) document.getElementById('credentials').value = content.credentials;
+            if (content.noteDate) document.getElementById('noteDate').value = content.noteDate;
+            if (content.noteTime) document.getElementById('noteTime').value = content.noteTime;
+            if (content.unit) document.getElementById('unit').value = content.unit;
+            if (content.patientId) document.getElementById('patientId').value = content.patientId;
+            if (content.patientDemo) document.getElementById('patientDemo').value = content.patientDemo;
+            if (content.focus) document.getElementById('focus').value = content.focus;
+
+            // Load diagnoses
+            if (content.selectedDiagnoses && Array.isArray(content.selectedDiagnoses)) {
+                selectedDiagnoses = content.selectedDiagnoses;
+                renderDiagnoses();
+            }
+
+            // Load note-specific fields
+            const t = doc.noteType;
+            if (t === 'dar') {
+                if (content.darData) document.getElementById('darData').value = content.darData;
+                if (content.darAction) document.getElementById('darAction').value = content.darAction;
+                if (content.darResponse) document.getElementById('darResponse').value = content.darResponse;
+            } else if (t === 'darp') {
+                if (content.darpData) document.getElementById('darpData').value = content.darpData;
+                if (content.darpAction) document.getElementById('darpAction').value = content.darpAction;
+                if (content.darpResponse) document.getElementById('darpResponse').value = content.darpResponse;
+                if (content.darpPlan) document.getElementById('darpPlan').value = content.darpPlan;
+            } else if (t === 'soap') {
+                if (content.soapSubjective) document.getElementById('soapSubjective').value = content.soapSubjective;
+                if (content.soapObjective) document.getElementById('soapObjective').value = content.soapObjective;
+                if (content.soapAssessment) document.getElementById('soapAssessment').value = content.soapAssessment;
+                if (content.soapPlan) document.getElementById('soapPlan').value = content.soapPlan;
+            } else if (t === 'soapie') {
+                if (content.soapieSubjective) document.getElementById('soapieSubjective').value = content.soapieSubjective;
+                if (content.soapieObjective) document.getElementById('soapieObjective').value = content.soapieObjective;
+                if (content.soapieAssessment) document.getElementById('soapieAssessment').value = content.soapieAssessment;
+                if (content.soapiePlan) document.getElementById('soapiePlan').value = content.soapiePlan;
+                if (content.soapieIntervention) document.getElementById('soapieIntervention').value = content.soapieIntervention;
+                if (content.soapieEvaluation) document.getElementById('soapieEvaluation').value = content.soapieEvaluation;
+            } else if (t === 'sbar') {
+                if (content.sbarSituation) document.getElementById('sbarSituation').value = content.sbarSituation;
+                if (content.sbarBackground) document.getElementById('sbarBackground').value = content.sbarBackground;
+                if (content.sbarAssessment) document.getElementById('sbarAssessment').value = content.sbarAssessment;
+                if (content.sbarRecommendation) document.getElementById('sbarRecommendation').value = content.sbarRecommendation;
+            } else if (t === 'pie') {
+                if (content.pieProblem) document.getElementById('pieProblem').value = content.pieProblem;
+                if (content.pieIntervention) document.getElementById('pieIntervention').value = content.pieIntervention;
+                if (content.pieEvaluation) document.getElementById('pieEvaluation').value = content.pieEvaluation;
+            } else if (t === 'narrative') {
+                if (content.narrativeText) document.getElementById('narrativeText').value = content.narrativeText;
+            } else if (t === 'h2t') {
+                if (content.h2tNeuro) document.getElementById('h2tNeuro').value = content.h2tNeuro;
+                if (content.h2tCardio) document.getElementById('h2tCardio').value = content.h2tCardio;
+                if (content.h2tResp) document.getElementById('h2tResp').value = content.h2tResp;
+                if (content.h2tGI) document.getElementById('h2tGI').value = content.h2tGI;
+                if (content.h2tGU) document.getElementById('h2tGU').value = content.h2tGU;
+                if (content.h2tSkin) document.getElementById('h2tSkin').value = content.h2tSkin;
+                if (content.h2tMSK) document.getElementById('h2tMSK').value = content.h2tMSK;
+                if (content.h2tPain) document.getElementById('h2tPain').value = content.h2tPain;
+                if (content.h2tPsych) document.getElementById('h2tPsych').value = content.h2tPsych;
+            }
+
+            // Close the modal
+            document.getElementById('historyModal').classList.add('hidden');
+            alert('Document loaded successfully!');
+            } catch (e) {
+                console.error('Error loading document:', e);
+                alert('Error loading document. Please try again.');
+            }
+        }
+
+        // Delete a document
+        async function deleteDocument(docId) {
+            if (!confirm('Are you sure you want to delete this document? This cannot be undone.')) {
+                return;
+            }
+
+            const user = sessionStorage.getItem('bsn9b_user');
+            if (!user) {
+                alert('Please log in to delete documents.');
+                return;
+            }
+
+            try {
+                const docRef = database.ref('userDocuments/' + sanitizeEmail(user) + '/' + docId);
+                await docRef.remove();
+                alert('Document deleted.');
+                loadDocumentHistory(); // Refresh the list
+            } catch (error) {
+                console.error('Error deleting document:', error);
+                alert('Failed to delete document: ' + error.message);
+            }
+        }
+
         // Initialize Firebase
         console.log('Initializing Firebase...');
         const firebaseConfig = {
@@ -1614,6 +2286,475 @@
             // Don't show alert for every error, just log
             return false;
         };
+
+        // ========== DIRECT MESSAGES ==========
+        let chatMode = 'group'; // 'group' or 'dm'
+        let currentDMConversation = null;
+        let dmConversations = [];
+        let dmUnreadCount = 0;
+        let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
+        const directMessagesRef = database.ref('directMessages');
+
+        // Generate conversation ID (sorted emails)
+        function getConversationId(email1, email2) {
+            return [email1, email2].sort().join('_').replace(/[.@]/g, '_');
+        }
+
+        // Switch between group chat and DM mode
+        function switchChatMode(mode) {
+            try {
+                chatMode = mode;
+                const groupView = document.getElementById('groupChatView');
+                const dmView = document.getElementById('dmView');
+                const tabGroup = document.getElementById('tabGroupChat');
+                const tabDM = document.getElementById('tabDM');
+                const chatTitle = document.getElementById('chatTitle');
+                const onlineCount = document.getElementById('onlineCount');
+
+                // Safety checks
+                if (!groupView || !dmView) {
+                    console.error('Chat views not found');
+                    return;
+                }
+
+            if (mode === 'group') {
+                groupView.style.display = 'flex';
+                dmView.style.display = 'none';
+                tabGroup.style.background = 'rgba(255,255,255,0.3)';
+                tabDM.style.background = 'rgba(255,255,255,0.1)';
+                chatTitle.textContent = 'BSN9B Chat';
+                onlineCount.style.display = 'block';
+
+                // Reset unread for group
+                unreadCount = 0;
+                document.getElementById('chatBadge').style.display = 'none';
+                lastReadTimestamp = Date.now();
+                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+            } else {
+                groupView.style.display = 'none';
+                dmView.style.display = 'flex';
+                tabGroup.style.background = 'rgba(255,255,255,0.1)';
+                tabDM.style.background = 'rgba(255,255,255,0.3)';
+                chatTitle.textContent = 'Direct Messages';
+                onlineCount.style.display = 'none';
+
+                // Show conversation list
+                showDMConversationList();
+                loadDMConversations();
+            }
+            } catch (e) {
+                console.error('Error switching chat mode:', e);
+            }
+        }
+
+        // Show the conversation list view
+        function showDMConversationList() {
+            document.getElementById('dmConversationList').style.display = 'block';
+            document.getElementById('dmMessageView').style.display = 'none';
+            document.getElementById('newDMSelector').style.display = 'none';
+            currentDMConversation = null;
+        }
+
+        // Show new DM user selector
+        function showNewDMSelector() {
+            document.getElementById('dmConversationList').style.display = 'none';
+            document.getElementById('dmMessageView').style.display = 'none';
+            document.getElementById('newDMSelector').style.display = 'flex';
+            document.getElementById('dmUserSearch').value = '';
+            loadDMUserList();
+        }
+
+        // Hide new DM selector
+        function hideNewDMSelector() {
+            showDMConversationList();
+        }
+
+        // Load user list for new DM
+        function loadDMUserList() {
+            const container = document.getElementById('dmUserList');
+
+            // Combine online users and all registered users
+            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            let users = [];
+
+            // Add online users first
+            onlineUsers.forEach(u => {
+                if (u.toLowerCase() !== displayName.toLowerCase()) {
+                    users.push({ name: u, online: true });
+                }
+            });
+
+            // Add registered users who aren't online
+            allRegisteredUsers.forEach(u => {
+                const firstName = u.firstName;
+                if (!onlineSet.has(firstName.toLowerCase()) && firstName.toLowerCase() !== displayName.toLowerCase()) {
+                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                }
+            });
+
+            renderDMUserList(users);
+        }
+
+        // Filter DM users by search
+        function filterDMUsers() {
+            const search = document.getElementById('dmUserSearch').value.toLowerCase();
+            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            let users = [];
+
+            onlineUsers.forEach(u => {
+                if (u.toLowerCase() !== displayName.toLowerCase() && u.toLowerCase().includes(search)) {
+                    users.push({ name: u, online: true });
+                }
+            });
+
+            allRegisteredUsers.forEach(u => {
+                const firstName = u.firstName;
+                if (!onlineSet.has(firstName.toLowerCase()) &&
+                    firstName.toLowerCase() !== displayName.toLowerCase() &&
+                    (firstName.toLowerCase().includes(search) || u.name.toLowerCase().includes(search))) {
+                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                }
+            });
+
+            renderDMUserList(users);
+        }
+
+        // Render DM user list
+        function renderDMUserList(users) {
+            const container = document.getElementById('dmUserList');
+
+            if (users.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px;">No users found</p>';
+                return;
+            }
+
+            container.innerHTML = users.map(u => `
+                <div onclick="startDMConversation('${u.name}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
+                    <div>
+                        <div style="font-weight: 600; color: #1a1a2e;">${u.name}${u.fullName && u.fullName !== u.name ? ` <span style="color:#888;font-weight:normal;font-size:12px;">(${u.fullName})</span>` : ''}</div>
+                    </div>
+                    ${u.online ? '<span style="font-size: 10px; background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px;">online</span>' : '<span style="font-size: 10px; color: #888;">offline</span>'}
+                </div>
+            `).join('');
+        }
+
+        // Start or open a DM conversation
+        function startDMConversation(partnerName) {
+            currentDMConversation = {
+                partnerName: partnerName,
+                conversationId: getConversationId(displayName, partnerName)
+            };
+
+            // Update UI
+            document.getElementById('dmConversationList').style.display = 'none';
+            document.getElementById('newDMSelector').style.display = 'none';
+            document.getElementById('dmMessageView').style.display = 'flex';
+            document.getElementById('dmPartnerName').textContent = partnerName;
+
+            // Check if partner is online
+            const isOnline = onlineUsers.some(u => u.toLowerCase() === partnerName.toLowerCase());
+            const statusEl = document.getElementById('dmPartnerStatus');
+            statusEl.textContent = isOnline ? 'online' : 'offline';
+            statusEl.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+            statusEl.style.color = isOnline ? '#16a34a' : '#666';
+
+            // Load messages
+            loadDMMessages(currentDMConversation.conversationId);
+
+            // Mark as read
+            markDMAsRead(currentDMConversation.conversationId);
+        }
+
+        // Close DM conversation and go back to list
+        function closeDMConversation() {
+            currentDMConversation = null;
+            showDMConversationList();
+            loadDMConversations();
+        }
+
+        // Load DM conversations list
+        function loadDMConversations() {
+            const container = document.getElementById('dmConversations');
+            if (!container) return;
+
+            container.innerHTML = '<p style="color: #888; font-size: 12px;">Loading...</p>';
+
+            // Query all conversations where the current user is a participant
+            directMessagesRef.once('value', (snapshot) => {
+                dmConversations = [];
+
+                snapshot.forEach((child) => {
+                    const convId = child.key;
+                    const data = child.val();
+
+                    if (!data) return;
+
+                    // Check if current user is in this conversation
+                    const participants = data.participants || {};
+                    const isParticipant = Object.values(participants).some(p =>
+                        p && (p.toLowerCase() === displayName.toLowerCase() ||
+                        p.toLowerCase() === currentUsername.toLowerCase())
+                    );
+
+                    if (isParticipant && data.lastMessage) {
+                        // Get partner name
+                        let partnerName = '';
+                        Object.values(participants).forEach(p => {
+                            if (p && p.toLowerCase() !== displayName.toLowerCase() &&
+                                p.toLowerCase() !== currentUsername.toLowerCase()) {
+                                partnerName = p;
+                            }
+                        });
+
+                        dmConversations.push({
+                            conversationId: convId,
+                            partnerName: partnerName,
+                            lastMessage: data.lastMessage,
+                            unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
+                        });
+                    }
+                });
+
+                // Sort by most recent
+                dmConversations.sort((a, b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
+
+                renderDMConversations();
+            });
+        }
+
+        // Render DM conversations
+        function renderDMConversations() {
+            const container = document.getElementById('dmConversations');
+
+            if (dmConversations.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; padding: 20px;">No conversations yet.<br>Start a new message!</p>';
+                return;
+            }
+
+            let totalUnread = 0;
+            container.innerHTML = dmConversations.map(conv => {
+                const time = conv.lastMessage ? formatTime(conv.lastMessage.timestamp) : '';
+                const preview = conv.lastMessage ? (conv.lastMessage.text || '').substring(0, 40) + (conv.lastMessage.text?.length > 40 ? '...' : '') : '';
+                const isUnread = conv.unread && conv.lastMessage?.sender !== displayName;
+                if (isUnread) totalUnread++;
+
+                return `
+                    <div onclick="startDMConversation('${conv.partnerName}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: ${isUnread ? '700' : '600'}; color: #1a1a2e; margin-bottom: 4px;">
+                                    ${isUnread ? '● ' : ''}${conv.partnerName}
+                                </div>
+                                <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${preview}
+                                </div>
+                            </div>
+                            <div style="font-size: 10px; color: #888; white-space: nowrap; margin-left: 10px;">
+                                ${time}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update DM badge
+            updateDMBadge(totalUnread);
+        }
+
+        // Update DM badge count
+        function updateDMBadge(count) {
+            dmUnreadCount = count;
+            const badge = document.getElementById('dmBadge');
+            const tabBadge = document.getElementById('dmTabBadge');
+
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+                tabBadge.textContent = count;
+                tabBadge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+                tabBadge.style.display = 'none';
+            }
+        }
+
+        // Load messages for a DM conversation
+        function loadDMMessages(conversationId) {
+            const container = document.getElementById('dmMessages');
+            container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>';
+
+            const messagesRef = directMessagesRef.child(conversationId + '/messages');
+            messagesRef.orderByChild('timestamp').on('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; padding: 20px;">No messages yet. Say hello!</p>';
+                    return;
+                }
+
+                const messages = [];
+                snapshot.forEach((child) => {
+                    messages.push(child.val());
+                });
+
+                let html = '';
+                messages.forEach(msg => {
+                    const isMe = msg.senderName === displayName || msg.sender === currentUsername;
+
+                    html += `
+                        <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.senderName}</div>
+                            <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
+                                ${(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
+                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">${formatTime(msg.timestamp)}</div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
+
+                // Mark as read
+                if (currentDMConversation && currentDMConversation.conversationId === conversationId) {
+                    markDMAsRead(conversationId);
+                }
+            });
+        }
+
+        // Send a DM
+        function sendDM(event) {
+            event.preventDefault();
+
+            if (!currentDMConversation) return;
+
+            const input = document.getElementById('dmInput');
+            if (!input) return;
+
+            const text = input.value.trim();
+            if (!text) return;
+
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                alert('Please log in to send messages.');
+                return;
+            }
+
+            const conversationId = currentDMConversation.conversationId;
+            const partnerName = currentDMConversation.partnerName;
+
+            const messageData = {
+                sender: currentUsername,
+                senderName: displayName,
+                text: text,
+                timestamp: Date.now(),
+                read: false
+            };
+
+            try {
+                // Add message
+                directMessagesRef.child(conversationId + '/messages').push(messageData)
+                    .catch(err => console.error('Error sending DM:', err));
+
+                // Update participants if not exists
+                directMessagesRef.child(conversationId + '/participants').set({
+                    user1: displayName,
+                    user2: partnerName
+                });
+
+                // Update last message
+                directMessagesRef.child(conversationId + '/lastMessage').set({
+                    text: text,
+                    timestamp: Date.now(),
+                    sender: displayName
+                });
+
+                input.value = '';
+            } catch (e) {
+                console.error('Error sending DM:', e);
+                alert('Failed to send message. Please try again.');
+            }
+        }
+
+        // Mark DM conversation as read
+        function markDMAsRead(conversationId) {
+            dmLastReadTimestamps[conversationId] = Date.now();
+            localStorage.setItem('dmLastRead', JSON.stringify(dmLastReadTimestamps));
+
+            // Recalculate unread count
+            let totalUnread = 0;
+            dmConversations.forEach(conv => {
+                if (conv.conversationId !== conversationId) {
+                    if (conv.unread && conv.lastMessage?.sender !== displayName) {
+                        totalUnread++;
+                    }
+                }
+            });
+            updateDMBadge(totalUnread);
+        }
+
+        // Listen for new DMs (for notifications)
+        function setupDMListener() {
+            try {
+                directMessagesRef.on('child_changed', (snapshot) => {
+                    try {
+                        const convId = snapshot.key;
+                        const data = snapshot.val();
+
+                        if (!data) return;
+
+                        // Check if we're a participant
+                        const participants = data.participants || {};
+                        const isParticipant = Object.values(participants).some(p =>
+                            p && (p.toLowerCase() === displayName.toLowerCase() ||
+                            p.toLowerCase() === currentUsername.toLowerCase())
+                        );
+
+                        if (!isParticipant) return;
+
+                        // Check if it's a new message for us
+                        if (data.lastMessage && data.lastMessage.sender !== displayName) {
+                            const lastRead = dmLastReadTimestamps[convId] || 0;
+                            if (data.lastMessage.timestamp > lastRead) {
+                                // Play notification sound
+                                if (!chatOpen || chatMode !== 'dm' || currentDMConversation?.conversationId !== convId) {
+                                    playNotificationSound();
+
+                                    // Browser notification
+                                    if (notificationsEnabled && Notification.permission === 'granted') {
+                                        try {
+                                            const notification = new Notification('New DM from ' + data.lastMessage.sender, {
+                                                body: (data.lastMessage.text || '').substring(0, 100),
+                                                tag: 'bsn9b-dm-' + convId
+                                            });
+                                            notification.onclick = () => {
+                                                window.focus();
+                                                if (!chatOpen) toggleChat();
+                                                switchChatMode('dm');
+                                                startDMConversation(data.lastMessage.sender);
+                                                notification.close();
+                                            };
+                                        } catch (notifErr) {
+                                            console.log('Notification error:', notifErr);
+                                        }
+                                    }
+                                }
+
+                                // Refresh conversation list if viewing DMs
+                                if (chatOpen && chatMode === 'dm' && !currentDMConversation) {
+                                    loadDMConversations();
+                                }
+                            }
+                        }
+                    } catch (innerErr) {
+                        console.error('DM listener inner error:', innerErr);
+                    }
+                });
+            } catch (e) {
+                console.error('Error setting up DM listener:', e);
+            }
+        }
+
+        // Initialize DM listener
+        setupDMListener();
 
         // ========== AI NURSING COMPANION ==========
         const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
