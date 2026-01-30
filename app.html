@@ -900,63 +900,7 @@
         BSN9B Nursing Documentation Tool
     </footer>
 
-    <!-- AI Nursing Companion Widget -->
-    <div id="aiWidget" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999; font-family: 'Segoe UI', sans-serif;">
-        <!-- AI Toggle Button -->
-        <button id="aiToggle" onclick="toggleAI()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
-            🩺
-        </button>
-        <span style="position: absolute; top: -2px; left: -2px; background: #8b5cf6; color: white; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold;">AI</span>
-
-        <!-- AI Chat Box -->
-        <div id="aiBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; left: 0; width: 380px; height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
-            <!-- AI Header -->
-            <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong style="font-size: 16px;">🩺 Nursing AI Assistant</strong>
-                    <div style="font-size: 11px; opacity: 0.9;">AI-Powered Study Helper</div>
-                </div>
-                <button onclick="toggleAI()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
-            </div>
-
-            <!-- Disclaimer -->
-            <div style="background: #fef3c7; color: #92400e; padding: 8px 12px; font-size: 11px; border-bottom: 1px solid #fcd34d;">
-                ⚠️ Educational purposes only. Not medical advice. Do not enter patient data.
-            </div>
-
-            <!-- Quick Actions -->
-            <div style="padding: 10px; background: #f0fdfa; border-bottom: 1px solid #e2e8f0; display: flex; gap: 6px; flex-wrap: wrap;">
-                <button onclick="aiQuickAction('drug')" style="background: #0d9488; color: white; border: none; padding: 5px 10px; border-radius: 12px; font-size: 11px; cursor: pointer;">💊 Drug Info</button>
-                <button onclick="aiQuickAction('careplan')" style="background: #0d9488; color: white; border: none; padding: 5px 10px; border-radius: 12px; font-size: 11px; cursor: pointer;">📋 Care Plan</button>
-                <button onclick="aiQuickAction('nclex')" style="background: #0d9488; color: white; border: none; padding: 5px 10px; border-radius: 12px; font-size: 11px; cursor: pointer;">📝 NCLEX Q</button>
-                <button onclick="aiQuickAction('labs')" style="background: #0d9488; color: white; border: none; padding: 5px 10px; border-radius: 12px; font-size: 11px; cursor: pointer;">🔬 Labs</button>
-            </div>
-
-            <!-- AI Messages -->
-            <div id="aiMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
-                <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; margin-bottom: 10px; font-size: 14px;">
-                    Hi! I'm your nursing AI assistant. I can help with:
-                    <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px;">
-                        <li>Drug information & nursing considerations</li>
-                        <li>Care plan development (NANDA, NIC, NOC)</li>
-                        <li>NCLEX practice questions</li>
-                        <li>Lab values & clinical concepts</li>
-                        <li>Nursing procedures & assessments</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- AI Input -->
-            <div style="padding: 12px; border-top: 1px solid #e2e8f0; background: white;">
-                <form onsubmit="sendAIMessage(event)" style="display: flex; gap: 8px;">
-                    <input type="text" id="aiInput" placeholder="Ask a nursing question..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none;" maxlength="1000">
-                    <button type="submit" id="aiSendBtn" style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px;">➤</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Peer Chat Widget -->
+    <!-- Chat Widget -->
     <div id="chatWidget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Segoe UI', sans-serif;">
         <!-- Chat Toggle Button -->
         <button id="chatToggle" onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
@@ -1097,21 +1041,6 @@
             }
         }
 
-        // Format message text with @mention highlighting
-        function formatMessageWithMentions(text, isMe) {
-            // Escape HTML first
-            let formatted = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-            // Highlight @mentions with a styled span
-            formatted = formatted.replace(/@(\w+)/g, function(match, name) {
-                const bgColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.2)';
-                const textColor = isMe ? '#fff' : '#7c3aed';
-                return `<span style="background: ${bgColor}; color: ${textColor}; padding: 1px 6px; border-radius: 10px; font-weight: 600;">@${name}</span>`;
-            });
-
-            return formatted;
-        }
-
         // Scroll to bottom
         function scrollToBottom() {
             const container = document.getElementById('chatMessages');
@@ -1219,16 +1148,11 @@
 
                     if (isNew && !chatOpen) newMessages++;
 
-                    // Format text with @mention highlighting
-                    const formattedText = formatMessageWithMentions(msg.text, isMe);
-                    // Check if this message mentions the current user
-                    const mentionsMe = msg.text.toLowerCase().includes('@' + displayName.toLowerCase());
-
                     html += `
                         <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
                             <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.user}</div>
-                            <div style="background: ${mentionsMe && !isMe ? 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : '#e2e8f0')}; color: ${mentionsMe || isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px; ${mentionsMe && !isMe ? 'box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);' : ''}">
-                                ${formattedText}
+                            <div style="background: ${isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
+                                ${msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                             </div>
                             <div style="font-size: 9px; color: #aaa; margin-top: 3px;">${formatTime(msg.timestamp)}</div>
                         </div>
@@ -1255,181 +1179,6 @@
         // Initialize chat listener
         setupChatListener();
 
-        // ========== AI NURSING COMPANION ==========
-        const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
-        let aiOpen = false;
-        let aiConversation = [];
-
-        const AI_SYSTEM_PROMPT = `You are a helpful nursing education assistant for BSN nursing students. Your role is to:
-- Explain nursing concepts, procedures, and pathophysiology clearly
-- Provide drug information including mechanism, side effects, and nursing considerations
-- Help develop care plans using NANDA-I diagnoses, NIC interventions, and NOC outcomes
-- Generate NCLEX-style practice questions with detailed rationales
-- Explain lab values and their clinical significance
-- Guide through clinical scenarios and critical thinking
-
-Important guidelines:
-- Always emphasize this is for EDUCATIONAL purposes only, not actual patient care
-- Encourage students to verify information with their instructors and official resources
-- Be concise but thorough - nursing students are busy
-- Use proper medical terminology while explaining in accessible terms
-- When discussing medications, always mention common nursing considerations
-- For NCLEX questions, provide the answer AND detailed rationales for all options`;
-
-        function toggleAI() {
-            aiOpen = !aiOpen;
-            const aiBox = document.getElementById('aiBox');
-            if (aiOpen) {
-                aiBox.style.display = 'flex';
-                document.getElementById('aiInput').focus();
-            } else {
-                aiBox.style.display = 'none';
-            }
-            document.getElementById('aiToggle').style.transform = aiOpen ? 'scale(0.9)' : 'scale(1)';
-        }
-
-        function aiQuickAction(type) {
-            const input = document.getElementById('aiInput');
-            switch(type) {
-                case 'drug':
-                    input.value = 'Tell me about the medication: ';
-                    input.focus();
-                    break;
-                case 'careplan':
-                    input.value = 'Help me create a care plan for a patient with: ';
-                    input.focus();
-                    break;
-                case 'nclex':
-                    input.value = 'Give me an NCLEX practice question about: ';
-                    input.focus();
-                    break;
-                case 'labs':
-                    input.value = 'Explain the lab value and nursing implications: ';
-                    input.focus();
-                    break;
-            }
-        }
-
-        function addAIMessage(text, isUser) {
-            const container = document.getElementById('aiMessages');
-            const msgDiv = document.createElement('div');
-            msgDiv.style.cssText = `
-                margin-bottom: 12px;
-                display: flex;
-                flex-direction: column;
-                align-items: ${isUser ? 'flex-end' : 'flex-start'};
-            `;
-
-            // Format AI responses with markdown-like styling
-            let formattedText = text;
-            if (!isUser) {
-                // Convert **bold** to <strong>
-                formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                // Convert bullet points
-                formattedText = formattedText.replace(/^[\-\•]\s/gm, '• ');
-                // Convert newlines to <br>
-                formattedText = formattedText.replace(/\n/g, '<br>');
-            }
-
-            msgDiv.innerHTML = `
-                <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isUser ? 'You' : '🩺 AI Assistant'}</div>
-                <div style="background: ${isUser ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)'}; color: white; padding: 12px 16px; border-radius: ${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 90%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
-                    ${isUser ? text.replace(/</g, '&lt;').replace(/>/g, '&gt;') : formattedText}
-                </div>
-            `;
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function showAITyping() {
-            const container = document.getElementById('aiMessages');
-            const typingDiv = document.createElement('div');
-            typingDiv.id = 'aiTyping';
-            typingDiv.style.cssText = 'margin-bottom: 12px; display: flex; flex-direction: column; align-items: flex-start;';
-            typingDiv.innerHTML = `
-                <div style="font-size: 10px; color: #888; margin-bottom: 3px;">🩺 AI Assistant</div>
-                <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; font-size: 14px;">
-                    <span class="typing-dots">Thinking<span>.</span><span>.</span><span>.</span></span>
-                </div>
-            `;
-            container.appendChild(typingDiv);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function hideAITyping() {
-            const typing = document.getElementById('aiTyping');
-            if (typing) typing.remove();
-        }
-
-        async function sendAIMessage(event) {
-            event.preventDefault();
-            const input = document.getElementById('aiInput');
-            const message = input.value.trim();
-            const sendBtn = document.getElementById('aiSendBtn');
-
-            if (!message) return;
-
-            // Add user message to UI
-            addAIMessage(message, true);
-            input.value = '';
-            sendBtn.disabled = true;
-
-            // Add to conversation history
-            aiConversation.push({ role: 'user', content: message });
-
-            // Show typing indicator
-            showAITyping();
-
-            try {
-                const response = await fetch(AI_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        messages: aiConversation,
-                        systemPrompt: AI_SYSTEM_PROMPT
-                    })
-                });
-
-                const data = await response.json();
-                hideAITyping();
-
-                if (data.success && data.response) {
-                    addAIMessage(data.response, false);
-                    aiConversation.push({ role: 'assistant', content: data.response });
-
-                    // Keep conversation history manageable (last 10 exchanges)
-                    if (aiConversation.length > 20) {
-                        aiConversation = aiConversation.slice(-20);
-                    }
-                } else {
-                    addAIMessage('Sorry, I encountered an error. Please try again. ' + (data.error || ''), false);
-                }
-            } catch (error) {
-                hideAITyping();
-                console.error('AI API Error:', error);
-                addAIMessage('Sorry, I could not connect to the AI service. Please check your connection and try again.', false);
-            }
-
-            sendBtn.disabled = false;
-            input.focus();
-        }
-
-        // Add typing animation CSS
-        const aiStyle = document.createElement('style');
-        aiStyle.textContent = `
-            .typing-dots span {
-                animation: blink 1.4s infinite;
-                animation-fill-mode: both;
-            }
-            .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-            .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-            @keyframes blink {
-                0%, 80%, 100% { opacity: 0; }
-                40% { opacity: 1; }
-            }
-        `;
-        document.head.appendChild(aiStyle);
-
         // Track online presence - use display name (first name)
         const myPresence = presenceRef.push();
         myPresence.set({
@@ -1445,36 +1194,22 @@ Important guidelines:
             document.getElementById('userList').style.display = userListVisible ? 'block' : 'none';
         }
 
-        // Store online users for @mention autocomplete
-        let onlineUsers = [];
-
         presenceRef.on('value', (snapshot) => {
             const count = snapshot.numChildren();
             document.getElementById('onlineCount').textContent = count + ' online (click to see)';
 
-            // Build user list with clickable @mention
-            onlineUsers = [];
+            // Build user list
+            const users = [];
             snapshot.forEach((child) => {
                 const data = child.val();
                 if (data.user) {
-                    onlineUsers.push(data.user);
+                    users.push(data.user);
                 }
             });
-
-            document.getElementById('userListNames').innerHTML = onlineUsers.length > 0
-                ? onlineUsers.map(u => `<div style="padding: 4px 0; cursor: pointer;" onclick="insertMention('${u}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">• ${u} <span style="font-size:10px;opacity:0.6;">(click to @mention)</span></div>`).join('')
+            document.getElementById('userListNames').innerHTML = users.length > 0
+                ? users.map(u => '<div style="padding: 2px 0;">• ' + u + '</div>').join('')
                 : '<div style="opacity: 0.7;">No users online</div>';
         });
-
-        // Insert @mention into chat input
-        function insertMention(username) {
-            const input = document.getElementById('chatInput');
-            input.value = '@' + username + ' ' + input.value;
-            input.focus();
-            // Close user list
-            document.getElementById('userList').style.display = 'none';
-            userListVisible = false;
-        }
     </script>
 
     <script>
