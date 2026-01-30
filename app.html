@@ -823,21 +823,40 @@
                 </div>
                 <div id="customPhrasesList" style="margin-top: 15px;"></div>
 
-                <!-- User Management Section -->
+                <!-- Pending Registrations Section -->
                 <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #ffcc80;">
-                    <h3 style="color: #e65100; margin-bottom: 15px;">👥 Manage Users</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end;">
+                    <h3 style="color: #e65100; margin-bottom: 15px;">📋 Pending Registrations <button onclick="refreshPendingUsers()" style="font-size: 12px; padding: 4px 10px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Refresh</button></h3>
+                    <div id="pendingUsersList" style="margin-top: 10px;">
+                        <p style="color: #666; font-style: italic;">Loading pending registrations...</p>
+                    </div>
+                </div>
+
+                <!-- Approved Users Section -->
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #ffcc80;">
+                    <h3 style="color: #e65100; margin-bottom: 15px;">✅ Approved Users</h3>
+                    <div id="approvedUsersList" style="margin-top: 10px;">
+                        <p style="color: #666; font-style: italic;">Loading approved users...</p>
+                    </div>
+                </div>
+
+                <!-- Manual User Add Section -->
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #ffcc80;">
+                    <h3 style="color: #e65100; margin-bottom: 15px;">➕ Add User Manually</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 12px;">Full Name</label>
+                            <input type="text" id="newUserName" placeholder="Jane Smith" style="padding: 10px;">
+                        </div>
                         <div class="form-group" style="margin: 0;">
                             <label style="font-size: 12px;">Username</label>
-                            <input type="text" id="newUsername" placeholder="username" style="padding: 10px;">
+                            <input type="text" id="newUsername" placeholder="jsmith" style="padding: 10px;">
                         </div>
                         <div class="form-group" style="margin: 0;">
                             <label style="font-size: 12px;">Password</label>
                             <input type="text" id="newUserPassword" placeholder="password" style="padding: 10px;">
                         </div>
-                        <button onclick="addCustomUser()" style="padding: 10px 20px; background: #ff9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Add User</button>
+                        <button onclick="addUserToSheet()" style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Add</button>
                     </div>
-                    <div id="customUsersList" style="margin-top: 15px;"></div>
                 </div>
             </div>
         </div>
@@ -851,6 +870,171 @@
         const { jsPDF } = window.jspdf;
         let currentNoteType = 'dar';
         let selectedDiagnoses = [];
+
+        // Google Apps Script API URL
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+
+        // Fetch all users from Google Sheet
+        async function fetchAllUsers() {
+            try {
+                const response = await fetch(API_URL + '?action=getUsers');
+                const data = await response.json();
+                if (data.success) {
+                    return data.users;
+                }
+            } catch (e) {
+                console.error('Error fetching users:', e);
+            }
+            return [];
+        }
+
+        // Refresh and display pending users
+        async function refreshPendingUsers() {
+            const pendingContainer = document.getElementById('pendingUsersList');
+            const approvedContainer = document.getElementById('approvedUsersList');
+
+            if (pendingContainer) pendingContainer.innerHTML = '<p style="color: #666; font-style: italic;">Loading...</p>';
+            if (approvedContainer) approvedContainer.innerHTML = '<p style="color: #666; font-style: italic;">Loading...</p>';
+
+            const users = await fetchAllUsers();
+
+            const pendingUsers = users.filter(u => u.status === 'pending');
+            const approvedUsers = users.filter(u => u.status === 'approved');
+
+            // Render pending users
+            if (pendingContainer) {
+                if (pendingUsers.length === 0) {
+                    pendingContainer.innerHTML = '<p style="color: #666; font-style: italic;">No pending registrations.</p>';
+                } else {
+                    let html = '<table style="width: 100%; font-size: 13px; border-collapse: collapse;">';
+                    html += '<tr style="background: #ffe0b2;"><th style="padding: 8px; text-align: left;">Name</th><th style="padding: 8px; text-align: left;">Username</th><th style="padding: 8px; text-align: left;">Email</th><th style="padding: 8px; text-align: left;">Date</th><th style="padding: 8px; width: 140px;">Actions</th></tr>';
+
+                    for (const user of pendingUsers) {
+                        html += '<tr style="border-bottom: 1px solid #ffcc80;">';
+                        html += '<td style="padding: 8px;">' + (user.name || '-') + '</td>';
+                        html += '<td style="padding: 8px;"><strong>' + user.username + '</strong></td>';
+                        html += '<td style="padding: 8px;">' + (user.email || '-') + '</td>';
+                        html += '<td style="padding: 8px;">' + (user.date || '-') + '</td>';
+                        html += '<td style="padding: 8px;">';
+                        html += '<button onclick="approveUser(\'' + user.username + '\')" style="background: #4caf50; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">Approve</button>';
+                        html += '<button onclick="denyUser(\'' + user.username + '\')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Deny</button>';
+                        html += '</td></tr>';
+                    }
+                    html += '</table>';
+                    pendingContainer.innerHTML = html;
+                }
+            }
+
+            // Render approved users
+            if (approvedContainer) {
+                if (approvedUsers.length === 0) {
+                    approvedContainer.innerHTML = '<p style="color: #666; font-style: italic;">No approved users yet.</p>';
+                } else {
+                    let html = '<table style="width: 100%; font-size: 13px; border-collapse: collapse;">';
+                    html += '<tr style="background: #c8e6c9;"><th style="padding: 8px; text-align: left;">Name</th><th style="padding: 8px; text-align: left;">Username</th><th style="padding: 8px; text-align: left;">Email</th><th style="padding: 8px; width: 80px;">Actions</th></tr>';
+
+                    for (const user of approvedUsers) {
+                        html += '<tr style="border-bottom: 1px solid #a5d6a7;">';
+                        html += '<td style="padding: 8px;">' + (user.name || '-') + '</td>';
+                        html += '<td style="padding: 8px;"><strong>' + user.username + '</strong></td>';
+                        html += '<td style="padding: 8px;">' + (user.email || '-') + '</td>';
+                        html += '<td style="padding: 8px;">';
+                        html += '<button onclick="revokeUser(\'' + user.username + '\')" style="background: #ff9800; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Revoke</button>';
+                        html += '</td></tr>';
+                    }
+                    html += '</table>';
+                    approvedContainer.innerHTML = html;
+                }
+            }
+        }
+
+        // Approve a pending user
+        async function approveUser(username) {
+            if (!confirm('Approve user "' + username + '"?')) return;
+
+            try {
+                const params = new URLSearchParams({
+                    action: 'updateStatus',
+                    username: username,
+                    status: 'approved'
+                });
+                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                alert('User "' + username + '" approved!');
+                setTimeout(refreshPendingUsers, 1000); // Refresh after a short delay
+            } catch (e) {
+                alert('Error approving user. Please try again.');
+            }
+        }
+
+        // Deny/delete a pending user
+        async function denyUser(username) {
+            if (!confirm('Deny and remove user "' + username + '"?')) return;
+
+            try {
+                const params = new URLSearchParams({
+                    action: 'updateStatus',
+                    username: username,
+                    status: 'denied'
+                });
+                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                alert('User "' + username + '" denied.');
+                setTimeout(refreshPendingUsers, 1000);
+            } catch (e) {
+                alert('Error denying user. Please try again.');
+            }
+        }
+
+        // Revoke an approved user
+        async function revokeUser(username) {
+            if (!confirm('Revoke access for "' + username + '"?')) return;
+
+            try {
+                const params = new URLSearchParams({
+                    action: 'updateStatus',
+                    username: username,
+                    status: 'revoked'
+                });
+                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                alert('User "' + username + '" access revoked.');
+                setTimeout(refreshPendingUsers, 1000);
+            } catch (e) {
+                alert('Error revoking user. Please try again.');
+            }
+        }
+
+        // Add user directly to sheet
+        async function addUserToSheet() {
+            const name = document.getElementById('newUserName').value.trim();
+            const username = document.getElementById('newUsername').value.trim().toLowerCase();
+            const password = document.getElementById('newUserPassword').value;
+
+            if (!username || !password) {
+                alert('Please enter at least username and password.');
+                return;
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    action: 'addUser',
+                    username: username,
+                    password: password,
+                    status: 'approved',
+                    name: name,
+                    email: ''
+                });
+                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+
+                // Clear inputs
+                document.getElementById('newUserName').value = '';
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newUserPassword').value = '';
+
+                alert('User "' + username + '" added and approved!');
+                setTimeout(refreshPendingUsers, 1000);
+            } catch (e) {
+                alert('Error adding user. Please try again.');
+            }
+        }
 
         // Smart Phrases - type shortcut and it auto-expands
         let smartPhrases = {
@@ -1322,10 +1506,16 @@
 
             // Check if admin user, show admin panel
             const currentUser = sessionStorage.getItem('bsn9b_user');
-            if (currentUser === 'admin') {
+            if (currentUser === 'admin' || currentUser === 'holdenc') {
                 document.getElementById('adminPanel').classList.remove('hidden');
                 renderCustomPhrases();
-                renderCustomUsers();
+                refreshPendingUsers();
+            }
+
+            // Check URL param for direct admin access
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('admin') === 'true' && (currentUser === 'admin' || currentUser === 'holdenc')) {
+                document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
             }
         });
 

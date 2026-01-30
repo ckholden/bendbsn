@@ -6,12 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title>BSN9B Nursing Documentation</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -21,7 +16,6 @@
             justify-content: center;
             padding: 20px;
         }
-
         .login-container {
             background: white;
             border-radius: 20px;
@@ -30,7 +24,6 @@
             width: 100%;
             max-width: 420px;
         }
-
         .login-header {
             background: linear-gradient(135deg, #0f3460 0%, #533483 50%, #e94560 100%);
             color: white;
@@ -38,50 +31,20 @@
             text-align: center;
             position: relative;
         }
-
         .login-header::after {
             content: '';
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             height: 4px;
             background: linear-gradient(90deg, #00d9ff, #e94560, #00d9ff);
         }
-
-        .login-header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .login-header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .login-header .icon {
-            font-size: 50px;
-            margin-bottom: 15px;
-        }
-
-        .login-form {
-            padding: 40px 30px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            color: #1a1a2e;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        input {
+        .login-header h1 { font-size: 28px; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .login-header p { opacity: 0.9; font-size: 14px; }
+        .login-header .icon { font-size: 50px; margin-bottom: 15px; }
+        .login-form { padding: 40px 30px; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; font-weight: 600; color: #1a1a2e; margin-bottom: 10px; font-size: 14px; }
+        input[type="text"], input[type="password"], input[type="email"] {
             width: 100%;
             padding: 16px 20px;
             border: 2px solid #e0e0e0;
@@ -91,14 +54,7 @@
             transition: all 0.3s;
             background: #fafafa;
         }
-
-        input:focus {
-            outline: none;
-            border-color: #533483;
-            box-shadow: 0 0 0 4px rgba(83, 52, 131, 0.15);
-            background: white;
-        }
-
+        input:focus { outline: none; border-color: #533483; box-shadow: 0 0 0 4px rgba(83, 52, 131, 0.15); background: white; }
         .btn {
             width: 100%;
             padding: 18px 24px;
@@ -112,59 +68,57 @@
             color: white;
             margin-top: 10px;
         }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(83, 52, 131, 0.4);
-        }
-
-        .btn:active {
-            transform: translateY(-1px);
-        }
-
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(83, 52, 131, 0.4); }
+        .btn:active { transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: linear-gradient(135deg, #666 0%, #888 100%); margin-top: 10px; }
         .error-message {
-            background: #fee;
-            border: 1px solid #fcc;
-            color: #c00;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            background: #fee; border: 1px solid #fcc; color: #c00;
+            padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;
             display: none;
         }
-
-        .error-message.show {
-            display: block;
-            animation: shake 0.5s ease;
+        .error-message.show { display: block; animation: shake 0.5s ease; }
+        .success-message {
+            background: #efe; border: 1px solid #cfc; color: #080;
+            padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;
+            display: none;
         }
-
+        .success-message.show { display: block; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
             40%, 80% { transform: translateX(5px); }
         }
-
-        .footer-text {
-            text-align: center;
-            color: #888;
-            font-size: 12px;
-            margin-top: 20px;
-        }
-
+        .footer-text { text-align: center; color: #888; font-size: 12px; margin-top: 20px; }
         .class-badge {
             display: inline-block;
             background: linear-gradient(135deg, #533483, #e94560);
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
+            color: white; padding: 6px 16px; border-radius: 20px;
+            font-size: 12px; font-weight: 600; margin-top: 10px;
         }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 1000; padding: 20px;
+            align-items: center; justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white; border-radius: 20px; max-width: 450px; width: 100%;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #0f3460 0%, #533483 100%);
+            color: white; padding: 25px; text-align: center; border-radius: 20px 20px 0 0;
+        }
+        .modal-header h2 { margin: 0; font-size: 22px; }
+        .modal-body { padding: 30px; }
+        .link-btn { background: none; border: none; color: #533483; cursor: pointer; text-decoration: underline; font-size: 14px; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="login-container">
+    <div class="login-container" id="loginContainer">
         <div class="login-header">
             <div class="icon">🩺</div>
             <h1>BSN9B Nursing Documentation</h1>
@@ -173,9 +127,8 @@
         </div>
 
         <form class="login-form" onsubmit="return handleLogin(event)">
-            <div class="error-message" id="errorMsg">
-                Invalid username or password. Please try again.
-            </div>
+            <div class="error-message" id="errorMsg">Invalid username or password.</div>
+            <div class="success-message" id="successMsg"></div>
 
             <div class="form-group">
                 <label for="username">Username</label>
@@ -194,78 +147,363 @@
                 </label>
             </div>
 
-            <button type="submit" class="btn">Sign In</button>
+            <button type="submit" class="btn" id="loginBtn">Sign In</button>
+
+            <p style="text-align: center; margin-top: 15px;">
+                <button type="button" class="link-btn" onclick="showRegisterModal()">Don't have an account? Register here</button>
+            </p>
 
             <p class="footer-text">For nursing student use</p>
         </form>
+    </div>
 
+    <!-- Registration Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Your Account</h2>
+            </div>
+            <div class="modal-body">
+                <div class="error-message" id="regErrorMsg"></div>
+                <div class="success-message" id="regSuccessMsg"></div>
+
+                <form onsubmit="return handleRegister(event)">
+                    <div class="form-group">
+                        <label for="regName">Full Name</label>
+                        <input type="text" id="regName" placeholder="e.g. Jane Smith" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regUsername">Desired Username</label>
+                        <input type="text" id="regUsername" placeholder="e.g. jsmith" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" placeholder="Choose a password" required>
+                    </div>
+
+                    <button type="submit" class="btn" id="regBtn">Submit Registration</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideRegisterModal()">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Account Prompt Modal (for generic login users) -->
+    <div class="modal" id="createAccountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Your Personal Account</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: #555;">You're using a shared login. Create your own account for a personalized experience!</p>
+
+                <div class="error-message" id="createErrorMsg"></div>
+                <div class="success-message" id="createSuccessMsg"></div>
+
+                <form onsubmit="return handleCreateAccount(event)">
+                    <div class="form-group">
+                        <label for="createName">Full Name</label>
+                        <input type="text" id="createName" placeholder="e.g. Jane Smith" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="createEmail">Email</label>
+                        <input type="email" id="createEmail" placeholder="your.email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="createUsername">Desired Username</label>
+                        <input type="text" id="createUsername" placeholder="e.g. jsmith" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="createPassword">Password</label>
+                        <input type="password" id="createPassword" placeholder="Choose a password" required>
+                    </div>
+
+                    <button type="submit" class="btn" id="createBtn">Create Account</button>
+                    <button type="button" class="btn btn-secondary" onclick="skipCreateAccount()">Skip for Now</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Simple hash function for basic obfuscation
-        function simpleHash(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return hash.toString();
-        }
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+        const ADMIN_EMAIL = 'christiankholden@gmail.com';
 
-        // Built-in credentials (hashed for basic obfuscation)
-        const builtInUsers = {
-            'sumner': simpleHash('nursingstudent'),
-            'holdenc': simpleHash('holdc123'),
-            'np': simpleHash('nursingstudent'),
-            'instructor': simpleHash('sumnerinstructor'),
-            'admin': simpleHash('admin1374')
+        // Generic/shared usernames that should prompt for account creation
+        const GENERIC_USERNAMES = ['sumner', 'np', 'student'];
+
+        // Fallback built-in users (in case API fails)
+        const FALLBACK_USERS = {
+            'admin': 'admin1374',
+            'holdenc': 'holdc123',
+            'sumner': 'nursingstudent',
+            'np': 'nursingstudent',
+            'instructor': 'sumnerinstructor'
         };
 
-        // Load custom users from localStorage
-        function getCustomUsers() {
-            const stored = localStorage.getItem('bsn9b_custom_users');
-            return stored ? JSON.parse(stored) : {};
-        }
+        let usersCache = null;
 
         // Check if already logged in
         if (sessionStorage.getItem('bsn9b_auth') === 'true') {
             window.location.href = 'app.html';
         }
 
-        function handleLogin(event) {
+        // Fetch users from Google Sheet on load
+        async function fetchUsers() {
+            try {
+                const response = await fetch(API_URL + '?action=getUsers');
+                const data = await response.json();
+                if (data.success) {
+                    usersCache = data.users;
+                    return data.users;
+                }
+            } catch (e) {
+                console.log('Using fallback auth');
+            }
+            return null;
+        }
+
+        // Initialize
+        fetchUsers();
+
+        async function handleLogin(event) {
             event.preventDefault();
 
             const username = document.getElementById('username').value.toLowerCase().trim();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
+            const loginBtn = document.getElementById('loginBtn');
 
-            const hashedPassword = simpleHash(password);
-            const customUsers = getCustomUsers();
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
+            errorMsg.classList.remove('show');
 
-            // Check built-in users first, then custom users
-            const isValidBuiltIn = builtInUsers[username] && builtInUsers[username] === hashedPassword;
-            const isValidCustom = customUsers[username] && customUsers[username].password === hashedPassword;
+            // Try to fetch fresh users
+            let users = usersCache || await fetchUsers();
 
-            if (isValidBuiltIn || isValidCustom) {
-                // Set session
+            let isValid = false;
+            let isGeneric = false;
+            let userStatus = null;
+
+            // Check against Google Sheet users
+            if (users) {
+                const user = users.find(u => u.username.toLowerCase() === username && u.password === password);
+                if (user) {
+                    if (user.status === 'approved') {
+                        isValid = true;
+                    } else if (user.status === 'pending') {
+                        errorMsg.textContent = 'Your account is pending approval. Please wait for admin confirmation.';
+                        errorMsg.classList.add('show');
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = 'Sign In';
+                        return false;
+                    }
+                }
+            }
+
+            // Fallback to built-in users
+            if (!isValid && FALLBACK_USERS[username] === password) {
+                isValid = true;
+                isGeneric = GENERIC_USERNAMES.includes(username);
+            }
+
+            if (isValid) {
                 sessionStorage.setItem('bsn9b_auth', 'true');
                 sessionStorage.setItem('bsn9b_user', username);
 
-                // Redirect to app
-                window.location.href = 'app.html';
+                // If generic login, prompt to create account
+                if (isGeneric) {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = 'Sign In';
+                    document.getElementById('createAccountModal').classList.add('show');
+                } else {
+                    window.location.href = 'app.html';
+                }
             } else {
-                // Show error
-                errorMsg.classList.remove('show');
-                void errorMsg.offsetWidth; // Trigger reflow for animation
+                errorMsg.textContent = 'Invalid username or password.';
                 errorMsg.classList.add('show');
-
-                // Clear password field
                 document.getElementById('password').value = '';
                 document.getElementById('password').focus();
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Sign In';
             }
 
             return false;
+        }
+
+        function showRegisterModal() {
+            document.getElementById('registerModal').classList.add('show');
+        }
+
+        function hideRegisterModal() {
+            document.getElementById('registerModal').classList.remove('show');
+            document.getElementById('regErrorMsg').classList.remove('show');
+            document.getElementById('regSuccessMsg').classList.remove('show');
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const username = document.getElementById('regUsername').value.toLowerCase().trim();
+            const password = document.getElementById('regPassword').value;
+            const regBtn = document.getElementById('regBtn');
+            const errorMsg = document.getElementById('regErrorMsg');
+            const successMsg = document.getElementById('regSuccessMsg');
+
+            regBtn.disabled = true;
+            regBtn.innerHTML = '<span class="loading"></span>Submitting...';
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+
+            // Check if username already exists
+            let users = usersCache || await fetchUsers();
+            if (users && users.some(u => u.username.toLowerCase() === username)) {
+                errorMsg.textContent = 'Username already taken. Please choose another.';
+                errorMsg.classList.add('show');
+                regBtn.disabled = false;
+                regBtn.innerHTML = 'Submit Registration';
+                return false;
+            }
+
+            try {
+                // Add to Google Sheet as pending
+                const params = new URLSearchParams({
+                    action: 'addUser',
+                    username: username,
+                    password: password,
+                    status: 'pending',
+                    name: name,
+                    email: email
+                });
+
+                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+
+                // Send email notification
+                await sendEmailNotification(name, email, username, 'new_registration');
+
+                successMsg.textContent = 'Registration submitted! You will receive an email once approved.';
+                successMsg.classList.add('show');
+
+                // Clear form
+                document.getElementById('regName').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regPassword').value = '';
+
+                // Refresh users cache
+                fetchUsers();
+
+            } catch (e) {
+                errorMsg.textContent = 'Error submitting registration. Please try again.';
+                errorMsg.classList.add('show');
+            }
+
+            regBtn.disabled = false;
+            regBtn.innerHTML = 'Submit Registration';
+            return false;
+        }
+
+        async function handleCreateAccount(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('createName').value.trim();
+            const email = document.getElementById('createEmail').value.trim();
+            const username = document.getElementById('createUsername').value.toLowerCase().trim();
+            const password = document.getElementById('createPassword').value;
+            const createBtn = document.getElementById('createBtn');
+            const errorMsg = document.getElementById('createErrorMsg');
+            const successMsg = document.getElementById('createSuccessMsg');
+
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<span class="loading"></span>Creating...';
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+
+            // Check if username already exists
+            let users = usersCache || await fetchUsers();
+            if (users && users.some(u => u.username.toLowerCase() === username)) {
+                errorMsg.textContent = 'Username already taken. Please choose another.';
+                errorMsg.classList.add('show');
+                createBtn.disabled = false;
+                createBtn.innerHTML = 'Create Account';
+                return false;
+            }
+
+            try {
+                // Add to Google Sheet as pending
+                const params = new URLSearchParams({
+                    action: 'addUser',
+                    username: username,
+                    password: password,
+                    status: 'pending',
+                    name: name,
+                    email: email
+                });
+
+                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+
+                // Send email notification
+                await sendEmailNotification(name, email, username, 'account_creation');
+
+                successMsg.textContent = 'Account request submitted! Continuing to app...';
+                successMsg.classList.add('show');
+
+                setTimeout(() => {
+                    window.location.href = 'app.html';
+                }, 2000);
+
+            } catch (e) {
+                errorMsg.textContent = 'Error creating account. Please try again.';
+                errorMsg.classList.add('show');
+                createBtn.disabled = false;
+                createBtn.innerHTML = 'Create Account';
+            }
+
+            return false;
+        }
+
+        function skipCreateAccount() {
+            document.getElementById('createAccountModal').classList.remove('show');
+            window.location.href = 'app.html';
+        }
+
+        async function sendEmailNotification(name, email, username, type) {
+            const adminUrl = 'https://bendbsn.com/app.html?admin=true';
+            const subject = type === 'new_registration'
+                ? 'New BendBSN Registration Request'
+                : 'New BendBSN Account Request';
+
+            // Use FormSubmit to send email
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('username', username);
+            formData.append('_subject', subject);
+            formData.append('message', `
+New account request:
+
+Name: ${name}
+Email: ${email}
+Requested Username: ${username}
+Type: ${type}
+
+Approve or deny at: ${adminUrl}
+            `);
+
+            try {
+                await fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (e) {
+                console.log('Email notification may have failed');
+            }
         }
 
         // Focus username field on load
