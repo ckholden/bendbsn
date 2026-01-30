@@ -246,9 +246,17 @@
 <body>
     <div class="container">
         <div class="header">
-            <div style="position: absolute; top: 15px; right: 20px;">
-                <span id="userDisplay" style="color: rgba(255,255,255,0.8); font-size: 12px; margin-right: 10px;"></span>
-                <button onclick="logout()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">Logout</button>
+            <div id="userDisplayContainer" style="position: absolute; top: 15px; right: 20px;">
+                <span id="userDisplay" style="color: rgba(255,255,255,0.8); font-size: 12px;"></span>
+            </div>
+            <!-- Alert/FYI Banners - Inside Header -->
+            <div id="alertBanner" class="header-banner alert-banner" style="display: none;">
+                <span id="alertText"></span>
+                <span class="banner-label">⚠️ ALERT</span>
+            </div>
+            <div id="fyiBanner" class="header-banner fyi-banner" style="display: none;">
+                <span id="fyiText"></span>
+                <span class="banner-label">ℹ️ FYI</span>
             </div>
             <h1>Sumner BSN9B Nursing Documentation</h1>
             <p>Progress Notes | Head-to-Toe | NANDA Diagnoses</p>
@@ -261,12 +269,16 @@
             <div class="info-box">
                 <strong>Quick Start:</strong> Enter info → Select format → Document → Export PDF/Word. Use <strong>Smart Phrases</strong> (📝 button) for shortcuts. <strong>Chat</strong> with classmates (💬 bottom-right). Ask the <strong>AI Nursing Companion</strong> (🩺 bottom-left) for drug info, care plans, and NCLEX help!
             </div>
-            <!-- Floating Smart Phrases Button - More Visible -->
-            <button onclick="document.getElementById('phrasesModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 45%; transform: translateY(-50%); background: linear-gradient(135deg, #ff9800, #f57c00); color: white; border: none; padding: 15px 12px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 13px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed; animation: pulse 2s infinite;">
-                📝 SMART PHRASES
+            <!-- Floating Logout Button -->
+            <button onclick="logout()" style="position: fixed; right: 0; top: 20%; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
+                🚪 LOGOUT
+            </button>
+            <!-- Floating Smart Phrases Button -->
+            <button onclick="document.getElementById('phrasesModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 38%; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed; animation: pulse 2s infinite;">
+                📝 PHRASES
             </button>
             <!-- Floating Feedback Button -->
-            <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 62%; transform: translateY(-50%); background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; padding: 15px 12px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 13px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
+            <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" style="position: fixed; right: 0; top: 56%; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; padding: 12px 10px; border-radius: 10px 0 0 10px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: -4px 4px 15px rgba(0,0,0,0.4); z-index: 100; writing-mode: vertical-rl; text-orientation: mixed;">
                 💡 FEEDBACK
             </button>
             <style>
@@ -845,24 +857,55 @@
                     </div>
     </div>
 
-    <!-- Alert/FYI Banners -->
-    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: alertFlash 1s infinite;">
-        <span id="alertText"></span>
-        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.8;">⚠️ ALERT</span>
-    </div>
-    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
-        <span id="fyiText"></span>
-        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
-    </div>
+    <!-- Banner Styles -->
     <style>
-        @keyframes alertFlash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        /* Ensure logout is ALWAYS visible above banners */
+        #logoutContainer {
+            z-index: 99999 !important;
+            position: fixed !important;
         }
-        #fyiBanner + #alertBanner, #alertBanner:not([style*="display: none"]) ~ * { margin-top: 50px; }
-        body.has-alert { padding-top: 50px; }
-        body.has-fyi { padding-top: 50px; }
-        body.has-alert.has-fyi { padding-top: 100px; }
+        .header-banner {
+            margin: 10px auto 15px auto;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            max-width: 90%;
+            position: relative;
+            z-index: 9998 !important;
+        }
+        #alertBanner, #fyiBanner {
+            z-index: 9998 !important;
+        }
+        .header-banner .banner-label {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        .alert-banner {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4);
+            animation: softFlashAlert 2s ease-in-out infinite;
+        }
+        .fyi-banner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #1a1a2e;
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+            animation: softFlashFyi 2s ease-in-out infinite;
+        }
+        @keyframes softFlashAlert {
+            0%, 100% { opacity: 1; box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4); }
+            50% { opacity: 0.85; box-shadow: 0 2px 15px rgba(220, 38, 38, 0.6); }
+        }
+        @keyframes softFlashFyi {
+            0%, 100% { opacity: 1; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3); }
+            50% { opacity: 0.85; box-shadow: 0 2px 15px rgba(245, 158, 11, 0.5); }
+        }
     </style>
 
     <footer style="text-align: center; padding: 20px; color: rgba(255,255,255,0.6); font-size: 12px;">
@@ -985,7 +1028,7 @@
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
 
-        // Listen for announcements (alert/fyi banners)
+        // Listen for announcements (alert/fyi banners - inside header)
         function setupAnnouncementListener() {
             announcementsRef.on('value', (snapshot) => {
                 const data = snapshot.val() || {};
@@ -998,21 +1041,16 @@
                 if (data.alert && data.alert.message) {
                     alertText.textContent = data.alert.message;
                     alertBanner.style.display = 'block';
-                    document.body.classList.add('has-alert');
                 } else {
                     alertBanner.style.display = 'none';
-                    document.body.classList.remove('has-alert');
                 }
 
-                // Handle FYI banner (offset if alert is showing)
+                // Handle FYI banner
                 if (data.fyi && data.fyi.message) {
                     fyiText.textContent = data.fyi.message;
                     fyiBanner.style.display = 'block';
-                    fyiBanner.style.top = (data.alert && data.alert.message) ? '50px' : '0';
-                    document.body.classList.add('has-fyi');
                 } else {
                     fyiBanner.style.display = 'none';
-                    document.body.classList.remove('has-fyi');
                 }
             });
         }
@@ -1533,8 +1571,16 @@ Important guidelines:
         function logout() {
             sessionStorage.removeItem('bsn9b_auth');
             sessionStorage.removeItem('bsn9b_user');
+            sessionStorage.removeItem('bsn9b_displayName');
             window.location.href = '/';
         }
+
+        // Auto-logout when user closes tab/window
+        window.addEventListener('beforeunload', function() {
+            sessionStorage.removeItem('bsn9b_auth');
+            sessionStorage.removeItem('bsn9b_user');
+            sessionStorage.removeItem('bsn9b_displayName');
+        });
 
         // Fetch all users from Google Sheet
         async function fetchAllUsers() {

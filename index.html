@@ -233,7 +233,6 @@
                     </div>
 
                     <button type="submit" class="btn" id="createBtn">Create Account</button>
-                    <button type="button" class="btn btn-secondary" onclick="skipCreateAccount()">Skip for Now</button>
                 </form>
             </div>
         </div>
@@ -297,47 +296,35 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
         const ADMIN_EMAIL = 'christiankholden@gmail.com';
+        const PASSWORD_SALT = 'BSN9B_SUMNER_2025'; // Salt for password hashing
 
-        // Generic/shared usernames that should prompt for account creation
-        const GENERIC_USERNAMES = ['sumner', 'np', 'student'];
+        // Hash password using SHA-256 with salt
+        async function hashPassword(password) {
+            const data = new TextEncoder().encode(password + PASSWORD_SALT);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
-        // Fallback built-in users (in case API fails)
+        // Pre-hashed fallback passwords (admin only)
+        // To generate: await hashPassword('your-password')
+        // admin1374 -> hashed | holdc123 -> hashed
         const FALLBACK_USERS = {
-            'admin': 'admin1374',
-            'holdenc': 'holdc123',
-            'sumner': 'nursingstudent',
-            'np': 'nursingstudent',
-            'instructor': 'sumnerinstructor',
-            'test': 'test'
+            'admin': '%%ADMIN_HASH%%',
+            'holdenc': '%%HOLDENC_HASH%%'
         };
+
+        // Initialize fallback hashes on load
+        (async function initFallbackHashes() {
+            FALLBACK_USERS['admin'] = await hashPassword('admin1374');
+            FALLBACK_USERS['holdenc'] = await hashPassword('holdc123');
+        })();
 
         // Display names for fallback users
         const FALLBACK_DISPLAY_NAMES = {
             'admin': 'Admin',
-            'holdenc': 'Christian',
-            'sumner': 'Student',
-            'np': 'NP Student',
-            'instructor': 'Instructor',
-            'test': 'Test User'
+            'holdenc': 'Christian'
         };
-
-        // Pre-approved contacts list - auto-approve if name/email/phone matches
-        const PRE_APPROVED = [
-            { name: 'Rylee Butterfield', email: '', phone: '5412136861' },
-            { name: 'Nicole Stodghill', email: 'nicoleashley2380@gmail.com', phone: '5412790959' },
-            { name: 'Naomi Steele', email: '', phone: '5414204186' },
-            { name: 'Madisyn Johnson', email: '22johnsonmk@gmail.com', phone: '5414608263' },
-            { name: 'Leanne Stewart', email: 'leanne.french@gmail.com', phone: '5039394502' },
-            { name: 'Laura Boehm', email: 'laura.boehm@freseniusmedicalcare.com', phone: '5416392004' },
-            { name: 'Kim Poulakis', email: 'kpoulakis@sumnercollege.edu', phone: '8435098679' },
-            { name: 'Kallyan Smith', email: 'kallyansmith@gmail.com', phone: '9073153447' },
-            { name: 'Hope La Fave', email: '', phone: '9162478037' },
-            { name: 'Cassie Simonson', email: 'cassiesimonson8@gmail.com', phone: '5412131589' },
-            { name: 'Caitlin Ward', email: '', phone: '2083406739' },
-            { name: 'Brittany Brunke', email: 'bbelcherghm@gmail.com', phone: '5416102503' },
-            { name: 'Ashley Salmond', email: 'ashleysalmondgyn@gmail.com', phone: '5416781202' },
-            { name: 'Ann Ottessen', email: 'aottesen@sumnercollege.edu', phone: '5037848387' },
-        ];
 
         // Normalize phone number (remove all non-digits)
         function normalizePhone(phone) {
@@ -346,22 +333,30 @@
         }
 
         // Check if a name fuzzy matches any pre-approved name
+        // Matches if ANY part of input name matches ANY part of approved name
+        // e.g., "Student Smith" matches "Student Test" (first name match)
+        // e.g., "John Butterfield" matches "Rylee Butterfield" (last name match)
         function fuzzyNameMatch(inputName, approvedName) {
             const input = inputName.toLowerCase().trim();
             const approved = approvedName.toLowerCase();
-            const approvedParts = approved.split(' ');
+            const inputParts = input.split(/\s+/).filter(p => p.length >= 3);
+            const approvedParts = approved.split(/\s+/).filter(p => p.length >= 3);
 
-            // Check if input matches first name, last name, or nickname
-            for (const part of approvedParts) {
-                if (part.length >= 3) {
-                    // Check if input starts with this part or vice versa
-                    if (part.startsWith(input) || input.startsWith(part)) return true;
-                    // Check if input contains this part or vice versa
-                    if (part.includes(input) || input.includes(part)) return true;
+            // Check if ANY input part matches ANY approved part (first OR last name)
+            for (const inputPart of inputParts) {
+                for (const approvedPart of approvedParts) {
+                    // Exact match
+                    if (inputPart === approvedPart) return true;
+                    // Starts with match (for nicknames like "Chris" matching "Christopher")
+                    if (inputPart.startsWith(approvedPart) || approvedPart.startsWith(inputPart)) return true;
                 }
             }
-            // Check full name match
-            if (approved.includes(input) || input.includes(approved)) return true;
+
+            // Also check if full input matches any approved part or vice versa
+            for (const approvedPart of approvedParts) {
+                if (input === approvedPart || approvedPart.includes(input) || input.includes(approvedPart)) return true;
+            }
+
             return false;
         }
 
@@ -425,19 +420,32 @@
             loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
             errorMsg.classList.remove('show');
 
+            // Hash the entered password for comparison
+            const hashedPassword = await hashPassword(password);
+
             // Try to fetch fresh users
             let users = usersCache || await fetchUsers();
 
             let isValid = false;
-            let isGeneric = false;
-            let userStatus = null;
 
             // Check against Google Sheet users
+            // Supports both hashed (new) and plain text (legacy) passwords for transition
             if (users) {
-                const user = users.find(u => u.username.toLowerCase() === username && u.password === password);
+                const user = users.find(u => u.username.toLowerCase() === username &&
+                    (u.password === hashedPassword || u.password === password));
                 if (user) {
                     if (user.status === 'approved') {
                         isValid = true;
+                        // If using legacy plain text password, upgrade to hash
+                        if (user.password === password && user.password !== hashedPassword) {
+                            // Silently upgrade password to hashed version
+                            const upgradeParams = new URLSearchParams({
+                                action: 'updatePassword',
+                                username: username,
+                                password: hashedPassword
+                            });
+                            fetch(API_URL + '?' + upgradeParams.toString(), { method: 'POST', mode: 'no-cors' });
+                        }
                     } else if (user.status === 'pending') {
                         errorMsg.textContent = 'Your account is pending approval. Please wait for admin confirmation.';
                         errorMsg.classList.add('show');
@@ -448,10 +456,9 @@
                 }
             }
 
-            // Fallback to built-in users
-            if (!isValid && FALLBACK_USERS[username] === password) {
+            // Fallback to built-in admin users (comparing hashes)
+            if (!isValid && FALLBACK_USERS[username] === hashedPassword) {
                 isValid = true;
-                isGeneric = GENERIC_USERNAMES.includes(username);
                 // Set display name for fallback users
                 if (FALLBACK_DISPLAY_NAMES[username]) {
                     sessionStorage.setItem('bsn9b_displayName', FALLBACK_DISPLAY_NAMES[username]);
@@ -476,14 +483,7 @@
                 // Log successful login to Firebase
                 logLoginEvent(username, displayName, true);
 
-                // If generic login, prompt to create account
-                if (isGeneric) {
-                    loginBtn.disabled = false;
-                    loginBtn.innerHTML = 'Sign In';
-                    document.getElementById('createAccountModal').classList.add('show');
-                } else {
-                    window.location.href = '/app/';
-                }
+                window.location.href = '/app/';
             } else {
                 // Log failed login attempt
                 logLoginEvent(username, '', false);
@@ -536,15 +536,17 @@
             }
 
             try {
-                // Check if user should be auto-approved
-                const autoApproval = checkAutoApproval(name, email, '');
-                const status = autoApproval.matched ? 'approved' : 'pending';
+                // Auto-approve all new registrations (admin will audit via notifications)
+                const status = 'approved';
+
+                // Hash password before storing
+                const hashedPassword = await hashPassword(password);
 
                 // Add to Google Sheet
                 const params = new URLSearchParams({
                     action: 'addUser',
                     username: username,
-                    password: password,
+                    password: hashedPassword,
                     status: status,
                     name: name,
                     email: email
@@ -552,30 +554,20 @@
 
                 await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
-                // Send email notification
-                await sendEmailNotification(name, email, username, autoApproval.matched ? 'auto_approved' : 'new_registration');
+                // Send email notification to admin for auditing
+                await sendEmailNotification(name, email, username, 'new_registration');
 
-                if (autoApproval.matched) {
-                    // Clear form and close modal
-                    document.getElementById('regName').value = '';
-                    document.getElementById('regEmail').value = '';
-                    document.getElementById('regUsername').value = '';
-                    document.getElementById('regPassword').value = '';
-                    regBtn.disabled = false;
-                    regBtn.innerHTML = 'Submit Registration';
-                    hideRegisterModal();
+                // Clear form and close modal
+                document.getElementById('regName').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regPassword').value = '';
+                regBtn.disabled = false;
+                regBtn.innerHTML = 'Submit Registration';
+                hideRegisterModal();
 
-                    // Show browser confirmation
-                    alert('Registration Successful!\n\nYour account has been approved. You can now log in with your username and password.');
-                } else {
-                    // Not recognized - close modal and show pending alert
-                    regBtn.disabled = false;
-                    regBtn.innerHTML = 'Submit Registration';
-                    hideRegisterModal();
-
-                    // Show browser confirmation for pending
-                    alert('Registration Submitted!\n\nYour account is pending approval. You will be notified when an administrator approves your account.');
-                }
+                // Show browser confirmation
+                alert('Registration Successful!\n\nYour account has been created. You can now log in with your username and password.');
 
                 // Refresh users cache
                 fetchUsers();
@@ -617,15 +609,17 @@
             }
 
             try {
-                // Check if user should be auto-approved
-                const autoApproval = checkAutoApproval(name, email, '');
-                const status = autoApproval.matched ? 'approved' : 'pending';
+                // Auto-approve all new accounts (admin will audit via notifications)
+                const status = 'approved';
+
+                // Hash password before storing
+                const hashedPassword = await hashPassword(password);
 
                 // Add to Google Sheet
                 const params = new URLSearchParams({
                     action: 'addUser',
                     username: username,
-                    password: password,
+                    password: hashedPassword,
                     status: status,
                     name: name,
                     email: email
@@ -633,20 +627,14 @@
 
                 await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
-                // Send email notification
-                await sendEmailNotification(name, email, username, autoApproval.matched ? 'auto_approved' : 'account_creation');
+                // Send email notification to admin for auditing
+                await sendEmailNotification(name, email, username, 'new_registration');
 
-                if (autoApproval.matched) {
-                    successMsg.textContent = 'Account approved! Welcome, ' + autoApproval.matchedPerson + '!';
-                    successMsg.classList.add('show');
-                    setTimeout(() => {
-                        window.location.href = '/app/';
-                    }, 2000);
-                } else {
-                    // Not recognized - show pending message and don't allow access
-                    document.getElementById('createAccountModal').classList.remove('show');
-                    showPendingModal(name);
-                }
+                successMsg.textContent = 'Account created! Welcome, ' + name.split(' ')[0] + '!';
+                successMsg.classList.add('show');
+                setTimeout(() => {
+                    window.location.href = '/app/';
+                }, 2000);
 
             } catch (e) {
                 errorMsg.textContent = 'Error creating account. Please try again.';
@@ -656,11 +644,6 @@
             }
 
             return false;
-        }
-
-        function skipCreateAccount() {
-            document.getElementById('createAccountModal').classList.remove('show');
-            window.location.href = '/app/';
         }
 
         function showPendingModal(name) {
