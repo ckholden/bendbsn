@@ -229,6 +229,36 @@
         </div>
     </div>
 
+    <!-- Pending Approval Modal (for unrecognized users) -->
+    <div class="modal" id="pendingModal">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+                <h2>Account Pending Approval</h2>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <div style="font-size: 60px; margin-bottom: 20px;">⏳</div>
+                <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+                    Hello <strong id="pendingUserName"></strong>,
+                </p>
+                <p style="color: #555; margin-bottom: 20px; line-height: 1.6;">
+                    You are not currently on our recognized users list. Your registration request has been submitted for <strong>approval and verification</strong>.
+                </p>
+                <div style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <p style="color: #e65100; font-weight: 600; margin-bottom: 10px;">What happens next?</p>
+                    <ul style="text-align: left; color: #555; font-size: 14px; margin: 0; padding-left: 20px;">
+                        <li>The administrator has been notified</li>
+                        <li>Your request will be reviewed shortly</li>
+                        <li>You'll be able to log in once approved</li>
+                    </ul>
+                </div>
+                <p style="color: #888; font-size: 13px;">
+                    If you believe this is an error, please contact your instructor or cohort administrator.
+                </p>
+                <button onclick="closePendingModal()" class="btn" style="margin-top: 20px;">OK, Got It</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
         const ADMIN_EMAIL = 'christiankholden@gmail.com';
@@ -460,16 +490,29 @@
 
                 if (autoApproval.matched) {
                     successMsg.textContent = 'Account approved! Matched: ' + autoApproval.matchedPerson + '. You can now log in.';
-                } else {
-                    successMsg.textContent = 'Registration submitted! You will receive an email once approved.';
-                }
-                successMsg.classList.add('show');
+                    successMsg.classList.add('show');
 
-                // Clear form
-                document.getElementById('regName').value = '';
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regUsername').value = '';
-                document.getElementById('regPassword').value = '';
+                    // Clear form
+                    document.getElementById('regName').value = '';
+                    document.getElementById('regEmail').value = '';
+                    document.getElementById('regUsername').value = '';
+                    document.getElementById('regPassword').value = '';
+
+                    regBtn.disabled = false;
+                    regBtn.innerHTML = 'Submit Registration';
+
+                    // Close modal after a moment so they can log in
+                    setTimeout(() => {
+                        hideRegisterModal();
+                    }, 3000);
+                } else {
+                    // Not recognized - show pending modal
+                    hideRegisterModal();
+                    showPendingModal(name);
+
+                    regBtn.disabled = false;
+                    regBtn.innerHTML = 'Submit Registration';
+                }
 
                 // Refresh users cache
                 fetchUsers();
@@ -477,10 +520,10 @@
             } catch (e) {
                 errorMsg.textContent = 'Error submitting registration. Please try again.';
                 errorMsg.classList.add('show');
+                regBtn.disabled = false;
+                regBtn.innerHTML = 'Submit Registration';
             }
 
-            regBtn.disabled = false;
-            regBtn.innerHTML = 'Submit Registration';
             return false;
         }
 
@@ -532,14 +575,15 @@
 
                 if (autoApproval.matched) {
                     successMsg.textContent = 'Account approved! Welcome, ' + autoApproval.matchedPerson + '!';
+                    successMsg.classList.add('show');
+                    setTimeout(() => {
+                        window.location.href = 'app.html';
+                    }, 2000);
                 } else {
-                    successMsg.textContent = 'Account request submitted! Continuing to app...';
+                    // Not recognized - show pending message and don't allow access
+                    document.getElementById('createAccountModal').classList.remove('show');
+                    showPendingModal(name);
                 }
-                successMsg.classList.add('show');
-
-                setTimeout(() => {
-                    window.location.href = 'app.html';
-                }, 2000);
 
             } catch (e) {
                 errorMsg.textContent = 'Error creating account. Please try again.';
@@ -554,6 +598,20 @@
         function skipCreateAccount() {
             document.getElementById('createAccountModal').classList.remove('show');
             window.location.href = 'app.html';
+        }
+
+        function showPendingModal(name) {
+            // Clear session so they can't access app
+            sessionStorage.removeItem('bsn9b_auth');
+            sessionStorage.removeItem('bsn9b_user');
+
+            // Show pending approval modal
+            document.getElementById('pendingModal').classList.add('show');
+            document.getElementById('pendingUserName').textContent = name;
+        }
+
+        function closePendingModal() {
+            document.getElementById('pendingModal').classList.remove('show');
         }
 
         async function sendEmailNotification(name, email, username, type) {
