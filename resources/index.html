@@ -10,7 +10,7 @@
     <meta http-equiv="Expires" content="0">
     <title>RN Resources - BSN9B</title>
     <script>
-        if (sessionStorage.getItem('bsn9b_auth') !== 'true') {
+        if (localStorage.getItem('bsn9b_auth') !== 'true') {
             window.location.href = '/';
         }
     </script>
@@ -621,15 +621,15 @@
 
     <script>
         // Display current user
-        const currentUsername = sessionStorage.getItem('bsn9b_user');
+        const currentUsername = localStorage.getItem('bsn9b_user');
         if (currentUsername) {
             document.getElementById('userDisplay').textContent = 'Logged in as: ' + currentUsername;
         }
 
         // Logout function
         function logout() {
-            sessionStorage.removeItem('bsn9b_auth');
-            sessionStorage.removeItem('bsn9b_user');
+            localStorage.removeItem('bsn9b_auth');
+            localStorage.removeItem('bsn9b_user');
             window.location.href = '/';
         }
 
@@ -985,7 +985,7 @@
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
-            chatRef.push({ user: sessionStorage.getItem('bsn9b_user') || 'Anonymous', text: message, timestamp: Date.now() });
+            chatRef.push({ user: localStorage.getItem('bsn9b_user') || 'Anonymous', text: message, timestamp: Date.now() });
             input.value = '';
         }
 
@@ -997,7 +997,7 @@
         function scrollToBottom() { document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight; }
 
         chatRef.orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
-            const container = document.getElementById('chatMessages'), currentUser = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
+            const container = document.getElementById('chatMessages'), currentUser = localStorage.getItem('bsn9b_user') || 'Anonymous';
             if (!snapshot.exists()) { container.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;margin-top:20px;">No messages yet. Start the conversation!</p>'; return; }
             let html = '', newMessages = 0;
             snapshot.forEach((child) => {
@@ -1010,7 +1010,7 @@
         });
 
         const myPresence = presenceRef.push();
-        myPresence.set({ user: sessionStorage.getItem('bsn9b_user') || 'Anonymous', online: true });
+        myPresence.set({ user: localStorage.getItem('bsn9b_user') || 'Anonymous', online: true });
         myPresence.onDisconnect().remove();
         presenceRef.on('value', (snapshot) => { document.getElementById('onlineCount').textContent = snapshot.numChildren() + ' online'; });
     </script>

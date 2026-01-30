@@ -10,7 +10,7 @@
     <meta http-equiv="Expires" content="0">
     <title>BSN9B Nursing Documentation</title>
     <script>
-        if (sessionStorage.getItem('bsn9b_auth') !== 'true') {
+        if (localStorage.getItem('bsn9b_auth') !== 'true') {
             window.location.href = '/';
         }
     </script>
@@ -1450,7 +1450,7 @@
 
         // Save current form to history
         async function saveToHistory() {
-            const user = sessionStorage.getItem('bsn9b_user');
+            const user = localStorage.getItem('bsn9b_user');
             if (!user) {
                 alert('Please log in to save documents.');
                 return;
@@ -1548,7 +1548,7 @@
 
         // Load document history list
         async function loadDocumentHistory() {
-            const user = sessionStorage.getItem('bsn9b_user');
+            const user = localStorage.getItem('bsn9b_user');
             if (!user) {
                 document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Please log in to view saved documents.</p>';
                 return;
@@ -1748,7 +1748,7 @@
                 return;
             }
 
-            const user = sessionStorage.getItem('bsn9b_user');
+            const user = localStorage.getItem('bsn9b_user');
             if (!user) {
                 alert('Please log in to delete documents.');
                 return;
@@ -1819,8 +1819,8 @@
         console.log('Firebase initialized, chatRef path:', chatRef.toString());
 
         // Get display name (first name) - stored when user logs in
-        const currentUsername = sessionStorage.getItem('bsn9b_user') || 'Anonymous';
-        const displayName = sessionStorage.getItem('bsn9b_displayName') || currentUsername;
+        const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
+        const displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
 
         // Verify Firebase Auth state and re-authenticate if needed
         let firebaseAuthReady = false;
@@ -1832,7 +1832,7 @@
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
                 // If we have session but no Firebase auth, redirect to login
                 // This can happen if Firebase auth expired
-                if (sessionStorage.getItem('bsn9b_auth') === 'true') {
+                if (localStorage.getItem('bsn9b_auth') === 'true') {
                     console.warn('Session exists but Firebase auth lost - may need to re-login');
                 }
             }
@@ -1845,7 +1845,7 @@
                     const banned = child.val();
                     if (banned.username === currentUsername || banned.username === displayName) {
                         alert('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'));
-                        sessionStorage.clear();
+                        localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
                         window.location.href = '/';
                     }
                 });
@@ -1858,7 +1858,7 @@
             const banned = snapshot.val();
             if (banned.username === currentUsername || banned.username === displayName) {
                 alert('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'));
-                sessionStorage.clear();
+                localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
                 window.location.href = '/';
             }
         });
@@ -3188,10 +3188,10 @@ Important guidelines:
         // Logout function
         function logout() {
             auth.signOut().then(() => {
-                sessionStorage.removeItem('bsn9b_auth');
-                sessionStorage.removeItem('bsn9b_user');
-                sessionStorage.removeItem('bsn9b_displayName');
-                sessionStorage.removeItem('bsn9b_uid');
+                localStorage.removeItem('bsn9b_auth');
+                localStorage.removeItem('bsn9b_user');
+                localStorage.removeItem('bsn9b_displayName');
+                localStorage.removeItem('bsn9b_uid');
                 window.location.href = '/';
             });
         }
@@ -3215,10 +3215,10 @@ Important guidelines:
         // Auto-logout when user closes tab/window
         window.addEventListener('beforeunload', function() {
             auth.signOut();
-            sessionStorage.removeItem('bsn9b_auth');
-            sessionStorage.removeItem('bsn9b_user');
-            sessionStorage.removeItem('bsn9b_displayName');
-            sessionStorage.removeItem('bsn9b_uid');
+            localStorage.removeItem('bsn9b_auth');
+            localStorage.removeItem('bsn9b_user');
+            localStorage.removeItem('bsn9b_displayName');
+            localStorage.removeItem('bsn9b_uid');
         });
 
         // Fetch all users from Google Sheet

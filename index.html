@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -384,7 +385,7 @@
         let usersCache = null;
 
         // Check if already logged in
-        if (sessionStorage.getItem('bsn9b_auth') === 'true') {
+        if (localStorage.getItem('bsn9b_auth') === 'true') {
             window.location.href = '/app/';
         }
 
@@ -448,11 +449,11 @@
                     displayName = email.split('@')[0];
                 }
 
-                // Store session info
-                sessionStorage.setItem('bsn9b_auth', 'true');
-                sessionStorage.setItem('bsn9b_user', user.email);
-                sessionStorage.setItem('bsn9b_displayName', displayName);
-                sessionStorage.setItem('bsn9b_uid', user.uid);
+                // Store session info (localStorage for persistence across refreshes)
+                localStorage.setItem('bsn9b_auth', 'true');
+                localStorage.setItem('bsn9b_user', user.email);
+                localStorage.setItem('bsn9b_displayName', displayName);
+                localStorage.setItem('bsn9b_uid', user.uid);
 
                 // Log successful login
                 logLoginEvent(user.email, displayName, true);
@@ -542,6 +543,9 @@
 
                 // Send email notification to admin
                 await sendEmailNotification(name, email, email, 'new_registration');
+
+                // Send welcome email to new user
+                await sendWelcomeEmail(name, email);
 
                 // Clear form and close modal
                 document.getElementById('regName').value = '';
@@ -645,8 +649,8 @@
 
         function showPendingModal(name) {
             // Clear session so they can't access app
-            sessionStorage.removeItem('bsn9b_auth');
-            sessionStorage.removeItem('bsn9b_user');
+            localStorage.removeItem('bsn9b_auth');
+            localStorage.removeItem('bsn9b_user');
 
             // Show pending approval modal
             document.getElementById('pendingModal').classList.add('show');
@@ -775,6 +779,40 @@ Review users anytime: ${adminUrl}`;
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const database = firebase.database();
+
+        // EmailJS Configuration - Replace with your own credentials from emailjs.com
+        const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY';  // Get from EmailJS Dashboard > Account > API Keys
+        const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID'; // Get from EmailJS Dashboard > Email Services
+        const EMAILJS_TEMPLATE_ID = 'welcome_email';  // Create template named 'welcome_email'
+
+        // Initialize EmailJS
+        if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
+            emailjs.init(EMAILJS_PUBLIC_KEY);
+        }
+
+        // Send welcome email to new user
+        async function sendWelcomeEmail(name, email) {
+            // Skip if EmailJS not configured
+            if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+                console.log('EmailJS not configured - skipping welcome email');
+                return;
+            }
+
+            try {
+                const templateParams = {
+                    to_name: name,
+                    to_email: email,
+                    login_link: 'https://bendbsn.com',
+                    message: `Your BSN9B account has been successfully created!\n\nPlease use your email address (${email}) and the password you created to login.\n\nClick the link below to login to your account.`
+                };
+
+                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+                console.log('Welcome email sent successfully to', email);
+            } catch (error) {
+                console.error('Failed to send welcome email:', error);
+                // Don't block registration if email fails
+            }
+        }
 
         function logLoginEvent(username, displayName, success) {
             const timestamp = Date.now();
