@@ -885,7 +885,7 @@
     <div id="chatWidget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Segoe UI', sans-serif;">
         <button id="chatToggle" onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">💬</button>
         <span id="chatBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; align-items: center; justify-content: center;">0</span>
-        <div id="chatBox" style="display: none; position: absolute; bottom: 70px; right: 0; width: 350px; height: 450px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; flex-direction: column;">
+        <div id="chatBox" style="display: none; position: absolute; bottom: 70px; right: 0; width: 350px; height: 450px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
             <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <div><strong style="font-size: 16px;">BSN9B Chat</strong><div id="onlineCount" style="font-size: 11px; opacity: 0.8;">Connecting...</div></div>
                 <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
@@ -912,14 +912,18 @@
 
         function toggleChat() {
             chatOpen = !chatOpen;
-            document.getElementById('chatBox').style.display = chatOpen ? 'flex' : 'none';
+            const chatBox = document.getElementById('chatBox');
             if (chatOpen) {
+                chatBox.style.display = 'flex';
+                chatBox.style.flexDirection = 'column';
                 unreadCount = 0;
                 document.getElementById('chatBadge').style.display = 'none';
                 lastReadTimestamp = Date.now();
                 localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
                 document.getElementById('chatInput').focus();
                 scrollToBottom();
+            } else {
+                chatBox.style.display = 'none';
             }
         }
 

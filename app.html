@@ -909,7 +909,7 @@
         <span id="chatBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
 
         <!-- Chat Box -->
-        <div id="chatBox" style="display: none; position: absolute; bottom: 70px; right: 0; width: 350px; height: 450px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; flex-direction: column;">
+        <div id="chatBox" style="display: none; position: absolute; bottom: 70px; right: 0; width: 350px; height: 450px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
             <!-- Chat Header -->
             <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -956,17 +956,20 @@
         // Toggle chat
         function toggleChat() {
             chatOpen = !chatOpen;
-            document.getElementById('chatBox').style.display = chatOpen ? 'flex' : 'none';
-            document.getElementById('chatToggle').style.transform = chatOpen ? 'scale(0.9)' : 'scale(1)';
-
+            const chatBox = document.getElementById('chatBox');
             if (chatOpen) {
+                chatBox.style.display = 'flex';
+                chatBox.style.flexDirection = 'column';
                 unreadCount = 0;
                 document.getElementById('chatBadge').style.display = 'none';
                 lastReadTimestamp = Date.now();
                 localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
                 document.getElementById('chatInput').focus();
                 scrollToBottom();
+            } else {
+                chatBox.style.display = 'none';
             }
+            document.getElementById('chatToggle').style.transform = chatOpen ? 'scale(0.9)' : 'scale(1)';
         }
 
         // Send message
