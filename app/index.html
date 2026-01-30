@@ -2238,7 +2238,9 @@
                             <div style="background: ${mentionsMe && !isMe ? 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : '#e2e8f0')}; color: ${mentionsMe || isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px; ${mentionsMe && !isMe ? 'box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);' : ''}">
                                 ${formattedText}
                             </div>
-                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">${formatTime(msg.timestamp)}</div>
+                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">
+                                ${formatTime(msg.timestamp)}${isMe ? ' <span style="color: #4ade80;" title="Delivered">✓</span>' : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -2622,7 +2624,9 @@
                             <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
                                 ${(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                             </div>
-                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">${formatTime(msg.timestamp)}</div>
+                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">
+                                ${formatTime(msg.timestamp)}${isMe ? (msg.read ? ' <span style="color: #4ade80;" title="Seen">✓✓</span>' : ' <span style="color: #888;" title="Delivered">✓</span>') : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -2630,9 +2634,9 @@
                 container.innerHTML = html;
                 container.scrollTop = container.scrollHeight;
 
-                // Mark as read
+                // Mark messages as read in Firebase (for messages we received)
                 if (currentDMConversation && currentDMConversation.conversationId === conversationId) {
-                    markDMAsRead(conversationId);
+                    markDMAsRead(conversationId, snapshot);
                 }
             });
         }
@@ -2692,9 +2696,22 @@
         }
 
         // Mark DM conversation as read
-        function markDMAsRead(conversationId) {
+        function markDMAsRead(conversationId, snapshot) {
             dmLastReadTimestamps[conversationId] = Date.now();
             localStorage.setItem('dmLastRead', JSON.stringify(dmLastReadTimestamps));
+
+            // Mark unread messages in Firebase as read (messages we received)
+            if (snapshot && snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const msg = child.val();
+                    const msgKey = child.key;
+                    // Only mark messages from others as read
+                    if (msg && !msg.read && msg.senderName !== displayName && msg.sender !== currentUsername) {
+                        directMessagesRef.child(conversationId + '/messages/' + msgKey + '/read').set(true)
+                            .catch(err => console.error('Error marking message as read:', err));
+                    }
+                });
+            }
 
             // Recalculate unread count
             let totalUnread = 0;
