@@ -1,10 +1,10 @@
-# Sumner BSN9B Nursing Documentation App
+# BENDBSN - Nursing Documentation & Collaboration Platform
 
-**Created by Christian Holden BSN9B**
+**Created by Christian Holden for Sumner College BSN9B**
 
-A web-based nursing documentation tool designed for Sumner College nursing students to create professional progress notes and assessments.
+A comprehensive web-based nursing documentation tool with real-time collaboration features designed for Sumner College nursing students.
 
-**Live URL:** [holdenportal.com/bsn9b](https://holdenportal.com/bsn9b)
+**Live URL:** [bendbsn.com](https://bendbsn.com)
 
 ---
 
@@ -19,6 +19,23 @@ A web-based nursing documentation tool designed for Sumner College nursing stude
 - **PIE** - Problem, Intervention, Evaluation
 - **Narrative** - Free-form narrative notes
 - **Head-to-Toe (H2T)** - Comprehensive assessment with quick-fill buttons
+
+### AI Nursing Companion
+- Intelligent chatbot for nursing education support
+- Quick action buttons:
+  - Drug Info lookup
+  - Care Plan assistance
+  - NCLEX-style questions
+  - Lab values reference
+- Powered by Groq API (Llama 3.3 70B model)
+- Accessible via teal chat widget (bottom-left corner)
+
+### Real-Time Chat & Collaboration
+- Live chat with classmates and instructors
+- Display names (first names) shown instead of usernames
+- Online presence indicator
+- 48-hour message retention with auto-cleanup
+- Firebase Realtime Database backend
 
 ### Quick Vitals Entry Panel
 - Individual input fields for BP, HR, RR, Temp, O2%, Pain
@@ -44,14 +61,7 @@ Type a shortcut followed by space to auto-expand text. Examples:
 - `.mae` - Moving all extremities
 - `.cta` - Clear to auscultation
 - `.rrr` - Regular rate and rhythm
-- `.wdta` - Will continue to monitor
-- `.wnl` - Within normal limits
-- `.nad` - No acute distress
-- `.fall` - Fall precautions
-- `.safe` - Safety measures
-- `.edu` - Patient education
-- `.dc` - Discharge instructions
-- And more...
+- And 40+ more...
 
 ### NANDA Nursing Diagnoses Database
 - Searchable database with 60+ nursing diagnoses
@@ -70,113 +80,82 @@ Pre-built phrases for rapid documentation:
 - **Pain:** Pain scales, Denies pain
 
 ### Export Options
-- **PDF Export** - Professional formatted document with:
-  - Header: "Sumner College - Bend Nursing Progress Note"
-  - Patient/nurse info box
-  - NANDA diagnoses section
-  - Clean section formatting
-  - Signature line
-  - Educational disclaimer
+- **PDF Export** - Professional formatted document
 - **Word Export** - .docx file with same formatting
 - **File Naming:** `date_time_noteType_lastName.pdf/docx`
 
 ---
 
-## User Access
+## Admin Panel
 
-### Login Credentials
-| Username | Password | Role |
-|----------|----------|------|
-| sumner | nursingstudent | Student |
-| np | nursingstudent | Student |
-| instructor | sumnerinstructor | Instructor |
-| holdenc | holdc123 | Owner |
-| admin | admin1374 | Admin (full access + user management) |
+Access at [bendbsn.com/admin.html](https://bendbsn.com/admin.html)
 
-### Admin Features (admin login only)
-- **Manage Smart Phrases** - Add/delete custom shortcuts
-- **Manage Users** - Add/delete custom user accounts
-- Custom users and phrases stored in browser localStorage
+### Moderator Controls
+- **Kick Users** - Remove users from current session
+- **Ban/Unban Users** - Permanent bans with real-time enforcement
+- **Delete Messages** - Remove individual chat messages
+- **View Online Users** - Real-time presence monitoring
+- **View Registered Users** - Full user list from Google Sheets
 
 ---
 
-## Technical Details
+## Technical Stack
 
-### Built With
+### Frontend
 - HTML5, CSS3, JavaScript (vanilla)
 - **jsPDF** - PDF generation
 - **docx.js** - Word document generation
 - **FileSaver.js** - File download handling
-- **FormSubmit.co** - Email form submissions
+
+### Backend Services
+- **Firebase Realtime Database** - Chat, presence, bans
+- **Google Apps Script** - User management API, AI proxy
+- **Groq API** - AI chat (free tier)
+- **GitHub Pages** - Static hosting
 
 ### File Structure
 ```
-bsn9b/
-├── index.html      # Login page
-├── app.html        # Main application
-└── README.md       # This documentation
+bendbsn/
+├── index.html              # Login page
+├── app.html                # Main application
+├── admin.html              # Admin/moderator panel
+├── resources.html          # Study resources
+├── complete-apps-script.js # Google Apps Script code
+├── ai-proxy-script.js      # AI proxy reference
+├── approved-contacts.csv   # Authorized users list
+├── CNAME                   # Custom domain config
+└── README.md               # This documentation
 ```
 
-### Hosting
-- GitHub Pages via `ckholden/Holden-nerd-portal` repository
-- Auto-deploys on push to main branch
-
 ### Data Storage
+- **Firebase:** Chat messages, online presence, banned users
+- **Google Sheets:** User accounts (via Apps Script)
 - **Session:** Login state (sessionStorage)
-- **Persistent:** Custom users and smart phrases (localStorage)
-- No server-side database - all client-side
+- **Local:** Custom smart phrases (localStorage)
 
 ---
 
-## Development History
+## Development Notes
 
-### Initial Build
-1. Researched nursing documentation formats (DARP, SOAP, SBAR, PIE, etc.)
-2. Created single-page web app with form-based documentation
-3. Implemented PDF and Word export functionality
-4. Added authentication system
+### API Endpoints
+- **Apps Script:** `https://script.google.com/macros/s/[DEPLOYMENT_ID]/exec`
+- **Firebase:** `bendbsn-c3da9-default-rtdb.firebaseio.com`
 
-### Feature Additions
-1. **NANDA Database** - Added 60+ searchable nursing diagnoses
-2. **Head-to-Toe Assessment** - New format with quick-fill buttons
-3. **Smart Phrases** - Auto-expanding text shortcuts
-4. **Quick Vitals Panel** - Structured input for vital signs
-5. **Admin Panel** - User and phrase management
-6. **Feedback System** - FormSubmit integration for suggestions
-
-### UI/UX Improvements
-1. Floating Smart Phrases reference button
-2. Collapsible sections
-3. Responsive grid layouts
-4. Clean PDF export formatting (removed overlapping elements)
-5. Professional header/footer with creator credit
-
-### Security Features
-1. Session-based authentication
-2. Password hashing (basic obfuscation)
-3. HIPAA warning for PHI/PII
-4. Educational disclaimer on exports
+### Deployment
+1. Push to `main` branch on GitHub
+2. GitHub Pages auto-deploys to bendbsn.com
+3. For AI/user management changes, redeploy Google Apps Script
 
 ---
 
-## Future Enhancement Ideas
-- I&O (Intake/Output) tracker
-- Medication administration section
-- Lab values reference panel
-- Common abbreviations lookup
-- Print-friendly mode
-- Auto-save drafts to localStorage
-- Additional smart phrases
+## Claude CLI Development
 
----
+To continue development, run from project directory:
+```bash
+claude
+```
 
-## Feedback & Suggestions
-Use the feedback form in the Smart Phrases modal (📝 button) to:
-- Report issues
-- Suggest new smart phrases
-- Share general feedback
-
-Submissions go directly to the app creator.
+Or use the desktop shortcut: `BENDBSN-Claude.bat`
 
 ---
 
