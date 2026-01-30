@@ -788,9 +788,9 @@ Review users anytime: ${adminUrl}`;
         const EMAILJS_SERVICE_ID = 'service_2dw80zz';
         const EMAILJS_TEMPLATE_ID = 'template_ty32lyw';
 
-        // Initialize EmailJS
+        // Initialize EmailJS with object format (v4)
         if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
-            emailjs.init(EMAILJS_PUBLIC_KEY);
+            emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
         }
 
         // Send welcome email to new user
@@ -813,7 +813,8 @@ Review users anytime: ${adminUrl}`;
                 };
 
                 console.log('Sending email with params:', templateParams);
-                const response = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+                // Pass public key in send call as well for v4 compatibility
+                const response = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
                 console.log('Welcome email sent successfully!', response);
             } catch (error) {
                 console.error('Failed to send welcome email:', error);
