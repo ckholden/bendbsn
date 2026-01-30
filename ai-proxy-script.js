@@ -1,37 +1,55 @@
 // ============================================
-// AI NURSING COMPANION - Google Apps Script Proxy
+// AI NURSING COMPANION - Google Apps Script (GROQ)
 // ============================================
 //
-// SETUP INSTRUCTIONS:
-// 1. Go to https://script.google.com
-// 2. Create a new project
-// 3. Paste this entire code
-// 4. Replace 'YOUR_ANTHROPIC_API_KEY' below with your actual API key
-// 5. Click Deploy > New Deployment
-// 6. Choose "Web app"
-// 7. Set "Execute as" to "Me"
-// 8. Set "Who has access" to "Anyone"
-// 9. Click Deploy and copy the URL
-// 10. Update the AI_API_URL in app.html with your new URL
+// ADD THIS CODE TO YOUR EXISTING GOOGLE APPS SCRIPT
+//
+// Steps:
+// 1. Go to https://console.groq.com and sign up (free)
+// 2. Create an API key
+// 3. Replace 'YOUR_GROQ_API_KEY' below with your key
+// 4. Add this code to your existing script
+// 5. Redeploy (Deploy > Manage Deployments > Edit > New Version)
 //
 // ============================================
 
-// IMPORTANT: Replace with your actual Anthropic API key
-const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY';
+// IMPORTANT: Replace with your Groq API key
+const GROQ_API_KEY = 'YOUR_GROQ_API_KEY';
+
+// ============================================
+// ADD THIS CHECK AT THE TOP OF YOUR EXISTING doPost FUNCTION:
+// ============================================
+/*
 
 function doPost(e) {
+  // === ADD THIS BLOCK AT THE TOP ===
+  if (e.postData && e.postData.contents) {
+    try {
+      const jsonData = JSON.parse(e.postData.contents);
+      if (jsonData.messages && jsonData.systemPrompt) {
+        return handleAIRequest(jsonData);
+      }
+    } catch(err) {
+      // Not JSON AI request, continue with normal flow
+    }
+  }
+  // === END OF ADDED BLOCK ===
+
+  // ... rest of your existing doPost code ...
+}
+
+*/
+// ============================================
+
+function handleAIRequest(data) {
   try {
-    const data = JSON.parse(e.postData.contents);
     const messages = data.messages || [];
     const systemPrompt = data.systemPrompt || '';
-
-    // Call Anthropic API
-    const response = callAnthropic(messages, systemPrompt);
+    const response = callGroq(messages, systemPrompt);
 
     return ContentService
       .createTextOutput(JSON.stringify({ success: true, response: response }))
       .setMimeType(ContentService.MimeType.JSON);
-
   } catch (error) {
     return ContentService
       .createTextOutput(JSON.stringify({ success: false, error: error.message }))
@@ -39,34 +57,27 @@ function doPost(e) {
   }
 }
 
-function doGet(e) {
-  return ContentService
-    .createTextOutput(JSON.stringify({ status: 'AI Proxy is running', timestamp: new Date().toISOString() }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+function callGroq(messages, systemPrompt) {
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
 
-function callAnthropic(messages, systemPrompt) {
-  const url = 'https://api.anthropic.com/v1/messages';
-
-  // Format messages for Anthropic API
-  const formattedMessages = messages.map(msg => ({
-    role: msg.role,
-    content: msg.content
-  }));
+  // Build messages array with system prompt
+  const allMessages = [
+    { role: 'system', content: systemPrompt },
+    ...messages.map(msg => ({ role: msg.role, content: msg.content }))
+  ];
 
   const payload = {
-    model: 'claude-sonnet-4-20250514',
+    model: 'llama-3.3-70b-versatile',  // Fast and capable model
+    messages: allMessages,
     max_tokens: 1024,
-    system: systemPrompt,
-    messages: formattedMessages
+    temperature: 0.7
   };
 
   const options = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
+      'Authorization': 'Bearer ' + GROQ_API_KEY
     },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
@@ -77,26 +88,26 @@ function callAnthropic(messages, systemPrompt) {
   const responseText = response.getContentText();
 
   if (responseCode !== 200) {
-    console.error('Anthropic API Error:', responseText);
+    console.error('Groq API Error:', responseText);
     throw new Error('API returned status ' + responseCode);
   }
 
   const result = JSON.parse(responseText);
 
-  if (result.content && result.content[0] && result.content[0].text) {
-    return result.content[0].text;
+  if (result.choices && result.choices[0] && result.choices[0].message) {
+    return result.choices[0].message.content;
   }
 
   throw new Error('Unexpected API response format');
 }
 
-// Test function - run this to verify your API key works
-function testAPI() {
+// Test function - run this in Apps Script to verify your API key works
+function testGroqAPI() {
   const testMessages = [{ role: 'user', content: 'Say hello in 5 words or less' }];
   const testSystem = 'You are a helpful assistant. Be very brief.';
 
   try {
-    const response = callAnthropic(testMessages, testSystem);
+    const response = callGroq(testMessages, testSystem);
     console.log('SUCCESS! Response:', response);
     return response;
   } catch (error) {
