@@ -1081,6 +1081,19 @@
         </div>
     </div>
 
+    <!-- Lock Screen Overlay -->
+    <div id="lockScreenOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); z-index: 99999; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="text-align: center; color: white;">
+            <div style="font-size: 80px; margin-bottom: 20px;">🔒</div>
+            <h1 style="font-size: 42px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">BSN9B</h1>
+            <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">Portal Locked</p>
+            <button onclick="unlockScreen()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 18px 50px; border-radius: 30px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 12px 40px rgba(59, 130, 246, 0.5)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 30px rgba(59, 130, 246, 0.4)'">
+                🔓 Unlock Portal
+            </button>
+            <p style="margin-top: 30px; font-size: 12px; opacity: 0.5;">Click unlock to return to your session</p>
+        </div>
+    </div>
+
     <!-- Alert/FYI Banners - Fixed at top -->
     <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: softFlashAlert 2s ease-in-out infinite;">
         <span id="alertText"></span>
@@ -3166,14 +3179,20 @@ Important guidelines:
             });
         }
 
-        // Quick lock screen - returns to login without confirmation
+        // Lock screen - shows privacy overlay without logging out
         function lockScreen() {
-            // Clear session but keep Firebase auth (user can log back in easily)
-            sessionStorage.removeItem('bsn9b_auth');
-            sessionStorage.removeItem('bsn9b_user');
-            sessionStorage.removeItem('bsn9b_displayName');
-            sessionStorage.removeItem('bsn9b_uid');
-            window.location.href = '/';
+            const overlay = document.getElementById('lockScreenOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+
+        // Unlock screen - hides the privacy overlay
+        function unlockScreen() {
+            const overlay = document.getElementById('lockScreenOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
         }
 
         // Auto-logout when user closes tab/window
