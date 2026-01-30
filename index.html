@@ -446,12 +446,9 @@
                             });
                             fetch(API_URL + '?' + upgradeParams.toString(), { method: 'POST', mode: 'no-cors' });
                         }
-                    } else if (user.status === 'pending') {
-                        errorMsg.textContent = 'Your account is pending approval. Please wait for admin confirmation.';
-                        errorMsg.classList.add('show');
-                        loginBtn.disabled = false;
-                        loginBtn.innerHTML = 'Sign In';
-                        return false;
+                    } else {
+                        // Auto-approve: allow login regardless of status
+                        isValid = true;
                     }
                 }
             }
