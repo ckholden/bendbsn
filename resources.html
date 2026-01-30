@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>RN Resources - BSN9B</title>
     <script>
         if (sessionStorage.getItem('bsn9b_auth') !== 'true') {
@@ -283,7 +286,11 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <div class="header" style="position: relative;">
+            <div style="position: absolute; top: 15px; right: 20px;">
+                <span id="userDisplay" style="color: rgba(255,255,255,0.8); font-size: 12px; margin-right: 10px;"></span>
+                <button onclick="logout()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">Logout</button>
+            </div>
             <h1>RN Resources</h1>
             <p>Drug Information | Lab Values | Calculations | References</p>
             <a href="app.html" class="back-btn">← Back to Documentation</a>
@@ -595,6 +602,19 @@
     </footer>
 
     <script>
+        // Display current user
+        const currentUsername = sessionStorage.getItem('bsn9b_user');
+        if (currentUsername) {
+            document.getElementById('userDisplay').textContent = 'Logged in as: ' + currentUsername;
+        }
+
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem('bsn9b_auth');
+            sessionStorage.removeItem('bsn9b_user');
+            window.location.href = 'index.html';
+        }
+
         // Drug lookup state
         let drugSearchTimeout = null;
 

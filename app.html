@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>BSN9B Nursing Documentation</title>
     <script>
         if (sessionStorage.getItem('bsn9b_auth') !== 'true') {
@@ -242,6 +245,10 @@
 <body>
     <div class="container">
         <div class="header">
+            <div style="position: absolute; top: 15px; right: 20px;">
+                <span id="userDisplay" style="color: rgba(255,255,255,0.8); font-size: 12px; margin-right: 10px;"></span>
+                <button onclick="logout()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">Logout</button>
+            </div>
             <h1>Sumner BSN9B Nursing Documentation</h1>
             <p>Progress Notes | Head-to-Toe | NANDA Diagnoses</p>
             <a href="resources.html" style="display: inline-block; margin-top: 15px; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; text-decoration: none; padding: 14px 30px; border-radius: 25px; font-size: 16px; font-weight: 700; transition: all 0.3s; box-shadow: 0 4px 15px rgba(255,107,53,0.4); animation: pulse-btn 2s infinite;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(255,107,53,0.6)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255,107,53,0.4)'">📚 RN Resources - Click Here!</a>
@@ -873,6 +880,19 @@
 
         // Google Apps Script API URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+
+        // Display current user
+        const currentUsername = sessionStorage.getItem('bsn9b_user');
+        if (currentUsername) {
+            document.getElementById('userDisplay').textContent = 'Logged in as: ' + currentUsername;
+        }
+
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem('bsn9b_auth');
+            sessionStorage.removeItem('bsn9b_user');
+            window.location.href = 'index.html';
+        }
 
         // Fetch all users from Google Sheet
         async function fetchAllUsers() {
