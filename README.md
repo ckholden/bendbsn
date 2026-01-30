@@ -124,6 +124,22 @@ Access at [bendbsn.com/admin/](https://bendbsn.com/admin/)
 - Refresh All Data
 - Export Login History to CSV
 
+### Chat Commands (holdenc only)
+Type these commands in the chat box to manage site-wide announcements:
+
+| Command | Description |
+|---------|-------------|
+| `alert/Your message` | Shows flashing red banner at top of all pages |
+| `fyi/Your message` | Shows yellow info banner at top of all pages |
+| `alert/clear` | Removes the alert banner |
+| `fyi/clear` | Removes the fyi banner |
+| `chat/clear` | Clears all chat history |
+
+**Notes:**
+- Commands are intercepted and don't appear in chat
+- Banners sync in real-time across all logged-in users
+- Both banners can be active simultaneously (alert stacks above fyi)
+
 ---
 
 ## User Accounts
