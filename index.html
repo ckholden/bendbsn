@@ -10,6 +10,7 @@
     <meta http-equiv="Expires" content="0">
     <title>BSN9B Nursing Documentation</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -138,8 +139,8 @@
             <div class="success-message" id="successMsg"></div>
 
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter your username" autocomplete="username" required>
+                <label for="username">Email</label>
+                <input type="email" id="username" name="email" placeholder="Enter your email" autocomplete="email" required>
             </div>
 
             <div class="form-group">
@@ -188,15 +189,11 @@
                         <input type="email" id="regEmail" placeholder="your.email@example.com" required>
                     </div>
                     <div class="form-group">
-                        <label for="regUsername">Desired Username</label>
-                        <input type="text" id="regUsername" placeholder="e.g. jsmith" required>
-                    </div>
-                    <div class="form-group">
                         <label for="regPassword">Password</label>
-                        <input type="password" id="regPassword" placeholder="Choose a password" required>
+                        <input type="password" id="regPassword" placeholder="Choose a password (min 6 characters)" required minlength="6">
                     </div>
 
-                    <button type="submit" class="btn" id="regBtn">Submit Registration</button>
+                    <button type="submit" class="btn" id="regBtn">Create Account</button>
                     <button type="button" class="btn btn-secondary" onclick="hideRegisterModal()">Cancel</button>
                 </form>
             </div>
@@ -283,8 +280,8 @@
 
                 <form onsubmit="return handleForgotPassword(event)">
                     <div class="form-group">
-                        <label for="forgotEmail">Email or Username</label>
-                        <input type="text" id="forgotEmail" placeholder="Enter your email or username" required>
+                        <label for="forgotEmail">Email Address</label>
+                        <input type="email" id="forgotEmail" placeholder="Enter your email address" required>
                     </div>
 
                     <button type="submit" class="btn" id="forgotBtn" style="background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);">Send Reset Request</button>
@@ -412,7 +409,7 @@
         async function handleLogin(event) {
             event.preventDefault();
 
-            const username = document.getElementById('username').value.toLowerCase().trim();
+            const email = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
             const loginBtn = document.getElementById('loginBtn');
@@ -421,72 +418,43 @@
             loginBtn.innerHTML = '<span class="loading"></span>Signing in...';
             errorMsg.classList.remove('show');
 
-            // Hash the entered password for comparison
-            const hashedPassword = await hashPassword(password);
+            try {
+                // Sign in with Firebase Auth
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
 
-            // Try to fetch fresh users
-            let users = usersCache || await fetchUsers();
+                // Get display name from Firebase user profile or email
+                let displayName = user.displayName || email.split('@')[0];
 
-            let isValid = false;
-
-            // Check against Google Sheet users
-            // Supports both hashed (new) and plain text (legacy) passwords for transition
-            if (users) {
-                const user = users.find(u => u.username.toLowerCase() === username &&
-                    (u.password === hashedPassword || u.password === password));
-                if (user) {
-                    if (user.status === 'approved') {
-                        isValid = true;
-                        // If using legacy plain text password, upgrade to hash
-                        if (user.password === password && user.password !== hashedPassword) {
-                            // Silently upgrade password to hashed version
-                            const upgradeParams = new URLSearchParams({
-                                action: 'updatePassword',
-                                username: username,
-                                password: hashedPassword
-                            });
-                            fetch(API_URL + '?' + upgradeParams.toString(), { method: 'POST', mode: 'no-cors' });
-                        }
-                    } else {
-                        // Auto-approve: allow login regardless of status
-                        isValid = true;
-                    }
-                }
-            }
-
-            // Fallback to built-in admin users (comparing hashes)
-            if (!isValid && FALLBACK_USERS[username] === hashedPassword) {
-                isValid = true;
-                // Set display name for fallback users
-                if (FALLBACK_DISPLAY_NAMES[username]) {
-                    sessionStorage.setItem('bsn9b_displayName', FALLBACK_DISPLAY_NAMES[username]);
-                }
-            }
-
-            if (isValid) {
+                // Store session info
                 sessionStorage.setItem('bsn9b_auth', 'true');
-                sessionStorage.setItem('bsn9b_user', username);
+                sessionStorage.setItem('bsn9b_user', user.email);
+                sessionStorage.setItem('bsn9b_displayName', displayName);
+                sessionStorage.setItem('bsn9b_uid', user.uid);
 
-                // Store display name (first name) for chat
-                let displayName = username;
-                if (users) {
-                    const userRecord = users.find(u => u.username.toLowerCase() === username);
-                    if (userRecord && userRecord.name) {
-                        const firstName = userRecord.name.split(' ')[0];
-                        sessionStorage.setItem('bsn9b_displayName', firstName);
-                        displayName = firstName;
-                    }
-                }
-
-                // Log successful login to Firebase
-                logLoginEvent(username, displayName, true);
+                // Log successful login
+                logLoginEvent(user.email, displayName, true);
 
                 window.location.href = '/app/';
-            } else {
+            } catch (error) {
                 // Log failed login attempt
-                logLoginEvent(username, '', false);
+                logLoginEvent(email, '', false);
 
-                errorMsg.textContent = 'Invalid username or password.';
+                // Show user-friendly error message
+                let message = 'Invalid email or password.';
+                if (error.code === 'auth/user-not-found') {
+                    message = 'No account found with this email. Please register first.';
+                } else if (error.code === 'auth/wrong-password') {
+                    message = 'Incorrect password. Try again or reset your password.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Please enter a valid email address.';
+                } else if (error.code === 'auth/user-disabled') {
+                    message = 'This account has been disabled. Contact admin.';
+                } else if (error.code === 'auth/too-many-requests') {
+                    message = 'Too many failed attempts. Please try again later.';
+                }
+
+                errorMsg.textContent = message;
                 errorMsg.classList.add('show');
                 document.getElementById('password').value = '';
                 document.getElementById('password').focus();
@@ -512,21 +480,19 @@
 
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
-            const username = document.getElementById('regUsername').value.toLowerCase().trim();
             const password = document.getElementById('regPassword').value;
             const regBtn = document.getElementById('regBtn');
             const errorMsg = document.getElementById('regErrorMsg');
             const successMsg = document.getElementById('regSuccessMsg');
 
             regBtn.disabled = true;
-            regBtn.innerHTML = '<span class="loading"></span>Submitting...';
+            regBtn.innerHTML = '<span class="loading"></span>Creating account...';
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
 
-            // Check if username already exists
-            let users = usersCache || await fetchUsers();
-            if (users && users.some(u => u.username.toLowerCase() === username)) {
-                errorMsg.textContent = 'Username already taken. Please choose another.';
+            // Validate password length
+            if (password.length < 6) {
+                errorMsg.textContent = 'Password must be at least 6 characters.';
                 errorMsg.classList.add('show');
                 regBtn.disabled = false;
                 regBtn.innerHTML = 'Submit Registration';
@@ -534,44 +500,48 @@
             }
 
             try {
-                // Auto-approve all new registrations (admin will audit via notifications)
-                const status = 'approved';
+                // Create user with Firebase Auth
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
 
-                // Hash password before storing
-                const hashedPassword = await hashPassword(password);
+                // Update display name in Firebase
+                await user.updateProfile({ displayName: name });
 
-                // Add to Google Sheet
+                // Save user profile to Google Sheet (no password stored)
                 const params = new URLSearchParams({
                     action: 'addUser',
-                    username: username,
-                    password: hashedPassword,
-                    status: status,
+                    username: email,
+                    password: '[Firebase Auth]', // Placeholder - password handled by Firebase
+                    status: 'approved',
                     name: name,
                     email: email
                 });
-
                 await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
-                // Send email notification to admin for auditing
-                await sendEmailNotification(name, email, username, 'new_registration');
+                // Send email notification to admin
+                await sendEmailNotification(name, email, email, 'new_registration');
 
                 // Clear form and close modal
                 document.getElementById('regName').value = '';
                 document.getElementById('regEmail').value = '';
-                document.getElementById('regUsername').value = '';
                 document.getElementById('regPassword').value = '';
                 regBtn.disabled = false;
                 regBtn.innerHTML = 'Submit Registration';
                 hideRegisterModal();
 
-                // Show browser confirmation
-                alert('Registration Successful!\n\nYour account has been created. You can now log in with your username and password.');
+                // Show success message
+                alert('Registration Successful!\n\nYour account has been created. You can now log in with your email and password.');
 
-                // Refresh users cache
-                fetchUsers();
-
-            } catch (e) {
-                errorMsg.textContent = 'Error submitting registration. Please try again.';
+            } catch (error) {
+                let message = 'Error creating account. Please try again.';
+                if (error.code === 'auth/email-already-in-use') {
+                    message = 'An account with this email already exists. Try logging in or reset your password.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Please enter a valid email address.';
+                } else if (error.code === 'auth/weak-password') {
+                    message = 'Password is too weak. Use at least 6 characters.';
+                }
+                errorMsg.textContent = message;
                 errorMsg.classList.add('show');
                 regBtn.disabled = false;
                 regBtn.innerHTML = 'Submit Registration';
@@ -674,7 +644,7 @@
         async function handleForgotPassword(event) {
             event.preventDefault();
 
-            const emailOrUsername = document.getElementById('forgotEmail').value.trim();
+            const email = document.getElementById('forgotEmail').value.trim();
             const forgotBtn = document.getElementById('forgotBtn');
             const errorMsg = document.getElementById('forgotErrorMsg');
             const successMsg = document.getElementById('forgotSuccessMsg');
@@ -684,60 +654,27 @@
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
 
-            // Look up user in the system
-            let users = usersCache || await fetchUsers();
-            let foundUser = null;
-
-            if (users) {
-                foundUser = users.find(u =>
-                    u.username.toLowerCase() === emailOrUsername.toLowerCase() ||
-                    (u.email && u.email.toLowerCase() === emailOrUsername.toLowerCase())
-                );
-            }
-
-            // Send reset request to admin
-            const formData = new FormData();
-            formData.append('_subject', 'BendBSN: Password Reset Request');
-            formData.append('email_or_username', emailOrUsername);
-            formData.append('found_in_system', foundUser ? 'Yes' : 'No');
-            if (foundUser) {
-                formData.append('user_details', `Username: ${foundUser.username}\nName: ${foundUser.name || 'N/A'}\nEmail: ${foundUser.email || 'N/A'}`);
-            }
-            formData.append('message', `PASSWORD RESET REQUEST
-
-User entered: ${emailOrUsername}
-Found in system: ${foundUser ? 'YES' : 'NO'}
-${foundUser ? `
-User Details:
-- Username: ${foundUser.username}
-- Name: ${foundUser.name || 'N/A'}
-- Email: ${foundUser.email || 'N/A'}
-- Status: ${foundUser.status}
-
-To reset: Open Google Sheet, find this user, and update their password.
-` : `
-User not found in the system. They may need to register first.
-`}
-Admin Panel: https://bendbsn.com/app.html?admin=true
-Google Sheet: Check your BendBSN Users sheet`);
-
             try {
-                await fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, {
-                    method: 'POST',
-                    body: formData
-                });
+                // Send password reset email via Firebase
+                await auth.sendPasswordResetEmail(email);
 
-                successMsg.textContent = 'Password reset request sent! The administrator will contact you with a new password.';
+                successMsg.textContent = 'Password reset email sent! Check your inbox (and spam folder) for a link to reset your password.';
                 successMsg.classList.add('show');
                 document.getElementById('forgotEmail').value = '';
 
-            } catch (e) {
-                errorMsg.textContent = 'Error sending request. Please try again.';
+            } catch (error) {
+                let message = 'Error sending reset email. Please try again.';
+                if (error.code === 'auth/user-not-found') {
+                    message = 'No account found with this email. Please register first.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Please enter a valid email address.';
+                }
+                errorMsg.textContent = message;
                 errorMsg.classList.add('show');
             }
 
             forgotBtn.disabled = false;
-            forgotBtn.innerHTML = 'Send Reset Request';
+            forgotBtn.innerHTML = 'Send Reset Email';
             return false;
         }
 
@@ -798,11 +735,18 @@ ${adminUrl}
             }
         }
 
-        // Firebase for login history
+        // Firebase Configuration
         const firebaseConfig = {
-            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.firebasestorage.app",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
         };
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const database = firebase.database();
 
         function logLoginEvent(username, displayName, success) {
