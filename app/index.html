@@ -10,10 +10,18 @@
     <meta http-equiv="Expires" content="0">
     <title>BSN9B Nursing Documentation</title>
     <script>
-        console.log('Auth check:', localStorage.getItem('bsn9b_auth'));
-        if (localStorage.getItem('bsn9b_auth') !== 'true') {
-            console.log('Redirecting to login - auth not found');
-            window.location.href = '/';
+        try {
+            var authVal = localStorage.getItem('bsn9b_auth');
+            console.log('=== APP PAGE LOAD ===');
+            console.log('Auth value:', authVal, 'Type:', typeof authVal);
+            if (authVal !== 'true') {
+                console.log('REDIRECTING - auth not true');
+                window.location.href = '/';
+            } else {
+                console.log('Auth OK - staying on app page');
+            }
+        } catch(e) {
+            console.error('Auth check error:', e);
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

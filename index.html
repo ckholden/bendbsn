@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <script>
+        // Early auth check - redirect to app if already logged in
+        if (localStorage.getItem('bsn9b_auth') === 'true') {
+            window.location.href = '/app/';
+        }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -384,10 +390,7 @@
 
         let usersCache = null;
 
-        // Check if already logged in
-        if (localStorage.getItem('bsn9b_auth') === 'true') {
-            window.location.href = '/app/';
-        }
+        // Auth check moved to <head> for faster redirect
 
         // Fetch users from Google Sheet on load
         async function fetchUsers() {
