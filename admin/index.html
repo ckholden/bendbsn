@@ -182,6 +182,25 @@
     </style>
 </head>
 <body>
+    <!-- Alert/FYI Banners -->
+    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: alertFlash 1s infinite;">
+        <span id="alertText"></span>
+        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.8;">⚠️ ALERT</span>
+    </div>
+    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
+        <span id="fyiText"></span>
+        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
+    </div>
+    <style>
+        @keyframes alertFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        }
+        body.has-alert { padding-top: 50px; }
+        body.has-fyi { padding-top: 50px; }
+        body.has-alert.has-fyi { padding-top: 100px; }
+    </style>
+
     <!-- Admin Login -->
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box">
@@ -381,6 +400,35 @@
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
+        const announcementsRef = database.ref('announcements');
+
+        // Listen for announcements (alert/fyi banners)
+        announcementsRef.on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            const alertBanner = document.getElementById('alertBanner');
+            const fyiBanner = document.getElementById('fyiBanner');
+            const alertText = document.getElementById('alertText');
+            const fyiText = document.getElementById('fyiText');
+
+            if (data.alert && data.alert.message) {
+                alertText.textContent = data.alert.message;
+                alertBanner.style.display = 'block';
+                document.body.classList.add('has-alert');
+            } else {
+                alertBanner.style.display = 'none';
+                document.body.classList.remove('has-alert');
+            }
+
+            if (data.fyi && data.fyi.message) {
+                fyiText.textContent = data.fyi.message;
+                fyiBanner.style.display = 'block';
+                fyiBanner.style.top = (data.alert && data.alert.message) ? '50px' : '0';
+                document.body.classList.add('has-fyi');
+            } else {
+                fyiBanner.style.display = 'none';
+                document.body.classList.remove('has-fyi');
+            }
+        });
 
         function checkAdminPassword() {
             const password = document.getElementById('adminPassword').value;
