@@ -1348,9 +1348,15 @@
                 username: currentUsername,
                 text: message,
                 timestamp: Date.now()
+            }).then(() => {
+                console.log('Message sent successfully');
+            }).catch((error) => {
+                console.error('Failed to send message:', error);
+                alert('Failed to send message: ' + error.message);
             });
 
             input.value = '';
+            hideMentionDropdown();
         }
 
         // Format timestamp
