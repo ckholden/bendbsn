@@ -11,8 +11,8 @@ A comprehensive web-based nursing documentation tool with real-time collaboratio
 ## Features
 
 ### Documentation Formats
-- **DAR** - Data, Action, Response
-- **DARP** - Data, Action, Response, Plan
+- **DAR** - Data, Action, Response/Recommendations
+- **DARP** - Data, Action, Response/Recommendations, Plan
 - **SOAP** - Subjective, Objective, Assessment, Plan
 - **SOAPIE** - SOAP + Intervention, Evaluation
 - **SBAR** - Situation, Background, Assessment, Recommendation
