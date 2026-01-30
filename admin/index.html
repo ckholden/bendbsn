@@ -325,7 +325,10 @@
             <div class="card">
                 <div class="card-header">
                     <span>Registered Users</span>
-                    <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-sm btn-warning" onclick="sendWelcomeEmailsToAll()" title="Send welcome email to all users">📧 Email All</button>
+                        <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
+                    </div>
                 </div>
                 <div style="padding: 8px 15px; background: #e3f2fd; font-size: 11px; color: #1565c0;">
                     <strong>Note:</strong> Ban users here. To fully delete accounts, go to <a href="https://console.firebase.google.com/project/bendbsn-17377/authentication/users" target="_blank" style="color: #1565c0;">Firebase Console → Authentication</a>
@@ -358,6 +361,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
     <script>
         // Admin password - change this!
@@ -381,6 +385,64 @@
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
+
+        // EmailJS Configuration
+        const EMAILJS_PUBLIC_KEY = 'Paf-N3lByYsImp0af';
+        const EMAILJS_SERVICE_ID = 'service_2dw80zz';
+        const EMAILJS_TEMPLATE_ID = 'template_ty32lyw';
+        emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+        // Send welcome emails to all registered users
+        async function sendWelcomeEmailsToAll() {
+            if (!confirm('Send welcome email to ALL registered users? This cannot be undone.')) return;
+
+            try {
+                const response = await fetch(API_URL + '?action=getUsers');
+                const data = await response.json();
+
+                if (!data.success || !data.users) {
+                    alert('Failed to fetch users');
+                    return;
+                }
+
+                const users = data.users;
+                let sent = 0;
+                let failed = 0;
+
+                const statusDiv = document.createElement('div');
+                statusDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 10000; text-align: center;';
+                statusDiv.innerHTML = '<h3>Sending Emails...</h3><p id="emailProgress">0 / ' + users.length + '</p>';
+                document.body.appendChild(statusDiv);
+
+                for (let i = 0; i < users.length; i++) {
+                    const user = users[i];
+                    if (!user.email) continue;
+
+                    try {
+                        const templateParams = {
+                            to_name: user.name || user.email.split('@')[0],
+                            to_email: user.email,
+                            reply_to: user.email,
+                            login_link: 'https://bendbsn.com',
+                            message: 'Your BSN9B account has been successfully created!\n\nPlease use your email address (' + user.email + ') and the password you created to login.\n\nClick the link below to login to your account.'
+                        };
+                        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+                        sent++;
+                    } catch (e) {
+                        console.error('Failed to send to', user.email, e);
+                        failed++;
+                    }
+
+                    document.getElementById('emailProgress').textContent = (i + 1) + ' / ' + users.length;
+                    await new Promise(r => setTimeout(r, 500)); // Rate limit
+                }
+
+                statusDiv.remove();
+                alert('Done! Sent: ' + sent + ', Failed: ' + failed);
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
 
         // Listen for announcements (alert/fyi banners)
         announcementsRef.on('value', (snapshot) => {
