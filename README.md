@@ -111,12 +111,13 @@ Access at [bendbsn.com/admin/](https://bendbsn.com/admin/)
 
 ### Features
 - **Login History** - View all login attempts (success/failed) with CSV export
-- **Registered Users** - Full user list from Google Sheets with approve/ban controls
+- **Registered Users** - User list with ban controls (link to Firebase Console for full deletion)
 - **Online Users** - Real-time presence monitoring with kick/ban options
 - **Banned Users** - Manage bans with unban capability
 - **Chat Messages** - View and delete recent messages
 - **Manage Smart Phrases** - Add global smart phrases for all users
-- **Add User** - Directly add new users to the system
+
+**Note:** "Add User" removed - users self-register via Firebase Auth
 
 ### Quick Actions
 - Kick All from Chat
@@ -124,7 +125,7 @@ Access at [bendbsn.com/admin/](https://bendbsn.com/admin/)
 - Refresh All Data
 - Export Login History to CSV
 
-### Chat Commands (holdenc only)
+### Chat Commands (Admin only - christiankholden@gmail.com)
 Type these commands in the chat box to manage site-wide announcements:
 
 | Command | Description |
@@ -142,16 +143,27 @@ Type these commands in the chat box to manage site-wide announcements:
 
 ---
 
-## User Accounts
+## User Accounts & Authentication
 
-### Default Users (Sumner College BSN9B)
-| Name | Username | Password |
-|------|----------|----------|
-| Holden C (Admin) | holdenc | admin |
-| Ann Ottessen (Instructor) | anno | instructor2025 |
-| All Students | firstnamelastinit | sumner2025 |
+### Firebase Authentication (Implemented January 2025)
+- **Login:** Email + Password (Firebase Auth)
+- **Registration:** Self-service via registration form
+- **Password Reset:** Automated via Firebase email
+- **Security:** Bcrypt password hashing (industry standard)
 
-Example student logins: `ryleeb`, `nicoles`, `naomis`, etc.
+### Admin Account
+| Name | Email | Notes |
+|------|-------|-------|
+| Christian Holden | christiankholden@gmail.com | Full admin access |
+
+### User Management
+- Users register themselves via the login page
+- Admin receives email notification for each new registration
+- Ban/unban users from Admin Dashboard
+- Full account deletion via [Firebase Console](https://console.firebase.google.com/project/bendbsn-17377/authentication/users)
+
+### Legacy Note
+Previous username/password system (Google Sheets) has been replaced. Old accounts no longer work - users must re-register with their email.
 
 ---
 
@@ -164,11 +176,13 @@ Example student logins: `ryleeb`, `nicoles`, `naomis`, etc.
 - **FileSaver.js** - File download handling
 
 ### Backend Services
-- **Firebase Realtime Database** - Chat, presence, bans, login history, global phrases
-- **Google Apps Script** - User management API, AI proxy
-- **Google Sheets** - User database (Sheet ID: `1q0zoGH8r4m6QbMvE3288d5jTf62t6IoKhtBKNRBMk2w`)
+- **Firebase Authentication** - Secure email/password login with bcrypt hashing
+- **Firebase Realtime Database** - Chat, presence, bans, login history, global phrases, announcements
+- **Google Apps Script** - User profile storage, AI proxy
+- **Google Sheets** - User directory (name, email only - passwords handled by Firebase)
 - **Groq API** - AI chat (free tier, Llama 3.3 70B)
 - **RxNav API** - Drug name autocomplete
+- **FormSubmit** - Email notifications for new registrations
 - **GitHub Pages** - Static hosting with custom domain
 
 ### File Structure
@@ -199,12 +213,14 @@ bendbsn/
 
 ## Security Features
 
-- HTTPS enforcement (GitHub Pages SSL)
-- HTTPS redirect on all pages
-- Failed login attempt tracking
-- Real-time ban enforcement
-- HIPAA notice (no real patient data)
-- Session-based authentication
+- **Firebase Authentication** - Industry-standard bcrypt password hashing
+- **Automatic password reset** - Secure email-based reset (no admin access to passwords)
+- **Auto-logout on tab close** - Session cleared when browser tab/window closes
+- **HTTPS enforcement** - GitHub Pages SSL on all pages
+- **Failed login attempt tracking** - Logged to Firebase
+- **Real-time ban enforcement** - Immediate effect across all sessions
+- **HIPAA notice** - Reminder to not enter real patient data
+- **Rate limiting** - Firebase Auth blocks brute force attempts
 
 ---
 
@@ -233,10 +249,11 @@ bendbsn/
 
 ### Google Apps Script Functions
 - `doGet(e)` - Handle GET requests (getUsers)
-- `doPost(e)` - Handle POST requests (addUser, updateStatus, AI chat)
+- `doPost(e)` - Handle POST requests (addUser, updateStatus, updatePassword, AI chat)
 - `getUsers()` - Fetch all users from sheet
-- `addUser(params)` - Add new user to sheet
+- `addUser(params)` - Add new user profile to sheet (passwords now in Firebase)
 - `updateStatus(params)` - Update user status
+- `updatePassword(params)` - Update password field (legacy support)
 - `handleAIRequest(data)` - Proxy AI requests to Groq
 - `setupUsersSheet()` - One-time setup to create Users tab
 
@@ -244,18 +261,52 @@ bendbsn/
 
 ## Changelog
 
-### January 2025
-- Initial release with all documentation formats
-- AI Nursing Companion integration
-- Real-time chat system
+### January 30, 2025 - Firebase Authentication Upgrade
+- **MAJOR:** Migrated from Google Sheets passwords to Firebase Authentication
+- Email/password login with bcrypt hashing (secure)
+- Self-service password reset via Firebase email
+- Auto-logout when user closes tab/window
+- Logout button moved to sidebar (always visible)
+- Removed "Add User" from admin panel (users self-register)
+- Admin commands now work with email-based usernames
+- Alert/FYI banners with soft flash animation
+- Registration notification emails to admin
+- Better error messages for login/registration issues
+
+### January 2025 - Initial Release
+- All documentation formats (DAR, DARP, SOAP, SOAPIE, SBAR, PIE, Narrative, H2T)
+- AI Nursing Companion integration (Groq/Llama 3.3)
+- Real-time chat system with Firebase
 - Admin panel with user management
 - Clean URLs (removed .html extensions)
 - HTTPS redirect on all pages
 - Login history tracking with failed attempts
 - Medication administration panel with RxNav autocomplete
 - Global smart phrases (admin-managed via Firebase)
-- Scrollable admin panel cards
+- Alert/FYI banner system with chat commands
 - CSV export for login history
+
+---
+
+## Future Upgrade Ideas
+
+### High Priority
+- [ ] **Google Sign-In** - One-click login for users with Google accounts
+- [ ] **Email verification** - Require email confirmation before account activation
+- [ ] **Profile page** - Let users update their display name and preferences
+
+### Medium Priority
+- [ ] **Role-based permissions** - Instructor vs Student roles with different capabilities
+- [ ] **Document history** - Save and retrieve previous documentation sessions
+- [ ] **Export to EHR format** - HL7 FHIR or CDA export options
+- [ ] **Mobile app** - Progressive Web App (PWA) for offline access
+
+### Nice to Have
+- [ ] **Dark mode** - Toggle for night shift documentation
+- [ ] **Voice dictation** - Speech-to-text for hands-free documentation
+- [ ] **Collaborative editing** - Multiple users editing same document
+- [ ] **NCLEX practice mode** - Timed quizzes with AI-generated questions
+- [ ] **Clinical rotation tracker** - Log hours and experiences
 
 ---
 
