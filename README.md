@@ -246,4 +246,12 @@ Or double-click: `BENDBSN-Claude.bat` on Desktop
 
 ---
 
+## Support
+
+If you find this tool helpful, consider supporting its development:
+
+**[Buy me a coffee via Venmo](https://venmo.com/ChristianKSHolden)**
+
+---
+
 *Last Updated: January 2025*
