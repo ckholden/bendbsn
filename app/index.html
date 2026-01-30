@@ -842,59 +842,7 @@
                 <button class="btn btn-pdf" onclick="generatePDF()">Export PDF</button>
             </div>
 
-            <!-- Admin Panel for Smart Phrases -->
-            <div id="adminPanel" class="admin-panel hidden" style="margin-top: 30px; padding: 20px; background: #fff3e0; border: 2px solid #ff9800; border-radius: 10px;">
-                <h3 style="color: #e65100; margin-bottom: 15px;">⚙️ Admin: Manage Smart Phrases</h3>
-                <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; align-items: end;">
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 12px;">Shortcut (e.g., .abc)</label>
-                        <input type="text" id="newPhraseShortcut" placeholder=".shortcut" style="padding: 10px;">
                     </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 12px;">Expansion Text</label>
-                        <input type="text" id="newPhraseText" placeholder="Text that will replace the shortcut" style="padding: 10px;">
-                    </div>
-                    <button onclick="addCustomPhrase()" style="padding: 10px 20px; background: #ff9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Add Phrase</button>
-                </div>
-                <div id="customPhrasesList" style="margin-top: 15px;"></div>
-
-                <!-- Pending Registrations Section -->
-                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #ffcc80;">
-                    <h3 style="color: #e65100; margin-bottom: 15px;">📋 Pending Registrations <button onclick="refreshPendingUsers()" style="font-size: 12px; padding: 4px 10px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Refresh</button></h3>
-                    <div id="pendingUsersList" style="margin-top: 10px;">
-                        <p style="color: #666; font-style: italic;">Loading pending registrations...</p>
-                    </div>
-                </div>
-
-                <!-- Approved Users Section -->
-                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #ffcc80;">
-                    <h3 style="color: #e65100; margin-bottom: 15px;">✅ Approved Users</h3>
-                    <div id="approvedUsersList" style="margin-top: 10px;">
-                        <p style="color: #666; font-style: italic;">Loading approved users...</p>
-                    </div>
-                </div>
-
-                <!-- Manual User Add Section -->
-                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #ffcc80;">
-                    <h3 style="color: #e65100; margin-bottom: 15px;">➕ Add User Manually</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end;">
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 12px;">Full Name</label>
-                            <input type="text" id="newUserName" placeholder="Jane Smith" style="padding: 10px;">
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 12px;">Username</label>
-                            <input type="text" id="newUsername" placeholder="jsmith" style="padding: 10px;">
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 12px;">Password</label>
-                            <input type="text" id="newUserPassword" placeholder="password" style="padding: 10px;">
-                        </div>
-                        <button onclick="addUserToSheet()" style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Add</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <footer style="text-align: center; padding: 20px; color: rgba(255,255,255,0.6); font-size: 12px;">
@@ -2159,20 +2107,7 @@ Important guidelines:
                 ta.addEventListener('input', expandSmartPhrases);
             });
 
-            // Check if admin user, show admin panel
-            const currentUser = sessionStorage.getItem('bsn9b_user');
-            if (currentUser === 'admin' || currentUser === 'holdenc') {
-                document.getElementById('adminPanel').classList.remove('hidden');
-                renderCustomPhrases();
-                refreshPendingUsers();
-            }
-
-            // Check URL param for direct admin access
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('admin') === 'true' && (currentUser === 'admin' || currentUser === 'holdenc')) {
-                document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
-            }
-        });
+            });
 
         // NANDA Database
         const nandaDatabase = [
