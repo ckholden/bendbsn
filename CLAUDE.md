@@ -12,42 +12,75 @@
 - Vanilla JavaScript (no frameworks)
 - Static HTML hosted on GitHub Pages
 - Google Apps Script API for user management
+- PWA enabled (manifest.json, sw.js)
+
+## Site Structure
+- `/` - Login page (index.html)
+- `/home/` - Home dashboard with navigation
+- `/app/` - Main documentation generator
+- `/resources/` - Clinical references, calculators, drug lookup
+- `/community/` - Community hub with posts, announcements
 
 ## Key Features Implemented (Jan 2025)
 
-### 1. Dark Mode
+### 1. Bottom Toolbar Navigation
+- Fixed bottom navigation bar on all pages
+- Items: Home, Docs, Community, More
+- "More" menu expands upward with: Dark Mode, Lock, Feedback, Logout
+- Smart Phrases in More menu (app page only)
+- Mobile-first design with proper touch targets
+
+### 2. Dark Mode
 - CSS variables in `:root` and `[data-theme="dark"]`
-- Toggle button on right sidebar (sun/moon icons)
+- Toggle via More menu
 - Persists in localStorage (`bsn9b_theme`)
 
-### 2. Document History
+### 3. Document History
 - Firebase path: `/userDocuments/{sanitizedEmail}/`
 - Save/load/delete nursing notes
 - Search/filter by patient name or note type
-- Modal UI with `historyModal`
 
-### 3. Direct Messages
+### 4. Direct Messages
 - Firebase path: `/directMessages/{conversationId}/`
 - Tabbed interface (Group/Direct) in chat widget
 - Purple badge for DM notifications
-- Real-time updates with `setupDMListener()`
-- Conversation ID: sorted emails with special chars replaced
+- Real-time updates
 
-### 4. Lock Screen Button
-- Blue button (LOCK) at right side, top: 29%
-- Quick session clear without full logout
-- Function: `lockScreen()`
+### 5. Community Hub
+- Firebase path: `/community/posts/`
+- Categories: Announcements, Study Tips, Career, NCLEX
+- Create/view posts with likes
+- Pinned posts support
 
-### 5. Terms Agreement
-- Moved from login to registration only
-- Checkbox ID: `regTermsAgree` (required)
+### 6. Clinical Toolkit (Resources page)
+- Pediatric vital signs reference
+- Pain assessment scales (FLACC, NRS)
+- Glasgow Coma Scale calculator
+- APGAR Score calculator
+- SBAR Communication template
+- Head-to-Toe assessment checklist
 
-## Floating Button Positions (right side)
-- LOGOUT: 20%
-- LOCK: 29%
-- PHRASES: 40%
-- FEEDBACK: 51%
-- DARK MODE: 62%
+### 7. PWA Support
+- manifest.json for app installation
+- Service Worker (sw.js) for offline caching
+- Apple touch icon support
+- Theme color meta tags
+
+## UI Components
+
+### Bottom Toolbar
+```css
+.bottom-toolbar - Fixed bottom nav
+.toolbar-item - Nav item (link or button)
+.more-menu - Expandable menu
+.more-menu-item - Menu action button
+```
+
+### Chat/AI Widgets
+- Position: `bottom: 80px` (above toolbar)
+- z-index: 999 (below toolbar's 1000)
+- Chat toggle: bottom-right
+- AI toggle: bottom-left
 
 ## Session Storage Keys
 - `bsn9b_auth`: Authentication flag
@@ -61,28 +94,43 @@
 - `database.ref('directMessages')` - DMs
 - `database.ref('userDocuments')` - Saved docs
 - `database.ref('chat/presence')` - Online users
+- `database.ref('community/posts')` - Community posts
+- `database.ref('announcements')` - Alert/FYI banners
 
 ## Key Functions
+
+### Navigation
+- `toggleMoreMenu()` - Show/hide More menu
+- Close on outside click
 
 ### Dark Mode
 - `initTheme()` - Initialize theme on page load
 - `toggleDarkMode()` - Switch themes
-- `updateThemeIcon()` - Update button icon
+- `updateThemeIcon()` - Update menu icon
 
 ### Document History
 - `saveToHistory()` - Save current form to Firebase
 - `loadDocumentHistory()` - Fetch saved documents
 - `loadDocument(docId)` - Load doc into form
 - `deleteDocument(docId)` - Remove document
-- `sanitizeEmail(email)` - Convert email to Firebase-safe path
 
 ### Direct Messages
-- `getConversationId(email1, email2)` - Generate sorted conversation ID
+- `getConversationId(email1, email2)` - Generate conversation ID
 - `switchChatMode(mode)` - Toggle group/dm view
-- `startDMConversation(partnerName)` - Open DM with user
+- `startDMConversation(partnerName)` - Open DM
 - `sendDM(event)` - Send direct message
-- `loadDMConversations()` - Fetch DM list
-- `setupDMListener()` - Real-time DM notifications
+
+### Community
+- `createPost(event)` - Create new post
+- `filterCategory(category)` - Filter by category
+- `likePost(postId)` - Like a post
+- `renderPosts()` - Render post feed
+
+### Clinical Tools
+- `calculateAPGAR()` - Calculate APGAR score
+- `calculateDripRate()` - IV drip calculator
+- `calculateDosage()` - Medication dosage calculator
+- `calculateWeightDose()` - Weight-based dosing
 
 ### Session
 - `logout()` - Full logout with Firebase signOut

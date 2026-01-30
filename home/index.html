@@ -10,6 +10,12 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#1f4e79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSN9B">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title>BSN9B - Home</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -128,33 +134,83 @@
             color: var(--text-secondary);
         }
 
-        /* Side buttons */
-        .side-btn {
+        /* Bottom Toolbar */
+        .bottom-toolbar {
             position: fixed;
+            bottom: 0;
+            left: 0;
             right: 0;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
+            height: 60px;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .toolbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 10px;
+            transition: color 0.2s;
+            background: none;
             border: none;
-            padding: 12px 10px;
-            border-radius: 10px 0 0 10px;
             cursor: pointer;
-            font-weight: 700;
-            font-size: 12px;
-            box-shadow: -4px 4px 15px rgba(0,0,0,0.4);
-            z-index: 100;
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            transition: all 0.3s ease;
+            font-family: inherit;
         }
 
-        .side-btn:hover {
-            transform: translateX(-3px);
+        .toolbar-item:hover { color: var(--accent); }
+        .toolbar-item.active { color: var(--accent); }
+        .toolbar-item .icon { font-size: 24px; margin-bottom: 2px; }
+        .toolbar-item .label { font-weight: 600; }
+
+        /* More Menu */
+        .more-menu {
+            position: fixed;
+            bottom: 70px;
+            right: 10px;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 8px 0;
+            display: none;
+            z-index: 1001;
+            min-width: 160px;
+            border: 1px solid var(--border);
         }
 
-        .theme-toggle { top: 62%; background: linear-gradient(135deg, #9333ea, #7e22ce); }
-        .logout-btn { top: 20%; background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .lock-btn { top: 29%; background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-        .feedback-btn { top: 51%; background: linear-gradient(135deg, #4caf50, #388e3c); }
+        .more-menu.show { display: block; }
+
+        .more-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .more-menu-item:hover { background: var(--bg-secondary); }
+        .more-menu-item .menu-icon { font-size: 18px; }
+
+        /* Adjust body padding for toolbar */
+        body {
+            padding-bottom: 80px;
+        }
 
         /* Dark mode specific */
         [data-theme="dark"] .nav-card {
@@ -255,11 +311,45 @@
         </div>
     </div>
 
-    <!-- Side Buttons -->
-    <button onclick="logout()" class="side-btn logout-btn">🚪 LOGOUT</button>
-    <button onclick="lockScreen()" class="side-btn lock-btn" title="Quick lock - preserves your session">🔒 LOCK</button>
-    <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" class="side-btn feedback-btn">💡 FEEDBACK</button>
-    <button id="themeToggle" onclick="toggleDarkMode()" class="side-btn theme-toggle"><span id="themeIcon">🌙</span> DARK</button>
+    <!-- Bottom Toolbar -->
+    <nav class="bottom-toolbar">
+        <a href="/home/" class="toolbar-item active">
+            <span class="icon">🏠</span>
+            <span class="label">Home</span>
+        </a>
+        <a href="/app/" class="toolbar-item">
+            <span class="icon">📝</span>
+            <span class="label">Docs</span>
+        </a>
+        <a href="/community/" class="toolbar-item">
+            <span class="icon">👥</span>
+            <span class="label">Community</span>
+        </a>
+        <button class="toolbar-item" onclick="toggleMoreMenu()">
+            <span class="icon">⋯</span>
+            <span class="label">More</span>
+        </button>
+    </nav>
+
+    <!-- More Menu -->
+    <div id="moreMenu" class="more-menu">
+        <button class="more-menu-item" onclick="toggleDarkMode(); toggleMoreMenu();">
+            <span class="menu-icon" id="themeMenuIcon">🌙</span>
+            <span id="themeMenuText">Dark Mode</span>
+        </button>
+        <button class="more-menu-item" onclick="lockScreen(); toggleMoreMenu();">
+            <span class="menu-icon">🔒</span>
+            <span>Lock Screen</span>
+        </button>
+        <button class="more-menu-item" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();">
+            <span class="menu-icon">💡</span>
+            <span>Feedback</span>
+        </button>
+        <button class="more-menu-item" onclick="logout();">
+            <span class="menu-icon">🚪</span>
+            <span>Logout</span>
+        </button>
+    </div>
 
     <!-- Feedback Modal -->
     <div id="feedbackModal" class="modal-overlay hidden">
@@ -289,7 +379,7 @@
     </div>
 
     <!-- Chat Widget -->
-    <div id="chatWidget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <div id="chatWidget" style="position: fixed; bottom: 80px; right: 20px; z-index: 999;">
         <button id="chatToggle" onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; position: relative;">
             💬
             <span id="chatBadge" style="position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: none; align-items: center; justify-content: center; font-weight: bold;">0</span>
@@ -312,7 +402,7 @@
     </div>
 
     <!-- AI Widget -->
-    <div id="aiWidget" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999;">
+    <div id="aiWidget" style="position: fixed; bottom: 80px; left: 20px; z-index: 999;">
         <button id="aiToggle" onclick="toggleAI()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; position: relative;">
             🩺
             <span style="position: absolute; top: -2px; left: -2px; background: #8b5cf6; color: white; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold;">AI</span>
@@ -384,11 +474,30 @@
 
         function updateThemeIcon() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) {
-                themeToggle.innerHTML = '<span id="themeIcon">' + (isDark ? '☀️' : '🌙') + '</span> ' + (isDark ? 'LIGHT' : 'DARK');
+            const themeMenuIcon = document.getElementById('themeMenuIcon');
+            const themeMenuText = document.getElementById('themeMenuText');
+            if (themeMenuIcon) {
+                themeMenuIcon.textContent = isDark ? '☀️' : '🌙';
+            }
+            if (themeMenuText) {
+                themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
             }
         }
+
+        // More menu toggle
+        function toggleMoreMenu() {
+            const menu = document.getElementById('moreMenu');
+            menu.classList.toggle('show');
+        }
+
+        // Close more menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('moreMenu');
+            const moreBtn = e.target.closest('.toolbar-item');
+            if (!menu.contains(e.target) && (!moreBtn || !moreBtn.onclick?.toString().includes('toggleMoreMenu'))) {
+                menu.classList.remove('show');
+            }
+        });
 
         // Lock/Unlock
         function lockScreen() {
@@ -596,6 +705,19 @@
 
         // Initialize
         initTheme();
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>

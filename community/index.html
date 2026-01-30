@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <script>
+        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+            window.location.href = '/';
+        }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#1f4e79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSN9B">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <title>Community Hub - BSN9B</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #fafafa;
+            --bg-input: #fafafa;
+            --text-primary: #1a1a2e;
+            --text-secondary: #666666;
+            --accent: #1f4e79;
+            --accent-light: #2d5a87;
+            --shadow: rgba(0,0,0,0.4);
+            --border: #e0e0e0;
+            --chat-msg-other-bg: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #1e2a3a;
+            --bg-input: #16213e;
+            --text-primary: #e6e6e6;
+            --text-secondary: #aaaaaa;
+            --accent: #4a90d9;
+            --accent-light: #5a9fe8;
+            --shadow: rgba(0,0,0,0.6);
+            --border: #2d3748;
+            --chat-msg-other-bg: #2d3748;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-page);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 16px 16px 0 0;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 26px; margin-bottom: 5px; }
+        .header p { opacity: 0.9; font-size: 13px; }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 12px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        .content {
+            background: var(--bg-primary);
+            padding: 25px;
+            border-radius: 0 0 16px 16px;
+        }
+
+        /* Category Tabs */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .category-tab {
+            padding: 10px 20px;
+            border: 2px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .category-tab:hover { border-color: var(--accent); }
+        .category-tab.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Post Card */
+        .post-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.2s;
+        }
+
+        .post-card:hover { box-shadow: 0 4px 15px var(--shadow); }
+
+        .post-card.pinned {
+            border-left: 4px solid #f59e0b;
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, var(--bg-secondary) 100%);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .post-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .post-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-announcement { background: #fef3c7; color: #92400e; }
+        .badge-blog { background: #dbeafe; color: #1e40af; }
+        .badge-career { background: #d1fae5; color: #065f46; }
+        .badge-nclex { background: #fce7f3; color: #9d174d; }
+
+        .post-content {
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .post-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .post-action {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .post-action:hover { color: var(--accent); }
+
+        /* Create Post Button */
+        .create-post-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .create-post-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .section-header h2 {
+            font-size: 18px;
+            color: var(--accent);
+        }
+
+        /* Bottom Toolbar */
+        .bottom-toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .toolbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 10px;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .toolbar-item:hover { color: var(--accent); }
+        .toolbar-item.active { color: var(--accent); }
+        .toolbar-item .icon { font-size: 24px; margin-bottom: 2px; }
+        .toolbar-item .label { font-weight: 600; }
+
+        /* More Menu */
+        .more-menu {
+            position: fixed;
+            bottom: 70px;
+            right: 10px;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 8px 0;
+            display: none;
+            z-index: 1001;
+            min-width: 160px;
+            border: 1px solid var(--border);
+        }
+
+        .more-menu.show { display: block; }
+
+        .more-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .more-menu-item:hover { background: var(--bg-secondary); }
+        .more-menu-item .menu-icon { font-size: 18px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.hidden { display: none; }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 25px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            color: var(--text-primary);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content input,
+        .modal-content select,
+        .modal-content textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .modal-content textarea { min-height: 150px; resize: vertical; }
+
+        /* Lock screen */
+        #lockScreenOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+        .empty-state h3 { color: var(--text-primary); margin-bottom: 10px; }
+
+        /* Comments */
+        .comments-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .comment {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        .comment-text {
+            font-size: 13px;
+            color: var(--text-primary);
+            margin-top: 4px;
+        }
+
+        .comment-time {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 600px) {
+            .category-tabs { gap: 6px; }
+            .category-tab { padding: 8px 14px; font-size: 12px; }
+            .post-title { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Lock Screen Overlay -->
+    <div id="lockScreenOverlay">
+        <div style="text-align: center; color: white;">
+            <div style="font-size: 80px; margin-bottom: 20px;">&#128274;</div>
+            <h1 style="font-size: 42px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">BSN9B</h1>
+            <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">Portal Locked</p>
+            <button onclick="unlockScreen()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 18px 50px; border-radius: 30px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);">&#128275; Unlock Portal</button>
+            <p style="margin-top: 30px; font-size: 12px; opacity: 0.5;">Click unlock to return to your session</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Community Hub</h1>
+            <p>Announcements | Study Tips | Career Resources | NCLEX Prep</p>
+            <a href="/home/" class="back-btn">Back to Home</a>
+        </div>
+
+        <div class="content">
+            <!-- Category Tabs -->
+            <div class="category-tabs">
+                <button class="category-tab active" onclick="filterCategory('all')">All</button>
+                <button class="category-tab" onclick="filterCategory('announcement')">Announcements</button>
+                <button class="category-tab" onclick="filterCategory('blog')">Study Tips</button>
+                <button class="category-tab" onclick="filterCategory('career')">Career</button>
+                <button class="category-tab" onclick="filterCategory('nclex')">NCLEX</button>
+            </div>
+
+            <!-- Create Post Button -->
+            <button class="create-post-btn" onclick="showCreatePostModal()">
+                <span>+</span> Create Post
+            </button>
+
+            <!-- Pinned Section -->
+            <div id="pinnedSection" style="display: none;">
+                <div class="section-header">
+                    <span>&#128204;</span>
+                    <h2>Pinned</h2>
+                </div>
+                <div id="pinnedPosts"></div>
+            </div>
+
+            <!-- Posts Feed -->
+            <div class="section-header">
+                <span>&#128240;</span>
+                <h2>Latest Posts</h2>
+            </div>
+            <div id="postsFeed">
+                <div class="empty-state">
+                    <div class="icon">&#128221;</div>
+                    <h3>No posts yet</h3>
+                    <p>Be the first to share something with the community!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div id="createPostModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 20px;">Create Post</h2>
+                <button onclick="hideCreatePostModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+            </div>
+            <form onsubmit="createPost(event)">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Title</label>
+                <input type="text" id="postTitle" required placeholder="Enter post title">
+
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Category</label>
+                <select id="postCategory" required>
+                    <option value="blog">Study Tips</option>
+                    <option value="career">Career</option>
+                    <option value="nclex">NCLEX</option>
+                </select>
+
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Content</label>
+                <textarea id="postContent" required placeholder="Share your thoughts, tips, or questions..."></textarea>
+
+                <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Publish Post</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 20px;">Send Feedback</h2>
+                <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+            </div>
+            <form action="https://formsubmit.co/christiankholden@gmail.com" method="POST">
+                <input type="hidden" name="_subject" value="BSN9B Feedback">
+                <input type="hidden" name="_captcha" value="false">
+                <input type="hidden" name="_template" value="table">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Type</label>
+                <select name="type" required>
+                    <option value="bug">Bug Report</option>
+                    <option value="feature">Feature Request</option>
+                    <option value="feedback" selected>General Feedback</option>
+                </select>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Your Name</label>
+                <input type="text" name="name" required placeholder="Enter your name">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Message</label>
+                <textarea name="message" required placeholder="Describe your feedback..."></textarea>
+                <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Send Feedback</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Toolbar -->
+    <nav class="bottom-toolbar">
+        <a href="/home/" class="toolbar-item">
+            <span class="icon">&#127968;</span>
+            <span class="label">Home</span>
+        </a>
+        <a href="/app/" class="toolbar-item">
+            <span class="icon">&#128221;</span>
+            <span class="label">Docs</span>
+        </a>
+        <a href="/community/" class="toolbar-item active">
+            <span class="icon">&#128101;</span>
+            <span class="label">Community</span>
+        </a>
+        <button class="toolbar-item" onclick="toggleMoreMenu()">
+            <span class="icon">&#8943;</span>
+            <span class="label">More</span>
+        </button>
+    </nav>
+
+    <!-- More Menu -->
+    <div id="moreMenu" class="more-menu">
+        <button class="more-menu-item" onclick="toggleDarkMode(); toggleMoreMenu();">
+            <span class="menu-icon" id="themeMenuIcon">&#127769;</span>
+            <span id="themeMenuText">Dark Mode</span>
+        </button>
+        <button class="more-menu-item" onclick="lockScreen(); toggleMoreMenu();">
+            <span class="menu-icon">&#128274;</span>
+            <span>Lock Screen</span>
+        </button>
+        <button class="more-menu-item" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();">
+            <span class="menu-icon">&#128161;</span>
+            <span>Feedback</span>
+        </button>
+        <button class="more-menu-item" onclick="logout();">
+            <span class="menu-icon">&#128682;</span>
+            <span>Logout</span>
+        </button>
+    </div>
+
+    <!-- AI Widget -->
+    <div id="aiWidget" style="position: fixed; bottom: 80px; left: 20px; z-index: 999;">
+        <button id="aiToggle" onclick="toggleAI()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; position: relative;">
+            &#129658;
+            <span style="position: absolute; top: -2px; left: -2px; background: #8b5cf6; color: white; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold;">AI</span>
+        </button>
+        <div id="aiBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; left: 0; width: 380px; height: 500px; background: var(--bg-primary); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700;">&#129658; AI Nursing Assistant</span>
+                <button onclick="toggleAI()" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px;">&times;</button>
+            </div>
+            <div style="background: #fef3c7; padding: 8px 12px; font-size: 11px; color: #92400e;">&#9888;&#65039; <strong>Educational Only:</strong> Not medical advice. Always verify with clinical resources.</div>
+            <div style="padding: 10px; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--border);">
+                <button onclick="aiQuickAction('drug')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">&#128138; Drug Info</button>
+                <button onclick="aiQuickAction('careplan')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">&#128203; Care Plan</button>
+                <button onclick="aiQuickAction('nclex')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">&#128221; NCLEX Q</button>
+                <button onclick="aiQuickAction('labs')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">&#128300; Labs</button>
+            </div>
+            <div id="aiMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-secondary);">
+                <div style="background: var(--chat-msg-other-bg); padding: 10px 14px; border-radius: 16px; margin-bottom: 10px; font-size: 14px; color: var(--text-primary);">Hi! I'm your AI nursing assistant. Ask me about medications, care plans, NCLEX questions, or lab values. How can I help you today?</div>
+            </div>
+            <form onsubmit="sendAIMessage(event)" style="padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; background: var(--bg-primary);">
+                <input type="text" id="aiInput" placeholder="Ask a nursing question..." style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; background: var(--bg-input); color: var(--text-primary);">
+                <button type="submit" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer;">Ask</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Widget -->
+    <div id="chatWidget" style="position: fixed; bottom: 80px; right: 20px; z-index: 999;">
+        <button id="chatToggle" onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; position: relative;">
+            &#128172;
+            <span id="chatBadge" style="position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: none; align-items: center; justify-content: center; font-weight: bold;">0</span>
+        </button>
+        <div id="chatBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; right: 0; width: 350px; height: 500px; background: var(--bg-primary); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700;">&#128172; Group Chat</span>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="toggleChatSound()" id="soundToggle" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 8px; border-radius: 5px; cursor: pointer; font-size: 12px;" title="Toggle sound">&#128276;</button>
+                    <button onclick="toggleChat()" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px;">&times;</button>
+                </div>
+            </div>
+            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-secondary);"></div>
+            <form onsubmit="sendMessage(event)" style="padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; background: var(--bg-primary);">
+                <input type="text" id="chatInput" placeholder="Type a message..." style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; background: var(--bg-input); color: var(--text-primary);">
+                <button type="submit" style="background: linear-gradient(135deg, #1f4e79, #2d5a87); color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer;">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.firebasestorage.app",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const chatRef = database.ref('chat/messages');
+        const postsRef = database.ref('community/posts');
+
+        // User info
+        const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
+        const displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
+
+        // Current filter
+        let currentCategory = 'all';
+
+        // Theme functions
+        function initTheme() {
+            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon();
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('bsn9b_theme', newTheme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const themeMenuIcon = document.getElementById('themeMenuIcon');
+            const themeMenuText = document.getElementById('themeMenuText');
+            if (themeMenuIcon) {
+                themeMenuIcon.innerHTML = isDark ? '&#9728;&#65039;' : '&#127769;';
+            }
+            if (themeMenuText) {
+                themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            }
+        }
+
+        // More menu toggle
+        function toggleMoreMenu() {
+            const menu = document.getElementById('moreMenu');
+            menu.classList.toggle('show');
+        }
+
+        // Close more menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('moreMenu');
+            const moreBtn = e.target.closest('.toolbar-item');
+            if (!menu.contains(e.target) && (!moreBtn || !moreBtn.onclick?.toString().includes('toggleMoreMenu'))) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Lock/Unlock
+        function lockScreen() {
+            document.getElementById('lockScreenOverlay').style.display = 'flex';
+        }
+
+        function unlockScreen() {
+            document.getElementById('lockScreenOverlay').style.display = 'none';
+        }
+
+        // Logout
+        function logout() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('bsn9b_auth');
+                localStorage.removeItem('bsn9b_user');
+                localStorage.removeItem('bsn9b_displayName');
+                localStorage.removeItem('bsn9b_uid');
+                window.location.href = '/';
+            });
+        }
+
+        // Posts functions
+        function showCreatePostModal() {
+            document.getElementById('createPostModal').classList.remove('hidden');
+        }
+
+        function hideCreatePostModal() {
+            document.getElementById('createPostModal').classList.add('hidden');
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postContent').value = '';
+        }
+
+        function createPost(event) {
+            event.preventDefault();
+            const title = document.getElementById('postTitle').value.trim();
+            const category = document.getElementById('postCategory').value;
+            const content = document.getElementById('postContent').value.trim();
+
+            if (!title || !content) return;
+
+            postsRef.push({
+                title: title,
+                content: content,
+                category: category,
+                author: displayName,
+                authorEmail: currentUsername,
+                pinned: false,
+                createdAt: Date.now(),
+                likes: 0,
+                comments: 0
+            });
+
+            hideCreatePostModal();
+        }
+
+        function filterCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            renderPosts();
+        }
+
+        function formatTimeAgo(timestamp) {
+            const diff = Date.now() - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return minutes + ' min ago';
+            if (hours < 24) return hours + ' hr ago';
+            return days + ' days ago';
+        }
+
+        function getCategoryBadge(category) {
+            const badges = {
+                announcement: '<span class="post-badge badge-announcement">Announcement</span>',
+                blog: '<span class="post-badge badge-blog">Study Tips</span>',
+                career: '<span class="post-badge badge-career">Career</span>',
+                nclex: '<span class="post-badge badge-nclex">NCLEX</span>'
+            };
+            return badges[category] || '';
+        }
+
+        let allPosts = [];
+
+        function renderPosts() {
+            const pinnedContainer = document.getElementById('pinnedPosts');
+            const feedContainer = document.getElementById('postsFeed');
+            const pinnedSection = document.getElementById('pinnedSection');
+
+            let filteredPosts = allPosts;
+            if (currentCategory !== 'all') {
+                filteredPosts = allPosts.filter(p => p.category === currentCategory);
+            }
+
+            const pinned = filteredPosts.filter(p => p.pinned);
+            const regular = filteredPosts.filter(p => !p.pinned);
+
+            // Pinned posts
+            if (pinned.length > 0) {
+                pinnedSection.style.display = 'block';
+                pinnedContainer.innerHTML = pinned.map(post => createPostCard(post, true)).join('');
+            } else {
+                pinnedSection.style.display = 'none';
+            }
+
+            // Regular posts
+            if (regular.length > 0) {
+                feedContainer.innerHTML = regular.map(post => createPostCard(post, false)).join('');
+            } else {
+                feedContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">&#128221;</div>
+                        <h3>No posts yet</h3>
+                        <p>Be the first to share something with the community!</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createPostCard(post, isPinned) {
+            return `
+                <div class="post-card ${isPinned ? 'pinned' : ''}">
+                    <div class="post-header">
+                        <div>
+                            <div class="post-title">${isPinned ? '&#128204; ' : ''}${escapeHtml(post.title)}</div>
+                            <div class="post-meta">By ${escapeHtml(post.author)} - ${formatTimeAgo(post.createdAt)}</div>
+                        </div>
+                        ${getCategoryBadge(post.category)}
+                    </div>
+                    <div class="post-content">${escapeHtml(post.content).substring(0, 300)}${post.content.length > 300 ? '...' : ''}</div>
+                    <div class="post-footer">
+                        <div class="post-actions">
+                            <button class="post-action" onclick="likePost('${post.id}')">
+                                &#10084;&#65039; ${post.likes || 0}
+                            </button>
+                            <button class="post-action" onclick="toggleComments('${post.id}')">
+                                &#128172; ${post.comments || 0}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function likePost(postId) {
+            const postRef = database.ref('community/posts/' + postId + '/likes');
+            postRef.transaction(current => (current || 0) + 1);
+        }
+
+        function toggleComments(postId) {
+            // TODO: Implement comment expansion
+            alert('Comments coming soon!');
+        }
+
+        // Load posts
+        postsRef.orderByChild('createdAt').on('value', (snapshot) => {
+            allPosts = [];
+            snapshot.forEach(child => {
+                allPosts.push({ id: child.key, ...child.val() });
+            });
+            allPosts.reverse(); // Newest first
+            renderPosts();
+        });
+
+        // Chat functions
+        let chatOpen = false;
+        let unreadCount = 0;
+        let lastReadTimestamp = parseInt(localStorage.getItem('chatLastRead') || '0');
+        let soundEnabled = localStorage.getItem('chatSoundEnabled') !== 'false';
+
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            document.getElementById('chatBox').style.display = chatOpen ? 'flex' : 'none';
+            if (chatOpen) {
+                unreadCount = 0;
+                updateBadge();
+                lastReadTimestamp = Date.now();
+                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        function updateBadge() {
+            const badge = document.getElementById('chatBadge');
+            if (unreadCount > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function toggleChatSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('chatSoundEnabled', soundEnabled.toString());
+            document.getElementById('soundToggle').innerHTML = soundEnabled ? '&#128276;' : '&#128277;';
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                alert('Please log in to send messages.');
+                return;
+            }
+
+            chatRef.push({
+                user: displayName,
+                username: currentUsername,
+                text: text,
+                timestamp: Date.now()
+            });
+            input.value = '';
+        }
+
+        // Load chat messages
+        chatRef.orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
+            const container = document.getElementById('chatMessages');
+            if (!snapshot.exists()) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); font-size: 12px;">No messages yet</p>';
+                return;
+            }
+
+            const messages = [];
+            const now = Date.now();
+            const fortyEightHours = 48 * 60 * 60 * 1000;
+
+            snapshot.forEach((child) => {
+                const msg = child.val();
+                if (msg && msg.timestamp && (now - msg.timestamp) < fortyEightHours) {
+                    messages.push(msg);
+                }
+            });
+
+            if (messages.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); font-size: 12px;">No recent messages</p>';
+                return;
+            }
+
+            let html = '';
+            let newMessages = 0;
+            messages.forEach(msg => {
+                const isMe = msg.user === displayName || msg.username === currentUsername;
+                if (!chatOpen && msg.timestamp > lastReadTimestamp && !isMe) {
+                    newMessages++;
+                }
+                html += '<div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ' + (isMe ? 'flex-end' : 'flex-start') + ';">' +
+                    '<div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 3px;">' + (isMe ? 'You' : escapeHtml(msg.user || 'Anonymous')) + '</div>' +
+                    '<div style="background: ' + (isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : 'var(--chat-msg-other-bg)') + '; color: ' + (isMe ? 'white' : 'var(--text-primary)') + '; padding: 10px 14px; border-radius: ' + (isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px') + '; max-width: 80%; word-wrap: break-word; font-size: 14px;">' +
+                    escapeHtml(msg.text || '') +
+                    '</div>' +
+                    '<div style="font-size: 9px; color: var(--text-secondary); margin-top: 3px;">' + formatTime(msg.timestamp) + '</div>' +
+                    '</div>';
+            });
+
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+
+            if (newMessages > 0 && !chatOpen) {
+                unreadCount = newMessages;
+                updateBadge();
+            }
+        });
+
+        // AI functions
+        let aiOpen = false;
+        let aiConversation = [];
+        const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+
+        function toggleAI() {
+            aiOpen = !aiOpen;
+            document.getElementById('aiBox').style.display = aiOpen ? 'flex' : 'none';
+            if (aiOpen) {
+                document.getElementById('aiInput').focus();
+            }
+        }
+
+        function aiQuickAction(type) {
+            const prompts = {
+                drug: 'Tell me about a common medication used in nursing (pick one and explain)',
+                careplan: 'Help me create a nursing care plan for a patient with hypertension',
+                nclex: 'Give me an NCLEX-style practice question with rationale',
+                labs: 'Explain common lab values nurses should know'
+            };
+            document.getElementById('aiInput').value = prompts[type];
+            document.getElementById('aiInput').focus();
+        }
+
+        function addAIMessage(message, isUser) {
+            const container = document.getElementById('aiMessages');
+            const div = document.createElement('div');
+            div.style.cssText = 'margin-bottom: 12px; display: flex; flex-direction: column; align-items: ' + (isUser ? 'flex-end' : 'flex-start') + ';';
+            div.innerHTML = '<div style="background: ' + (isUser ? 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)' : 'var(--chat-msg-other-bg)') + '; color: ' + (isUser ? 'white' : 'var(--text-primary)') + '; padding: 10px 14px; border-radius: ' + (isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px') + '; max-width: 85%; word-wrap: break-word; font-size: 14px; white-space: pre-wrap;">' + escapeHtml(message) + '</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendAIMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addAIMessage(text, true);
+            input.value = '';
+
+            aiConversation.push({ role: 'user', content: text });
+            if (aiConversation.length > 20) {
+                aiConversation = aiConversation.slice(-20);
+            }
+
+            // Show typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'aiTyping';
+            typingDiv.innerHTML = '<div style="background: var(--chat-msg-other-bg); color: var(--text-primary); padding: 10px 14px; border-radius: 16px; font-size: 14px;">Thinking...</div>';
+            document.getElementById('aiMessages').appendChild(typingDiv);
+
+            try {
+                const response = await fetch(AI_API_URL + '?action=aiChat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ messages: aiConversation })
+                });
+                const data = await response.json();
+
+                document.getElementById('aiTyping')?.remove();
+
+                if (data.success && data.response) {
+                    addAIMessage(data.response, false);
+                    aiConversation.push({ role: 'assistant', content: data.response });
+                } else {
+                    addAIMessage('Sorry, I encountered an error. Please try again.', false);
+                }
+            } catch (error) {
+                document.getElementById('aiTyping')?.remove();
+                addAIMessage('Sorry, I couldn\'t connect. Please try again.', false);
+            }
+        }
+
+        // Initialize
+        initTheme();
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
