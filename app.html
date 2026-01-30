@@ -914,9 +914,15 @@
             <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong style="font-size: 16px;">BSN9B Chat</strong>
-                    <div id="onlineCount" style="font-size: 11px; opacity: 0.8;">Connecting...</div>
+                    <div id="onlineCount" onclick="toggleUserList()" style="font-size: 11px; opacity: 0.8; cursor: pointer;">Connecting...</div>
                 </div>
                 <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
+            </div>
+
+            <!-- Online Users List (toggleable) -->
+            <div id="userList" style="display: none; background: #1a3d5c; color: white; padding: 10px 15px; font-size: 12px; max-height: 100px; overflow-y: auto;">
+                <div style="opacity: 0.7; margin-bottom: 5px;">Online now:</div>
+                <div id="userListNames"></div>
             </div>
 
             <!-- Chat Messages -->
@@ -940,6 +946,7 @@
 
     <script>
         // Initialize Firebase
+        console.log('Initializing Firebase...');
         const firebaseConfig = {
             databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com"
         };
@@ -947,6 +954,7 @@
         const database = firebase.database();
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
+        console.log('Firebase initialized, chatRef path:', chatRef.toString());
 
         // Chat state
         let chatOpen = false;
@@ -1012,6 +1020,14 @@
 
         // 48-hour threshold in milliseconds
         const MESSAGE_RETENTION_MS = 48 * 60 * 60 * 1000;
+
+        // Debug: Direct test read of messages
+        chatRef.once('value').then((snapshot) => {
+            console.log('DEBUG direct read - exists:', snapshot.exists());
+            console.log('DEBUG direct read - data:', snapshot.val());
+        }).catch((err) => {
+            console.error('DEBUG direct read error:', err);
+        });
 
         // Clean up old messages (older than 48 hours)
         function cleanupOldMessages() {
@@ -1103,9 +1119,27 @@
         myPresence.set({ user: sessionStorage.getItem('bsn9b_user') || 'Anonymous', online: true });
         myPresence.onDisconnect().remove();
 
+        let userListVisible = false;
+        function toggleUserList() {
+            userListVisible = !userListVisible;
+            document.getElementById('userList').style.display = userListVisible ? 'block' : 'none';
+        }
+
         presenceRef.on('value', (snapshot) => {
             const count = snapshot.numChildren();
-            document.getElementById('onlineCount').textContent = count + ' online';
+            document.getElementById('onlineCount').textContent = count + ' online (click to see)';
+
+            // Build user list
+            const users = [];
+            snapshot.forEach((child) => {
+                const data = child.val();
+                if (data.user) {
+                    users.push(data.user);
+                }
+            });
+            document.getElementById('userListNames').innerHTML = users.length > 0
+                ? users.map(u => '<div style="padding: 2px 0;">• ' + u + '</div>').join('')
+                : '<div style="opacity: 0.7;">No users online</div>';
         });
     </script>
 
