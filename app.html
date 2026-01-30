@@ -276,12 +276,12 @@
                 .phrase-item { position: relative; cursor: help; padding: 4px 6px; border-radius: 4px; transition: background 0.2s; }
                 .phrase-item:hover { background: #e3f2fd; }
                 .phrase-item .tooltip {
-                    display: none; position: absolute; top: 100%; left: 0;
+                    display: none; position: fixed;
                     background: #333; color: #fff; padding: 10px 12px; border-radius: 6px;
                     font-size: 12px; white-space: normal; word-wrap: break-word;
-                    width: 220px; z-index: 9999;
+                    max-width: 280px; z-index: 99999;
                     box-shadow: 0 4px 15px rgba(0,0,0,0.5); line-height: 1.5;
-                    text-align: left; margin-top: 5px;
+                    text-align: left; pointer-events: none;
                 }
                 .phrase-item:hover .tooltip { display: block; }
             </style>
@@ -299,7 +299,7 @@
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.vs</code> Vital Signs<span class="tooltip">BP: __ | HR: __ | O2: __% | RR: __ | T: __ | Pain: __/10</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.neuro</code> Neuro<span class="tooltip">A&Ox4. PERRLA. GCS 15. MAE x4.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.resp</code> Respiratory<span class="tooltip">CTA bilat. No adventitious sounds. Unlabored. O2: __% on __.</span></div>
-                        <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.cv</code> Cardiovascular<span class="tooltip">S1S2 RRR. No murmurs. Pulses 2+ x4. Cap refill <3s. No edema.</span></div>
+                        <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.cv</code> Cardiovascular<span class="tooltip">S1S2 RRR. No murmurs. Pulses 2+ x4. Cap refill &lt;3s. No edema.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.gi</code> GI<span class="tooltip">BS active x4 quads. Abdomen soft, NT, ND. Last BM: __.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.gu</code> GU<span class="tooltip">Voiding without difficulty. Urine clear yellow.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.skin</code> Skin<span class="tooltip">Warm, dry, intact. No breakdown or pressure injuries.</span></div>
@@ -2126,6 +2126,18 @@ Important guidelines:
             // Attach listeners
             document.querySelectorAll('textarea').forEach(ta => {
                 ta.addEventListener('input', expandSmartPhrases);
+            });
+
+            // Dynamic tooltip positioning for phrase items
+            document.querySelectorAll('.phrase-item').forEach(item => {
+                item.addEventListener('mouseenter', function(e) {
+                    const tooltip = this.querySelector('.tooltip');
+                    if (tooltip) {
+                        const rect = this.getBoundingClientRect();
+                        tooltip.style.top = (rect.bottom + 5) + 'px';
+                        tooltip.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
+                    }
+                });
             });
 
             // Check if admin user, show admin panel
