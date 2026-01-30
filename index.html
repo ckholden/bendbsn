@@ -156,6 +156,10 @@
                 <button type="button" class="link-btn" onclick="showRegisterModal()">Don't have an account? Register here</button>
             </p>
 
+            <p style="text-align: center; margin-top: 10px;">
+                <button type="button" class="link-btn" onclick="showForgotPasswordModal()">Forgot your password?</button>
+            </p>
+
             <p class="footer-text">For nursing student use</p>
         </form>
     </div>
@@ -258,6 +262,31 @@
                     If you believe this is an error, please contact your instructor or cohort administrator.
                 </p>
                 <button onclick="closePendingModal()" class="btn" style="margin-top: 20px;">OK, Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal" id="forgotPasswordModal">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);">
+                <h2>Reset Password</h2>
+            </div>
+            <div class="modal-body">
+                <p style="color: #555; margin-bottom: 20px;">Enter your email address or username and we'll send a password reset request to the administrator.</p>
+
+                <div class="error-message" id="forgotErrorMsg"></div>
+                <div class="success-message" id="forgotSuccessMsg"></div>
+
+                <form onsubmit="return handleForgotPassword(event)">
+                    <div class="form-group">
+                        <label for="forgotEmail">Email or Username</label>
+                        <input type="text" id="forgotEmail" placeholder="Enter your email or username" required>
+                    </div>
+
+                    <button type="submit" class="btn" id="forgotBtn" style="background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);">Send Reset Request</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideForgotPasswordModal()">Cancel</button>
+                </form>
             </div>
         </div>
     </div>
@@ -617,12 +646,97 @@
             document.getElementById('pendingModal').classList.remove('show');
         }
 
+        // Forgot password functions
+        function showForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.add('show');
+            document.getElementById('forgotEmail').focus();
+        }
+
+        function hideForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.remove('show');
+            document.getElementById('forgotErrorMsg').classList.remove('show');
+            document.getElementById('forgotSuccessMsg').classList.remove('show');
+            document.getElementById('forgotEmail').value = '';
+        }
+
+        async function handleForgotPassword(event) {
+            event.preventDefault();
+
+            const emailOrUsername = document.getElementById('forgotEmail').value.trim();
+            const forgotBtn = document.getElementById('forgotBtn');
+            const errorMsg = document.getElementById('forgotErrorMsg');
+            const successMsg = document.getElementById('forgotSuccessMsg');
+
+            forgotBtn.disabled = true;
+            forgotBtn.innerHTML = '<span class="loading"></span>Sending...';
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+
+            // Look up user in the system
+            let users = usersCache || await fetchUsers();
+            let foundUser = null;
+
+            if (users) {
+                foundUser = users.find(u =>
+                    u.username.toLowerCase() === emailOrUsername.toLowerCase() ||
+                    (u.email && u.email.toLowerCase() === emailOrUsername.toLowerCase())
+                );
+            }
+
+            // Send reset request to admin
+            const formData = new FormData();
+            formData.append('_subject', 'BendBSN: Password Reset Request');
+            formData.append('email_or_username', emailOrUsername);
+            formData.append('found_in_system', foundUser ? 'Yes' : 'No');
+            if (foundUser) {
+                formData.append('user_details', `Username: ${foundUser.username}\nName: ${foundUser.name || 'N/A'}\nEmail: ${foundUser.email || 'N/A'}`);
+            }
+            formData.append('message', `PASSWORD RESET REQUEST
+
+User entered: ${emailOrUsername}
+Found in system: ${foundUser ? 'YES' : 'NO'}
+${foundUser ? `
+User Details:
+- Username: ${foundUser.username}
+- Name: ${foundUser.name || 'N/A'}
+- Email: ${foundUser.email || 'N/A'}
+- Status: ${foundUser.status}
+
+To reset: Open Google Sheet, find this user, and update their password.
+` : `
+User not found in the system. They may need to register first.
+`}
+Admin Panel: https://bendbsn.com/app.html?admin=true
+Google Sheet: Check your BendBSN Users sheet`);
+
+            try {
+                await fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                successMsg.textContent = 'Password reset request sent! The administrator will contact you with a new password.';
+                successMsg.classList.add('show');
+                document.getElementById('forgotEmail').value = '';
+
+            } catch (e) {
+                errorMsg.textContent = 'Error sending request. Please try again.';
+                errorMsg.classList.add('show');
+            }
+
+            forgotBtn.disabled = false;
+            forgotBtn.innerHTML = 'Send Reset Request';
+            return false;
+        }
+
         async function sendEmailNotification(name, email, username, type) {
             const adminUrl = 'https://bendbsn.com/app.html?admin=true';
             let subject;
             if (type === 'auto_approved') {
                 subject = 'BendBSN: Auto-Approved - ' + name;
             } else if (type === 'new_registration') {
+                subject = 'BendBSN: Needs Approval - ' + name;
+            } else if (type === 'account_creation') {
                 subject = 'BendBSN: Needs Approval - ' + name;
             } else {
                 subject = 'BendBSN: Account Request - ' + name;
@@ -637,24 +751,28 @@
 
             let message;
             if (type === 'auto_approved') {
-                message = `AUTO-APPROVED (matched pre-approved list)
+                message = `✅ AUTO-APPROVED (matched pre-approved list)
 
 Name: ${name}
 Email: ${email}
 Username: ${username}
 
-This user was automatically approved because they matched someone on your pre-approved contacts list. No action needed.
+This user was automatically approved. No action needed.
 
-View all users at: ${adminUrl}`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+View all users: ${adminUrl}`;
             } else {
-                message = `NEEDS APPROVAL
+                message = `🔔 NEW USER NEEDS APPROVAL
 
 Name: ${name}
 Email: ${email}
 Requested Username: ${username}
 
-This user was NOT found on your pre-approved list. Please review and approve/deny at:
-${adminUrl}`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👉 APPROVE/DENY HERE:
+${adminUrl}
+
+(Log in as admin or holdenc, scroll to Admin panel)`;
             }
             formData.append('message', message);
 
