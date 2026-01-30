@@ -253,7 +253,6 @@
             <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
             <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
             <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
-            <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showAddUser()">Add User</button>
         </div>
 
         <!-- Login History Modal -->
@@ -293,36 +292,6 @@
             </div>
         </div>
 
-        <!-- Add User Modal -->
-        <div id="addUserModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 500px; margin: 50px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #9c27b0; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="margin: 0; font-size: 18px;">Add New User</h2>
-                    <button onclick="closeAddUser()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
-                </div>
-                <div style="padding: 20px;">
-                    <p style="color: #666; margin-bottom: 15px;">Add a new user directly to the system.</p>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Full Name</label>
-                        <input type="text" id="newUserName" placeholder="John Doe" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Username</label>
-                        <input type="text" id="newUsername" placeholder="johnd" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Password</label>
-                        <input type="text" id="newUserPassword" placeholder="password123" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Email (optional)</label>
-                        <input type="email" id="newUserEmail" placeholder="john@email.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                    <button onclick="addNewUser()" style="width: 100%; background: #9c27b0; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Add User</button>
-                </div>
-            </div>
-        </div>
-
         <div class="grid">
             <!-- Online Users -->
             <div class="card">
@@ -357,6 +326,9 @@
                 <div class="card-header">
                     <span>Registered Users</span>
                     <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
+                </div>
+                <div style="padding: 8px 15px; background: #e3f2fd; font-size: 11px; color: #1565c0;">
+                    <strong>Note:</strong> Ban users here. To fully delete accounts, go to <a href="https://console.firebase.google.com/project/bendbsn-17377/authentication/users" target="_blank" style="color: #1565c0;">Firebase Console → Authentication</a>
                 </div>
                 <div class="card-body tall" id="registeredUsersList">
                     <div class="empty-state">
@@ -868,51 +840,6 @@
             }
         }
 
-        // Add User Management
-        function showAddUser() {
-            document.getElementById('addUserModal').style.display = 'block';
-        }
-
-        function closeAddUser() {
-            document.getElementById('addUserModal').style.display = 'none';
-        }
-
-        async function addNewUser() {
-            const name = document.getElementById('newUserName').value.trim();
-            const username = document.getElementById('newUsername').value.trim().toLowerCase();
-            const password = document.getElementById('newUserPassword').value;
-            const email = document.getElementById('newUserEmail').value.trim();
-
-            if (!username || !password) {
-                alert('Username and password are required.');
-                return;
-            }
-
-            try {
-                const params = new URLSearchParams({
-                    action: 'addUser',
-                    name: name,
-                    username: username,
-                    password: password,
-                    email: email,
-                    status: 'approved'
-                });
-
-                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
-
-                // Clear form
-                document.getElementById('newUserName').value = '';
-                document.getElementById('newUsername').value = '';
-                document.getElementById('newUserPassword').value = '';
-                document.getElementById('newUserEmail').value = '';
-
-                alert('User "' + username + '" added successfully!');
-                closeAddUser();
-                setTimeout(loadRegisteredUsers, 1000);
-            } catch (e) {
-                alert('Error adding user: ' + e.message);
-            }
-        }
     </script>
 </body>
 </html>

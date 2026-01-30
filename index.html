@@ -533,6 +533,7 @@
                 alert('Registration Successful!\n\nYour account has been created. You can now log in with your email and password.');
 
             } catch (error) {
+                console.error('Registration error:', error.code, error.message);
                 let message = 'Error creating account. Please try again.';
                 if (error.code === 'auth/email-already-in-use') {
                     message = 'An account with this email already exists. Try logging in or reset your password.';
@@ -540,11 +541,17 @@
                     message = 'Please enter a valid email address.';
                 } else if (error.code === 'auth/weak-password') {
                     message = 'Password is too weak. Use at least 6 characters.';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    message = 'Email/password sign-up is not enabled. Contact admin.';
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = 'Network error. Check your internet connection.';
+                } else if (error.message) {
+                    message = error.message;
                 }
                 errorMsg.textContent = message;
                 errorMsg.classList.add('show');
                 regBtn.disabled = false;
-                regBtn.innerHTML = 'Submit Registration';
+                regBtn.innerHTML = 'Create Account';
             }
 
             return false;
