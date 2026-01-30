@@ -1384,32 +1384,51 @@
             hideMentionDropdown();
         }
 
-        // Format timestamp
+        // Format timestamp (with safety checks)
         function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            const now = new Date();
-            const isToday = date.toDateString() === now.toDateString();
+            try {
+                if (!timestamp || typeof timestamp !== 'number') {
+                    return 'Unknown time';
+                }
+                const date = new Date(timestamp);
+                if (isNaN(date.getTime())) {
+                    return 'Invalid time';
+                }
+                const now = new Date();
+                const isToday = date.toDateString() === now.toDateString();
 
-            if (isToday) {
-                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } else {
-                return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                if (isToday) {
+                    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+            } catch (e) {
+                console.error('formatTime error:', e);
+                return 'Time error';
             }
         }
 
-        // Format message text with @mention highlighting
+        // Format message text with @mention highlighting (with safety checks)
         function formatMessageWithMentions(text, isMe) {
-            // Escape HTML first
-            let formatted = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            try {
+                if (!text || typeof text !== 'string') {
+                    return '';
+                }
+                // Escape HTML first
+                let formatted = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-            // Highlight @mentions with a styled span
-            formatted = formatted.replace(/@(\w+)/g, function(match, name) {
-                const bgColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.2)';
-                const textColor = isMe ? '#fff' : '#7c3aed';
-                return `<span style="background: ${bgColor}; color: ${textColor}; padding: 1px 6px; border-radius: 10px; font-weight: 600;">@${name}</span>`;
-            });
+                // Highlight @mentions with a styled span
+                formatted = formatted.replace(/@(\w+)/g, function(match, name) {
+                    const bgColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.2)';
+                    const textColor = isMe ? '#fff' : '#7c3aed';
+                    return `<span style="background: ${bgColor}; color: ${textColor}; padding: 1px 6px; border-radius: 10px; font-weight: 600;">@${name}</span>`;
+                });
 
-            return formatted;
+                return formatted;
+            } catch (e) {
+                console.error('formatMessageWithMentions error:', e);
+                return text || '';
+            }
         }
 
         // Scroll to bottom
@@ -1567,6 +1586,34 @@
 
         // Initialize chat listener
         setupChatListener();
+
+        // ========== CHAT CONNECTION MONITORING ==========
+        // Monitor Firebase connection state
+        const connectedRef = database.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            const connected = snap.val() === true;
+            const onlineCountEl = document.getElementById('onlineCount');
+            if (connected) {
+                console.log('Firebase: Connected');
+                if (onlineCountEl && onlineCountEl.textContent.includes('Disconnected')) {
+                    onlineCountEl.textContent = 'Reconnected! Refreshing...';
+                    // Re-setup listener on reconnect
+                    setTimeout(() => setupChatListener(), 500);
+                }
+            } else {
+                console.log('Firebase: Disconnected');
+                if (onlineCountEl) {
+                    onlineCountEl.innerHTML = '<span style="color: #fca5a5;">Disconnected - reconnecting...</span>';
+                }
+            }
+        });
+
+        // Wrap critical operations in try-catch
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Global error:', msg, 'at', url, lineNo);
+            // Don't show alert for every error, just log
+            return false;
+        };
 
         // ========== AI NURSING COMPANION ==========
         const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
