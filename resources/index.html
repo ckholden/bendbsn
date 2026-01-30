@@ -15,10 +15,33 @@
         }
     </script>
     <style>
+        /* CSS Variables for theming */
+        :root {
+            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-input: #fafafa;
+            --text-primary: #1a1a2e;
+            --text-secondary: #666666;
+            --accent: #1f4e79;
+            --border: #e2e8f0;
+            --chat-msg-other-bg: #e2e8f0;
+        }
+        [data-theme="dark"] {
+            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-input: #16213e;
+            --text-primary: #e6e6e6;
+            --text-secondary: #aaaaaa;
+            --accent: #4a90d9;
+            --border: #2d3748;
+            --chat-msg-other-bg: #2d3748;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: var(--bg-page);
             min-height: 100vh;
             padding: 20px;
         }
@@ -290,6 +313,50 @@
         body.has-alert { padding-top: 50px; }
         body.has-fyi { padding-top: 50px; }
         body.has-alert.has-fyi { padding-top: 100px; }
+
+        /* Side buttons */
+        .side-btn {
+            position: fixed;
+            right: 0;
+            color: white;
+            border: none;
+            padding: 12px 10px;
+            border-radius: 10px 0 0 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            box-shadow: -4px 4px 15px rgba(0,0,0,0.4);
+            z-index: 100;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transition: all 0.3s ease;
+        }
+        .side-btn:hover { transform: translateX(-3px); }
+        .logout-btn { top: 20%; background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .lock-btn { top: 29%; background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .feedback-btn { top: 51%; background: linear-gradient(135deg, #4caf50, #388e3c); }
+        .theme-toggle { top: 62%; background: linear-gradient(135deg, #9333ea, #7e22ce); }
+
+        /* Dark mode support */
+        [data-theme="dark"] .content { background: var(--bg-primary); color: var(--text-primary); }
+        [data-theme="dark"] .card { background: var(--bg-secondary); border-color: var(--border); }
+        [data-theme="dark"] .card h2 { color: var(--accent); border-color: var(--accent); }
+        [data-theme="dark"] .link-list a { color: var(--accent); }
+        [data-theme="dark"] table { color: var(--text-primary); }
+        [data-theme="dark"] th { background: var(--bg-secondary); color: var(--text-primary); }
+        [data-theme="dark"] td { border-color: var(--border); }
+        [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea { background: var(--bg-input); color: var(--text-primary); border-color: var(--border); }
+        [data-theme="dark"] footer { color: rgba(255,255,255,0.6); }
+
+        /* Lock screen */
+        #lockScreenOverlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .modal-overlay.hidden { display: none; }
+        .modal-content { background: var(--bg-primary); border-radius: 16px; padding: 25px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); color: var(--text-primary); }
+        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 15px; background: var(--bg-input); color: var(--text-primary); }
+        .modal-content textarea { min-height: 120px; resize: vertical; }
     </style>
 </head>
 <body>
@@ -311,7 +378,7 @@
             </div>
             <h1>RN Resources</h1>
             <p>Drug Information | Lab Values | Calculations | References</p>
-            <a href="/app/" class="back-btn">← Back to Documentation</a>
+            <a href="/home/" class="back-btn">← Back to Home</a>
         </div>
 
         <div class="content">
@@ -615,6 +682,77 @@
         </div>
     </div>
 
+    <!-- Lock Screen Overlay -->
+    <div id="lockScreenOverlay">
+        <div style="text-align: center; color: white;">
+            <div style="font-size: 80px; margin-bottom: 20px;">🔒</div>
+            <h1 style="font-size: 42px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">BSN9B</h1>
+            <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">Portal Locked</p>
+            <button onclick="unlockScreen()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 18px 50px; border-radius: 30px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);">🔓 Unlock Portal</button>
+            <p style="margin-top: 30px; font-size: 12px; opacity: 0.5;">Click unlock to return to your session</p>
+        </div>
+    </div>
+
+    <!-- Side Buttons -->
+    <button onclick="logout()" class="side-btn logout-btn">🚪 LOGOUT</button>
+    <button onclick="lockScreen()" class="side-btn lock-btn" title="Quick lock - preserves your session">🔒 LOCK</button>
+    <button onclick="document.getElementById('feedbackModal').classList.remove('hidden')" class="side-btn feedback-btn">💡 FEEDBACK</button>
+    <button id="themeToggle" onclick="toggleDarkMode()" class="side-btn theme-toggle"><span id="themeIcon">🌙</span> DARK</button>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 20px;">💡 Send Feedback</h2>
+                <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+            </div>
+            <form action="https://formsubmit.co/christiankholden@gmail.com" method="POST">
+                <input type="hidden" name="_subject" value="BSN9B Feedback">
+                <input type="hidden" name="_captcha" value="false">
+                <input type="hidden" name="_template" value="table">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Type</label>
+                <select name="type" required>
+                    <option value="bug">🐛 Bug Report</option>
+                    <option value="feature">✨ Feature Request</option>
+                    <option value="feedback" selected>📝 General Feedback</option>
+                </select>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Your Name</label>
+                <input type="text" name="name" required placeholder="Enter your name">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Message</label>
+                <textarea name="message" required placeholder="Describe your feedback..."></textarea>
+                <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Send Feedback</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Widget -->
+    <div id="aiWidget" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999;">
+        <button id="aiToggle" onclick="toggleAI()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; position: relative;">
+            🩺
+            <span style="position: absolute; top: -2px; left: -2px; background: #8b5cf6; color: white; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold;">AI</span>
+        </button>
+        <div id="aiBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; left: 0; width: 380px; height: 500px; background: var(--bg-primary); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700;">🩺 AI Nursing Assistant</span>
+                <button onclick="toggleAI()" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px;">&times;</button>
+            </div>
+            <div style="background: #fef3c7; padding: 8px 12px; font-size: 11px; color: #92400e;">⚠️ <strong>Educational Only:</strong> Not medical advice. Always verify with clinical resources.</div>
+            <div style="padding: 10px; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--border);">
+                <button onclick="aiQuickAction('drug')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">💊 Drug Info</button>
+                <button onclick="aiQuickAction('careplan')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">📋 Care Plan</button>
+                <button onclick="aiQuickAction('nclex')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">📝 NCLEX Q</button>
+                <button onclick="aiQuickAction('labs')" style="padding: 5px 10px; border-radius: 12px; border: none; background: #0d9488; color: white; cursor: pointer; font-size: 11px;">🔬 Labs</button>
+            </div>
+            <div id="aiMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-secondary);">
+                <div style="background: var(--chat-msg-other-bg); padding: 10px 14px; border-radius: 16px; margin-bottom: 10px; font-size: 14px; color: var(--text-primary);">Hi! I'm your AI nursing assistant. Ask me about medications, care plans, NCLEX questions, or lab values. How can I help you today?</div>
+            </div>
+            <form onsubmit="sendAIMessage(event)" style="padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; background: var(--bg-primary);">
+                <input type="text" id="aiInput" placeholder="Ask a nursing question..." style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; background: var(--bg-input); color: var(--text-primary);">
+                <button type="submit" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer;">Ask</button>
+            </form>
+        </div>
+    </div>
+
     <footer>
         BSN9B Nursing Resources
     </footer>
@@ -630,7 +768,100 @@
         function logout() {
             localStorage.removeItem('bsn9b_auth');
             localStorage.removeItem('bsn9b_user');
+            localStorage.removeItem('bsn9b_displayName');
+            localStorage.removeItem('bsn9b_uid');
             window.location.href = '/';
+        }
+
+        // Theme functions
+        function initTheme() {
+            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon();
+        }
+        function toggleDarkMode() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('bsn9b_theme', newTheme);
+            updateThemeIcon();
+        }
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.innerHTML = '<span id="themeIcon">' + (isDark ? '☀️' : '🌙') + '</span> ' + (isDark ? 'LIGHT' : 'DARK');
+            }
+        }
+        initTheme();
+
+        // Lock functions
+        function lockScreen() {
+            document.getElementById('lockScreenOverlay').style.display = 'flex';
+        }
+        function unlockScreen() {
+            document.getElementById('lockScreenOverlay').style.display = 'none';
+        }
+
+        // AI functions
+        let aiOpen = false;
+        let aiConversation = [];
+        const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+
+        function toggleAI() {
+            aiOpen = !aiOpen;
+            document.getElementById('aiBox').style.display = aiOpen ? 'flex' : 'none';
+            if (aiOpen) document.getElementById('aiInput').focus();
+        }
+        function aiQuickAction(type) {
+            const prompts = {
+                drug: 'Tell me about a common medication used in nursing (pick one and explain)',
+                careplan: 'Help me create a nursing care plan for a patient with hypertension',
+                nclex: 'Give me an NCLEX-style practice question with rationale',
+                labs: 'Explain common lab values nurses should know'
+            };
+            document.getElementById('aiInput').value = prompts[type];
+            document.getElementById('aiInput').focus();
+        }
+        function addAIMessage(message, isUser) {
+            const container = document.getElementById('aiMessages');
+            const div = document.createElement('div');
+            div.style.cssText = 'margin-bottom: 12px; display: flex; flex-direction: column; align-items: ' + (isUser ? 'flex-end' : 'flex-start') + ';';
+            div.innerHTML = '<div style="background: ' + (isUser ? 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)' : 'var(--chat-msg-other-bg)') + '; color: ' + (isUser ? 'white' : 'var(--text-primary)') + '; padding: 10px 14px; border-radius: ' + (isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px') + '; max-width: 85%; word-wrap: break-word; font-size: 14px; white-space: pre-wrap;">' + message.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        async function sendAIMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+            addAIMessage(text, true);
+            input.value = '';
+            aiConversation.push({ role: 'user', content: text });
+            if (aiConversation.length > 20) aiConversation = aiConversation.slice(-20);
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'aiTyping';
+            typingDiv.innerHTML = '<div style="background: var(--chat-msg-other-bg); color: var(--text-primary); padding: 10px 14px; border-radius: 16px; font-size: 14px;">Thinking...</div>';
+            document.getElementById('aiMessages').appendChild(typingDiv);
+            try {
+                const response = await fetch(AI_API_URL + '?action=aiChat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ messages: aiConversation })
+                });
+                const data = await response.json();
+                document.getElementById('aiTyping')?.remove();
+                if (data.success && data.response) {
+                    addAIMessage(data.response, false);
+                    aiConversation.push({ role: 'assistant', content: data.response });
+                } else {
+                    addAIMessage('Sorry, I encountered an error. Please try again.', false);
+                }
+            } catch (error) {
+                document.getElementById('aiTyping')?.remove();
+                addAIMessage('Sorry, I couldn\'t connect. Please try again.', false);
+            }
         }
 
         // Drug lookup state
