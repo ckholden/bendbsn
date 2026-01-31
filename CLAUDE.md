@@ -141,3 +141,82 @@
 - Null checks on DOM elements and Firebase data
 - Optional chaining for nested properties
 - XSS protection via HTML escaping in messages
+
+## Chat System Architecture (Jan 2025 - IMPORTANT)
+
+### Critical: Inline JavaScript Only
+The chat system MUST use **inline JavaScript** on each page. External `chat.js` causes timing/initialization issues due to IIFE pattern and Firebase auth checks.
+
+**Working Architecture:**
+- `/app/index.html` - Has ~1,400 lines of inline chat JS (the reference implementation)
+- `/home/index.html` - Copy of inline chat JS
+- `/community/index.html` - Copy of inline chat JS
+- `/resources/index.html` - Copy of inline chat JS (with prefixed variables)
+
+### Required HTML Elements (must exist before script runs)
+```html
+<!-- Alert/FYI Banners -->
+<div id="alertBanner">...<span id="alertText"></span></div>
+<div id="fyiBanner">...<span id="fyiText"></span></div>
+
+<!-- Chat Widget -->
+<div id="chatWidget">
+  <button id="chatToggle" onclick="toggleChat()">💬</button>
+  <span id="chatBadge"></span>
+  <span id="dmBadge"></span>
+  <div id="chatBox">
+    <div id="chatTitle"></div>
+    <div id="onlineCount"></div>
+    <div id="userList"><div id="userListNames"></div></div>
+    <div id="groupChatView">
+      <div id="chatMessages"></div>
+      <div id="mentionDropdown"></div>
+      <input id="chatInput">
+    </div>
+    <div id="dmView">...</div>
+  </div>
+</div>
+```
+
+### Variable Naming for /resources/
+The resources page has existing `currentUsername` variable. Chat code uses:
+- `chatCurrentUsername` instead of `currentUsername`
+- `chatDisplayName` instead of `displayName`
+- `fetchAllUsersForChat()` instead of `fetchAllUsers()`
+
+### Chat Code Structure (in order)
+1. Firebase refs: `chatRef`, `presenceRef`, `bannedRef`, `announcementsRef`
+2. `setupAnnouncementListener()` - Alert/FYI banners
+3. Auth state handler and ban checks
+4. Chat state variables: `chatOpen`, `unreadCount`, `lastReadTimestamp`
+5. Notification functions: `playNotificationSound()`, `toggleChatSound()`, etc.
+6. `toggleChat()` - Open/close chat widget
+7. `sendMessage(event)` - Send group chat message (includes admin commands)
+8. Utility functions: `formatTime()`, `formatMessageWithMentions()`, `scrollToBottom()`
+9. `setupChatListener()` - Main message rendering
+10. Connection monitoring
+11. DM functions (~480 lines): All direct message functionality
+12. Presence tracking: Online users, `toggleUserList()`
+13. @Mention autocomplete: `fetchAllUsers()`, `showMentionDropdown()`, event listeners
+
+### Service Worker Caching Issue
+After deploying updates, users may see old cached code. Solutions:
+1. Hard refresh: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
+2. Unregister service worker: DevTools → Application → Service Workers → Unregister
+3. Clear browser cache
+
+### Debug Logging (can be removed in production)
+Debug logs use 🔥 emoji prefix:
+- `🔥 CHAT SYSTEM INIT START`
+- `🔥 toggleChat called`
+- `🔥 chatBox found: true/false`
+- `🔥 chatInput found: true/false`
+- `🔥 CHAT SYSTEM INIT COMPLETE`
+
+### Admin Commands (in sendMessage)
+Only for admin emails (`christiankholden@gmail.com`, `holdenc`):
+- `alert/message` - Set red alert banner
+- `alert/clear` - Clear alert banner
+- `fyi/message` - Set yellow FYI banner
+- `fyi/clear` - Clear FYI banner
+- `chat/clear` - Clear all chat messages
