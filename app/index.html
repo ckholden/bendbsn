@@ -1653,6 +1653,10 @@
             <span class="menu-icon" aria-hidden="true">🔒</span>
             <span>Lock Screen</span>
         </button>
+        <button class="more-menu-item" role="menuitem" onclick="toggleFullscreen(); toggleMoreMenu();" id="fullscreenBtn">
+            <span class="menu-icon" aria-hidden="true" id="fullscreenIcon">⛶</span>
+            <span id="fullscreenText">Full Screen</span>
+        </button>
         <button class="more-menu-item" role="menuitem" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();">
             <span class="menu-icon" aria-hidden="true">💡</span>
             <span>Feedback</span>
@@ -1669,6 +1673,43 @@
     <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
+        // ========== FULLSCREEN MODE ==========
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                // Enter fullscreen
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                }
+                updateFullscreenUI(true);
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                updateFullscreenUI(false);
+            }
+        }
+
+        function updateFullscreenUI(isFullscreen) {
+            const icon = document.getElementById('fullscreenIcon');
+            const text = document.getElementById('fullscreenText');
+            if (icon) icon.textContent = isFullscreen ? '⛶' : '⛶';
+            if (text) text.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+        }
+
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', () => {
+            updateFullscreenUI(!!document.fullscreenElement);
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            updateFullscreenUI(!!document.webkitFullscreenElement);
+        });
+
         // ========== TOAST NOTIFICATION SYSTEM ==========
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');

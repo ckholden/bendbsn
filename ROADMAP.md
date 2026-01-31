@@ -58,7 +58,7 @@
 - [x] Swipe gestures for panels (swipe right/down to close chat, swipe left/down for AI)
 - [x] Improved form inputs for mobile (44px touch targets, 16px font for iOS)
 - [x] Safe area insets for notched phones
-- [ ] Full-screen mode option
+- [x] Full-screen mode option (in More menu on all pages)
 
 ### Phase 4: Community Enhancements (Priority: MEDIUM)
 - [x] Comment threads on posts (reply functionality with Firebase)
@@ -70,7 +70,7 @@
 ### Phase 5: Clinical Toolkit Expansion (Priority: MEDIUM)
 - [x] SBAR shift handoff generator (interactive form with copy to clipboard)
 - [x] Procedure checklists (Foley, IV, Wound Care, Med Admin, Trach Care)
-- [ ] Timer/reminders for med passes
+- [x] Med pass timer with browser notifications and sound alerts
 
 ### Phase 6: PWA Enhancement (Priority: MEDIUM)
 - [ ] Push notifications

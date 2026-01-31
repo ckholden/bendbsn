@@ -532,6 +532,10 @@
             <span class="menu-icon" aria-hidden="true">🔒</span>
             <span>Lock Screen</span>
         </button>
+        <button class="more-menu-item" onclick="toggleFullscreen(); toggleMoreMenu();" role="menuitem" aria-label="Toggle full screen" id="fullscreenBtn">
+            <span class="menu-icon" aria-hidden="true" id="fullscreenIcon">⛶</span>
+            <span id="fullscreenText">Full Screen</span>
+        </button>
         <button class="more-menu-item" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();" role="menuitem" aria-label="Send feedback">
             <span class="menu-icon" aria-hidden="true">💡</span>
             <span>Feedback</span>
@@ -713,6 +717,27 @@
     </div>
 
     <script>
+        // ========== FULLSCREEN MODE ==========
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                updateFullscreenUI(true);
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                updateFullscreenUI(false);
+            }
+        }
+        function updateFullscreenUI(isFullscreen) {
+            const icon = document.getElementById('fullscreenIcon');
+            const text = document.getElementById('fullscreenText');
+            if (text) text.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+        }
+        document.addEventListener('fullscreenchange', () => updateFullscreenUI(!!document.fullscreenElement));
+        document.addEventListener('webkitfullscreenchange', () => updateFullscreenUI(!!document.webkitFullscreenElement));
+
         // ========== TOAST NOTIFICATION SYSTEM ==========
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');

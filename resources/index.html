@@ -392,6 +392,52 @@
             color: #888;
         }
 
+        /* Med Timer */
+        .timer-preset {
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .timer-preset:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .active-timer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #4caf50;
+        }
+        [data-theme="dark"] .active-timer {
+            background: linear-gradient(135deg, #1b3d1b 0%, #2d4a2d 100%);
+        }
+        .timer-info { flex: 1; }
+        .timer-label { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+        .timer-countdown { font-size: 20px; font-weight: 700; color: #2e7d32; font-family: monospace; }
+        [data-theme="dark"] .timer-countdown { color: #81c784; }
+        .timer-cancel {
+            padding: 6px 12px;
+            background: #ffebee;
+            color: #c62828;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .timer-cancel:hover { background: #c62828; color: white; }
+
         @keyframes alertFlash {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
@@ -1189,6 +1235,40 @@
                     </div>
                 </div>
 
+                <!-- Medication Timer -->
+                <div class="card">
+                    <h2>⏱️ Med Pass Timer</h2>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Set reminders for medication rounds or patient checks</p>
+
+                    <div style="display: grid; gap: 12px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button onclick="setMedTimer(15)" class="timer-preset">15 min</button>
+                            <button onclick="setMedTimer(30)" class="timer-preset">30 min</button>
+                            <button onclick="setMedTimer(60)" class="timer-preset">1 hour</button>
+                            <button onclick="setMedTimer(120)" class="timer-preset">2 hours</button>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label style="font-size: 13px; font-weight: 600;">Custom:</label>
+                            <input type="number" id="customTimerMin" placeholder="Minutes" min="1" max="480" style="flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
+                            <button onclick="setMedTimer(parseInt(document.getElementById('customTimerMin').value))" style="padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Set</button>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label style="font-size: 13px; font-weight: 600;">Label:</label>
+                            <input type="text" id="timerLabel" placeholder="e.g., Room 412 Pain Med" style="flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
+                        </div>
+                    </div>
+
+                    <!-- Active Timers -->
+                    <div id="activeTimers" style="margin-top: 15px;"></div>
+
+                    <p style="font-size: 11px; color: #888; margin-top: 15px;">
+                        <strong>Note:</strong> Enable browser notifications for alerts when timer completes.
+                        <button onclick="requestNotificationPermission()" style="background: none; border: none; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 11px;">Enable Notifications</button>
+                    </p>
+                </div>
+
                 <!-- Additional Resources -->
                 <div class="card">
                     <h2>🔗 Additional Resources</h2>
@@ -1248,6 +1328,10 @@
         <button class="more-menu-item" role="menuitem" onclick="lockScreen(); toggleMoreMenu();">
             <span class="menu-icon" aria-hidden="true">🔒</span>
             <span>Lock Screen</span>
+        </button>
+        <button class="more-menu-item" role="menuitem" onclick="toggleFullscreen(); toggleMoreMenu();" id="fullscreenBtn">
+            <span class="menu-icon" aria-hidden="true" id="fullscreenIcon">⛶</span>
+            <span id="fullscreenText">Full Screen</span>
         </button>
         <button class="more-menu-item" role="menuitem" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();">
             <span class="menu-icon" aria-hidden="true">💡</span>
@@ -1842,6 +1926,147 @@ Important guidelines:
             }
         }
 
+        // ========== MED PASS TIMER ==========
+        let activeTimers = [];
+        let timerIdCounter = 0;
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showToast('Notifications enabled!', 'success');
+                    } else {
+                        showToast('Notifications blocked. Enable in browser settings.', 'warning');
+                    }
+                });
+            } else {
+                showToast('Browser does not support notifications', 'error');
+            }
+        }
+
+        function setMedTimer(minutes) {
+            if (!minutes || minutes < 1 || minutes > 480) {
+                showToast('Please enter a valid time (1-480 minutes)', 'warning');
+                return;
+            }
+
+            const label = document.getElementById('timerLabel').value.trim() || 'Med Timer';
+            const timerId = ++timerIdCounter;
+            const endTime = Date.now() + (minutes * 60 * 1000);
+
+            const timer = {
+                id: timerId,
+                label: label,
+                endTime: endTime,
+                interval: null
+            };
+
+            timer.interval = setInterval(() => updateTimer(timerId), 1000);
+            activeTimers.push(timer);
+
+            document.getElementById('timerLabel').value = '';
+            document.getElementById('customTimerMin').value = '';
+
+            renderTimers();
+            showToast(`Timer set for ${minutes} minute${minutes > 1 ? 's' : ''}`, 'success');
+        }
+
+        function updateTimer(timerId) {
+            const timer = activeTimers.find(t => t.id === timerId);
+            if (!timer) return;
+
+            const remaining = timer.endTime - Date.now();
+
+            if (remaining <= 0) {
+                // Timer complete
+                clearInterval(timer.interval);
+                activeTimers = activeTimers.filter(t => t.id !== timerId);
+                renderTimers();
+
+                // Show notification
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Med Timer Complete', {
+                        body: timer.label,
+                        icon: '/icons/icon-192.png',
+                        tag: 'med-timer-' + timerId,
+                        requireInteraction: true
+                    });
+                }
+
+                // Play sound and show toast
+                playTimerSound();
+                showToast(`Timer complete: ${timer.label}`, 'success', 10000);
+            } else {
+                renderTimers();
+            }
+        }
+
+        function cancelTimer(timerId) {
+            const timer = activeTimers.find(t => t.id === timerId);
+            if (timer) {
+                clearInterval(timer.interval);
+                activeTimers = activeTimers.filter(t => t.id !== timerId);
+                renderTimers();
+                showToast('Timer cancelled', 'info');
+            }
+        }
+
+        function renderTimers() {
+            const container = document.getElementById('activeTimers');
+            if (!container) return;
+
+            if (activeTimers.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = activeTimers.map(timer => {
+                const remaining = Math.max(0, timer.endTime - Date.now());
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                return `
+                    <div class="active-timer">
+                        <div class="timer-info">
+                            <div class="timer-label">${escapeHtml(timer.label)}</div>
+                            <div class="timer-countdown">${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}</div>
+                        </div>
+                        <button class="timer-cancel" onclick="cancelTimer(${timer.id})">Cancel</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function playTimerSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                oscillator.start();
+                setTimeout(() => { oscillator.stop(); }, 200);
+                setTimeout(() => {
+                    const osc2 = audioContext.createOscillator();
+                    osc2.connect(gainNode);
+                    osc2.frequency.value = 1000;
+                    osc2.type = 'sine';
+                    osc2.start();
+                    setTimeout(() => osc2.stop(), 200);
+                }, 300);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
         // APGAR Calculator
         function calculateAPGAR() {
             const appearance = parseInt(document.getElementById('apgar-appearance').value) || 0;
@@ -2050,6 +2275,26 @@ Generated: ${new Date().toLocaleString()}`;
     </div>
 
     <script>
+        // ========== FULLSCREEN MODE ==========
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                updateFullscreenUI(true);
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                updateFullscreenUI(false);
+            }
+        }
+        function updateFullscreenUI(isFullscreen) {
+            const text = document.getElementById('fullscreenText');
+            if (text) text.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+        }
+        document.addEventListener('fullscreenchange', () => updateFullscreenUI(!!document.fullscreenElement));
+        document.addEventListener('webkitfullscreenchange', () => updateFullscreenUI(!!document.webkitFullscreenElement));
+
         // ========== TOAST NOTIFICATION SYSTEM ==========
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');
