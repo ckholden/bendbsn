@@ -293,9 +293,13 @@
 
     // ========== CHAT LISTENER ==========
     function setupChatListener() {
+        console.log('Chat.js: Setting up chat listener');
         chatRef.on('value', (snapshot) => {
             const container = document.getElementById('chatMessages');
-            if (!container) return;
+            if (!container) {
+                console.warn('Chat.js: chatMessages container not found');
+                return;
+            }
 
             if (!snapshot.exists() || snapshot.numChildren() === 0) {
                 container.innerHTML = '<p style="text-align: center; color: var(--text-secondary, #888); font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
@@ -344,12 +348,16 @@
             scrollToBottom();
 
             if (newMessages > 0 && !chatOpen) {
+                console.log('Chat.js: New messages detected:', newMessages);
                 const shouldNotify = unreadCount < newMessages;
                 unreadCount = newMessages;
                 const badge = document.getElementById('chatBadge');
                 if (badge) {
                     badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
                     badge.style.display = 'flex';
+                    console.log('Chat.js: Badge updated');
+                } else {
+                    console.warn('Chat.js: chatBadge element not found');
                 }
                 if (shouldNotify && messages.length > 0) {
                     const latestMessage = messages[messages.length - 1];
@@ -740,6 +748,7 @@
 
     // DM Listener for notifications
     function setupDMListener() {
+        console.log('Chat.js: Setting up DM listener');
         directMessagesRef.on('child_changed', (snapshot) => {
             try {
                 const convId = snapshot.key;
@@ -1012,7 +1021,11 @@
     function setupMentionListeners() {
         const chatInput = document.getElementById('chatInput');
         const mentionDropdown = document.getElementById('mentionDropdown');
-        if (!chatInput || !mentionDropdown) return;
+        if (!chatInput || !mentionDropdown) {
+            console.warn('Chat.js: Could not find chatInput or mentionDropdown elements');
+            return;
+        }
+        console.log('Chat.js: Mention listeners attached');
 
         chatInput.addEventListener('input', function(e) {
             const value = this.value;
