@@ -208,6 +208,101 @@
         .badge-blog { background: #dbeafe; color: #1e40af; }
         .badge-career { background: #d1fae5; color: #065f46; }
         .badge-nclex { background: #fce7f3; color: #9d174d; }
+        .badge-question { background: #e0e7ff; color: #3730a3; }
+        .badge-general { background: #f3f4f6; color: #374151; }
+
+        /* Replies/Comments Section */
+        .replies-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+        .replies-section.show { display: block; }
+
+        .replies-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .replies-header h4 {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .replies-toggle {
+            font-size: 12px;
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .reply-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .reply-form input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            font-size: 13px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+        .reply-form input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .reply-form button {
+            padding: 10px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .reply-form button:hover { background: var(--accent-light); }
+
+        .reply-item {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--accent);
+        }
+        .reply-author {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        .reply-content {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .reply-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .replies-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .no-replies {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
 
         .post-content {
             color: var(--text-primary);
@@ -603,12 +698,14 @@
 
         <div class="content">
             <!-- Category Tabs -->
-            <div class="category-tabs">
-                <button class="category-tab active" onclick="filterCategory('all')">All</button>
-                <button class="category-tab" onclick="filterCategory('announcement')">Announcements</button>
-                <button class="category-tab" onclick="filterCategory('blog')">Study Tips</button>
-                <button class="category-tab" onclick="filterCategory('career')">Career</button>
-                <button class="category-tab" onclick="filterCategory('nclex')">NCLEX</button>
+            <div class="category-tabs" role="tablist" aria-label="Post categories">
+                <button class="category-tab active" role="tab" aria-selected="true" onclick="filterCategory('all')">All</button>
+                <button class="category-tab" role="tab" aria-selected="false" onclick="filterCategory('announcement')">Announcements</button>
+                <button class="category-tab" role="tab" aria-selected="false" onclick="filterCategory('blog')">Study Tips</button>
+                <button class="category-tab" role="tab" aria-selected="false" onclick="filterCategory('career')">Career</button>
+                <button class="category-tab" role="tab" aria-selected="false" onclick="filterCategory('nclex')">NCLEX</button>
+                <button class="category-tab" role="tab" aria-selected="false" onclick="filterCategory('question')">Questions</button>
+                <button class="category-tab" role="tab" aria-selected="false" onclick="filterCategory('general')">General</button>
             </div>
 
             <!-- Create Post Button -->
@@ -653,9 +750,12 @@
 
                 <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Category</label>
                 <select id="postCategory" required>
-                    <option value="blog">Study Tips</option>
+                    <option value="announcement">Announcements</option>
+                    <option value="blog" selected>Study Tips</option>
                     <option value="career">Career</option>
                     <option value="nclex">NCLEX</option>
+                    <option value="question">Questions</option>
+                    <option value="general">General</option>
                 </select>
 
                 <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Content</label>
@@ -2184,9 +2284,11 @@
                 announcement: '<span class="post-badge badge-announcement">Announcement</span>',
                 blog: '<span class="post-badge badge-blog">Study Tips</span>',
                 career: '<span class="post-badge badge-career">Career</span>',
-                nclex: '<span class="post-badge badge-nclex">NCLEX</span>'
+                nclex: '<span class="post-badge badge-nclex">NCLEX</span>',
+                question: '<span class="post-badge badge-question">Question</span>',
+                general: '<span class="post-badge badge-general">General</span>'
             };
-            return badges[category] || '';
+            return badges[category] || '<span class="post-badge badge-general">General</span>';
         }
 
         let allPosts = [];
@@ -2227,8 +2329,9 @@
         }
 
         function createPostCard(post, isPinned) {
+            const replyCount = post.replyCount || 0;
             return `
-                <div class="post-card ${isPinned ? 'pinned' : ''}">
+                <div class="post-card ${isPinned ? 'pinned' : ''}" id="post-${post.id}">
                     <div class="post-header">
                         <div>
                             <div class="post-title">${isPinned ? '&#128204; ' : ''}${escapeHtml(post.title)}</div>
@@ -2236,15 +2339,28 @@
                         </div>
                         ${getCategoryBadge(post.category)}
                     </div>
-                    <div class="post-content">${escapeHtml(post.content).substring(0, 300)}${post.content.length > 300 ? '...' : ''}</div>
+                    <div class="post-content">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
                     <div class="post-footer">
                         <div class="post-actions">
-                            <button class="post-action" onclick="likePost('${post.id}')">
-                                &#10084;&#65039; ${post.likes || 0}
+                            <button class="post-action" onclick="likePost('${post.id}')" aria-label="Like post">
+                                &#10084;&#65039; <span id="likes-${post.id}">${post.likes || 0}</span>
                             </button>
-                            <button class="post-action" onclick="toggleComments('${post.id}')">
-                                &#128172; ${post.comments || 0}
+                            <button class="post-action" onclick="toggleReplies('${post.id}')" aria-label="View replies" aria-expanded="false">
+                                &#128172; <span id="reply-count-${post.id}">${replyCount}</span> Replies
                             </button>
+                        </div>
+                    </div>
+                    <!-- Replies Section -->
+                    <div class="replies-section" id="replies-${post.id}">
+                        <div class="replies-header">
+                            <h4>Replies</h4>
+                        </div>
+                        <div class="reply-form">
+                            <input type="text" id="reply-input-${post.id}" placeholder="Write a reply..." onkeypress="if(event.key==='Enter')submitReply('${post.id}')">
+                            <button onclick="submitReply('${post.id}')">Reply</button>
+                        </div>
+                        <div class="replies-list" id="replies-list-${post.id}">
+                            <div class="no-replies">Loading replies...</div>
                         </div>
                     </div>
                 </div>
@@ -2262,9 +2378,83 @@
             postRef.transaction(current => (current || 0) + 1);
         }
 
+        // Track which posts have replies expanded
+        const expandedReplies = new Set();
+
+        function toggleReplies(postId) {
+            const repliesSection = document.getElementById('replies-' + postId);
+            const btn = document.querySelector(`[onclick="toggleReplies('${postId}')"]`);
+
+            if (repliesSection.classList.contains('show')) {
+                repliesSection.classList.remove('show');
+                expandedReplies.delete(postId);
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            } else {
+                repliesSection.classList.add('show');
+                expandedReplies.add(postId);
+                if (btn) btn.setAttribute('aria-expanded', 'true');
+                loadReplies(postId);
+            }
+        }
+
+        function loadReplies(postId) {
+            const repliesRef = database.ref('community/posts/' + postId + '/replies');
+            const repliesList = document.getElementById('replies-list-' + postId);
+
+            repliesRef.orderByChild('createdAt').on('value', (snapshot) => {
+                const replies = [];
+                snapshot.forEach(child => {
+                    replies.push({ id: child.key, ...child.val() });
+                });
+
+                if (replies.length === 0) {
+                    repliesList.innerHTML = '<div class="no-replies">No replies yet. Be the first to reply!</div>';
+                } else {
+                    repliesList.innerHTML = replies.map(reply => `
+                        <div class="reply-item">
+                            <div class="reply-author">${escapeHtml(reply.author)}</div>
+                            <div class="reply-content">${escapeHtml(reply.content)}</div>
+                            <div class="reply-time">${formatTimeAgo(reply.createdAt)}</div>
+                        </div>
+                    `).join('');
+                }
+
+                // Update reply count
+                const countEl = document.getElementById('reply-count-' + postId);
+                if (countEl) countEl.textContent = replies.length;
+
+                // Update the post's replyCount in Firebase
+                database.ref('community/posts/' + postId + '/replyCount').set(replies.length);
+            });
+        }
+
+        function submitReply(postId) {
+            const input = document.getElementById('reply-input-' + postId);
+            const content = input.value.trim();
+
+            if (!content) {
+                showToast('Please enter a reply', 'warning');
+                return;
+            }
+
+            const repliesRef = database.ref('community/posts/' + postId + '/replies');
+            repliesRef.push({
+                content: content,
+                author: displayName,
+                authorEmail: currentUsername,
+                createdAt: Date.now()
+            }).then(() => {
+                input.value = '';
+                showToast('Reply posted!', 'success');
+            }).catch(err => {
+                showToast('Failed to post reply', 'error');
+                console.error(err);
+            });
+        }
+
+        // Legacy function name for compatibility
         function toggleComments(postId) {
-            // TODO: Implement comment expansion
-            showToast('Comments coming soon!', 'info');
+            toggleReplies(postId);
         }
 
         // Load posts
@@ -2491,6 +2681,35 @@ Important guidelines:
                 }
             }
         });
+
+        // ========== SWIPE GESTURES FOR MOBILE ==========
+        (function() {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            const SWIPE_THRESHOLD = 80;
+            const SWIPE_RESTRAINT = 100;
+
+            function addSwipeToClose(element, closeCallback, direction) {
+                if (!element) return;
+                element.addEventListener('touchstart', function(e) {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+                element.addEventListener('touchend', function(e) {
+                    const touchEndX = e.changedTouches[0].screenX;
+                    const touchEndY = e.changedTouches[0].screenY;
+                    const diffX = touchEndX - touchStartX;
+                    const diffY = touchEndY - touchStartY;
+                    if (diffY > SWIPE_THRESHOLD && Math.abs(diffX) < SWIPE_RESTRAINT) { closeCallback(); return; }
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffY) < SWIPE_RESTRAINT) {
+                        if (direction === 'right' && diffX > 0) closeCallback();
+                        if (direction === 'left' && diffX < 0) closeCallback();
+                    }
+                }, { passive: true });
+            }
+            addSwipeToClose(document.getElementById('chatBox'), function() { if (chatOpen) toggleChat(); }, 'right');
+            addSwipeToClose(document.getElementById('aiBox'), function() { if (aiOpen) toggleAI(); }, 'left');
+        })();
 
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {

@@ -952,6 +952,49 @@
                         </div>
                     </div>
 
+                    <!-- SBAR Shift Handoff Generator -->
+                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">📝 SBAR Shift Handoff Generator</h3>
+                    <div class="collapse-content hidden">
+                        <p style="font-size: 11px; color: #666; margin-bottom: 12px;">Fill in the fields below to generate a complete SBAR handoff report</p>
+                        <div id="sbarForm" style="display: grid; gap: 12px;">
+                            <div style="background: #e3f2fd; padding: 12px; border-radius: 8px; border-left: 4px solid #1976d2;">
+                                <strong style="color: #1976d2; font-size: 13px;">S - Situation</strong>
+                                <input type="text" id="sbar-patient" placeholder="Patient name & room (e.g., John Doe, Rm 412)" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-reason" placeholder="Reason for handoff (e.g., End of shift report)" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                            <div style="background: #fff3e0; padding: 12px; border-radius: 8px; border-left: 4px solid #ff9800;">
+                                <strong style="color: #e65100; font-size: 13px;">B - Background</strong>
+                                <input type="text" id="sbar-diagnosis" placeholder="Admitting diagnosis" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-history" placeholder="Relevant history (allergies, code status, isolation)" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-meds" placeholder="Key medications & IVs" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                            <div style="background: #e8f5e9; padding: 12px; border-radius: 8px; border-left: 4px solid #4caf50;">
+                                <strong style="color: #2e7d32; font-size: 13px;">A - Assessment</strong>
+                                <input type="text" id="sbar-vitals" placeholder="Latest vitals (BP, HR, RR, Temp, SpO2, Pain)" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-neuro" placeholder="Neuro/LOC status" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-io" placeholder="I&O, last void/BM" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-concerns" placeholder="Current concerns or changes" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                            <div style="background: #fce4ec; padding: 12px; border-radius: 8px; border-left: 4px solid #e91e63;">
+                                <strong style="color: #c2185b; font-size: 13px;">R - Recommendation</strong>
+                                <input type="text" id="sbar-pending" placeholder="Pending tests/procedures" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-followup" placeholder="Follow-up actions needed" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <input type="text" id="sbar-priority" placeholder="Priority concerns for next shift" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button onclick="generateSBARHandoff()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #1f4e79, #2d5a87); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Generate Handoff</button>
+                            <button onclick="clearSBARForm()" style="padding: 12px 20px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; cursor: pointer;">Clear</button>
+                        </div>
+                        <div id="sbar-output" style="display: none; margin-top: 15px; background: #fff; border: 2px solid #1f4e79; border-radius: 8px; padding: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <strong style="color: #1f4e79;">Generated SBAR Handoff</strong>
+                                <button onclick="copySBARHandoff()" style="padding: 6px 12px; background: #4caf50; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">Copy to Clipboard</button>
+                            </div>
+                            <pre id="sbar-text" style="white-space: pre-wrap; font-family: inherit; font-size: 12px; line-height: 1.6; margin: 0; color: #333;"></pre>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- NANDA Diagnoses Quick Reference -->
@@ -1656,6 +1699,80 @@ Important guidelines:
                 interpretation = '(Critically low - immediate resuscitation)';
             }
             document.getElementById('apgar-interpretation').textContent = interpretation;
+        }
+
+        // ========== SBAR HANDOFF GENERATOR ==========
+        function generateSBARHandoff() {
+            const patient = document.getElementById('sbar-patient').value.trim();
+            const reason = document.getElementById('sbar-reason').value.trim();
+            const diagnosis = document.getElementById('sbar-diagnosis').value.trim();
+            const history = document.getElementById('sbar-history').value.trim();
+            const meds = document.getElementById('sbar-meds').value.trim();
+            const vitals = document.getElementById('sbar-vitals').value.trim();
+            const neuro = document.getElementById('sbar-neuro').value.trim();
+            const io = document.getElementById('sbar-io').value.trim();
+            const concerns = document.getElementById('sbar-concerns').value.trim();
+            const pending = document.getElementById('sbar-pending').value.trim();
+            const followup = document.getElementById('sbar-followup').value.trim();
+            const priority = document.getElementById('sbar-priority').value.trim();
+
+            if (!patient) {
+                showToast('Please enter patient name and room', 'warning');
+                return;
+            }
+
+            let output = `SBAR SHIFT HANDOFF REPORT
+${'='.repeat(40)}
+
+S - SITUATION
+Patient: ${patient || 'N/A'}
+Reason: ${reason || 'End of shift handoff'}
+
+B - BACKGROUND
+Diagnosis: ${diagnosis || 'N/A'}
+Relevant History: ${history || 'N/A'}
+Key Medications/IVs: ${meds || 'N/A'}
+
+A - ASSESSMENT
+Vitals: ${vitals || 'N/A'}
+Neuro/LOC: ${neuro || 'N/A'}
+I&O: ${io || 'N/A'}
+Current Concerns: ${concerns || 'None noted'}
+
+R - RECOMMENDATION
+Pending Tests/Procedures: ${pending || 'None'}
+Follow-up Actions: ${followup || 'Continue current plan of care'}
+Priority for Next Shift: ${priority || 'Monitor as per orders'}
+
+${'='.repeat(40)}
+Generated: ${new Date().toLocaleString()}`;
+
+            document.getElementById('sbar-text').textContent = output;
+            document.getElementById('sbar-output').style.display = 'block';
+            showToast('SBAR handoff generated!', 'success');
+        }
+
+        function clearSBARForm() {
+            const inputs = document.querySelectorAll('#sbarForm input');
+            inputs.forEach(input => input.value = '');
+            document.getElementById('sbar-output').style.display = 'none';
+            showToast('Form cleared', 'info');
+        }
+
+        function copySBARHandoff() {
+            const text = document.getElementById('sbar-text').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('Copied to clipboard!', 'success');
+            });
         }
     </script>
 
@@ -2978,6 +3095,35 @@ Important guidelines:
                 }
             }
         });
+
+        // ========== SWIPE GESTURES FOR MOBILE ==========
+        (function() {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            const SWIPE_THRESHOLD = 80;
+            const SWIPE_RESTRAINT = 100;
+
+            function addSwipeToClose(element, closeCallback, direction) {
+                if (!element) return;
+                element.addEventListener('touchstart', function(e) {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+                element.addEventListener('touchend', function(e) {
+                    const touchEndX = e.changedTouches[0].screenX;
+                    const touchEndY = e.changedTouches[0].screenY;
+                    const diffX = touchEndX - touchStartX;
+                    const diffY = touchEndY - touchStartY;
+                    if (diffY > SWIPE_THRESHOLD && Math.abs(diffX) < SWIPE_RESTRAINT) { closeCallback(); return; }
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffY) < SWIPE_RESTRAINT) {
+                        if (direction === 'right' && diffX > 0) closeCallback();
+                        if (direction === 'left' && diffX < 0) closeCallback();
+                    }
+                }, { passive: true });
+            }
+            addSwipeToClose(document.getElementById('chatBox'), function() { if (chatOpen) toggleChat(); }, 'right');
+            addSwipeToClose(document.getElementById('aiBox'), function() { if (aiOpen) toggleAI(); }, 'left');
+        })();
 
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {

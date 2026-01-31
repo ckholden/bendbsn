@@ -2179,6 +2179,35 @@ Important guidelines:
             }
         });
 
+        // ========== SWIPE GESTURES FOR MOBILE ==========
+        (function() {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            const SWIPE_THRESHOLD = 80;
+            const SWIPE_RESTRAINT = 100;
+
+            function addSwipeToClose(element, closeCallback, direction) {
+                if (!element) return;
+                element.addEventListener('touchstart', function(e) {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+                element.addEventListener('touchend', function(e) {
+                    const touchEndX = e.changedTouches[0].screenX;
+                    const touchEndY = e.changedTouches[0].screenY;
+                    const diffX = touchEndX - touchStartX;
+                    const diffY = touchEndY - touchStartY;
+                    if (diffY > SWIPE_THRESHOLD && Math.abs(diffX) < SWIPE_RESTRAINT) { closeCallback(); return; }
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffY) < SWIPE_RESTRAINT) {
+                        if (direction === 'right' && diffX > 0) closeCallback();
+                        if (direction === 'left' && diffX < 0) closeCallback();
+                    }
+                }, { passive: true });
+            }
+            addSwipeToClose(document.getElementById('chatBox'), function() { if (chatOpen) toggleChat(); }, 'right');
+            addSwipeToClose(document.getElementById('aiBox'), function() { if (aiOpen) toggleAI(); }, 'left');
+        })();
+
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
