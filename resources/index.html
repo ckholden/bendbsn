@@ -1659,6 +1659,1109 @@ Important guidelines:
         const auth = firebase.auth();
         const database = firebase.database();
 
+        // ========== CHAT SYSTEM (INLINE FROM /app/) ==========
+        const chatRef = database.ref('chat/messages');
+        const presenceRef = database.ref('chat/presence');
+        const bannedRef = database.ref('banned');
+        const announcementsRef = database.ref('announcements');
+
+        // Listen for announcements (alert/fyi banners - inside header)
+        function setupAnnouncementListener() {
+            announcementsRef.on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const alertBanner = document.getElementById('alertBanner');
+                const fyiBanner = document.getElementById('fyiBanner');
+                const alertText = document.getElementById('alertText');
+                const fyiText = document.getElementById('fyiText');
+
+                // Handle alert banner
+                if (data.alert && data.alert.message) {
+                    alertText.textContent = data.alert.message;
+                    alertBanner.style.display = 'block';
+                    document.body.classList.add('has-alert');
+                } else {
+                    alertBanner.style.display = 'none';
+                    document.body.classList.remove('has-alert');
+                }
+
+                // Handle FYI banner (offset if alert is showing)
+                if (data.fyi && data.fyi.message) {
+                    fyiText.textContent = data.fyi.message;
+                    fyiBanner.style.display = 'block';
+                    fyiBanner.style.top = (data.alert && data.alert.message) ? '50px' : '0';
+                    document.body.classList.add('has-fyi');
+                } else {
+                    fyiBanner.style.display = 'none';
+                    document.body.classList.remove('has-fyi');
+                }
+            });
+        }
+        setupAnnouncementListener();
+        console.log('Firebase initialized, chatRef path:', chatRef.toString());
+
+        // Get display name (first name) - stored when user logs in
+        const chatCurrentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
+        const chatDisplayName = localStorage.getItem('bsn9b_displayName') || chatCurrentUsername;
+
+        // Verify Firebase Auth state and re-authenticate if needed
+        let firebaseAuthReady = false;
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Firebase Auth: Logged in as', user.email);
+                firebaseAuthReady = true;
+            } else {
+                console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
+                if (localStorage.getItem('bsn9b_auth') === 'true') {
+                    console.warn('Session exists but Firebase auth lost - may need to re-login');
+                }
+            }
+        });
+
+        // Check if current user is banned
+        function checkIfBanned() {
+            bannedRef.once('value', (snapshot) => {
+                snapshot.forEach((child) => {
+                    const banned = child.val();
+                    if (banned.username === chatCurrentUsername || banned.username === chatDisplayName) {
+                        alert('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'));
+                        localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
+                        window.location.href = '/';
+                    }
+                });
+            });
+        }
+        checkIfBanned();
+
+        // Listen for bans in real-time
+        bannedRef.on('child_added', (snapshot) => {
+            const banned = snapshot.val();
+            if (banned.username === chatCurrentUsername || banned.username === chatDisplayName) {
+                alert('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'));
+                localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
+                window.location.href = '/';
+            }
+        });
+
+        // Chat state
+        let chatOpen = false;
+        let unreadCount = 0;
+        let lastReadTimestamp = parseInt(localStorage.getItem('chatLastRead') || '0');
+
+        // Notification preferences (sound ON by default, browser notifications OFF by default)
+        let soundEnabled = localStorage.getItem('chatSoundEnabled') !== 'false';
+        let notificationsEnabled = localStorage.getItem('chatNotificationsEnabled') === 'true';
+
+        // Audio notification using Web Audio API
+        function playNotificationSound() {
+            if (!soundEnabled) return;
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.log('Audio notification not available:', e);
+            }
+        }
+
+        // Toggle sound notifications
+        function toggleChatSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('chatSoundEnabled', soundEnabled.toString());
+            updateSoundToggleUI();
+        }
+
+        function updateSoundToggleUI() {
+            const btn = document.getElementById('soundToggleBtn');
+            if (btn) {
+                btn.innerHTML = soundEnabled ? '🔔' : '🔕';
+                btn.title = soundEnabled ? 'Sound ON (click to mute)' : 'Sound OFF (click to unmute)';
+            }
+        }
+
+        // Browser Notifications
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('Browser does not support notifications');
+                return false;
+            }
+
+            if (Notification.permission === 'granted') {
+                notificationsEnabled = true;
+                localStorage.setItem('chatNotificationsEnabled', 'true');
+                updateNotificationToggleUI();
+                return true;
+            }
+
+            if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    notificationsEnabled = true;
+                    localStorage.setItem('chatNotificationsEnabled', 'true');
+                    updateNotificationToggleUI();
+                    return true;
+                }
+            }
+
+            notificationsEnabled = false;
+            localStorage.setItem('chatNotificationsEnabled', 'false');
+            updateNotificationToggleUI();
+            return false;
+        }
+
+        function sendBrowserNotification(message) {
+            if (!notificationsEnabled || Notification.permission !== 'granted') return;
+            if (document.hasFocus() && chatOpen) return;
+
+            try {
+                const notification = new Notification('BSN9B Chat', {
+                    body: `${message.user}: ${message.text.substring(0, 100)}${message.text.length > 100 ? '...' : ''}`,
+                    tag: 'bsn9b-chat',
+                    requireInteraction: false
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    if (!chatOpen) toggleChat();
+                    notification.close();
+                };
+
+                setTimeout(() => notification.close(), 5000);
+            } catch (e) {
+                console.log('Notification error:', e);
+            }
+        }
+
+        function toggleBrowserNotifications() {
+            if (notificationsEnabled) {
+                notificationsEnabled = false;
+                localStorage.setItem('chatNotificationsEnabled', 'false');
+                updateNotificationToggleUI();
+            } else {
+                requestNotificationPermission();
+            }
+        }
+
+        function updateNotificationToggleUI() {
+            const btn = document.getElementById('notificationToggleBtn');
+            if (btn) {
+                btn.innerHTML = notificationsEnabled ? '📲' : '📵';
+                btn.title = notificationsEnabled ? 'Browser notifications ON' : 'Browser notifications OFF (click to enable)';
+            }
+        }
+
+        // Initialize notification UI on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSoundToggleUI();
+            updateNotificationToggleUI();
+        });
+
+        // Toggle chat
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            const chatBox = document.getElementById('chatBox');
+            if (chatOpen) {
+                chatBox.style.display = 'flex';
+                chatBox.style.flexDirection = 'column';
+                unreadCount = 0;
+                document.getElementById('chatBadge').style.display = 'none';
+                lastReadTimestamp = Date.now();
+                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                document.getElementById('chatInput').focus();
+                scrollToBottom();
+            } else {
+                chatBox.style.display = 'none';
+            }
+            document.getElementById('chatToggle').style.transform = chatOpen ? 'scale(0.9)' : 'scale(1)';
+        }
+
+        // Send message
+        function sendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Admin commands (admin emails only)
+            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
+            if (adminEmails.includes(chatCurrentUsername.toLowerCase())) {
+                // Alert command: alert/message or alert/clear
+                if (message.toLowerCase().startsWith('alert/')) {
+                    const alertMsg = message.substring(6).trim();
+                    if (alertMsg.toLowerCase() === 'clear') {
+                        announcementsRef.child('alert').remove();
+                    } else if (alertMsg) {
+                        announcementsRef.child('alert').set({ message: alertMsg, timestamp: Date.now() });
+                    }
+                    input.value = '';
+                    return;
+                }
+                // FYI command: fyi/message or fyi/clear
+                if (message.toLowerCase().startsWith('fyi/')) {
+                    const fyiMsg = message.substring(4).trim();
+                    if (fyiMsg.toLowerCase() === 'clear') {
+                        announcementsRef.child('fyi').remove();
+                    } else if (fyiMsg) {
+                        announcementsRef.child('fyi').set({ message: fyiMsg, timestamp: Date.now() });
+                    }
+                    input.value = '';
+                    return;
+                }
+                // Chat clear command: chat/clear
+                if (message.toLowerCase() === 'chat/clear') {
+                    chatRef.remove();
+                    input.value = '';
+                    return;
+                }
+            }
+
+            // Check Firebase Auth status
+            const currentUser = auth.currentUser;
+            console.log('Sending message, Firebase auth user:', currentUser ? currentUser.email : 'NOT AUTHENTICATED');
+
+            if (!currentUser) {
+                alert('Chat requires authentication. Please refresh the page or log in again.');
+                return;
+            }
+
+            chatRef.push({
+                user: chatDisplayName,
+                username: chatCurrentUsername,
+                text: message,
+                timestamp: Date.now()
+            }).then(() => {
+                console.log('Message sent successfully');
+            }).catch((error) => {
+                console.error('Failed to send message:', error);
+                alert('Failed to send message: ' + error.message + '\n\nYou may need to log in again.');
+            });
+
+            input.value = '';
+            hideMentionDropdown();
+        }
+
+        // Format timestamp (with safety checks)
+        function formatTime(timestamp) {
+            try {
+                if (!timestamp || typeof timestamp !== 'number') {
+                    return 'Unknown time';
+                }
+                const date = new Date(timestamp);
+                if (isNaN(date.getTime())) {
+                    return 'Invalid time';
+                }
+                const now = new Date();
+                const isToday = date.toDateString() === now.toDateString();
+
+                if (isToday) {
+                    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+            } catch (e) {
+                console.error('formatTime error:', e);
+                return 'Time error';
+            }
+        }
+
+        // Format message text with @mention highlighting (with safety checks)
+        function formatMessageWithMentions(text, isMe) {
+            try {
+                if (!text || typeof text !== 'string') {
+                    return '';
+                }
+                // Escape HTML first
+                let formatted = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+                // Highlight @mentions with a styled span
+                formatted = formatted.replace(/@(\w+)/g, function(match, name) {
+                    const bgColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.2)';
+                    const textColor = isMe ? '#fff' : '#7c3aed';
+                    return `<span style="background: ${bgColor}; color: ${textColor}; padding: 1px 6px; border-radius: 10px; font-weight: 600;">@${name}</span>`;
+                });
+
+                return formatted;
+            } catch (e) {
+                console.error('formatMessageWithMentions error:', e);
+                return text || '';
+            }
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 7-day threshold in milliseconds
+        const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
+        // Clean up old messages (older than 7 days)
+        function cleanupOldMessages() {
+            const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+            chatRef.once('value', (snapshot) => {
+                snapshot.forEach((child) => {
+                    const msg = child.val();
+                    if (msg.timestamp && msg.timestamp < cutoff) {
+                        child.ref.remove();
+                    }
+                });
+            });
+        }
+
+        // Run cleanup on load and every hour
+        cleanupOldMessages();
+        setInterval(cleanupOldMessages, 60 * 60 * 1000);
+
+        // Listen for messages
+        function setupChatListener() {
+            console.log('Setting up chat listener...');
+            chatRef.on('value', (snapshot) => {
+                console.log('=== CHAT LISTENER FIRED ===');
+                console.log('Snapshot exists:', snapshot.exists());
+                console.log('Snapshot numChildren:', snapshot.numChildren());
+
+                const container = document.getElementById('chatMessages');
+                if (!container) {
+                    console.error('chatMessages container not found!');
+                    return;
+                }
+
+                if (!snapshot.exists() || snapshot.numChildren() === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
+                    return;
+                }
+
+                // Get ALL messages first, then filter
+                const allMessages = [];
+                snapshot.forEach((child) => {
+                    const msg = child.val();
+                    allMessages.push(msg);
+                });
+
+                // Filter by 7 days
+                const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+                const messages = allMessages.filter(msg => msg.timestamp && msg.timestamp >= cutoff);
+
+                // Sort by timestamp
+                messages.sort((a, b) => a.timestamp - b.timestamp);
+
+                if (messages.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
+                    return;
+                }
+
+                let html = '';
+                let newMessages = 0;
+
+                messages.forEach((msg) => {
+                    const isMe = msg.user === chatDisplayName || msg.username === chatCurrentUsername;
+                    const isNew = msg.timestamp > lastReadTimestamp;
+
+                    if (isNew && !chatOpen) newMessages++;
+
+                    // Format text with @mention highlighting
+                    const formattedText = formatMessageWithMentions(msg.text, isMe);
+                    // Check if this message mentions the current user
+                    const mentionsMe = msg.text.toLowerCase().includes('@' + chatDisplayName.toLowerCase());
+
+                    html += `
+                        <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.user}</div>
+                            <div style="background: ${mentionsMe && !isMe ? 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : '#e2e8f0')}; color: ${mentionsMe || isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px; ${mentionsMe && !isMe ? 'box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);' : ''}">
+                                ${formattedText}
+                            </div>
+                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">
+                                ${formatTime(msg.timestamp)}${isMe ? ' <span style="color: #4ade80;" title="Delivered">✓</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+                scrollToBottom();
+
+                // Update unread badge and send notifications
+                if (newMessages > 0 && !chatOpen) {
+                    const shouldNotify = unreadCount < newMessages;
+
+                    unreadCount = newMessages;
+                    const badge = document.getElementById('chatBadge');
+                    badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                    badge.style.display = 'flex';
+
+                    if (shouldNotify && messages.length > 0) {
+                        const latestMessage = messages[messages.length - 1];
+                        if (latestMessage.username !== chatCurrentUsername) {
+                            playNotificationSound();
+                            sendBrowserNotification(latestMessage);
+                        }
+                    }
+                }
+            }, (error) => {
+                console.error('Chat listener error:', error);
+                document.getElementById('chatMessages').innerHTML = '<p style="color: red; padding: 20px;">Chat error: ' + error.message + '</p>';
+            });
+        }
+
+        // Initialize chat listener
+        setupChatListener();
+
+        // Monitor Firebase connection state
+        const connectedRef = database.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            const connected = snap.val() === true;
+            const onlineCountEl = document.getElementById('onlineCount');
+            if (connected) {
+                console.log('Firebase: Connected');
+                if (onlineCountEl && onlineCountEl.textContent.includes('Disconnected')) {
+                    onlineCountEl.textContent = 'Reconnected! Refreshing...';
+                    setTimeout(() => setupChatListener(), 500);
+                }
+            } else {
+                console.log('Firebase: Disconnected');
+                if (onlineCountEl) {
+                    onlineCountEl.innerHTML = '<span style="color: #fca5a5;">Disconnected - reconnecting...</span>';
+                }
+            }
+        });
+
+        // ========== DIRECT MESSAGES ==========
+        let chatMode = 'group';
+        let currentDMConversation = null;
+        let dmConversations = [];
+        let dmUnreadCount = 0;
+        let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
+        const directMessagesRef = database.ref('directMessages');
+
+        function getConversationId(email1, email2) {
+            return [email1, email2].sort().join('_').replace(/[.@]/g, '_');
+        }
+
+        function switchChatMode(mode) {
+            try {
+                chatMode = mode;
+                const groupView = document.getElementById('groupChatView');
+                const dmView = document.getElementById('dmView');
+                const tabGroup = document.getElementById('tabGroupChat');
+                const tabDM = document.getElementById('tabDM');
+                const chatTitle = document.getElementById('chatTitle');
+                const onlineCount = document.getElementById('onlineCount');
+
+                if (!groupView || !dmView) {
+                    console.error('Chat views not found');
+                    return;
+                }
+
+                if (mode === 'group') {
+                    groupView.style.display = 'flex';
+                    dmView.style.display = 'none';
+                    tabGroup.style.background = 'rgba(255,255,255,0.3)';
+                    tabDM.style.background = 'rgba(255,255,255,0.1)';
+                    chatTitle.textContent = 'BSN9B Chat';
+                    onlineCount.style.display = 'block';
+
+                    unreadCount = 0;
+                    document.getElementById('chatBadge').style.display = 'none';
+                    lastReadTimestamp = Date.now();
+                    localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                } else {
+                    groupView.style.display = 'none';
+                    dmView.style.display = 'flex';
+                    tabGroup.style.background = 'rgba(255,255,255,0.1)';
+                    tabDM.style.background = 'rgba(255,255,255,0.3)';
+                    chatTitle.textContent = 'Direct Messages';
+                    onlineCount.style.display = 'none';
+
+                    showDMConversationList();
+                    loadDMConversations();
+                }
+            } catch (e) {
+                console.error('Error switching chat mode:', e);
+            }
+        }
+
+        function showDMConversationList() {
+            document.getElementById('dmConversationList').style.display = 'block';
+            document.getElementById('dmMessageView').style.display = 'none';
+            document.getElementById('newDMSelector').style.display = 'none';
+            currentDMConversation = null;
+        }
+
+        function showNewDMSelector() {
+            document.getElementById('dmConversationList').style.display = 'none';
+            document.getElementById('dmMessageView').style.display = 'none';
+            document.getElementById('newDMSelector').style.display = 'flex';
+            document.getElementById('dmUserSearch').value = '';
+            loadDMUserList();
+        }
+
+        function hideNewDMSelector() {
+            showDMConversationList();
+        }
+
+        function loadDMUserList() {
+            const container = document.getElementById('dmUserList');
+            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            let users = [];
+
+            onlineUsers.forEach(u => {
+                if (u.toLowerCase() !== chatDisplayName.toLowerCase()) {
+                    users.push({ name: u, online: true });
+                }
+            });
+
+            allRegisteredUsers.forEach(u => {
+                const firstName = u.firstName;
+                if (!onlineSet.has(firstName.toLowerCase()) && firstName.toLowerCase() !== chatDisplayName.toLowerCase()) {
+                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                }
+            });
+
+            renderDMUserList(users);
+        }
+
+        function filterDMUsers() {
+            const search = document.getElementById('dmUserSearch').value.toLowerCase();
+            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            let users = [];
+
+            onlineUsers.forEach(u => {
+                if (u.toLowerCase() !== chatDisplayName.toLowerCase() && u.toLowerCase().includes(search)) {
+                    users.push({ name: u, online: true });
+                }
+            });
+
+            allRegisteredUsers.forEach(u => {
+                const firstName = u.firstName;
+                if (!onlineSet.has(firstName.toLowerCase()) &&
+                    firstName.toLowerCase() !== chatDisplayName.toLowerCase() &&
+                    (firstName.toLowerCase().includes(search) || u.name.toLowerCase().includes(search))) {
+                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                }
+            });
+
+            renderDMUserList(users);
+        }
+
+        function renderDMUserList(users) {
+            const container = document.getElementById('dmUserList');
+
+            if (users.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px;">No users found</p>';
+                return;
+            }
+
+            container.innerHTML = users.map(u => `
+                <div onclick="startDMConversation('${u.name}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
+                    <div>
+                        <div style="font-weight: 600; color: #1a1a2e;">${u.name}${u.fullName && u.fullName !== u.name ? ` <span style="color:#888;font-weight:normal;font-size:12px;">(${u.fullName})</span>` : ''}</div>
+                    </div>
+                    ${u.online ? '<span style="font-size: 10px; background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px;">online</span>' : '<span style="font-size: 10px; color: #888;">offline</span>'}
+                </div>
+            `).join('');
+        }
+
+        function startDMConversation(partnerName) {
+            currentDMConversation = {
+                partnerName: partnerName,
+                conversationId: getConversationId(chatDisplayName, partnerName)
+            };
+
+            document.getElementById('dmConversationList').style.display = 'none';
+            document.getElementById('newDMSelector').style.display = 'none';
+            document.getElementById('dmMessageView').style.display = 'flex';
+            document.getElementById('dmPartnerName').textContent = partnerName;
+
+            const isOnline = onlineUsers.some(u => u.toLowerCase() === partnerName.toLowerCase());
+            const statusEl = document.getElementById('dmPartnerStatus');
+            statusEl.textContent = isOnline ? 'online' : 'offline';
+            statusEl.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+            statusEl.style.color = isOnline ? '#16a34a' : '#666';
+
+            loadDMMessages(currentDMConversation.conversationId);
+            markDMAsRead(currentDMConversation.conversationId);
+        }
+
+        function closeDMConversation() {
+            currentDMConversation = null;
+            showDMConversationList();
+            loadDMConversations();
+        }
+
+        function loadDMConversations() {
+            const container = document.getElementById('dmConversations');
+            if (!container) return;
+
+            container.innerHTML = '<p style="color: #888; font-size: 12px;">Loading...</p>';
+
+            directMessagesRef.once('value', (snapshot) => {
+                dmConversations = [];
+
+                snapshot.forEach((child) => {
+                    const convId = child.key;
+                    const data = child.val();
+
+                    if (!data) return;
+
+                    const participants = data.participants || {};
+                    const isParticipant = Object.values(participants).some(p =>
+                        p && (p.toLowerCase() === chatDisplayName.toLowerCase() ||
+                        p.toLowerCase() === chatCurrentUsername.toLowerCase())
+                    );
+
+                    if (isParticipant && data.lastMessage) {
+                        let partnerName = '';
+                        Object.values(participants).forEach(p => {
+                            if (p && p.toLowerCase() !== chatDisplayName.toLowerCase() &&
+                                p.toLowerCase() !== chatCurrentUsername.toLowerCase()) {
+                                partnerName = p;
+                            }
+                        });
+
+                        dmConversations.push({
+                            conversationId: convId,
+                            partnerName: partnerName,
+                            lastMessage: data.lastMessage,
+                            unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
+                        });
+                    }
+                });
+
+                dmConversations.sort((a, b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
+                renderDMConversations();
+            });
+        }
+
+        function renderDMConversations() {
+            const container = document.getElementById('dmConversations');
+
+            if (dmConversations.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; padding: 20px;">No conversations yet.<br>Start a new message!</p>';
+                return;
+            }
+
+            let totalUnread = 0;
+            container.innerHTML = dmConversations.map(conv => {
+                const time = conv.lastMessage ? formatTime(conv.lastMessage.timestamp) : '';
+                const preview = conv.lastMessage ? (conv.lastMessage.text || '').substring(0, 40) + (conv.lastMessage.text?.length > 40 ? '...' : '') : '';
+                const isUnread = conv.unread && conv.lastMessage?.sender !== chatDisplayName;
+                if (isUnread) totalUnread++;
+
+                return `
+                    <div onclick="startDMConversation('${conv.partnerName}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: ${isUnread ? '700' : '600'}; color: #1a1a2e; margin-bottom: 4px;">
+                                    ${isUnread ? '● ' : ''}${conv.partnerName}
+                                </div>
+                                <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${conv.lastMessage?.sender === chatDisplayName ? 'You: ' : ''}${preview}
+                                </div>
+                            </div>
+                            <div style="font-size: 10px; color: #888; white-space: nowrap; margin-left: 10px;">
+                                ${time}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateDMBadge(totalUnread);
+        }
+
+        function updateDMBadge(count) {
+            dmUnreadCount = count;
+            const badge = document.getElementById('dmBadge');
+            const tabBadge = document.getElementById('dmTabBadge');
+
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+                tabBadge.textContent = count;
+                tabBadge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+                tabBadge.style.display = 'none';
+            }
+        }
+
+        function loadDMMessages(conversationId) {
+            const container = document.getElementById('dmMessages');
+            container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>';
+
+            const messagesRef = directMessagesRef.child(conversationId + '/messages');
+            messagesRef.orderByChild('timestamp').on('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px; padding: 20px;">No messages yet. Say hello!</p>';
+                    return;
+                }
+
+                const messages = [];
+                snapshot.forEach((child) => {
+                    messages.push(child.val());
+                });
+
+                let html = '';
+                messages.forEach(msg => {
+                    const isMe = msg.senderName === chatDisplayName || msg.sender === chatCurrentUsername;
+
+                    html += `
+                        <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.senderName}</div>
+                            <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
+                                ${(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
+                            <div style="font-size: 9px; color: #aaa; margin-top: 3px;">
+                                ${formatTime(msg.timestamp)}${isMe ? (msg.read ? ' <span style="color: #4ade80;" title="Seen">✓✓</span>' : ' <span style="color: #888;" title="Delivered">✓</span>') : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
+
+                if (currentDMConversation && currentDMConversation.conversationId === conversationId) {
+                    markDMAsRead(conversationId, snapshot);
+                }
+            });
+        }
+
+        function sendDM(event) {
+            event.preventDefault();
+
+            if (!currentDMConversation) return;
+
+            const input = document.getElementById('dmInput');
+            if (!input) return;
+
+            const text = input.value.trim();
+            if (!text) return;
+
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                alert('Please log in to send messages.');
+                return;
+            }
+
+            const conversationId = currentDMConversation.conversationId;
+            const partnerName = currentDMConversation.partnerName;
+
+            const messageData = {
+                sender: chatCurrentUsername,
+                senderName: chatDisplayName,
+                text: text,
+                timestamp: Date.now(),
+                read: false
+            };
+
+            try {
+                directMessagesRef.child(conversationId + '/messages').push(messageData)
+                    .catch(err => console.error('Error sending DM:', err));
+
+                directMessagesRef.child(conversationId + '/participants').set({
+                    user1: chatDisplayName,
+                    user2: partnerName
+                });
+
+                directMessagesRef.child(conversationId + '/lastMessage').set({
+                    text: text,
+                    timestamp: Date.now(),
+                    sender: chatDisplayName
+                });
+
+                input.value = '';
+            } catch (e) {
+                console.error('Error sending DM:', e);
+                alert('Failed to send message. Please try again.');
+            }
+        }
+
+        function markDMAsRead(conversationId, snapshot) {
+            dmLastReadTimestamps[conversationId] = Date.now();
+            localStorage.setItem('dmLastRead', JSON.stringify(dmLastReadTimestamps));
+
+            if (snapshot && snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const msg = child.val();
+                    const msgKey = child.key;
+                    if (msg && !msg.read && msg.senderName !== chatDisplayName && msg.sender !== chatCurrentUsername) {
+                        directMessagesRef.child(conversationId + '/messages/' + msgKey + '/read').set(true)
+                            .catch(err => console.error('Error marking message as read:', err));
+                    }
+                });
+            }
+
+            let totalUnread = 0;
+            dmConversations.forEach(conv => {
+                if (conv.conversationId !== conversationId) {
+                    if (conv.unread && conv.lastMessage?.sender !== chatDisplayName) {
+                        totalUnread++;
+                    }
+                }
+            });
+            updateDMBadge(totalUnread);
+        }
+
+        function setupDMListener() {
+            try {
+                directMessagesRef.on('child_changed', (snapshot) => {
+                    try {
+                        const convId = snapshot.key;
+                        const data = snapshot.val();
+
+                        if (!data) return;
+
+                        const participants = data.participants || {};
+                        const isParticipant = Object.values(participants).some(p =>
+                            p && (p.toLowerCase() === chatDisplayName.toLowerCase() ||
+                            p.toLowerCase() === chatCurrentUsername.toLowerCase())
+                        );
+
+                        if (!isParticipant) return;
+
+                        if (data.lastMessage && data.lastMessage.sender !== chatDisplayName) {
+                            const lastRead = dmLastReadTimestamps[convId] || 0;
+                            if (data.lastMessage.timestamp > lastRead) {
+                                if (!chatOpen || chatMode !== 'dm' || currentDMConversation?.conversationId !== convId) {
+                                    playNotificationSound();
+
+                                    if (notificationsEnabled && Notification.permission === 'granted') {
+                                        try {
+                                            const notification = new Notification('New DM from ' + data.lastMessage.sender, {
+                                                body: (data.lastMessage.text || '').substring(0, 100),
+                                                tag: 'bsn9b-dm-' + convId
+                                            });
+                                            notification.onclick = () => {
+                                                window.focus();
+                                                if (!chatOpen) toggleChat();
+                                                switchChatMode('dm');
+                                                startDMConversation(data.lastMessage.sender);
+                                                notification.close();
+                                            };
+                                        } catch (notifErr) {
+                                            console.log('Notification error:', notifErr);
+                                        }
+                                    }
+                                }
+
+                                if (chatOpen && chatMode === 'dm' && !currentDMConversation) {
+                                    loadDMConversations();
+                                }
+                            }
+                        }
+                    } catch (innerErr) {
+                        console.error('DM listener inner error:', innerErr);
+                    }
+                });
+            } catch (e) {
+                console.error('Error setting up DM listener:', e);
+            }
+        }
+
+        setupDMListener();
+
+        // Track online presence
+        const myPresence = presenceRef.push();
+        myPresence.set({
+            user: chatDisplayName,
+            username: chatCurrentUsername,
+            online: true
+        });
+        myPresence.onDisconnect().remove();
+
+        let userListVisible = false;
+        function toggleUserList() {
+            userListVisible = !userListVisible;
+            document.getElementById('userList').style.display = userListVisible ? 'block' : 'none';
+        }
+
+        // Store online users for @mention autocomplete
+        let onlineUsers = [];
+
+        presenceRef.on('value', (snapshot) => {
+            const count = snapshot.numChildren();
+            document.getElementById('onlineCount').textContent = count + ' online (click to see)';
+
+            onlineUsers = [];
+            snapshot.forEach((child) => {
+                const data = child.val();
+                if (data.user) {
+                    onlineUsers.push(data.user);
+                }
+            });
+
+            document.getElementById('userListNames').innerHTML = onlineUsers.length > 0
+                ? onlineUsers.map(u => `<div style="padding: 4px 0; cursor: pointer;" onclick="insertMention('${u}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">• ${u} <span style="font-size:10px;opacity:0.6;">(click to @mention)</span></div>`).join('')
+                : '<div style="opacity: 0.7;">No users online</div>';
+        });
+
+        function insertMention(username) {
+            const input = document.getElementById('chatInput');
+            input.value = '@' + username + ' ' + input.value;
+            input.focus();
+            document.getElementById('userList').style.display = 'none';
+            userListVisible = false;
+        }
+
+        // ========== @MENTION AUTOCOMPLETE ==========
+        let allRegisteredUsers = [];
+        let mentionDropdownIndex = -1;
+
+        async function fetchAllUsersForChat() {
+            try {
+                const response = await fetch('https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?action=getUsers');
+                const data = await response.json();
+                if (data.success && data.users) {
+                    allRegisteredUsers = data.users
+                        .filter(u => u.name && u.name.trim())
+                        .map(u => ({
+                            name: u.name.trim(),
+                            firstName: u.name.trim().split(' ')[0],
+                            email: u.email || ''
+                        }));
+                    console.log('Loaded', allRegisteredUsers.length, 'users for @mention');
+                }
+            } catch (e) {
+                console.log('Could not fetch users for @mention:', e);
+            }
+        }
+
+        fetchAllUsersForChat();
+
+        const chatInput = document.getElementById('chatInput');
+        const mentionDropdown = document.getElementById('mentionDropdown');
+
+        chatInput.addEventListener('input', function(e) {
+            const value = this.value;
+            const cursorPos = this.selectionStart;
+            const textBeforeCursor = value.substring(0, cursorPos);
+            const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+            if (atMatch) {
+                const searchTerm = atMatch[1].toLowerCase();
+                showMentionDropdown(searchTerm);
+            } else {
+                hideMentionDropdown();
+            }
+        });
+
+        chatInput.addEventListener('keydown', function(e) {
+            if (mentionDropdown.style.display === 'none') return;
+
+            const items = mentionDropdown.querySelectorAll('.mention-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                mentionDropdownIndex = Math.min(mentionDropdownIndex + 1, items.length - 1);
+                updateMentionHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                mentionDropdownIndex = Math.max(mentionDropdownIndex - 1, 0);
+                updateMentionHighlight(items);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (mentionDropdownIndex >= 0 && items[mentionDropdownIndex]) {
+                    e.preventDefault();
+                    selectMention(items[mentionDropdownIndex].dataset.name);
+                }
+            } else if (e.key === 'Escape') {
+                hideMentionDropdown();
+            }
+        });
+
+        function showMentionDropdown(searchTerm) {
+            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            let matches = [];
+
+            onlineUsers.forEach(u => {
+                if (u.toLowerCase().includes(searchTerm)) {
+                    matches.push({ name: u, online: true });
+                }
+            });
+
+            allRegisteredUsers.forEach(u => {
+                const firstName = u.firstName;
+                const fullName = u.name;
+                if (!onlineSet.has(firstName.toLowerCase()) &&
+                    (firstName.toLowerCase().includes(searchTerm) || fullName.toLowerCase().includes(searchTerm))) {
+                    matches.push({ name: firstName, fullName: fullName, online: false });
+                }
+            });
+
+            matches = matches.slice(0, 8);
+
+            if (matches.length === 0) {
+                hideMentionDropdown();
+                return;
+            }
+
+            mentionDropdownIndex = 0;
+            mentionDropdown.innerHTML = matches.map((m, i) => `
+                <div class="mention-item" data-name="${m.name}"
+                     style="padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; ${i === 0 ? 'background: #f0f7ff;' : ''}"
+                     onclick="selectMention('${m.name}')"
+                     onmouseover="this.style.background='#f0f7ff'"
+                     onmouseout="this.style.background='${i === mentionDropdownIndex ? '#f0f7ff' : 'transparent'}'">
+                    <span style="font-weight: 500;">@${m.name}${m.fullName && m.fullName !== m.name ? ' <span style="color:#888;font-weight:normal;">(' + m.fullName + ')</span>' : ''}</span>
+                    ${m.online ? '<span style="font-size: 10px; background: #22c55e; color: white; padding: 2px 6px; border-radius: 10px;">online</span>' : ''}
+                </div>
+            `).join('');
+
+            mentionDropdown.style.display = 'block';
+        }
+
+        function hideMentionDropdown() {
+            mentionDropdown.style.display = 'none';
+            mentionDropdownIndex = -1;
+        }
+
+        function updateMentionHighlight(items) {
+            items.forEach((item, i) => {
+                item.style.background = i === mentionDropdownIndex ? '#f0f7ff' : 'transparent';
+            });
+        }
+
+        function selectMention(name) {
+            const input = chatInput;
+            const value = input.value;
+            const cursorPos = input.selectionStart;
+
+            const textBeforeCursor = value.substring(0, cursorPos);
+            const atIndex = textBeforeCursor.lastIndexOf('@');
+
+            if (atIndex !== -1) {
+                const newValue = value.substring(0, atIndex) + '@' + name + ' ' + value.substring(cursorPos);
+                input.value = newValue;
+
+                const newCursorPos = atIndex + name.length + 2;
+                input.setSelectionRange(newCursorPos, newCursorPos);
+            }
+
+            hideMentionDropdown();
+            input.focus();
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!chatInput.contains(e.target) && !mentionDropdown.contains(e.target)) {
+                hideMentionDropdown();
+            }
+        });
+        // ========== END CHAT SYSTEM ==========
+
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -1672,8 +2775,5 @@ Important guidelines:
             });
         }
     </script>
-
-    <!-- Shared Chat Module -->
-    <script src="/js/chat.js?v=3"></script>
 </body>
 </html>
