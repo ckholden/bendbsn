@@ -299,6 +299,10 @@
                         <div class="stat-number" id="statBanned">0</div>
                         <div class="stat-label">Banned</div>
                     </div>
+                    <div class="stat-box" style="flex: 1;">
+                        <div class="stat-number" id="statPosts">0</div>
+                        <div class="stat-label">Community Posts</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -311,6 +315,8 @@
             <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
             <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
             <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
+            <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showCommunityStats()">Community Stats</button>
+            <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
         </div>
 
         <!-- Login History Modal -->
@@ -346,6 +352,42 @@
                     <div id="globalPhrasesList" style="max-height: 300px; overflow-y: auto;">
                         <p style="color: #888;">Custom phrases will appear here.</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post Detail Modal -->
+        <div id="postDetailModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 700px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
+                <div style="background: #9c27b0; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">Post Details</h2>
+                    <button onclick="closePostDetail()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                </div>
+                <div id="postDetailContent" style="padding: 20px;">
+                    <p>Loading...</p>
+                </div>
+                <div style="padding: 0 20px 20px; display: flex; gap: 10px;">
+                    <button id="pinPostBtn" onclick="togglePostPin()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Pin Post</button>
+                    <button onclick="deletePostAdmin()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Delete Post</button>
+                </div>
+                <div style="padding: 0 20px 20px;">
+                    <h4 style="margin: 0 0 10px; color: #333;">Replies</h4>
+                    <div id="postRepliesList" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; border-radius: 8px; padding: 10px;">
+                        <p style="color: #888; margin: 0;">No replies</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Community Stats Modal -->
+        <div id="communityStatsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 500px; margin: 50px auto; background: white; border-radius: 12px; overflow: hidden;">
+                <div style="background: #9c27b0; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">Community Statistics</h2>
+                    <button onclick="closeCommunityStats()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                </div>
+                <div id="communityStatsContent" style="padding: 20px;">
+                    <p>Loading...</p>
                 </div>
             </div>
         </div>
@@ -412,6 +454,30 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Community Posts -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header">
+                    <span>Community Posts</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="categoryFilter" onchange="loadCommunityPosts()" style="padding: 5px 10px; border-radius: 4px; border: none; font-size: 12px;">
+                            <option value="all">All Categories</option>
+                            <option value="announcements">Announcements</option>
+                            <option value="study-tips">Study Tips</option>
+                            <option value="career">Career</option>
+                            <option value="nclex">NCLEX</option>
+                            <option value="general">General</option>
+                        </select>
+                        <button class="refresh-btn" onclick="loadCommunityPosts()">&#x21bb;</button>
+                    </div>
+                </div>
+                <div class="card-body tall" id="communityPostsList" style="max-height: 350px;">
+                    <div class="empty-state">
+                        <div class="icon">&#128221;</div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -443,6 +509,11 @@
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
+        const communityPostsRef = database.ref('community/posts');
+
+        // Community posts state
+        let allCommunityPosts = [];
+        let currentPostId = null;
 
         // Toast notification function
         function showToast(message, type = 'info', duration = 3000) {
@@ -566,11 +637,13 @@
             loadBannedUsers();
             loadRegisteredUsers();
             loadMessages();
+            loadCommunityPosts();
 
             // Real-time updates
             presenceRef.on('value', () => loadOnlineUsers());
             bannedRef.on('value', () => loadBannedUsers());
             chatRef.limitToLast(50).on('value', () => loadMessages());
+            communityPostsRef.on('value', () => loadCommunityPosts());
         }
 
         function logout() {
@@ -822,6 +895,7 @@
             loadBannedUsers();
             loadRegisteredUsers();
             loadMessages();
+            loadCommunityPosts();
         }
 
         // Login History - use correct Firebase URL
@@ -975,6 +1049,368 @@
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
+
+        // ========== COMMUNITY POSTS MANAGEMENT ==========
+
+        function getCategoryLabel(cat) {
+            const labels = {
+                'announcements': 'Announcements',
+                'study-tips': 'Study Tips',
+                'career': 'Career',
+                'nclex': 'NCLEX',
+                'general': 'General'
+            };
+            return labels[cat] || cat;
+        }
+
+        function getCategoryColor(cat) {
+            const colors = {
+                'announcements': '#e94560',
+                'study-tips': '#28a745',
+                'career': '#007bff',
+                'nclex': '#ff9800',
+                'general': '#6c757d'
+            };
+            return colors[cat] || '#6c757d';
+        }
+
+        function formatTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'm ago';
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + 'h ago';
+            const days = Math.floor(hours / 24);
+            if (days < 7) return days + 'd ago';
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        function loadCommunityPosts() {
+            const container = document.getElementById('communityPostsList');
+            const filter = document.getElementById('categoryFilter').value;
+
+            communityPostsRef.once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128221;</div><p>No community posts</p></div>';
+                    document.getElementById('statPosts').textContent = '0';
+                    allCommunityPosts = [];
+                    return;
+                }
+
+                allCommunityPosts = [];
+                snapshot.forEach((child) => {
+                    allCommunityPosts.push({ id: child.key, ...child.val() });
+                });
+
+                // Update stat
+                document.getElementById('statPosts').textContent = allCommunityPosts.length;
+
+                // Sort by pinned first, then by timestamp (newest first)
+                allCommunityPosts.sort((a, b) => {
+                    if (a.pinned && !b.pinned) return -1;
+                    if (!a.pinned && b.pinned) return 1;
+                    return (b.timestamp || 0) - (a.timestamp || 0);
+                });
+
+                // Filter by category
+                let filtered = allCommunityPosts;
+                if (filter !== 'all') {
+                    filtered = allCommunityPosts.filter(p => p.category === filter);
+                }
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128221;</div><p>No posts in this category</p></div>';
+                    return;
+                }
+
+                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
+                html += '<thead><tr style="background: #f8f9fa;">';
+                html += '<th style="padding: 8px; text-align: left;">Title</th>';
+                html += '<th style="padding: 8px; text-align: left;">Author</th>';
+                html += '<th style="padding: 8px; text-align: center;">Category</th>';
+                html += '<th style="padding: 8px; text-align: center;">Stats</th>';
+                html += '<th style="padding: 8px; text-align: center;">Actions</th>';
+                html += '</tr></thead><tbody>';
+
+                filtered.forEach((post) => {
+                    const pinIcon = post.pinned ? '📌 ' : '';
+                    const replyCount = post.replies ? Object.keys(post.replies).length : 0;
+                    const likeCount = post.likes || 0;
+                    const categoryColor = getCategoryColor(post.category);
+
+                    html += `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 8px;">
+                            <div style="font-weight: 600; color: #333;">${pinIcon}${escapeHtml(post.title || 'Untitled')}</div>
+                            <div style="font-size: 11px; color: #888;">${formatTimeAgo(post.timestamp)}</div>
+                        </td>
+                        <td style="padding: 8px; color: #666;">${escapeHtml(post.authorName || 'Unknown')}</td>
+                        <td style="padding: 8px; text-align: center;">
+                            <span style="background: ${categoryColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">${getCategoryLabel(post.category)}</span>
+                        </td>
+                        <td style="padding: 8px; text-align: center; font-size: 12px;">
+                            <span title="Likes">❤️ ${likeCount}</span>
+                            <span title="Replies" style="margin-left: 8px;">💬 ${replyCount}</span>
+                        </td>
+                        <td style="padding: 8px; text-align: center;">
+                            <button onclick="viewPostDetail('${post.id}')" class="btn btn-sm" style="background: #9c27b0; color: white; margin-right: 4px;">View</button>
+                            <button onclick="quickTogglePin('${post.id}', ${!!post.pinned})" class="btn btn-sm btn-warning" style="margin-right: 4px;">${post.pinned ? 'Unpin' : 'Pin'}</button>
+                            <button onclick="quickDeletePost('${post.id}', '${escapeHtml(post.title || 'this post')}')" class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function viewPostDetail(postId) {
+            currentPostId = postId;
+            const post = allCommunityPosts.find(p => p.id === postId);
+            if (!post) {
+                showToast('Post not found', 'error');
+                return;
+            }
+
+            const container = document.getElementById('postDetailContent');
+            const pinBtn = document.getElementById('pinPostBtn');
+            pinBtn.textContent = post.pinned ? 'Unpin Post' : 'Pin Post';
+
+            const categoryColor = getCategoryColor(post.category);
+            container.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <span style="background: ${categoryColor}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${getCategoryLabel(post.category)}</span>
+                    ${post.pinned ? '<span style="background: #ff9800; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-left: 8px;">📌 Pinned</span>' : ''}
+                </div>
+                <h3 style="margin: 0 0 10px; color: #333;">${escapeHtml(post.title || 'Untitled')}</h3>
+                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                    By <strong>${escapeHtml(post.authorName || 'Unknown')}</strong> • ${new Date(post.timestamp).toLocaleString()}
+                </p>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-size: 14px; color: #333; max-height: 200px; overflow-y: auto;">${escapeHtml(post.content || 'No content')}</div>
+                <div style="margin-top: 15px; display: flex; gap: 20px; color: #666; font-size: 13px;">
+                    <span>❤️ ${post.likes || 0} likes</span>
+                    <span>💬 ${post.replies ? Object.keys(post.replies).length : 0} replies</span>
+                </div>
+            `;
+
+            loadPostReplies(postId, post.replies);
+            document.getElementById('postDetailModal').style.display = 'block';
+        }
+
+        function loadPostReplies(postId, replies) {
+            const container = document.getElementById('postRepliesList');
+
+            if (!replies || Object.keys(replies).length === 0) {
+                container.innerHTML = '<p style="color: #888; margin: 0; text-align: center;">No replies yet</p>';
+                return;
+            }
+
+            const replyArray = Object.entries(replies).map(([key, val]) => ({ id: key, ...val }));
+            replyArray.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+            let html = '';
+            replyArray.forEach((reply) => {
+                html += `<div style="padding: 10px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 12px; color: #1f4e79;">${escapeHtml(reply.authorName || 'Unknown')}</div>
+                        <div style="font-size: 13px; color: #333; margin: 4px 0;">${escapeHtml(reply.content || '')}</div>
+                        <div style="font-size: 11px; color: #888;">${formatTimeAgo(reply.timestamp)}</div>
+                    </div>
+                    <button onclick="deleteReply('${postId}', '${reply.id}')" class="btn btn-danger btn-sm" style="flex-shrink: 0;">Delete</button>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function closePostDetail() {
+            document.getElementById('postDetailModal').style.display = 'none';
+            currentPostId = null;
+        }
+
+        function deleteReply(postId, replyId) {
+            if (!confirm('Delete this reply?')) return;
+
+            communityPostsRef.child(postId).child('replies').child(replyId).remove()
+                .then(() => {
+                    showToast('Reply deleted', 'success');
+                    // Reload the post detail
+                    communityPostsRef.child(postId).once('value', (snapshot) => {
+                        if (snapshot.exists()) {
+                            const post = snapshot.val();
+                            loadPostReplies(postId, post.replies);
+                        }
+                    });
+                    loadCommunityPosts();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function togglePostPin() {
+            if (!currentPostId) return;
+
+            const post = allCommunityPosts.find(p => p.id === currentPostId);
+            if (!post) return;
+
+            const newPinned = !post.pinned;
+            communityPostsRef.child(currentPostId).update({ pinned: newPinned })
+                .then(() => {
+                    showToast(newPinned ? 'Post pinned' : 'Post unpinned', 'success');
+                    document.getElementById('pinPostBtn').textContent = newPinned ? 'Unpin Post' : 'Pin Post';
+                    loadCommunityPosts();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function quickTogglePin(postId, currentlyPinned) {
+            const newPinned = !currentlyPinned;
+            communityPostsRef.child(postId).update({ pinned: newPinned })
+                .then(() => {
+                    showToast(newPinned ? 'Post pinned' : 'Post unpinned', 'success');
+                    loadCommunityPosts();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function deletePostAdmin() {
+            if (!currentPostId) return;
+
+            const post = allCommunityPosts.find(p => p.id === currentPostId);
+            const title = post ? post.title : 'this post';
+
+            if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+
+            communityPostsRef.child(currentPostId).remove()
+                .then(() => {
+                    showToast('Post deleted', 'success');
+                    closePostDetail();
+                    loadCommunityPosts();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function quickDeletePost(postId, title) {
+            if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+
+            communityPostsRef.child(postId).remove()
+                .then(() => {
+                    showToast('Post deleted', 'success');
+                    loadCommunityPosts();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function clearAllPosts() {
+            if (!confirm('Delete ALL community posts? This cannot be undone!')) return;
+            if (!confirm('Are you REALLY sure? This will permanently delete all posts and replies.')) return;
+
+            communityPostsRef.remove()
+                .then(() => {
+                    showToast('All community posts deleted', 'success');
+                    loadCommunityPosts();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function showCommunityStats() {
+            document.getElementById('communityStatsModal').style.display = 'block';
+            renderCommunityStats();
+        }
+
+        function closeCommunityStats() {
+            document.getElementById('communityStatsModal').style.display = 'none';
+        }
+
+        function renderCommunityStats() {
+            const container = document.getElementById('communityStatsContent');
+
+            if (allCommunityPosts.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888;">No community posts to analyze</p>';
+                return;
+            }
+
+            const totalPosts = allCommunityPosts.length;
+            let totalReplies = 0;
+            let totalLikes = 0;
+            let pinnedCount = 0;
+            const authorCounts = {};
+            const categoryCounts = {};
+
+            allCommunityPosts.forEach((post) => {
+                if (post.replies) totalReplies += Object.keys(post.replies).length;
+                totalLikes += post.likes || 0;
+                if (post.pinned) pinnedCount++;
+
+                const author = post.authorName || 'Unknown';
+                authorCounts[author] = (authorCounts[author] || 0) + 1;
+
+                const cat = post.category || 'general';
+                categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+            });
+
+            // Find top contributor
+            let topContributor = 'N/A';
+            let maxPosts = 0;
+            Object.entries(authorCounts).forEach(([name, count]) => {
+                if (count > maxPosts) {
+                    maxPosts = count;
+                    topContributor = name;
+                }
+            });
+
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="stat-box">
+                        <div class="stat-number">${totalPosts}</div>
+                        <div class="stat-label">Total Posts</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${totalReplies}</div>
+                        <div class="stat-label">Total Replies</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${totalLikes}</div>
+                        <div class="stat-label">Total Likes</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${pinnedCount}</div>
+                        <div class="stat-label">Pinned Posts</div>
+                    </div>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="margin: 0 0 10px; color: #1f4e79;">Top Contributor</h4>
+                    <p style="margin: 0; font-size: 16px; font-weight: 600;">${escapeHtml(topContributor)} <span style="color: #888; font-weight: normal;">(${maxPosts} posts)</span></p>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px; color: #1f4e79;">Posts by Category</h4>
+            `;
+
+            Object.entries(categoryCounts).forEach(([cat, count]) => {
+                const color = getCategoryColor(cat);
+                const percent = Math.round((count / totalPosts) * 100);
+                html += `<div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>${getCategoryLabel(cat)}</span>
+                        <span>${count} (${percent}%)</span>
+                    </div>
+                    <div style="height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; width: ${percent}%; background: ${color};"></div>
+                    </div>
+                </div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ========== END COMMUNITY POSTS MANAGEMENT ==========
 
     </script>
 
