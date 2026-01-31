@@ -928,6 +928,8 @@
     }
 
     function showMentionDropdown(searchTerm) {
+        console.log('Chat.js: showMentionDropdown called with:', searchTerm);
+        console.log('Chat.js: onlineUsers:', onlineUsers.length, 'allRegisteredUsers:', allRegisteredUsers.length);
         const mentionDropdown = document.getElementById('mentionDropdown');
         if (!mentionDropdown) return;
 
@@ -1019,13 +1021,15 @@
 
     // Setup @mention event listeners when DOM is ready
     function setupMentionListeners() {
+        console.log('Chat.js: setupMentionListeners called');
         const chatInput = document.getElementById('chatInput');
         const mentionDropdown = document.getElementById('mentionDropdown');
+        console.log('Chat.js: chatInput found:', !!chatInput, 'mentionDropdown found:', !!mentionDropdown);
         if (!chatInput || !mentionDropdown) {
             console.warn('Chat.js: Could not find chatInput or mentionDropdown elements');
             return;
         }
-        console.log('Chat.js: Mention listeners attached');
+        console.log('Chat.js: Attaching mention event listeners');
 
         chatInput.addEventListener('input', function(e) {
             const value = this.value;
