@@ -20,11 +20,15 @@
     <meta name="apple-mobile-web-app-title" content="BSN9B">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <!-- Preconnect hints for faster external resource loading -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://formsubmit.co" crossorigin>
     <title>BSN9B Nursing Documentation</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -135,6 +139,63 @@
         .link-btn { background: none; border: none; color: #533483; cursor: pointer; text-decoration: underline; font-size: 14px; }
         .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+        }
+        .toast {
+            padding: 14px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: toastSlideIn 0.3s ease;
+            color: white;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .toast.hiding {
+            animation: toastSlideOut 0.3s ease forwards;
+        }
+        .toast-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .toast-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .toast-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .toast-info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .toast-icon { font-size: 18px; flex-shrink: 0; }
+        .toast-content { flex: 1; }
+        .toast-title { font-weight: 600; margin-bottom: 2px; }
+        .toast-message { opacity: 0.95; }
+        .toast-close {
+            background: none;
+            border: none;
+            color: white;
+            opacity: 0.7;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            line-height: 1;
+        }
+        .toast-close:hover { opacity: 1; }
+        @keyframes toastSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        @media (max-width: 480px) {
+            .toast-container { left: 10px; right: 10px; max-width: none; }
+        }
     </style>
 </head>
 <body>
@@ -304,7 +365,41 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <script>
+        // ========== TOAST NOTIFICATION SYSTEM ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <div class="toast-content">
+                    <div class="toast-message">${message.replace(/\n/g, '<br>')}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remove after duration
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
         const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
         const ADMIN_EMAIL = 'christiankholden@gmail.com';
         const PASSWORD_SALT = 'BSN9B_SUMNER_2025'; // Salt for password hashing
@@ -565,7 +660,7 @@
                 hideRegisterModal();
 
                 // Show success message
-                alert('Registration Successful!\n\nYour account has been created. You can now log in with your email and password.');
+                showToast('Registration Successful! Your account has been created. You can now log in with your email and password.', 'success', 5000);
 
             } catch (error) {
                 console.error('Registration error:', error.code, error.message);
@@ -847,6 +942,15 @@ Review users anytime: ${adminUrl}`;
 
         // Focus username field on load
         document.getElementById('username').focus();
+
+        // ========== KEYBOARD NAVIGATION ==========
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // Close any open modal
+                const modals = document.querySelectorAll('.modal.show');
+                modals.forEach(modal => modal.classList.remove('show'));
+            }
+        });
 
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {

@@ -21,6 +21,40 @@
 - `/resources/` - Clinical references, calculators, drug lookup
 - `/community/` - Community hub with posts, announcements
 
+## Performance & Accessibility Improvements (Jan 2026)
+
+### Script Loading Optimization
+- All external scripts use `defer` attribute for non-blocking loading
+- Preconnect hints for Firebase, CDN domains (gstatic.com, jsdelivr.net, cdnjs.cloudflare.com)
+- Export libraries (jsPDF, docx, FileSaver) lazy-loaded on demand (~170KB saved)
+
+### Firebase Optimizations
+- Listener cleanup on page unload (`cleanupFirebaseListeners()`)
+- User list caching in localStorage with 10-minute expiry (`USER_CACHE_KEY`)
+- Chat messages limited to last 50 for DOM performance
+
+### Accessibility (WCAG)
+- ARIA labels on all interactive elements
+- `role="navigation"`, `role="dialog"`, `role="tablist"`, `role="tab"` attributes
+- `aria-expanded` for expandable menus
+- `aria-live="polite"` for dynamic content (badges, chat messages)
+- Keyboard navigation (ESC to close modals)
+- Focus management with `:focus-visible` styles
+
+### UI/UX Improvements
+- Toast notifications replace all `alert()` calls (`showToast()` function)
+- Dark mode CSS for chat widget elements
+- Loading states on export buttons (`btn-loading` class)
+- Debounced NANDA search (300ms)
+
+### Service Worker (sw.js)
+- Versioned cache (`CACHE_VERSION = 'v2'`)
+- Stale-while-revalidate for HTML pages
+- Automatic old cache cleanup on activation
+- Support for `SKIP_WAITING` and `CLEAR_CACHE` messages
+
+---
+
 ## Key Features Implemented (Jan 2025)
 
 ### 1. Bottom Toolbar Navigation
