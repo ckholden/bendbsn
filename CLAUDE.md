@@ -24,7 +24,7 @@
 ## Performance & Accessibility Improvements (Jan 2026)
 
 ### Script Loading Optimization
-- All external scripts use `defer` attribute for non-blocking loading
+- **IMPORTANT**: Firebase SDK scripts must NOT use `defer` - they must load synchronously before inline scripts that use Firebase
 - Preconnect hints for Firebase, CDN domains (gstatic.com, jsdelivr.net, cdnjs.cloudflare.com)
 - Export libraries (jsPDF, docx, FileSaver) lazy-loaded on demand (~170KB saved)
 
