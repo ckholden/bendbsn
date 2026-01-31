@@ -885,7 +885,7 @@
     window.toggleBrowserNotifications = toggleBrowserNotifications;
 
     // ========== @MENTION AUTOCOMPLETE ==========
-    let allRegisteredUsers = [];
+    // allRegisteredUsers is defined at top of file
     let mentionDropdownIndex = -1;
 
     // Fetch all registered users from Google Sheet
