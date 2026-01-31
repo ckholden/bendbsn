@@ -304,6 +304,99 @@
             font-size: 13px;
         }
 
+        /* Post Author Actions (Edit/Delete) */
+        .post-author-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .post-action-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .edit-btn {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .edit-btn:hover {
+            background: #1976d2;
+            color: white;
+        }
+        .delete-btn {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .delete-btn:hover {
+            background: #c62828;
+            color: white;
+        }
+        [data-theme="dark"] .edit-btn {
+            background: #1e3a5f;
+            color: #64b5f6;
+        }
+        [data-theme="dark"] .edit-btn:hover {
+            background: #1976d2;
+            color: white;
+        }
+        [data-theme="dark"] .delete-btn {
+            background: #4a1c1c;
+            color: #ef5350;
+        }
+        [data-theme="dark"] .delete-btn:hover {
+            background: #c62828;
+            color: white;
+        }
+
+        /* Confirm Delete Modal */
+        .confirm-modal {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .confirm-modal h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+        .confirm-modal p {
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .confirm-modal .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .confirm-modal .btn-cancel {
+            padding: 10px 20px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .confirm-modal .btn-delete {
+            padding: 10px 20px;
+            background: #c62828;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
         .post-content {
             color: var(--text-primary);
             font-size: 14px;
@@ -697,6 +790,13 @@
         </div>
 
         <div class="content">
+            <!-- Search Bar -->
+            <div class="search-bar" style="margin-bottom: 15px;">
+                <input type="text" id="postSearchInput" placeholder="Search posts by title or content..."
+                    oninput="searchPosts(this.value)"
+                    style="width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 25px; font-size: 14px; background: var(--bg-input); color: var(--text-primary);">
+            </div>
+
             <!-- Category Tabs -->
             <div class="category-tabs" role="tablist" aria-label="Post categories">
                 <button class="category-tab active" role="tab" aria-selected="true" onclick="filterCategory('all')">All</button>
@@ -789,6 +889,49 @@
                 <textarea name="message" required placeholder="Describe your feedback..."></textarea>
                 <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Send Feedback</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Edit Post Modal -->
+    <div id="editPostModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 20px;">Edit Post</h2>
+                <button onclick="hideEditPostModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+            </div>
+            <form onsubmit="saveEditedPost(event)">
+                <input type="hidden" id="editPostId">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Title</label>
+                <input type="text" id="editPostTitle" required placeholder="Enter post title">
+
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Category</label>
+                <select id="editPostCategory" required>
+                    <option value="announcement">Announcements</option>
+                    <option value="blog">Study Tips</option>
+                    <option value="career">Career</option>
+                    <option value="nclex">NCLEX</option>
+                    <option value="question">Questions</option>
+                    <option value="general">General</option>
+                </select>
+
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Content</label>
+                <textarea id="editPostContent" required placeholder="Share your thoughts, tips, or questions..."></textarea>
+
+                <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deletePostModal" class="modal-overlay hidden">
+        <div class="confirm-modal">
+            <h3>Delete Post?</h3>
+            <p>This action cannot be undone. All replies will also be deleted.</p>
+            <input type="hidden" id="deletePostId">
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="hideDeletePostModal()">Cancel</button>
+                <button class="btn-delete" onclick="confirmDeletePost()">Delete</button>
+            </div>
         </div>
     </div>
 
@@ -2292,6 +2435,12 @@
         }
 
         let allPosts = [];
+        let searchTerm = '';
+
+        function searchPosts(term) {
+            searchTerm = term.toLowerCase().trim();
+            renderPosts();
+        }
 
         function renderPosts() {
             const pinnedContainer = document.getElementById('pinnedPosts');
@@ -2299,8 +2448,19 @@
             const pinnedSection = document.getElementById('pinnedSection');
 
             let filteredPosts = allPosts;
+
+            // Filter by category
             if (currentCategory !== 'all') {
-                filteredPosts = allPosts.filter(p => p.category === currentCategory);
+                filteredPosts = filteredPosts.filter(p => p.category === currentCategory);
+            }
+
+            // Filter by search term
+            if (searchTerm) {
+                filteredPosts = filteredPosts.filter(p =>
+                    p.title.toLowerCase().includes(searchTerm) ||
+                    p.content.toLowerCase().includes(searchTerm) ||
+                    p.author.toLowerCase().includes(searchTerm)
+                );
             }
 
             const pinned = filteredPosts.filter(p => p.pinned);
@@ -2330,16 +2490,26 @@
 
         function createPostCard(post, isPinned) {
             const replyCount = post.replyCount || 0;
+            const isAuthor = post.authorEmail === currentUsername;
+            const authorActions = isAuthor ? `
+                <div class="post-author-actions">
+                    <button class="post-action-btn edit-btn" onclick="editPost('${post.id}')" aria-label="Edit post" title="Edit">&#9998;</button>
+                    <button class="post-action-btn delete-btn" onclick="deletePost('${post.id}')" aria-label="Delete post" title="Delete">&#128465;</button>
+                </div>
+            ` : '';
             return `
                 <div class="post-card ${isPinned ? 'pinned' : ''}" id="post-${post.id}">
                     <div class="post-header">
-                        <div>
+                        <div style="flex: 1;">
                             <div class="post-title">${isPinned ? '&#128204; ' : ''}${escapeHtml(post.title)}</div>
-                            <div class="post-meta">By ${escapeHtml(post.author)} - ${formatTimeAgo(post.createdAt)}</div>
+                            <div class="post-meta">By ${escapeHtml(post.author)} - ${formatTimeAgo(post.createdAt)}${post.editedAt ? ' (edited)' : ''}</div>
                         </div>
-                        ${getCategoryBadge(post.category)}
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            ${getCategoryBadge(post.category)}
+                            ${authorActions}
+                        </div>
                     </div>
-                    <div class="post-content">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
+                    <div class="post-content" id="content-${post.id}">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
                     <div class="post-footer">
                         <div class="post-actions">
                             <button class="post-action" onclick="likePost('${post.id}')" aria-label="Like post">
@@ -2455,6 +2625,86 @@
         // Legacy function name for compatibility
         function toggleComments(postId) {
             toggleReplies(postId);
+        }
+
+        // ========== POST EDITING & DELETION ==========
+        function editPost(postId) {
+            const post = allPosts.find(p => p.id === postId);
+            if (!post) {
+                showToast('Post not found', 'error');
+                return;
+            }
+            if (post.authorEmail !== currentUsername) {
+                showToast('You can only edit your own posts', 'error');
+                return;
+            }
+
+            document.getElementById('editPostId').value = postId;
+            document.getElementById('editPostTitle').value = post.title;
+            document.getElementById('editPostCategory').value = post.category;
+            document.getElementById('editPostContent').value = post.content;
+            document.getElementById('editPostModal').classList.remove('hidden');
+        }
+
+        function hideEditPostModal() {
+            document.getElementById('editPostModal').classList.add('hidden');
+        }
+
+        function saveEditedPost(event) {
+            event.preventDefault();
+            const postId = document.getElementById('editPostId').value;
+            const title = document.getElementById('editPostTitle').value.trim();
+            const category = document.getElementById('editPostCategory').value;
+            const content = document.getElementById('editPostContent').value.trim();
+
+            if (!title || !content) {
+                showToast('Please fill in all fields', 'warning');
+                return;
+            }
+
+            database.ref('community/posts/' + postId).update({
+                title: title,
+                category: category,
+                content: content,
+                editedAt: Date.now()
+            }).then(() => {
+                hideEditPostModal();
+                showToast('Post updated successfully', 'success');
+            }).catch(err => {
+                showToast('Failed to update post', 'error');
+                console.error(err);
+            });
+        }
+
+        function deletePost(postId) {
+            const post = allPosts.find(p => p.id === postId);
+            if (!post) {
+                showToast('Post not found', 'error');
+                return;
+            }
+            if (post.authorEmail !== currentUsername) {
+                showToast('You can only delete your own posts', 'error');
+                return;
+            }
+
+            document.getElementById('deletePostId').value = postId;
+            document.getElementById('deletePostModal').classList.remove('hidden');
+        }
+
+        function hideDeletePostModal() {
+            document.getElementById('deletePostModal').classList.add('hidden');
+        }
+
+        function confirmDeletePost() {
+            const postId = document.getElementById('deletePostId').value;
+
+            database.ref('community/posts/' + postId).remove().then(() => {
+                hideDeletePostModal();
+                showToast('Post deleted', 'success');
+            }).catch(err => {
+                showToast('Failed to delete post', 'error');
+                console.error(err);
+            });
         }
 
         // Load posts

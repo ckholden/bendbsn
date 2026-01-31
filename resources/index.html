@@ -352,6 +352,46 @@
         .collapse-content.hidden {
             display: none;
         }
+
+        /* Procedure Checklists */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .checklist-item:hover {
+            background: var(--accent-hover);
+        }
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+            cursor: pointer;
+            accent-color: #4caf50;
+        }
+        .checklist-item:has(input:checked) {
+            background: #e8f5e9;
+            text-decoration: line-through;
+            color: #666;
+        }
+        [data-theme="dark"] .checklist-item:has(input:checked) {
+            background: #1b3d1b;
+            color: #888;
+        }
+
         @keyframes alertFlash {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
@@ -1036,6 +1076,119 @@
                     <a href="/app/" class="btn" style="display: block; text-align: center; margin-top: 15px;">Full NANDA Database →</a>
                 </div>
 
+                <!-- Procedure Checklists -->
+                <div class="card" style="grid-column: span 2;">
+                    <h2>📋 Procedure Checklists</h2>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Interactive checklists for common nursing procedures</p>
+
+                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🩺 Foley Catheter Insertion</h3>
+                    <div class="collapse-content hidden">
+                        <div class="checklist" id="foley-checklist">
+                            <label class="checklist-item"><input type="checkbox"> Verify order and check for allergies (latex, iodine)</label>
+                            <label class="checklist-item"><input type="checkbox"> Gather supplies: catheter kit, extra gloves, lighting</label>
+                            <label class="checklist-item"><input type="checkbox"> Explain procedure to patient, ensure privacy</label>
+                            <label class="checklist-item"><input type="checkbox"> Position patient (supine, knees bent for female; supine for male)</label>
+                            <label class="checklist-item"><input type="checkbox"> Perform hand hygiene, apply sterile gloves</label>
+                            <label class="checklist-item"><input type="checkbox"> Establish sterile field, arrange supplies</label>
+                            <label class="checklist-item"><input type="checkbox"> Apply sterile drape with fenestration</label>
+                            <label class="checklist-item"><input type="checkbox"> Test balloon with 10mL sterile water</label>
+                            <label class="checklist-item"><input type="checkbox"> Lubricate catheter tip generously</label>
+                            <label class="checklist-item"><input type="checkbox"> Cleanse urethral meatus (female: front to back; male: circular from meatus outward)</label>
+                            <label class="checklist-item"><input type="checkbox"> Insert catheter until urine flows, then advance 2-3 inches more</label>
+                            <label class="checklist-item"><input type="checkbox"> Inflate balloon with 10mL sterile water</label>
+                            <label class="checklist-item"><input type="checkbox"> Gently pull back to confirm balloon seated</label>
+                            <label class="checklist-item"><input type="checkbox"> Secure catheter to thigh, connect to drainage bag</label>
+                            <label class="checklist-item"><input type="checkbox"> Position bag below bladder level</label>
+                            <label class="checklist-item"><input type="checkbox"> Document: catheter size, balloon volume, urine output, patient tolerance</label>
+                        </div>
+                        <button onclick="clearChecklist('foley-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                    </div>
+
+                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">💉 IV Insertion</h3>
+                    <div class="collapse-content hidden">
+                        <div class="checklist" id="iv-checklist">
+                            <label class="checklist-item"><input type="checkbox"> Verify order, check patient ID, assess for allergies</label>
+                            <label class="checklist-item"><input type="checkbox"> Gather supplies: IV catheter, tegaderm, extension set, flush, tourniquet</label>
+                            <label class="checklist-item"><input type="checkbox"> Explain procedure to patient</label>
+                            <label class="checklist-item"><input type="checkbox"> Perform hand hygiene, apply clean gloves</label>
+                            <label class="checklist-item"><input type="checkbox"> Select appropriate vein (avoid arm with fistula, mastectomy side, injured area)</label>
+                            <label class="checklist-item"><input type="checkbox"> Apply tourniquet 4-6 inches above site</label>
+                            <label class="checklist-item"><input type="checkbox"> Palpate vein, confirm bouncy feeling</label>
+                            <label class="checklist-item"><input type="checkbox"> Cleanse site with alcohol/chlorhexidine, allow to dry</label>
+                            <label class="checklist-item"><input type="checkbox"> Anchor vein below insertion site</label>
+                            <label class="checklist-item"><input type="checkbox"> Insert catheter at 15-30° angle, bevel up</label>
+                            <label class="checklist-item"><input type="checkbox"> Observe for flashback in chamber</label>
+                            <label class="checklist-item"><input type="checkbox"> Advance catheter, retract stylet</label>
+                            <label class="checklist-item"><input type="checkbox"> Release tourniquet</label>
+                            <label class="checklist-item"><input type="checkbox"> Apply pressure above catheter tip, remove stylet completely</label>
+                            <label class="checklist-item"><input type="checkbox"> Connect extension set/flush, secure with tegaderm</label>
+                            <label class="checklist-item"><input type="checkbox"> Flush with saline, assess for infiltration</label>
+                            <label class="checklist-item"><input type="checkbox"> Label dressing with date, time, initials, gauge</label>
+                            <label class="checklist-item"><input type="checkbox"> Document: site, catheter gauge, number of attempts, patient tolerance</label>
+                        </div>
+                        <button onclick="clearChecklist('iv-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                    </div>
+
+                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🩹 Wound Care/Dressing Change</h3>
+                    <div class="collapse-content hidden">
+                        <div class="checklist" id="wound-checklist">
+                            <label class="checklist-item"><input type="checkbox"> Review order and wound care instructions</label>
+                            <label class="checklist-item"><input type="checkbox"> Gather supplies based on wound type</label>
+                            <label class="checklist-item"><input type="checkbox"> Perform hand hygiene, apply clean gloves</label>
+                            <label class="checklist-item"><input type="checkbox"> Position patient, ensure adequate lighting</label>
+                            <label class="checklist-item"><input type="checkbox"> Remove old dressing, assess drainage on dressing</label>
+                            <label class="checklist-item"><input type="checkbox"> Dispose of soiled dressing, remove gloves, hand hygiene</label>
+                            <label class="checklist-item"><input type="checkbox"> Apply sterile gloves</label>
+                            <label class="checklist-item"><input type="checkbox"> Assess wound: size, depth, drainage, odor, edges, surrounding skin</label>
+                            <label class="checklist-item"><input type="checkbox"> Cleanse wound per order (typically center to periphery)</label>
+                            <label class="checklist-item"><input type="checkbox"> Apply prescribed treatment/medication</label>
+                            <label class="checklist-item"><input type="checkbox"> Apply appropriate dressing, secure</label>
+                            <label class="checklist-item"><input type="checkbox"> Label dressing with date, time, initials</label>
+                            <label class="checklist-item"><input type="checkbox"> Document: wound assessment, treatment, patient response</label>
+                        </div>
+                        <button onclick="clearChecklist('wound-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                    </div>
+
+                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">💊 Medication Administration (5 Rights)</h3>
+                    <div class="collapse-content hidden">
+                        <div class="checklist" id="med-checklist">
+                            <label class="checklist-item"><input type="checkbox"> <strong>Right Patient</strong> - Check 2 identifiers (name, DOB, MRN)</label>
+                            <label class="checklist-item"><input type="checkbox"> <strong>Right Drug</strong> - Verify medication matches order</label>
+                            <label class="checklist-item"><input type="checkbox"> <strong>Right Dose</strong> - Calculate if needed, verify amount</label>
+                            <label class="checklist-item"><input type="checkbox"> <strong>Right Route</strong> - PO, IV, IM, SubQ, SL, etc.</label>
+                            <label class="checklist-item"><input type="checkbox"> <strong>Right Time</strong> - Within 30 min of scheduled time</label>
+                            <label class="checklist-item"><input type="checkbox"> Check for allergies</label>
+                            <label class="checklist-item"><input type="checkbox"> Verify expiration date</label>
+                            <label class="checklist-item"><input type="checkbox"> Assess for contraindications (vital signs, labs)</label>
+                            <label class="checklist-item"><input type="checkbox"> Educate patient about medication</label>
+                            <label class="checklist-item"><input type="checkbox"> Administer medication</label>
+                            <label class="checklist-item"><input type="checkbox"> Stay with patient for PO meds to ensure swallowed</label>
+                            <label class="checklist-item"><input type="checkbox"> Document immediately after administration</label>
+                        </div>
+                        <button onclick="clearChecklist('med-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                    </div>
+
+                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🫁 Tracheostomy Care</h3>
+                    <div class="collapse-content hidden">
+                        <div class="checklist" id="trach-checklist">
+                            <label class="checklist-item"><input type="checkbox"> Verify order, gather supplies, explain to patient</label>
+                            <label class="checklist-item"><input type="checkbox"> Position patient (semi-Fowler's)</label>
+                            <label class="checklist-item"><input type="checkbox"> Perform hand hygiene, apply sterile gloves</label>
+                            <label class="checklist-item"><input type="checkbox"> Suction tracheostomy if needed (before cleaning)</label>
+                            <label class="checklist-item"><input type="checkbox"> Remove inner cannula (if applicable)</label>
+                            <label class="checklist-item"><input type="checkbox"> Clean inner cannula with sterile saline/hydrogen peroxide</label>
+                            <label class="checklist-item"><input type="checkbox"> Rinse with sterile saline, dry with pipe cleaners</label>
+                            <label class="checklist-item"><input type="checkbox"> Replace inner cannula and lock in place</label>
+                            <label class="checklist-item"><input type="checkbox"> Clean stoma site with sterile saline, moving outward</label>
+                            <label class="checklist-item"><input type="checkbox"> Apply pre-cut trach dressing (do not cut gauze)</label>
+                            <label class="checklist-item"><input type="checkbox"> Change trach ties if soiled (two-person assist recommended)</label>
+                            <label class="checklist-item"><input type="checkbox"> Ensure ties allow 1-2 finger breadth</label>
+                            <label class="checklist-item"><input type="checkbox"> Document: stoma condition, secretions, patient tolerance</label>
+                        </div>
+                        <button onclick="clearChecklist('trach-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                    </div>
+                </div>
+
                 <!-- Additional Resources -->
                 <div class="card">
                     <h2>🔗 Additional Resources</h2>
@@ -1677,6 +1830,16 @@ Important guidelines:
             element.classList.toggle('collapsed');
             const content = element.nextElementSibling;
             content.classList.toggle('hidden');
+        }
+
+        function clearChecklist(checklistId) {
+            const checklist = document.getElementById(checklistId);
+            if (checklist) {
+                checklist.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+                showToast('Checklist reset', 'info');
+            }
         }
 
         // APGAR Calculator

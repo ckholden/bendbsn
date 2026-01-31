@@ -54,20 +54,22 @@
 ## In Progress
 
 ### Phase 2: Mobile Optimization (Priority: HIGH)
-- [ ] Responsive breakpoints refinement
-- [ ] Swipe gestures for panels
-- [ ] Improved form inputs for mobile
+- [x] Responsive breakpoints refinement (tablet 768-1024px, phone breakpoints)
+- [x] Swipe gestures for panels (swipe right/down to close chat, swipe left/down for AI)
+- [x] Improved form inputs for mobile (44px touch targets, 16px font for iOS)
+- [x] Safe area insets for notched phones
 - [ ] Full-screen mode option
 
 ### Phase 4: Community Enhancements (Priority: MEDIUM)
-- [ ] Comment threads on posts
-- [ ] Post editing/deletion
-- [ ] Better search and filtering
+- [x] Comment threads on posts (reply functionality with Firebase)
+- [x] All categories available (Announcements, Study Tips, Career, NCLEX, Questions, General)
+- [x] Post editing/deletion (author only, with confirmation)
+- [x] Search bar for filtering posts by title/content/author
 - [ ] User profiles
 
 ### Phase 5: Clinical Toolkit Expansion (Priority: MEDIUM)
-- [ ] Additional note templates (SBAR shift handoff)
-- [ ] Procedure checklists
+- [x] SBAR shift handoff generator (interactive form with copy to clipboard)
+- [x] Procedure checklists (Foley, IV, Wound Care, Med Admin, Trach Care)
 - [ ] Timer/reminders for med passes
 
 ### Phase 6: PWA Enhancement (Priority: MEDIUM)
