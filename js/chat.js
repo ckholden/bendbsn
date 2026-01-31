@@ -1079,6 +1079,27 @@
     setupChatListener();
     setupDMListener();
     fetchAllUsers();
+    loadDMConversations();  // Populate DM data for badge
+
+    // Set up initial DM unread count
+    directMessagesRef.once('value', (snapshot) => {
+        if (!snapshot.exists()) return;
+        let totalUnread = 0;
+        snapshot.forEach((child) => {
+            const data = child.val();
+            const participants = data.participants || {};
+            const isParticipant = Object.values(participants).some(p =>
+                p && (p.toLowerCase() === displayName.toLowerCase() || p.toLowerCase() === currentUsername.toLowerCase())
+            );
+            if (isParticipant && data.lastMessage && data.lastMessage.sender !== displayName) {
+                const lastRead = dmLastReadTimestamps[child.key] || 0;
+                if (data.lastMessage.timestamp > lastRead) {
+                    totalUnread++;
+                }
+            }
+        });
+        updateDMBadge(totalUnread);
+    });
 
     // Setup mention listeners and notification UI when DOM is ready
     if (document.readyState === 'loading') {
