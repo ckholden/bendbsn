@@ -24,8 +24,6 @@
     const auth = firebase.auth();
     const database = firebase.database();
 
-    console.log('Chat.js: Initialized for user', localStorage.getItem('bsn9b_displayName') || 'Anonymous');
-
     // Firebase References
     const chatRef = database.ref('chat/messages');
     const directMessagesRef = database.ref('directMessages');
@@ -35,6 +33,20 @@
     // User info from localStorage
     const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
     const displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
+
+    // Toast notification helper (uses page's showToast if available, otherwise creates basic toast)
+    function chatShowToast(message, type = 'info') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else {
+            // Fallback basic toast
+            const toast = document.createElement('div');
+            toast.style.cssText = `position: fixed; top: 20px; right: 20px; padding: 14px 24px; border-radius: 12px; color: white; font-weight: 500; font-size: 14px; z-index: 100000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    }
 
     // Chat State
     let chatOpen = false;
@@ -62,14 +74,7 @@
 
     // ========== AUTH STATE ==========
     auth.onAuthStateChanged((user) => {
-        if (user) {
-            console.log('Chat: Firebase Auth logged in as', user.email || user.uid);
-        } else {
-            console.log('Chat: Firebase Auth not logged in');
-            if (localStorage.getItem('bsn9b_auth') === 'true') {
-                console.warn('Chat: Session exists but Firebase auth lost');
-            }
-        }
+        // Auth state change handled silently
     });
 
     // ========== PRESENCE TRACKING ==========
@@ -119,7 +124,7 @@
                     }));
                 }
             })
-            .catch(err => console.log('Chat: Could not load users:', err));
+            .catch(() => { /* Silent fail */ });
     }
     loadAllUsers();
 
@@ -139,7 +144,7 @@
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.3);
         } catch (e) {
-            console.log('Chat: Audio notification not available');
+            // Audio not available
         }
     }
 
@@ -274,7 +279,7 @@
 
         const currentUser = auth.currentUser;
         if (!currentUser) {
-            alert('Chat requires authentication. Please refresh the page or log in again.');
+            chatShowToast('Chat requires authentication. Please refresh the page or log in again.', 'error');
             return;
         }
 
@@ -285,7 +290,7 @@
             timestamp: Date.now()
         }).catch((error) => {
             console.error('Chat: Failed to send message:', error);
-            alert('Failed to send message: ' + error.message);
+            chatShowToast('Failed to send message: ' + error.message, 'error');
         });
 
         input.value = '';
@@ -293,13 +298,9 @@
 
     // ========== CHAT LISTENER ==========
     function setupChatListener() {
-        console.log('Chat.js: Setting up chat listener');
         chatRef.on('value', (snapshot) => {
             const container = document.getElementById('chatMessages');
-            if (!container) {
-                console.warn('Chat.js: chatMessages container not found');
-                return;
-            }
+            if (!container) return;
 
             if (!snapshot.exists() || snapshot.numChildren() === 0) {
                 container.innerHTML = '<p style="text-align: center; color: var(--text-secondary, #888); font-size: 12px; margin-top: 20px;">No messages yet. Start the conversation!</p>';
@@ -348,16 +349,12 @@
             scrollToBottom();
 
             if (newMessages > 0 && !chatOpen) {
-                console.log('Chat.js: New messages detected:', newMessages);
                 const shouldNotify = unreadCount < newMessages;
                 unreadCount = newMessages;
                 const badge = document.getElementById('chatBadge');
                 if (badge) {
                     badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
                     badge.style.display = 'flex';
-                    console.log('Chat.js: Badge updated');
-                } else {
-                    console.warn('Chat.js: chatBadge element not found');
                 }
                 if (shouldNotify && messages.length > 0) {
                     const latestMessage = messages[messages.length - 1];
@@ -690,7 +687,7 @@
 
         const currentUser = auth.currentUser;
         if (!currentUser) {
-            alert('Please log in to send messages.');
+            chatShowToast('Please log in to send messages.', 'error');
             return;
         }
 
@@ -719,7 +716,7 @@
             input.value = '';
         } catch (e) {
             console.error('Chat: Error sending DM:', e);
-            alert('Failed to send message. Please try again.');
+            chatShowToast('Failed to send message. Please try again.', 'error');
         }
     };
 
@@ -748,7 +745,6 @@
 
     // DM Listener for notifications
     function setupDMListener() {
-        console.log('Chat.js: Setting up DM listener');
         directMessagesRef.on('child_changed', (snapshot) => {
             try {
                 const convId = snapshot.key;
@@ -817,12 +813,10 @@
         const connected = snap.val() === true;
         const onlineCountEl = document.getElementById('onlineCount');
         if (connected) {
-            console.log('Chat: Firebase connected');
             if (onlineCountEl && onlineCountEl.textContent.includes('Disconnected')) {
                 onlineCountEl.textContent = 'Reconnected!';
             }
         } else {
-            console.log('Chat: Firebase disconnected');
             if (onlineCountEl) {
                 onlineCountEl.innerHTML = '<span style="color: #fca5a5;">Disconnected...</span>';
             }
@@ -832,7 +826,6 @@
     // ========== BROWSER NOTIFICATIONS ==========
     async function requestNotificationPermission() {
         if (!('Notification' in window)) {
-            console.log('Browser does not support notifications');
             return false;
         }
 
@@ -878,7 +871,7 @@
 
             setTimeout(() => notification.close(), 5000);
         } catch (e) {
-            console.log('Notification error:', e);
+            // Notification failed silently
         }
     }
 
@@ -920,16 +913,13 @@
                         firstName: u.name.trim().split(' ')[0],
                         email: u.email || ''
                     }));
-                console.log('Chat: Loaded', allRegisteredUsers.length, 'users for @mention');
             }
         } catch (e) {
-            console.log('Chat: Could not fetch users for @mention:', e);
+            // Failed to fetch users for @mention
         }
     }
 
     function showMentionDropdown(searchTerm) {
-        console.log('Chat.js: showMentionDropdown called with:', searchTerm);
-        console.log('Chat.js: onlineUsers:', onlineUsers.length, 'allRegisteredUsers:', allRegisteredUsers.length);
         const mentionDropdown = document.getElementById('mentionDropdown');
         if (!mentionDropdown) return;
 
@@ -1021,15 +1011,9 @@
 
     // Setup @mention event listeners when DOM is ready
     function setupMentionListeners() {
-        console.log('Chat.js: setupMentionListeners called');
         const chatInput = document.getElementById('chatInput');
         const mentionDropdown = document.getElementById('mentionDropdown');
-        console.log('Chat.js: chatInput found:', !!chatInput, 'mentionDropdown found:', !!mentionDropdown);
-        if (!chatInput || !mentionDropdown) {
-            console.warn('Chat.js: Could not find chatInput or mentionDropdown elements');
-            return;
-        }
-        console.log('Chat.js: Attaching mention event listeners');
+        if (!chatInput || !mentionDropdown) return;
 
         chatInput.addEventListener('input', function(e) {
             const value = this.value;
@@ -1117,7 +1101,5 @@
         updateNotificationToggleUI();
         updateSoundToggleUI();
     }
-
-    console.log('Chat.js: Initialized for user', displayName);
 
 })();

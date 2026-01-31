@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Resources to cache for offline use
@@ -22,26 +22,16 @@ const STALE_WHILE_REVALIDATE = [
 
 // Install event - cache core resources
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing service worker version:', CACHE_VERSION);
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('[SW] Caching app shell...');
-                return cache.addAll(OFFLINE_URLS);
-            })
-            .then(() => {
-                console.log('[SW] Install complete');
-                return self.skipWaiting();
-            })
-            .catch((error) => {
-                console.log('[SW] Install failed:', error);
-            })
+            .then((cache) => cache.addAll(OFFLINE_URLS))
+            .then(() => self.skipWaiting())
+            .catch(() => { /* Install failed */ })
     );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating service worker version:', CACHE_VERSION);
     event.waitUntil(
         caches.keys()
             .then((cacheNames) => {
@@ -49,16 +39,12 @@ self.addEventListener('activate', (event) => {
                     cacheNames.map((cacheName) => {
                         // Delete all caches that don't match current version
                         if (cacheName.startsWith('bsn9b-') && cacheName !== CACHE_NAME) {
-                            console.log('[SW] Deleting old cache:', cacheName);
                             return caches.delete(cacheName);
                         }
                     })
                 );
             })
-            .then(() => {
-                console.log('[SW] Activation complete, claiming clients');
-                return self.clients.claim();
-            })
+            .then(() => self.clients.claim())
     );
 });
 
@@ -133,20 +119,16 @@ self.addEventListener('fetch', (event) => {
 // Handle messages from clients
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
-        console.log('[SW] Received SKIP_WAITING message');
         self.skipWaiting();
     }
 
     // Support for cache clear request
     if (event.data && event.data.type === 'CLEAR_CACHE') {
-        console.log('[SW] Clearing cache...');
         event.waitUntil(
             caches.keys().then((cacheNames) => {
                 return Promise.all(
                     cacheNames.map((cacheName) => caches.delete(cacheName))
                 );
-            }).then(() => {
-                console.log('[SW] Cache cleared');
             })
         );
     }

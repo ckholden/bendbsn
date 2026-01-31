@@ -235,6 +235,28 @@
         body.has-alert { padding-top: 50px; }
         body.has-fyi { padding-top: 50px; }
         body.has-alert.has-fyi { padding-top: 100px; }
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            z-index: 100000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            max-width: 400px;
+        }
+        .toast.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .toast.error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .toast.info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 
     <!-- Admin Login -->
@@ -422,6 +444,18 @@
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
 
+        // Toast notification function
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
         // EmailJS Configuration
         const EMAILJS_PUBLIC_KEY = 'Paf-N3lByYsImp0af';
         const EMAILJS_SERVICE_ID = 'service_2dw80zz';
@@ -437,7 +471,7 @@
                 const data = await response.json();
 
                 if (!data.success || !data.users) {
-                    alert('Failed to fetch users');
+                    showToast('Failed to fetch users', 'error');
                     return;
                 }
 
@@ -474,9 +508,9 @@
                 }
 
                 statusDiv.remove();
-                alert('Done! Sent: ' + sent + ', Failed: ' + failed);
+                showToast('Done! Sent: ' + sent + ', Failed: ' + failed, 'success');
             } catch (e) {
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
             }
         }
 
@@ -697,8 +731,8 @@
         function kickUser(presenceKey, username) {
             if (confirm(`Kick ${username} from chat?`)) {
                 presenceRef.child(presenceKey).remove()
-                    .then(() => alert(`${username} has been kicked from chat`))
-                    .catch((e) => alert('Error: ' + e.message));
+                    .then(() => showToast(`${username} has been kicked from chat`, 'success'))
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
 
@@ -706,8 +740,8 @@
         function kickAllUsers() {
             if (confirm('Kick ALL users from chat? They will need to refresh to reconnect.')) {
                 presenceRef.remove()
-                    .then(() => alert('All users have been kicked from chat'))
-                    .catch((e) => alert('Error: ' + e.message));
+                    .then(() => showToast('All users have been kicked from chat', 'success'))
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
 
@@ -721,7 +755,7 @@
                     timestamp: Date.now(),
                     bannedBy: 'admin'
                 }).then(() => {
-                    alert(`${username} has been banned`);
+                    showToast(`${username} has been banned`, 'success');
                     // Also kick them from chat
                     presenceRef.once('value', (snapshot) => {
                         snapshot.forEach((child) => {
@@ -730,7 +764,7 @@
                             }
                         });
                     });
-                }).catch((e) => alert('Error: ' + e.message));
+                }).catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
 
@@ -738,8 +772,8 @@
         function unbanUser(banKey) {
             if (confirm('Unban this user?')) {
                 bannedRef.child(banKey).remove()
-                    .then(() => alert('User has been unbanned'))
-                    .catch((e) => alert('Error: ' + e.message));
+                    .then(() => showToast('User has been unbanned', 'success'))
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
 
@@ -753,10 +787,10 @@
                         status: 'approved'
                     });
                     await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                    alert(`${username} has been approved`);
+                    showToast(`${username} has been approved`, 'success');
                     loadRegisteredUsers();
                 } catch (e) {
-                    alert('Error: ' + e.message);
+                    showToast('Error: ' + e.message, 'error');
                 }
             }
         }
@@ -766,7 +800,7 @@
             if (confirm('Delete this message?')) {
                 chatRef.child(messageKey).remove()
                     .then(() => loadMessages())
-                    .catch((e) => alert('Error: ' + e.message));
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
 
@@ -775,10 +809,10 @@
             if (confirm('Delete ALL chat messages? This cannot be undone.')) {
                 chatRef.remove()
                     .then(() => {
-                        alert('All messages have been deleted');
+                        showToast('All messages have been deleted', 'success');
                         loadMessages();
                     })
-                    .catch((e) => alert('Error: ' + e.message));
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
 
@@ -848,7 +882,7 @@
 
         function exportLoginHistory() {
             if (loginHistoryData.length === 0) {
-                alert('No data to export');
+                showToast('No data to export', 'info');
                 return;
             }
 
@@ -913,7 +947,7 @@
             const text = document.getElementById('newPhraseText').value.trim();
 
             if (!shortcut || !text) {
-                alert('Please enter both shortcut and expansion text.');
+                showToast('Please enter both shortcut and expansion text.', 'error');
                 return;
             }
 
@@ -930,15 +964,15 @@
                 document.getElementById('newPhraseShortcut').value = '';
                 document.getElementById('newPhraseText').value = '';
                 loadGlobalPhrases();
-                alert('Smart phrase added: ' + shortcut);
-            }).catch((e) => alert('Error: ' + e.message));
+                showToast('Smart phrase added: ' + shortcut, 'success');
+            }).catch((e) => showToast('Error: ' + e.message, 'error'));
         }
 
         function deleteGlobalPhrase(key) {
             if (confirm('Delete this smart phrase?')) {
                 globalPhrasesRef.child(key).remove()
                     .then(() => loadGlobalPhrases())
-                    .catch((e) => alert('Error: ' + e.message));
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
             }
         }
 
