@@ -494,17 +494,28 @@
 
         // Auth check moved to <head> for faster redirect
 
-        // Fetch users from Google Sheet on load
-        async function fetchUsers() {
+        // Fetch users from Google Sheet on load (with timeout)
+        async function fetchUsers(timeoutMs = 5000) {
             try {
-                const response = await fetch(API_URL + '?action=getUsers');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+                const response = await fetch(API_URL + '?action=getUsers', {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
                 const data = await response.json();
                 if (data.success) {
                     usersCache = data.users;
                     return data.users;
                 }
             } catch (e) {
-                console.log('Using fallback auth');
+                if (e.name === 'AbortError') {
+                    console.log('User fetch timed out, continuing without it');
+                } else {
+                    console.log('Using fallback auth');
+                }
             }
             return null;
         }
@@ -529,40 +540,30 @@
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
 
-                // Get display name from Firebase user profile
-                let displayName = user.displayName;
+                // Get display name - use Firebase profile or fallback to email immediately
+                // Don't block login on external API calls
+                let displayName = user.displayName || email.split('@')[0];
 
-                // If no displayName in Firebase, try to get from Google Sheet
-                if (!displayName) {
-                    try {
-                        const users = await fetchUsers();
-                        if (users) {
-                            const userRecord = users.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
-                            if (userRecord && userRecord.name) {
-                                displayName = userRecord.name.split(' ')[0]; // First name
-                                // Update Firebase profile for next time
-                                await user.updateProfile({ displayName: userRecord.name.split(' ')[0] });
-                            }
-                        }
-                    } catch (e) {
-                        console.log('Could not fetch user profile from sheet');
-                    }
-                }
-
-                // Fallback to email username
-                if (!displayName) {
-                    displayName = email.split('@')[0];
-                }
-
-                // Store session info (localStorage for persistence across refreshes)
+                // Store session info immediately (localStorage for persistence)
                 localStorage.setItem('bsn9b_auth', 'true');
                 localStorage.setItem('bsn9b_user', user.email);
                 localStorage.setItem('bsn9b_displayName', displayName);
                 localStorage.setItem('bsn9b_uid', user.uid);
 
-                // Log successful login
+                // Log successful login (fire and forget - don't await)
                 logLoginEvent(user.email, displayName, true);
 
+                // If no displayName in Firebase, try to get from Google Sheet in background
+                // This will update the profile for next login
+                if (!user.displayName && usersCache) {
+                    const userRecord = usersCache.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
+                    if (userRecord && userRecord.name) {
+                        // Update Firebase profile in background (don't await)
+                        user.updateProfile({ displayName: userRecord.name.split(' ')[0] }).catch(() => {});
+                    }
+                }
+
+                // Redirect immediately - don't wait for anything else
                 window.location.href = '/home/';
             } catch (error) {
                 // Log failed login attempt
