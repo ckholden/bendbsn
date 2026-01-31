@@ -205,13 +205,14 @@ After deploying updates, users may see old cached code. Solutions:
 2. Unregister service worker: DevTools → Application → Service Workers → Unregister
 3. Clear browser cache
 
-### Debug Logging (can be removed in production)
-Debug logs use 🔥 emoji prefix:
-- `🔥 CHAT SYSTEM INIT START`
-- `🔥 toggleChat called`
-- `🔥 chatBox found: true/false`
-- `🔥 chatInput found: true/false`
-- `🔥 CHAT SYSTEM INIT COMPLETE`
+### Debug Logging (removed Jan 2025)
+Debug logs were removed from production. To re-add for troubleshooting, add these console.log statements with 🔥 emoji prefix:
+- After `// ========== CHAT SYSTEM`: `console.log('🔥 CHAT SYSTEM INIT START');`
+- In `toggleChat()`: `console.log('🔥 toggleChat called');` and `console.log('🔥 chatBox found:', !!chatBox);`
+- After chatInput/mentionDropdown declarations: `console.log('🔥 chatInput found:', !!chatInput);`
+- Before `// ========== END CHAT SYSTEM`: `console.log('🔥 CHAT SYSTEM INIT COMPLETE');`
+
+**Note:** Null checks on `chatInput` event listeners were kept for safety.
 
 ### Admin Commands (in sendMessage)
 Only for admin emails (`christiankholden@gmail.com`, `holdenc`):
