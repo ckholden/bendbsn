@@ -615,7 +615,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span id="chatTitle" style="font-weight: 700; font-size: 16px;">BSN9B Chat</span>
-                        <div id="onlineCount" style="font-size: 11px; opacity: 0.8;">Connecting...</div>
+                        <div id="onlineCount" onclick="toggleUserList()" style="font-size: 11px; opacity: 0.8; cursor: pointer;">Connecting...</div>
                     </div>
                     <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px;">&times;</button>
                 </div>
@@ -623,6 +623,11 @@
                     <button id="tabGroupChat" onclick="switchChatMode('group')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.3); color: white; font-size: 12px; font-weight: 600; cursor: pointer;">&#128101; Group</button>
                     <button id="tabDM" onclick="switchChatMode('dm')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; font-size: 12px; font-weight: 600; cursor: pointer;">&#9993;&#65039; Direct <span id="dmTabBadge" style="display: none; background: #8b5cf6; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px;">0</span></button>
                 </div>
+            </div>
+
+            <div id="userList" style="display: none; background: #1a3d5c; color: white; padding: 10px 15px; font-size: 12px; max-height: 100px; overflow-y: auto;">
+                <div style="opacity: 0.7; margin-bottom: 5px;">Online now:</div>
+                <div id="userListNames"></div>
             </div>
 
             <div id="groupChatView" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
@@ -688,6 +693,7 @@
         const database = firebase.database();
         const chatRef = database.ref('chat/messages');
         const postsRef = database.ref('community/posts');
+        const announcementsRef = database.ref('announcements');
 
         // User info
         const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
@@ -927,6 +933,17 @@
             }
         }
 
+        function toggleUserList() {
+            const ul = document.getElementById('userList');
+            ul.style.display = ul.style.display === 'none' ? 'block' : 'none';
+            if (ul.style.display === 'block') {
+                const namesEl = document.getElementById('userListNames');
+                namesEl.innerHTML = onlineUsers.length > 0
+                    ? onlineUsers.map(u => `<div style="padding: 4px 0;">• ${u}</div>`).join('')
+                    : '<div style="opacity: 0.7;">No users online</div>';
+            }
+        }
+
         function updateBadge() {
             const badge = document.getElementById('chatBadge');
             if (unreadCount > 0) {
@@ -945,8 +962,38 @@
         function sendMessage(event) {
             event.preventDefault();
             const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if (!text) return;
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Admin commands (admin emails only)
+            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
+            if (adminEmails.includes(currentUsername.toLowerCase())) {
+                if (message.toLowerCase().startsWith('alert/')) {
+                    const alertMsg = message.substring(6).trim();
+                    if (alertMsg.toLowerCase() === 'clear') {
+                        announcementsRef.child('alert').remove();
+                    } else if (alertMsg) {
+                        announcementsRef.child('alert').set({ message: alertMsg, timestamp: Date.now() });
+                    }
+                    input.value = '';
+                    return;
+                }
+                if (message.toLowerCase().startsWith('fyi/')) {
+                    const fyiMsg = message.substring(4).trim();
+                    if (fyiMsg.toLowerCase() === 'clear') {
+                        announcementsRef.child('fyi').remove();
+                    } else if (fyiMsg) {
+                        announcementsRef.child('fyi').set({ message: fyiMsg, timestamp: Date.now() });
+                    }
+                    input.value = '';
+                    return;
+                }
+                if (message.toLowerCase() === 'chat/clear') {
+                    chatRef.remove();
+                    input.value = '';
+                    return;
+                }
+            }
 
             const currentUser = auth.currentUser;
             if (!currentUser) {
@@ -957,7 +1004,7 @@
             chatRef.push({
                 user: displayName,
                 username: currentUsername,
-                text: text,
+                text: message,
                 timestamp: Date.now()
             });
             input.value = '';

@@ -508,6 +508,7 @@
         const auth = firebase.auth();
         const database = firebase.database();
         const chatRef = database.ref('chat/messages');
+        const announcementsRef = database.ref('announcements');
 
         // User info
         const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
@@ -612,6 +613,17 @@
             document.getElementById('soundToggle').textContent = soundEnabled ? '🔔' : '🔕';
         }
 
+        function toggleUserList() {
+            const ul = document.getElementById('userList');
+            ul.style.display = ul.style.display === 'none' ? 'block' : 'none';
+            if (ul.style.display === 'block') {
+                const namesEl = document.getElementById('userListNames');
+                namesEl.innerHTML = onlineUsers.length > 0
+                    ? onlineUsers.map(u => `<div style="padding: 4px 0;">• ${u}</div>`).join('')
+                    : '<div style="opacity: 0.7;">No users online</div>';
+            }
+        }
+
         function formatTime(timestamp) {
             const date = new Date(timestamp);
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -620,8 +632,41 @@
         function sendMessage(event) {
             event.preventDefault();
             const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if (!text) return;
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Admin commands (admin emails only)
+            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
+            if (adminEmails.includes(currentUsername.toLowerCase())) {
+                // Alert command: alert/message or alert/clear
+                if (message.toLowerCase().startsWith('alert/')) {
+                    const alertMsg = message.substring(6).trim();
+                    if (alertMsg.toLowerCase() === 'clear') {
+                        announcementsRef.child('alert').remove();
+                    } else if (alertMsg) {
+                        announcementsRef.child('alert').set({ message: alertMsg, timestamp: Date.now() });
+                    }
+                    input.value = '';
+                    return;
+                }
+                // FYI command: fyi/message or fyi/clear
+                if (message.toLowerCase().startsWith('fyi/')) {
+                    const fyiMsg = message.substring(4).trim();
+                    if (fyiMsg.toLowerCase() === 'clear') {
+                        announcementsRef.child('fyi').remove();
+                    } else if (fyiMsg) {
+                        announcementsRef.child('fyi').set({ message: fyiMsg, timestamp: Date.now() });
+                    }
+                    input.value = '';
+                    return;
+                }
+                // Chat clear command: chat/clear
+                if (message.toLowerCase() === 'chat/clear') {
+                    chatRef.remove();
+                    input.value = '';
+                    return;
+                }
+            }
 
             const currentUser = auth.currentUser;
             if (!currentUser) {
@@ -632,7 +677,7 @@
             chatRef.push({
                 user: displayName,
                 username: currentUsername,
-                text: text,
+                text: message,
                 timestamp: Date.now()
             });
             input.value = '';
