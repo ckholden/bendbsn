@@ -179,6 +179,42 @@
             align-items: center;
         }
         .action-bar label { font-weight: 600; color: #333; }
+
+        /* Bottom Toolbar */
+        .bottom-toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .toolbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            color: #666;
+            text-decoration: none;
+            font-size: 10px;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .toolbar-item:hover { color: #1f4e79; }
+        .toolbar-item.active { color: #e94560; }
+        .toolbar-item .icon { font-size: 24px; margin-bottom: 2px; }
+        .toolbar-item .label { font-weight: 600; }
+        body { padding-bottom: 70px; }
     </style>
 </head>
 <body>
@@ -907,5 +943,33 @@
         }
 
     </script>
+
+    <!-- Bottom Toolbar -->
+    <nav class="bottom-toolbar">
+        <a href="/home/" class="toolbar-item">
+            <span class="icon">&#127968;</span>
+            <span class="label">Home</span>
+        </a>
+        <a href="/app/" class="toolbar-item">
+            <span class="icon">&#128221;</span>
+            <span class="label">Docs</span>
+        </a>
+        <a href="/community/" class="toolbar-item">
+            <span class="icon">&#128172;</span>
+            <span class="label">Community</span>
+        </a>
+        <a href="/resources/" class="toolbar-item">
+            <span class="icon">&#128218;</span>
+            <span class="label">Resources</span>
+        </a>
+        <a href="/admin/" class="toolbar-item active">
+            <span class="icon">&#9881;&#65039;</span>
+            <span class="label">Admin</span>
+        </a>
+        <button class="toolbar-item" onclick="logout()">
+            <span class="icon">&#128682;</span>
+            <span class="label">Logout</span>
+        </button>
+    </nav>
 </body>
 </html>
