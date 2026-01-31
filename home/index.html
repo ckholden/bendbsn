@@ -588,6 +588,7 @@
         const database = firebase.database();
 
         // ========== CHAT SYSTEM (INLINE FROM /app/) ==========
+        console.log('🔥 CHAT SYSTEM INIT START');
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
@@ -797,8 +798,10 @@
 
         // Toggle chat
         function toggleChat() {
+            console.log('🔥 toggleChat called');
             chatOpen = !chatOpen;
             const chatBox = document.getElementById('chatBox');
+            console.log('🔥 chatBox found:', !!chatBox);
             if (chatOpen) {
                 chatBox.style.display = 'flex';
                 chatBox.style.flexDirection = 'column';
@@ -1572,8 +1575,9 @@
 
         const chatInput = document.getElementById('chatInput');
         const mentionDropdown = document.getElementById('mentionDropdown');
+        console.log('🔥 chatInput found:', !!chatInput, 'mentionDropdown found:', !!mentionDropdown);
 
-        chatInput.addEventListener('input', function(e) {
+        if (chatInput) chatInput.addEventListener('input', function(e) {
             const value = this.value;
             const cursorPos = this.selectionStart;
             const textBeforeCursor = value.substring(0, cursorPos);
@@ -1587,7 +1591,7 @@
             }
         });
 
-        chatInput.addEventListener('keydown', function(e) {
+        if (chatInput) chatInput.addEventListener('keydown', function(e) {
             if (mentionDropdown.style.display === 'none') return;
 
             const items = mentionDropdown.querySelectorAll('.mention-item');
@@ -1684,10 +1688,11 @@
         }
 
         document.addEventListener('click', function(e) {
-            if (!chatInput.contains(e.target) && !mentionDropdown.contains(e.target)) {
+            if (chatInput && mentionDropdown && !chatInput.contains(e.target) && !mentionDropdown.contains(e.target)) {
                 hideMentionDropdown();
             }
         });
+        console.log('🔥 CHAT SYSTEM INIT COMPLETE');
         // ========== END CHAT SYSTEM ==========
 
         // Set welcome message
