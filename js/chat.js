@@ -199,12 +199,16 @@
     window.toggleChatSound = function() {
         soundEnabled = !soundEnabled;
         localStorage.setItem('chatSoundEnabled', soundEnabled.toString());
+        updateSoundToggleUI();
+    };
+
+    function updateSoundToggleUI() {
         const btn = document.getElementById('soundToggleBtn');
         if (btn) {
             btn.innerHTML = soundEnabled ? '🔔' : '🔕';
             btn.title = soundEnabled ? 'Sound ON (click to mute)' : 'Sound OFF (click to unmute)';
         }
-    };
+    }
 
     // ========== USER LIST TOGGLE ==========
     window.toggleUserList = function() {
@@ -806,9 +810,265 @@
         }
     });
 
+    // ========== BROWSER NOTIFICATIONS ==========
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            console.log('Browser does not support notifications');
+            return false;
+        }
+
+        if (Notification.permission === 'granted') {
+            notificationsEnabled = true;
+            localStorage.setItem('chatNotificationsEnabled', 'true');
+            updateNotificationToggleUI();
+            return true;
+        }
+
+        if (Notification.permission !== 'denied') {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                notificationsEnabled = true;
+                localStorage.setItem('chatNotificationsEnabled', 'true');
+                updateNotificationToggleUI();
+                return true;
+            }
+        }
+
+        notificationsEnabled = false;
+        localStorage.setItem('chatNotificationsEnabled', 'false');
+        updateNotificationToggleUI();
+        return false;
+    }
+
+    function sendBrowserNotification(message) {
+        if (!notificationsEnabled || Notification.permission !== 'granted') return;
+        if (document.hasFocus() && chatOpen) return;
+
+        try {
+            const notification = new Notification('BSN9B Chat', {
+                body: `${message.user}: ${message.text.substring(0, 100)}${message.text.length > 100 ? '...' : ''}`,
+                tag: 'bsn9b-chat',
+                requireInteraction: false
+            });
+
+            notification.onclick = function() {
+                window.focus();
+                if (!chatOpen) window.toggleChat();
+                notification.close();
+            };
+
+            setTimeout(() => notification.close(), 5000);
+        } catch (e) {
+            console.log('Notification error:', e);
+        }
+    }
+
+    function toggleBrowserNotifications() {
+        if (notificationsEnabled) {
+            notificationsEnabled = false;
+            localStorage.setItem('chatNotificationsEnabled', 'false');
+            updateNotificationToggleUI();
+        } else {
+            requestNotificationPermission();
+        }
+    }
+
+    function updateNotificationToggleUI() {
+        const btn = document.getElementById('notificationToggleBtn');
+        if (btn) {
+            btn.innerHTML = notificationsEnabled ? '📲' : '📵';
+            btn.title = notificationsEnabled ? 'Browser notifications ON' : 'Browser notifications OFF (click to enable)';
+        }
+    }
+
+    // Expose browser notification toggle
+    window.toggleBrowserNotifications = toggleBrowserNotifications;
+
+    // ========== @MENTION AUTOCOMPLETE ==========
+    let allRegisteredUsers = [];
+    let mentionDropdownIndex = -1;
+
+    // Fetch all registered users from Google Sheet
+    async function fetchAllUsers() {
+        try {
+            const response = await fetch('https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?action=getUsers');
+            const data = await response.json();
+            if (data.success && data.users) {
+                allRegisteredUsers = data.users
+                    .filter(u => u.name && u.name.trim())
+                    .map(u => ({
+                        name: u.name.trim(),
+                        firstName: u.name.trim().split(' ')[0],
+                        email: u.email || ''
+                    }));
+                console.log('Chat: Loaded', allRegisteredUsers.length, 'users for @mention');
+            }
+        } catch (e) {
+            console.log('Chat: Could not fetch users for @mention:', e);
+        }
+    }
+
+    function showMentionDropdown(searchTerm) {
+        const mentionDropdown = document.getElementById('mentionDropdown');
+        if (!mentionDropdown) return;
+
+        const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+
+        let matches = [];
+
+        // Add online users first (marked as online)
+        onlineUsers.forEach(u => {
+            if (u.toLowerCase().includes(searchTerm)) {
+                matches.push({ name: u, online: true });
+            }
+        });
+
+        // Add registered users who aren't online
+        allRegisteredUsers.forEach(u => {
+            const firstName = u.firstName;
+            const fullName = u.name;
+            if (!onlineSet.has(firstName.toLowerCase()) &&
+                (firstName.toLowerCase().includes(searchTerm) || fullName.toLowerCase().includes(searchTerm))) {
+                matches.push({ name: firstName, fullName: fullName, online: false });
+            }
+        });
+
+        // Limit to 8 results
+        matches = matches.slice(0, 8);
+
+        if (matches.length === 0) {
+            hideMentionDropdown();
+            return;
+        }
+
+        mentionDropdownIndex = 0;
+        mentionDropdown.innerHTML = matches.map((m, i) => `
+            <div class="mention-item" data-name="${m.name}"
+                 style="padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; ${i === 0 ? 'background: var(--bg-secondary, #f0f7ff);' : ''}"
+                 onclick="selectMention('${m.name}')"
+                 onmouseover="this.style.background='var(--bg-secondary, #f0f7ff)'"
+                 onmouseout="this.style.background='${i === mentionDropdownIndex ? 'var(--bg-secondary, #f0f7ff)' : 'transparent'}'">
+                <span style="font-weight: 500;">@${m.name}${m.fullName && m.fullName !== m.name ? ' <span style="color:var(--text-secondary, #888);font-weight:normal;">(' + m.fullName + ')</span>' : ''}</span>
+                ${m.online ? '<span style="font-size: 10px; background: #22c55e; color: white; padding: 2px 6px; border-radius: 10px;">online</span>' : ''}
+            </div>
+        `).join('');
+
+        mentionDropdown.style.display = 'block';
+    }
+
+    function hideMentionDropdown() {
+        const mentionDropdown = document.getElementById('mentionDropdown');
+        if (mentionDropdown) {
+            mentionDropdown.style.display = 'none';
+        }
+        mentionDropdownIndex = -1;
+    }
+
+    function updateMentionHighlight(items) {
+        items.forEach((item, i) => {
+            item.style.background = i === mentionDropdownIndex ? 'var(--bg-secondary, #f0f7ff)' : 'transparent';
+        });
+    }
+
+    function selectMention(name) {
+        const chatInput = document.getElementById('chatInput');
+        if (!chatInput) return;
+
+        const value = chatInput.value;
+        const cursorPos = chatInput.selectionStart;
+
+        // Find the @ symbol position
+        const textBeforeCursor = value.substring(0, cursorPos);
+        const atIndex = textBeforeCursor.lastIndexOf('@');
+
+        if (atIndex !== -1) {
+            // Replace @partial with @fullname
+            const newValue = value.substring(0, atIndex) + '@' + name + ' ' + value.substring(cursorPos);
+            chatInput.value = newValue;
+
+            // Move cursor after the mention
+            const newCursorPos = atIndex + name.length + 2;
+            chatInput.setSelectionRange(newCursorPos, newCursorPos);
+        }
+
+        hideMentionDropdown();
+        chatInput.focus();
+    }
+
+    // Expose selectMention for onclick handlers
+    window.selectMention = selectMention;
+
+    // Setup @mention event listeners when DOM is ready
+    function setupMentionListeners() {
+        const chatInput = document.getElementById('chatInput');
+        const mentionDropdown = document.getElementById('mentionDropdown');
+        if (!chatInput || !mentionDropdown) return;
+
+        chatInput.addEventListener('input', function(e) {
+            const value = this.value;
+            const cursorPos = this.selectionStart;
+
+            // Find if we're typing after an @ symbol
+            const textBeforeCursor = value.substring(0, cursorPos);
+            const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+            if (atMatch) {
+                const searchTerm = atMatch[1].toLowerCase();
+                showMentionDropdown(searchTerm);
+            } else {
+                hideMentionDropdown();
+            }
+        });
+
+        chatInput.addEventListener('keydown', function(e) {
+            if (mentionDropdown.style.display === 'none') return;
+
+            const items = mentionDropdown.querySelectorAll('.mention-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                mentionDropdownIndex = Math.min(mentionDropdownIndex + 1, items.length - 1);
+                updateMentionHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                mentionDropdownIndex = Math.max(mentionDropdownIndex - 1, 0);
+                updateMentionHighlight(items);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (mentionDropdownIndex >= 0 && items[mentionDropdownIndex]) {
+                    e.preventDefault();
+                    selectMention(items[mentionDropdownIndex].dataset.name);
+                }
+            } else if (e.key === 'Escape') {
+                hideMentionDropdown();
+            }
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!chatInput.contains(e.target) && !mentionDropdown.contains(e.target)) {
+                hideMentionDropdown();
+            }
+        });
+    }
+
     // ========== INITIALIZATION ==========
     setupChatListener();
     setupDMListener();
+    fetchAllUsers();
+
+    // Setup mention listeners and notification UI when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setupMentionListeners();
+            updateNotificationToggleUI();
+            updateSoundToggleUI();
+        });
+    } else {
+        setupMentionListeners();
+        updateNotificationToggleUI();
+        updateSoundToggleUI();
+    }
 
     console.log('Chat.js: Initialized for user', displayName);
 
