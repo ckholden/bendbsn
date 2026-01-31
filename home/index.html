@@ -517,6 +517,19 @@
         // Set welcome message
         document.getElementById('welcomeMessage').textContent = 'Welcome back, ' + displayName + '!';
 
+        // Verify Firebase Auth state
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Firebase Auth: Logged in as', user.email || user.uid);
+            } else {
+                console.log('Firebase Auth: Not logged in');
+                // If session exists but Firebase auth lost, user may need to re-login
+                if (localStorage.getItem('bsn9b_auth') === 'true') {
+                    console.warn('Session exists but Firebase auth lost');
+                }
+            }
+        });
+
         // Theme functions
         function initTheme() {
             const saved = localStorage.getItem('bsn9b_theme') || 'light';

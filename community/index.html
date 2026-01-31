@@ -699,6 +699,18 @@
         const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
         const displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
 
+        // Verify Firebase Auth state
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Firebase Auth: Logged in as', user.email || user.uid);
+            } else {
+                console.log('Firebase Auth: Not logged in');
+                if (localStorage.getItem('bsn9b_auth') === 'true') {
+                    console.warn('Session exists but Firebase auth lost');
+                }
+            }
+        });
+
         // Current filter
         let currentCategory = 'all';
 
