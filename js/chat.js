@@ -9,12 +9,22 @@
 
     // Ensure Firebase is available
     if (typeof firebase === 'undefined') {
-        console.error('Chat.js: Firebase not loaded');
+        console.error('Chat.js: Firebase SDK not loaded');
+        return;
+    }
+
+    // Verify Firebase app is initialized
+    try {
+        firebase.app();
+    } catch (e) {
+        console.error('Chat.js: Firebase not initialized yet');
         return;
     }
 
     const auth = firebase.auth();
     const database = firebase.database();
+
+    console.log('Chat.js: Initialized for user', localStorage.getItem('bsn9b_displayName') || 'Anonymous');
 
     // Firebase References
     const chatRef = database.ref('chat/messages');
