@@ -1075,6 +1075,21 @@
         let aiOpen = false;
         let aiConversation = [];
         const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+        const AI_SYSTEM_PROMPT = `You are a helpful nursing education assistant for BSN nursing students. Your role is to:
+- Explain nursing concepts, procedures, and pathophysiology clearly
+- Provide drug information including mechanism, side effects, and nursing considerations
+- Help develop care plans using NANDA-I diagnoses, NIC interventions, and NOC outcomes
+- Generate NCLEX-style practice questions with detailed rationales
+- Explain lab values and their clinical significance
+- Guide through clinical scenarios and critical thinking
+
+Important guidelines:
+- Always emphasize this is for EDUCATIONAL purposes only, not actual patient care
+- Encourage students to verify information with their instructors and official resources
+- Be concise but thorough - nursing students are busy
+- Use proper medical terminology while explaining in accessible terms
+- When discussing medications, always mention common nursing considerations
+- For NCLEX questions, provide the answer AND detailed rationales for all options`;
 
         function toggleAI() {
             aiOpen = !aiOpen;
@@ -1113,10 +1128,14 @@
             typingDiv.innerHTML = '<div style="background: var(--chat-msg-other-bg); color: var(--text-primary); padding: 10px 14px; border-radius: 16px; font-size: 14px;">Thinking...</div>';
             document.getElementById('aiMessages').appendChild(typingDiv);
             try {
-                const response = await fetch(AI_API_URL + '?action=aiChat', {
+                const response = await fetch(AI_API_URL, {
                     method: 'POST',
+                    redirect: 'follow',
                     headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ messages: aiConversation })
+                    body: JSON.stringify({
+                        messages: aiConversation,
+                        systemPrompt: AI_SYSTEM_PROMPT
+                    })
                 });
                 const data = await response.json();
                 document.getElementById('aiTyping')?.remove();
@@ -1124,10 +1143,11 @@
                     addAIMessage(data.response, false);
                     aiConversation.push({ role: 'assistant', content: data.response });
                 } else {
-                    addAIMessage('Sorry, I encountered an error. Please try again.', false);
+                    addAIMessage('Sorry, I encountered an error. Please try again. ' + (data.error || ''), false);
                 }
             } catch (error) {
                 document.getElementById('aiTyping')?.remove();
+                console.error('AI API Error:', error);
                 addAIMessage('Sorry, I couldn\'t connect. Please try again.', false);
             }
         }
