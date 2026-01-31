@@ -255,3 +255,104 @@ Only for admin emails (`christiankholden@gmail.com`, `holdenc`):
 - `fyi/message` - Set yellow FYI banner
 - `fyi/clear` - Clear FYI banner
 - `chat/clear` - Clear all chat messages
+
+---
+
+## Admin Panel - Community Moderation (Jan 2026)
+
+### Overview
+The admin panel (`/admin/index.html`) includes comprehensive community post moderation controls, allowing administrators to manage posts and replies from the Community Hub.
+
+### Firebase Reference
+```javascript
+const communityPostsRef = database.ref('community/posts');
+```
+
+### State Variables
+```javascript
+let allCommunityPosts = [];  // Cached posts array
+let currentPostId = null;     // Currently viewed post in modal
+```
+
+### UI Components
+
+#### Quick Stats
+- Added "Community Posts" stat box showing total post count (`#statPosts`)
+
+#### Action Bar Buttons
+- **Community Stats** (purple) - Opens statistics modal
+- **Clear All Posts** (red) - Deletes all posts with double confirmation
+
+#### Community Posts Card
+- Spans 2 columns in the grid layout
+- Category filter dropdown: All, Announcements, Study Tips, Career, NCLEX, General
+- Table columns: Title, Author, Category, Stats (likes/replies), Actions
+- Actions per post: View, Pin/Unpin, Delete
+- Pinned posts show 📌 icon and appear first
+
+#### Post Detail Modal (`#postDetailModal`)
+- Full post content with category badge
+- Pin status indicator
+- Author name and timestamp
+- Pin/Unpin button
+- Delete Post button
+- Replies list with individual delete buttons
+
+#### Community Stats Modal (`#communityStatsModal`)
+- Total posts, replies, likes, pinned count
+- Top contributor (name + post count)
+- Posts by category with progress bars
+
+### Admin Functions
+
+| Function | Purpose |
+|----------|---------|
+| `loadCommunityPosts()` | Fetch all posts, apply filter, render table |
+| `viewPostDetail(postId)` | Open modal with full post content |
+| `loadPostReplies(postId, replies)` | Render replies in modal |
+| `deleteReply(postId, replyId)` | Delete specific reply, refresh view |
+| `togglePostPin()` | Pin/unpin post from modal |
+| `quickTogglePin(postId, pinned)` | Pin/unpin from list view |
+| `deletePostAdmin()` | Delete post from modal |
+| `quickDeletePost(postId, title)` | Delete post from list view |
+| `clearAllPosts()` | Delete ALL posts (double confirm) |
+| `showCommunityStats()` | Open statistics modal |
+| `closeCommunityStats()` | Close statistics modal |
+| `renderCommunityStats()` | Calculate and display analytics |
+| `closePostDetail()` | Close post detail modal |
+
+### Helper Functions
+
+| Function | Purpose |
+|----------|---------|
+| `getCategoryLabel(cat)` | Get display name for category |
+| `getCategoryColor(cat)` | Get color for category badge |
+| `formatTimeAgo(timestamp)` | Format relative time (e.g., "2h ago") |
+| `escapeHtml(text)` | XSS protection for user content |
+
+### Category Colors
+```javascript
+{
+  'announcements': '#e94560',  // Red/pink
+  'study-tips': '#28a745',     // Green
+  'career': '#007bff',         // Blue
+  'nclex': '#ff9800',          // Orange
+  'general': '#6c757d'         // Gray
+}
+```
+
+### Real-time Updates
+```javascript
+// In initAdmin()
+communityPostsRef.on('value', () => loadCommunityPosts());
+```
+
+### Post Sorting Logic
+1. Pinned posts first
+2. Then by timestamp (newest first)
+
+### Security
+- All user content escaped via `escapeHtml()` before rendering
+- Delete operations require confirmation
+- Clear All requires double confirmation
+- Admin password required to access panel
