@@ -319,11 +319,15 @@
         </a>
         <a href="/app/" class="toolbar-item">
             <span class="icon">📝</span>
-            <span class="label">Docs</span>
+            <span class="label">RN Notes</span>
         </a>
         <a href="/community/" class="toolbar-item">
             <span class="icon">👥</span>
             <span class="label">Community</span>
+        </a>
+        <a href="/resources/" class="toolbar-item">
+            <span class="icon">📚</span>
+            <span class="label">Resources</span>
         </a>
         <button class="toolbar-item" onclick="toggleMoreMenu()">
             <span class="icon">⋯</span>
@@ -781,9 +785,30 @@
             }
         }
 
+        // Presence tracking
+        const presenceRef = database.ref('chat/presence');
+        const myPresence = presenceRef.push();
+        myPresence.set({
+            name: displayName,
+            user: currentUsername,
+            online: true,
+            timestamp: Date.now()
+        });
+        myPresence.onDisconnect().remove();
+
+        // Update presence timestamp periodically
+        setInterval(() => {
+            myPresence.update({ timestamp: Date.now() });
+        }, 60000);
+
         // Load online users for presence
-        database.ref('chat/presence').on('value', (snapshot) => {
+        presenceRef.on('value', (snapshot) => {
             onlineUsers = [];
+            const count = snapshot.numChildren();
+            const onlineCountEl = document.getElementById('onlineCount');
+            if (onlineCountEl) {
+                onlineCountEl.textContent = count + ' online';
+            }
             if (snapshot.exists()) {
                 const now = Date.now();
                 snapshot.forEach((child) => {

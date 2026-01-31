@@ -538,11 +538,15 @@
         </a>
         <a href="/app/" class="toolbar-item">
             <span class="icon">&#128221;</span>
-            <span class="label">Docs</span>
+            <span class="label">RN Notes</span>
         </a>
         <a href="/community/" class="toolbar-item active">
             <span class="icon">&#128101;</span>
             <span class="label">Community</span>
+        </a>
+        <a href="/resources/" class="toolbar-item">
+            <span class="icon">&#128218;</span>
+            <span class="label">Resources</span>
         </a>
         <button class="toolbar-item" onclick="toggleMoreMenu()">
             <span class="icon">&#8943;</span>
@@ -1010,6 +1014,20 @@
 
         // Online users presence
         const presenceRef = database.ref('chat/presence');
+        const myPresence = presenceRef.push();
+        myPresence.set({
+            name: displayName,
+            user: currentUsername,
+            online: true,
+            timestamp: Date.now()
+        });
+        myPresence.onDisconnect().remove();
+
+        // Update presence timestamp periodically
+        setInterval(() => {
+            myPresence.update({ timestamp: Date.now() });
+        }, 60000);
+
         presenceRef.on('value', (snapshot) => {
             const el = document.getElementById('onlineCount');
             if (el) el.textContent = snapshot.numChildren() + ' online';
