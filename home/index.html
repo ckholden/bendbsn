@@ -431,13 +431,17 @@
 
     <!-- Chat Widget with DM Support -->
     <div id="chatWidget" style="position: fixed; bottom: 80px; right: 20px; z-index: 999; font-family: 'Segoe UI', sans-serif;">
+        <!-- Chat Toggle Button -->
         <button id="chatToggle" onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
             💬
         </button>
-        <span id="chatBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; align-items: center; justify-content: center;">0</span>
-        <span id="dmBadge" style="display: none; position: absolute; top: -5px; left: -5px; background: #8b5cf6; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; align-items: center; justify-content: center;">0</span>
+        <span id="chatBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #e94560; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
+        <!-- DM Badge (separate from group chat) -->
+        <span id="dmBadge" style="display: none; position: absolute; top: -5px; left: -5px; background: #8b5cf6; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
 
-        <div id="chatBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; right: 0; width: 350px; height: 500px; background: var(--bg-primary); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
+        <!-- Chat Box -->
+        <div id="chatBox" style="display: none; flex-direction: column; position: absolute; bottom: 70px; right: 0; width: 350px; height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden;">
+            <!-- Chat Header -->
             <div style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; padding: 12px 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
@@ -450,60 +454,86 @@
                         <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px;">×</button>
                     </div>
                 </div>
+                <!-- Chat Mode Tabs -->
                 <div style="display: flex; gap: 8px; margin-top: 10px;">
-                    <button id="tabGroupChat" onclick="switchChatMode('group')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.3); color: white; font-size: 12px; font-weight: 600; cursor: pointer;">👥 Group</button>
-                    <button id="tabDM" onclick="switchChatMode('dm')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; font-size: 12px; font-weight: 600; cursor: pointer;">✉️ Direct <span id="dmTabBadge" style="display: none; background: #8b5cf6; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px;">0</span></button>
+                    <button id="tabGroupChat" onclick="switchChatMode('group')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.3); color: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                        👥 Group
+                    </button>
+                    <button id="tabDM" onclick="switchChatMode('dm')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                        ✉️ Direct <span id="dmTabBadge" style="display: none; background: #8b5cf6; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px;">0</span>
+                    </button>
                 </div>
             </div>
 
+            <!-- Online Users List (toggleable) -->
             <div id="userList" style="display: none; background: #1a3d5c; color: white; padding: 10px 15px; font-size: 12px; max-height: 100px; overflow-y: auto;">
                 <div style="opacity: 0.7; margin-bottom: 5px;">Online now:</div>
                 <div id="userListNames"></div>
             </div>
 
+            <!-- GROUP CHAT VIEW -->
             <div id="groupChatView" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-secondary);"></div>
-                <div style="padding: 12px; border-top: 1px solid var(--border); background: var(--bg-primary); position: relative;">
-                    <div id="mentionDropdown" style="display: none; position: absolute; bottom: 100%; left: 12px; right: 60px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; z-index: 100;"></div>
+                <!-- Chat Messages -->
+                <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
+                    <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
+                </div>
+
+                <!-- Chat Input -->
+                <div style="padding: 12px; border-top: 1px solid #e2e8f0; background: white; position: relative;">
+                    <!-- @Mention Autocomplete Dropdown -->
+                    <div id="mentionDropdown" style="display: none; position: absolute; bottom: 100%; left: 12px; right: 60px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; z-index: 100;"></div>
                     <form onsubmit="sendMessage(event)" style="display: flex; gap: 8px;">
-                        <input type="text" id="chatInput" placeholder="Type @ to mention someone..." style="flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; background: var(--bg-input); color: var(--text-primary);" maxlength="500" autocomplete="off">
+                        <input type="text" id="chatInput" placeholder="Type @ to mention someone..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none;" maxlength="500" autocomplete="off">
                         <button type="submit" style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px;">➤</button>
                     </form>
                 </div>
             </div>
 
+            <!-- DM VIEW -->
             <div id="dmView" style="flex: 1; display: none; flex-direction: column; overflow: hidden;">
-                <div id="dmConversationList" style="flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-secondary);">
+                <!-- DM Conversation List (shows when no conversation selected) -->
+                <div id="dmConversationList" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
                     <div style="margin-bottom: 15px;">
-                        <button onclick="showNewDMSelector()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">✏️ New Message</button>
+                        <button onclick="showNewDMSelector()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                            ✏️ New Message
+                        </button>
                     </div>
-                    <div id="dmConversations" style="color: var(--text-secondary); font-size: 12px; text-align: center;">Loading conversations...</div>
+                    <div id="dmConversations" style="color: #888; font-size: 12px; text-align: center;">
+                        Loading conversations...
+                    </div>
                 </div>
 
+                <!-- DM Messages View (shows when conversation selected) -->
                 <div id="dmMessageView" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
-                    <div id="dmHeader" style="padding: 10px 15px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
-                        <button onclick="closeDMConversation()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px; color: var(--text-primary);">←</button>
-                        <span id="dmPartnerName" style="font-weight: 600; color: var(--accent);">Partner Name</span>
-                        <span id="dmPartnerStatus" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--border); color: var(--text-secondary);">offline</span>
+                    <!-- DM Header with back button -->
+                    <div id="dmHeader" style="padding: 10px 15px; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                        <button onclick="closeDMConversation()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px;">←</button>
+                        <span id="dmPartnerName" style="font-weight: 600; color: #1f4e79;">Partner Name</span>
+                        <span id="dmPartnerStatus" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #666;">offline</span>
                     </div>
-                    <div id="dmMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: var(--bg-secondary);"></div>
-                    <div style="padding: 12px; border-top: 1px solid var(--border); background: var(--bg-primary);">
+                    <!-- DM Messages -->
+                    <div id="dmMessages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
+                    </div>
+                    <!-- DM Input -->
+                    <div style="padding: 12px; border-top: 1px solid #e2e8f0; background: white;">
                         <form onsubmit="sendDM(event)" style="display: flex; gap: 8px;">
-                            <input type="text" id="dmInput" placeholder="Type a message..." style="flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; background: var(--bg-input); color: var(--text-primary);" maxlength="500">
+                            <input type="text" id="dmInput" placeholder="Type a message..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none;" maxlength="500" autocomplete="off">
                             <button type="submit" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px;">➤</button>
                         </form>
                     </div>
                 </div>
 
+                <!-- New DM User Selector -->
                 <div id="newDMSelector" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
-                    <div style="padding: 10px 15px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
-                        <button onclick="hideNewDMSelector()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px; color: var(--text-primary);">←</button>
-                        <span style="font-weight: 600; color: var(--accent);">New Message</span>
+                    <div style="padding: 10px 15px; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                        <button onclick="hideNewDMSelector()" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px;">←</button>
+                        <span style="font-weight: 600; color: #1f4e79;">New Message</span>
                     </div>
                     <div style="padding: 15px;">
-                        <input type="text" id="dmUserSearch" placeholder="Search users..." oninput="filterDMUsers()" style="width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; background: var(--bg-input); color: var(--text-primary); margin-bottom: 15px;">
+                        <input type="text" id="dmUserSearch" placeholder="Search users..." oninput="filterDMUsers()" style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; margin-bottom: 15px;">
                     </div>
-                    <div id="dmUserList" style="flex: 1; overflow-y: auto; padding: 0 15px 15px 15px;"></div>
+                    <div id="dmUserList" style="flex: 1; overflow-y: auto; padding: 0 15px 15px 15px;">
+                    </div>
                 </div>
             </div>
         </div>
