@@ -464,8 +464,28 @@
             outline-offset: 2px;
         }
 
+        /* ========== MOBILE RESPONSIVE STYLES ========== */
+
+        /* Smooth scrolling and touch-friendly */
+        html { scroll-behavior: smooth; }
+        #chatMessages, #dmMessages, #aiMessages, .posts-container {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        /* Minimum touch target size */
+        @media (pointer: coarse) {
+            button, .btn, .toolbar-item, .more-menu-item, .category-tab {
+                min-height: 44px;
+            }
+        }
+
         /* Mobile Chat/AI Widget - Full Screen Overlay */
         @media (max-width: 768px) {
+            body {
+                padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+            }
+
             #chatBox, #aiBox {
                 position: fixed !important;
                 top: 0 !important;
@@ -476,6 +496,8 @@
                 height: 100% !important;
                 border-radius: 0 !important;
                 z-index: 10000 !important;
+                padding-top: env(safe-area-inset-top, 0px);
+                padding-bottom: env(safe-area-inset-bottom, 0px);
             }
 
             #chatWidget, #aiWidget {
@@ -485,6 +507,34 @@
             #chatToggle, #aiToggle {
                 width: 54px !important;
                 height: 54px !important;
+            }
+
+            .bottom-toolbar {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+        }
+
+        /* Small phones */
+        @media (max-width: 480px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+
+            .post-card { padding: 15px; }
+            .category-tabs { flex-wrap: wrap; gap: 8px; }
+        }
+
+        /* Landscape orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .bottom-toolbar { height: 50px; }
+            .toolbar-item .label { display: none; }
+        }
+
+        /* Safe area insets for bottom toolbar */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .bottom-toolbar {
+                padding-bottom: env(safe-area-inset-bottom);
+                height: calc(60px + env(safe-area-inset-bottom));
             }
         }
 

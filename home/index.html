@@ -312,15 +312,37 @@
             outline-offset: 2px;
         }
 
+        /* ========== MOBILE RESPONSIVE STYLES ========== */
+
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* Touch-friendly scrolling */
+        #chatMessages, #dmMessages, #aiMessages {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        /* Minimum touch target size (44px) */
+        @media (pointer: coarse) {
+            button, .btn, .toolbar-item, .more-menu-item, .nav-card {
+                min-height: 44px;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             .title { font-size: 36px; }
             .nav-buttons { flex-direction: column; align-items: center; }
-            .nav-card { min-width: 200px; padding: 30px 40px; }
+            .nav-card { min-width: 200px; padding: 30px 40px; min-height: 80px; }
         }
 
         /* Mobile Chat/AI Widget - Full Screen Overlay */
         @media (max-width: 768px) {
+            body {
+                padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+            }
+
             #chatBox, #aiBox {
                 position: fixed !important;
                 top: 0 !important;
@@ -331,6 +353,8 @@
                 height: 100% !important;
                 border-radius: 0 !important;
                 z-index: 10000 !important;
+                padding-top: env(safe-area-inset-top, 0px);
+                padding-bottom: env(safe-area-inset-bottom, 0px);
             }
 
             #chatWidget, #aiWidget {
@@ -340,6 +364,37 @@
             #chatToggle, #aiToggle {
                 width: 54px !important;
                 height: 54px !important;
+            }
+
+            .bottom-toolbar {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+        }
+
+        /* Small phones */
+        @media (max-width: 480px) {
+            .title { font-size: 28px; }
+            .nav-card { padding: 25px 35px; }
+
+            /* Prevent iOS zoom on input focus */
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Landscape orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .container { padding: 20px; }
+            .title { font-size: 24px; margin-bottom: 15px; }
+            .bottom-toolbar { height: 50px; }
+            .toolbar-item .label { display: none; }
+        }
+
+        /* Safe area insets for bottom toolbar */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .bottom-toolbar {
+                padding-bottom: env(safe-area-inset-bottom);
+                height: calc(60px + env(safe-area-inset-bottom));
             }
         }
 

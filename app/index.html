@@ -409,15 +409,52 @@
 
         .more-menu-item:hover { background: var(--bg-secondary); }
         .more-menu-item .menu-icon { font-size: 18px; }
+        /* ========== MOBILE RESPONSIVE STYLES ========== */
+
+        /* Smooth scrolling for all elements */
+        html { scroll-behavior: smooth; }
+
+        /* Touch-friendly scrolling */
+        .form-container, #chatMessages, #dmMessages, #aiMessages {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        /* Minimum touch target size (44px recommended by Apple/Google) */
+        @media (pointer: coarse) {
+            button, .btn, .toolbar-item, .more-menu-item, .note-type-card {
+                min-height: 44px;
+            }
+            select, input[type="checkbox"], input[type="radio"] {
+                min-width: 44px;
+                min-height: 44px;
+            }
+        }
+
+        /* Tablet breakpoint (768px - 1024px) */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .container { max-width: 90%; }
+            .note-type-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Tablet/Large phone (max-width: 768px) */
         @media (max-width: 768px) {
             .note-type-grid { grid-template-columns: repeat(2, 1fr); }
             .form-row, .form-row.three-col, .h2t-grid { grid-template-columns: 1fr; }
             .btn-container { flex-direction: column; }
+
+            /* Better spacing for toolbar */
+            .bottom-toolbar {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
         }
 
         /* Mobile: Large phones (max-width: 640px) */
         @media (max-width: 640px) {
-            body { padding: 10px; }
+            body {
+                padding: 10px;
+                padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+            }
             .container { border-radius: 12px; }
             .header { padding: 20px; }
             .header h1 { font-size: 22px; }
@@ -435,6 +472,9 @@
                 max-height: none !important;
                 border-radius: 0 !important;
                 z-index: 10000 !important;
+                /* Safe area for notched phones */
+                padding-top: env(safe-area-inset-top, 0px);
+                padding-bottom: env(safe-area-inset-bottom, 0px);
             }
 
             /* Larger touch targets for toggle buttons */
@@ -450,6 +490,11 @@
                 max-height: calc(100vh - 40px) !important;
                 margin: 15px !important;
             }
+
+            /* Better textarea sizing */
+            textarea {
+                min-height: 120px;
+            }
         }
 
         /* Mobile: Standard phones (max-width: 480px) */
@@ -461,15 +506,19 @@
             .form-container { padding: 15px; }
 
             .note-type-grid { grid-template-columns: 1fr !important; gap: 8px; }
-            .note-type-card { padding: 12px; }
+            .note-type-card { padding: 12px; min-height: 60px; }
             .note-type-card h3 { font-size: 14px; }
 
-            /* Prevent iOS zoom on input focus */
+            /* Prevent iOS zoom on input focus (minimum 16px) */
             input, select, textarea {
                 font-size: 16px !important;
             }
 
-            .btn { padding: 16px !important; font-size: 15px !important; }
+            .btn {
+                padding: 16px !important;
+                font-size: 15px !important;
+                min-height: 50px;
+            }
 
             /* Widget toggle buttons */
             #chatToggle, #aiToggle {
@@ -479,8 +528,19 @@
             }
 
             /* Chat input area */
-            #chatInput, #aiInput {
+            #chatInput, #aiInput, #dmInput {
                 font-size: 16px !important;
+                padding: 12px !important;
+            }
+
+            /* Better form field spacing */
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            label {
+                margin-bottom: 8px;
+                display: block;
             }
         }
 
@@ -504,6 +564,26 @@
         @media (max-width: 400px) {
             #aiWidget {
                 bottom: 80px !important;
+            }
+        }
+
+        /* Landscape phone orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .header { padding: 10px 20px; }
+            .header h1 { font-size: 18px; }
+            .header p { display: none; }
+            .bottom-toolbar { height: 50px; }
+            .toolbar-item .label { display: none; }
+        }
+
+        /* Safe area insets for bottom toolbar */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .bottom-toolbar {
+                padding-bottom: env(safe-area-inset-bottom);
+                height: calc(60px + env(safe-area-inset-bottom));
+            }
+            body {
+                padding-bottom: calc(70px + env(safe-area-inset-bottom));
             }
         }
 
