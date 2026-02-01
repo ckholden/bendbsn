@@ -278,6 +278,8 @@
                 <p style="opacity: 0.8; font-size: 14px;">Manage users, chat, and site settings</p>
             </div>
             <div class="header-actions">
+                <span id="firebaseAuthStatus" style="color: rgba(255,255,255,0.8); font-size: 12px; align-self: center;">Firebase: not signed in</span>
+                <button class="btn btn-secondary" onclick="openFirebaseAuthModal()">Firebase Sign In</button>
                 <button class="btn btn-secondary" onclick="window.location.href='/app/'">Back to App</button>
                 <button class="btn btn-secondary" onclick="logout()">Logout</button>
             </div>
@@ -482,6 +484,20 @@
         </div>
     </div>
 
+    <!-- Firebase Auth Modal -->
+    <div id="firebaseAuthModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="font-size: 18px;">Firebase Sign In</h2>
+                <button onclick="closeFirebaseAuthModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">&times;</button>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Sign in so admin actions can update Firebase data.</p>
+            <input type="email" id="firebaseAuthEmail" placeholder="Email" autocomplete="email">
+            <input type="password" id="firebaseAuthPassword" placeholder="Password" autocomplete="current-password">
+            <button class="btn btn-primary" style="width: 100%;" onclick="firebaseAdminSignIn()">Sign In</button>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -508,6 +524,7 @@
         const database = firebase.database();
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
+        const userProfilesRef = database.ref('userProfiles');
         const userProfilesRef = database.ref('userProfiles');
 
         const SESSION_KEY = 'bsn9b_session_key';
@@ -674,6 +691,43 @@
             }
         }
 
+        function updateFirebaseAuthStatus() {
+            const statusEl = document.getElementById('firebaseAuthStatus');
+            const user = auth.currentUser;
+            if (!statusEl) return;
+            if (user && user.email) {
+                statusEl.textContent = 'Firebase: ' + user.email;
+            } else {
+                statusEl.textContent = 'Firebase: not signed in';
+            }
+        }
+
+        function openFirebaseAuthModal() {
+            document.getElementById('firebaseAuthModal').classList.remove('hidden');
+            document.getElementById('firebaseAuthEmail').focus();
+        }
+
+        function closeFirebaseAuthModal() {
+            document.getElementById('firebaseAuthModal').classList.add('hidden');
+        }
+
+        async function firebaseAdminSignIn() {
+            const email = document.getElementById('firebaseAuthEmail').value.trim();
+            const password = document.getElementById('firebaseAuthPassword').value;
+            if (!email || !password) {
+                showToast('Enter email and password.', 'error');
+                return;
+            }
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                updateFirebaseAuthStatus();
+                closeFirebaseAuthModal();
+                showToast('Firebase sign-in successful.', 'success');
+            } catch (e) {
+                showToast('Firebase sign-in failed: ' + e.message, 'error');
+            }
+        }
+
         // Check if already logged in as admin
         if (sessionStorage.getItem('bsn9b_admin') === 'true') {
             document.getElementById('loginOverlay').style.display = 'none';
@@ -682,6 +736,8 @@
         }
 
         function initAdmin() {
+            auth.onAuthStateChanged(() => updateFirebaseAuthStatus());
+            updateFirebaseAuthStatus();
             loadOnlineUsers();
             loadBannedUsers();
             loadRegisteredUsers();
@@ -696,6 +752,7 @@
         }
 
         function logout() {
+            auth.signOut().catch(() => {});
             endSessionTracking('logout');
             sessionStorage.removeItem('bsn9b_admin');
             localStorage.removeItem('bsn9b_auth');
@@ -1492,6 +1549,11 @@
 
         async function normalizeUserRoles() {
             if (!confirm('Set all users to RN Student and set Ann to Instructor?')) return;
+            if (!auth.currentUser) {
+                showToast('Sign in to Firebase first.', 'error');
+                openFirebaseAuthModal();
+                return;
+            }
             const annEmail = 'amottesen@gmail.com';
             try {
                 const snapshot = await userProfilesRef.once('value');
