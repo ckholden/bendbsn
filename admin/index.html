@@ -525,6 +525,9 @@
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
         const userProfilesRef = database.ref('userProfiles');
+        const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Other'];
+        let userProfilesByEmail = {};
+        let userProfilesByUid = {};
 
         const SESSION_KEY = 'bsn9b_session_key';
         const SESSION_START_KEY = 'bsn9b_session_start';
@@ -828,10 +831,63 @@
             });
         }
 
+        async function refreshUserProfilesMap() {
+            userProfilesByEmail = {};
+            userProfilesByUid = {};
+            if (!auth.currentUser) return;
+            try {
+                const snapshot = await userProfilesRef.once('value');
+                if (!snapshot.exists()) return;
+                snapshot.forEach((child) => {
+                    const profile = child.val() || {};
+                    const uid = child.key;
+                    const emailKey = (profile.email || '').toLowerCase();
+                    userProfilesByUid[uid] = profile;
+                    if (emailKey) {
+                        userProfilesByEmail[emailKey] = { uid: uid, ...profile };
+                    }
+                });
+            } catch (e) {
+                console.warn('Failed to load user profiles for roles:', e);
+            }
+        }
+
+        function getRoleOptionsHtml(selected) {
+            return ROLE_OPTIONS.map((role) => {
+                const isSelected = role === selected ? 'selected' : '';
+                return `<option value="${role}" ${isSelected}>${role}</option>`;
+            }).join('');
+        }
+
+        async function updateUserRole(uid, email, role) {
+            if (!auth.currentUser) {
+                showToast('Sign in to Firebase first.', 'error');
+                openFirebaseAuthModal();
+                return;
+            }
+            if (!uid) {
+                showToast('User profile not found yet. Ask user to log in once.', 'info');
+                return;
+            }
+            try {
+                await userProfilesRef.child(uid).update({
+                    role: role,
+                    email: email || null,
+                    updatedAt: Date.now()
+                });
+                showToast(`Role updated to ${role}`, 'success');
+                await refreshUserProfilesMap();
+                loadRegisteredUsers();
+            } catch (e) {
+                showToast('Failed to update role: ' + e.message, 'error');
+            }
+        }
+
         // Load registered users from Google Sheets
         async function loadRegisteredUsers() {
             const container = document.getElementById('registeredUsersList');
             try {
+                await refreshUserProfilesMap();
                 const response = await fetch(API_URL + '?action=getUsers');
                 const data = await response.json();
 
@@ -848,15 +904,30 @@
                     users.forEach((user) => {
                         const statusClass = user.status === 'approved' ? 'status-approved' :
                                            user.status === 'banned' ? 'status-banned' : 'status-pending';
+                        const emailKey = (user.email || '').toLowerCase();
+                        const profile = userProfilesByEmail[emailKey] || null;
+                        const roleValue = (profile && profile.role) || user.role || 'RN Student';
+                        const roleLabel = roleValue || 'RN Student';
+                        const profileUid = profile ? profile.uid : '';
+                        const roleSelect = auth.currentUser
+                            ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; margin-right: 6px;">
+                                   ${getRoleOptionsHtml(roleLabel)}
+                               </select>`
+                            : `<span style="font-size: 12px; color: #666;">${roleLabel}</span>`;
                         html += `
                             <div class="user-item">
                                 <div class="user-info">
                                     <div class="user-name">${user.name || user.username}</div>
                                     <div class="user-email">${user.email || ''} | @${user.username}</div>
                                     <div class="user-status ${statusClass}">${user.status || 'pending'}</div>
+                                    <div class="user-status" style="font-size: 11px; color: #1f4e79;">Role: ${roleLabel}</div>
                                 </div>
                                 <div class="user-actions">
                                     ${user.status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveUser('${user.username}')">Approve</button>` : ''}
+                                    ${auth.currentUser ? `
+                                        ${roleSelect}
+                                        <button class="btn btn-sm btn-primary" onclick="updateUserRole('${profileUid}', '${user.email || ''}', this.previousElementSibling.value)">Save Role</button>
+                                    ` : ''}
                                     <button class="btn btn-danger btn-sm" onclick="banUser('${user.username}')">Ban</button>
                                 </div>
                             </div>

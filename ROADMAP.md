@@ -5,6 +5,9 @@
 - **Last Updated:** January 2026
 - **Live URL:** https://bendbsn.com
 
+## Recent Updates
+- See `UPDATES.md` for the detailed change log.
+
 ---
 
 ## Completed Features
@@ -24,6 +27,8 @@
 - [x] Persistent login sessions
 - [x] Homepage with navigation
 - [x] Community hub with posts
+- [x] UID-based private document storage
+- [x] UID-based direct messages with secure rules
 
 ### Performance Optimizations (Jan 2026)
 - [x] Script loading with `defer` attribute

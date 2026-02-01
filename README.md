@@ -185,6 +185,14 @@ Previous username/password system (Google Sheets) has been replaced. Old account
 - **FormSubmit** - Email notifications for new registrations
 - **GitHub Pages** - Static hosting with custom domain
 
+### Update Log
+- See `UPDATES.md` for recent changes and security updates.
+
+### Realtime Database Rules
+- Rules file: `database.rules.json` (apply in Firebase Console or via Firebase CLI)
+- `userDocuments` and `directMessages` now key by UID for privacy
+- First login after this update writes `userProfiles/{uid}` used for DM lookup
+
 ### File Structure
 ```
 bendbsn/

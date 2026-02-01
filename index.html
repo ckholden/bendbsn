@@ -574,6 +574,25 @@
                 localStorage.setItem('bsn9b_displayName', displayName);
                 localStorage.setItem('bsn9b_uid', user.uid);
 
+                // Ensure user profile exists/updates for existing accounts (fire-and-forget)
+                const profileUpdate = {
+                    email: user.email,
+                    displayName: displayName,
+                    updatedAt: Date.now()
+                };
+                if (usersCache) {
+                    const userRecord = usersCache.find(
+                        u => u.email && u.email.toLowerCase() === user.email.toLowerCase()
+                    );
+                    if (userRecord && userRecord.role) {
+                        profileUpdate.role = userRecord.role;
+                    }
+                    if (userRecord && userRecord.name && !user.displayName) {
+                        profileUpdate.displayName = userRecord.name;
+                    }
+                }
+                database.ref('userProfiles/' + user.uid).update(profileUpdate).catch(() => {});
+
                 // Log successful login (fire and forget - don't await)
                 logLoginEvent(user.email, displayName, true);
 

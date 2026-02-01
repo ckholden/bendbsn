@@ -8,6 +8,7 @@
 - `userDocuments` is now keyed by `auth.uid` for privacy.
 - `directMessages` now uses UID-based participants for access control.
 - Added `userProfiles/{uid}` write on login to support secure DM lookups.
+- Admin-only read/write added at `userProfiles` root to allow role normalization.
 
 ### App Changes
 - Updated chat/DM logic across `app/index.html`, `home/index.html`, `community/index.html`, `resources/index.html` to use UID-based identity.
@@ -15,6 +16,8 @@
 - DM participant data now stores `{uid: {displayName, email}}`.
 - Added DM self-test button + function to verify DM read/write permissions.
 - App auto-attempts legacy document migration from email-keyed docs to UID-keyed docs on login.
+- Login page now auto-creates/updates `userProfiles/{uid}` for existing users on every sign-in.
+- Admin panel now supports per-user role updates (Role dropdown + Save Role).
 - Expanded H2T assessment with Mental Status, Safety/Risk, and Lines/Drains sections.
 - Added PHQ-9/GAD-7 scoring with summary insertion into Psychosocial notes.
 - Medication insert panel now supports frequency, PRN parameters, effect/response, and recent meds.
