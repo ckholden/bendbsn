@@ -317,6 +317,7 @@
             <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
             <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showCommunityStats()">Community Stats</button>
             <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
+            <button class="btn btn-sm" style="background: #1f4e79; color: white;" onclick="normalizeUserRoles()">Normalize Roles</button>
         </div>
 
         <!-- Login History Modal -->
@@ -507,6 +508,54 @@
         const database = firebase.database();
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
+        const userProfilesRef = database.ref('userProfiles');
+
+        const SESSION_KEY = 'bsn9b_session_key';
+        const SESSION_START_KEY = 'bsn9b_session_start';
+        const SESSION_HEARTBEAT_MS = 60000;
+        let sessionHeartbeatTimer = null;
+
+        function updateSessionHeartbeat() {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            database.ref('loginHistory/' + sessionKey).update({
+                lastSeen: Date.now()
+            }).catch(() => {});
+        }
+
+        function startSessionHeartbeat() {
+            updateSessionHeartbeat();
+            if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+            sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+        }
+
+        function endSessionTracking(reason) {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
+            const end = Date.now();
+            const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
+            const durationMinutes = durationSeconds !== null ? Math.round(durationSeconds / 60) : null;
+            localStorage.setItem('bsn9b_session_end_sent', 'true');
+            database.ref('loginHistory/' + sessionKey).update({
+                sessionEnd: end,
+                durationSeconds: durationSeconds,
+                durationMinutes: durationMinutes,
+                endReason: reason || 'logout'
+            }).catch(() => {});
+        }
+
+        function clearSessionTracking() {
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(SESSION_START_KEY);
+            localStorage.removeItem('bsn9b_session_end_sent');
+        }
+
+        startSessionHeartbeat();
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') updateSessionHeartbeat();
+        });
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
         const communityPostsRef = database.ref('community/posts');
@@ -647,11 +696,13 @@
         }
 
         function logout() {
+            endSessionTracking('logout');
             sessionStorage.removeItem('bsn9b_admin');
             localStorage.removeItem('bsn9b_auth');
             localStorage.removeItem('bsn9b_user');
             localStorage.removeItem('bsn9b_displayName');
             localStorage.removeItem('bsn9b_uid');
+            clearSessionTracking();
             window.location.href = '/';
         }
 
@@ -911,6 +962,16 @@
             document.getElementById('loginHistoryModal').style.display = 'none';
         }
 
+        function formatDuration(seconds) {
+            const s = Math.max(0, Math.floor(seconds));
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sec = s % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            if (m > 0) return `${m}m ${sec}s`;
+            return `${sec}s`;
+        }
+
         function loadLoginHistory() {
             const container = document.getElementById('loginHistoryContent');
             container.innerHTML = '<p>Loading...</p>';
@@ -934,6 +995,7 @@
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Date/Time</th>';
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Username</th>';
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Display Name</th>';
+                html += '<th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Duration</th>';
                 html += '<th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Status</th>';
                 html += '</tr></thead><tbody>';
 
@@ -941,10 +1003,20 @@
                     const date = new Date(login.timestamp).toLocaleString();
                     const statusColor = login.success ? '#28a745' : '#dc3545';
                     const statusText = login.success ? 'Success' : 'Failed';
+                    const start = login.timestamp || 0;
+                    const end = login.sessionEnd || login.lastSeen || null;
+                    let durationSeconds = login.durationSeconds;
+                    if ((!durationSeconds || durationSeconds === 0) && start && end) {
+                        durationSeconds = Math.max(0, Math.round((end - start) / 1000));
+                    }
+                    const durationLabel = durationSeconds
+                        ? formatDuration(durationSeconds)
+                        : (login.success ? 'Active' : '—');
                     html += `<tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 8px 10px;">${date}</td>
                         <td style="padding: 8px 10px; font-weight: 500;">${login.username || 'N/A'}</td>
                         <td style="padding: 8px 10px;">${login.displayName || 'N/A'}</td>
+                        <td style="padding: 8px 10px; text-align: center;">${durationLabel}</td>
                         <td style="padding: 8px 10px; text-align: center;"><span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${statusText}</span></td>
                     </tr>`;
                 });
@@ -960,12 +1032,18 @@
                 return;
             }
 
-            let csv = 'Date/Time,Username,Display Name,Status,User Agent\n';
+            let csv = 'Date/Time,Username,Display Name,Status,Duration (sec),User Agent\n';
             loginHistoryData.forEach((login) => {
                 const date = new Date(login.timestamp).toLocaleString();
                 const status = login.success ? 'Success' : 'Failed';
                 const userAgent = (login.userAgent || '').replace(/,/g, ';');
-                csv += `"${date}","${login.username || ''}","${login.displayName || ''}","${status}","${userAgent}"\n`;
+                const start = login.timestamp || 0;
+                const end = login.sessionEnd || login.lastSeen || null;
+                let durationSeconds = login.durationSeconds;
+                if ((!durationSeconds || durationSeconds === 0) && start && end) {
+                    durationSeconds = Math.max(0, Math.round((end - start) / 1000));
+                }
+                csv += `"${date}","${login.username || ''}","${login.displayName || ''}","${status}","${durationSeconds || ''}","${userAgent}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -1411,6 +1489,35 @@
         }
 
         // ========== END COMMUNITY POSTS MANAGEMENT ==========
+
+        async function normalizeUserRoles() {
+            if (!confirm('Set all users to RN Student and set Ann to Instructor?')) return;
+            const annEmail = 'amottesen@gmail.com';
+            try {
+                const snapshot = await userProfilesRef.once('value');
+                if (!snapshot.exists()) {
+                    showToast('No user profiles found.', 'info');
+                    return;
+                }
+                const updates = {};
+                let total = 0;
+                let annFound = false;
+                snapshot.forEach((child) => {
+                    const profile = child.val() || {};
+                    const email = (profile.email || '').toLowerCase();
+                    const role = email === annEmail ? 'Instructor' : 'RN Student';
+                    if (email === annEmail) annFound = true;
+                    updates[child.key + '/role'] = role;
+                    total += 1;
+                });
+                await userProfilesRef.update(updates);
+                const annStatus = annFound ? 'Ann set to Instructor.' : 'Ann not found in userProfiles.';
+                showToast(`Roles updated for ${total} users. ${annStatus}`, 'success');
+            } catch (e) {
+                console.error('Role normalization failed:', e);
+                showToast('Failed to normalize roles: ' + e.message, 'error');
+            }
+        }
 
     </script>
 

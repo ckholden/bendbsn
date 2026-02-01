@@ -374,6 +374,91 @@
         .toolbar-item .icon { font-size: 24px; margin-bottom: 2px; }
         .toolbar-item .label { font-weight: 600; }
 
+        .mobile-action-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 60px;
+            display: none;
+            gap: 8px;
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.96);
+            border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
+            z-index: 1001;
+            backdrop-filter: blur(8px);
+        }
+
+        .mobile-action-btn {
+            flex: 1;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+        }
+
+        .mobile-action-btn.save { background: linear-gradient(135deg, #10b981, #059669); }
+        .mobile-action-btn.copy { background: linear-gradient(135deg, #0f766e, #0d9488); }
+        .mobile-action-btn.pdf { background: linear-gradient(135deg, #1f4e79, #2d5a87); }
+        .mobile-action-btn.word { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+
+        .mobile-action-status {
+            display: none;
+            position: fixed;
+            right: 12px;
+            bottom: 120px;
+            background: #0f172a;
+            color: white;
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            z-index: 1002;
+            opacity: 0.9;
+        }
+
+        .section-jump-btn {
+            position: fixed;
+            right: 12px;
+            bottom: 130px;
+            z-index: 1002;
+            display: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #1f4e79, #2d5a87);
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 8px 20px rgba(31,78,121,0.35);
+            cursor: pointer;
+        }
+
+        .section-jump-panel {
+            position: fixed;
+            right: 12px;
+            bottom: 180px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            width: 220px;
+            max-height: 50vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 1003;
+        }
+
+        .section-jump-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .section-jump-item:hover { background: #f8fafc; }
+
         /* More Menu */
         .more-menu {
             position: fixed;
@@ -447,13 +532,17 @@
             .bottom-toolbar {
                 padding-bottom: env(safe-area-inset-bottom, 0px);
             }
+
+            .mobile-action-bar { display: flex; }
+            .mobile-action-status { display: block; }
+            .section-jump-btn { display: block; }
         }
 
         /* Mobile: Large phones (max-width: 640px) */
         @media (max-width: 640px) {
             body {
                 padding: 10px;
-                padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+                padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
             }
             .container { border-radius: 12px; }
             .header { padding: 20px; }
@@ -583,7 +672,7 @@
                 height: calc(60px + env(safe-area-inset-bottom));
             }
             body {
-                padding-bottom: calc(70px + env(safe-area-inset-bottom));
+                padding-bottom: calc(120px + env(safe-area-inset-bottom));
             }
         }
 
@@ -676,6 +765,7 @@
             <div class="info-box">
                 <strong>Quick Start:</strong> Enter info → Select format → Document → Export PDF/Word. Use <strong>Smart Phrases</strong> (📝 button) for shortcuts. <strong>Chat</strong> with classmates (💬 bottom-right). Ask the <strong>AI Nursing Companion</strong> (🩺 bottom-left) for drug info, care plans, and NCLEX help!
             </div>
+            <div id="autoSaveStatus" style="margin-top: 10px; font-size: 12px; color: #64748b;">Draft not saved</div>
             <style>
                 @keyframes pulse {
                     0%, 100% { box-shadow: -4px 4px 15px rgba(0,0,0,0.4); }
@@ -945,10 +1035,27 @@
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Medication Name</label>
                         <input type="text" id="medName" placeholder="Start typing drug name..." style="width: 100%; padding: 8px; font-size: 13px;" autocomplete="off">
                         <div id="drugDropdown" class="drug-dropdown"></div>
+                        <div id="medRecents" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;"></div>
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Dose</label>
                         <input type="text" id="medDose" placeholder="e.g., 4mg" style="width: 100%; padding: 8px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Frequency</label>
+                        <select id="medFreq" style="width: 100%; padding: 8px; font-size: 12px;">
+                            <option value="">—</option>
+                            <option value="Once">Once</option>
+                            <option value="Daily">Daily</option>
+                            <option value="BID">BID</option>
+                            <option value="TID">TID</option>
+                            <option value="QID">QID</option>
+                            <option value="q4h">q4h</option>
+                            <option value="q6h">q6h</option>
+                            <option value="q8h">q8h</option>
+                            <option value="q12h">q12h</option>
+                            <option value="PRN">PRN</option>
+                        </select>
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Route</label>
@@ -1005,6 +1112,14 @@
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Indication</label>
                         <input type="text" id="medIndication" placeholder="e.g., pain, HTN" style="width: 100%; padding: 8px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">PRN Parameters</label>
+                        <input type="text" id="medPrnParams" placeholder="e.g., pain >6/10, SBP >160" style="width: 100%; padding: 8px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Effect / Response</label>
+                        <input type="text" id="medEffect" placeholder="e.g., pain improved to 3/10" style="width: 100%; padding: 8px; font-size: 13px;">
                     </div>
                 </div>
                 <p style="margin-top: 8px; font-size: 11px; color: #1565c0;">Click in a text field first, then click "Insert Med" to add medication documentation. Time: N=now, N+15, N-30</p>
@@ -1151,6 +1266,16 @@
                 <p style="font-size:12px;color:#666;margin-bottom:15px;">Click quick-fill buttons to insert common findings, then edit as needed.</p>
                 <div class="h2t-grid">
                     <div class="h2t-section">
+                        <h4>Mental Status</h4>
+                        <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'A&O x4. ')">A&O x4</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Speech clear. ')">Speech clear</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Mood euthymic. ')">Mood euthymic</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Cooperative. ')">Cooperative</span>
+                        </div>
+                        <textarea id="h2tMental" placeholder="Appearance, behavior, mood/affect, thought process, orientation..."></textarea>
+                    </div>
+                    <div class="h2t-section">
                         <h4>Neurological</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tNeuro', 'A&O x4. ')">A&O x4</span>
@@ -1236,10 +1361,71 @@
                         </div>
                         <textarea id="h2tPain" placeholder="Pain level, location, quality, interventions..."></textarea>
                     </div>
+                    <div class="h2t-section">
+                        <h4>Safety / Risk</h4>
+                        <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tSafety', 'Fall risk precautions in place. ')">Fall risk</span>
+                            <span class="quick-fill" onclick="appendToField('h2tSafety', 'Bed low, call light within reach. ')">Call light</span>
+                            <span class="quick-fill" onclick="appendToField('h2tSafety', 'Denies SI/HI. ')">Denies SI/HI</span>
+                        </div>
+                        <textarea id="h2tSafety" placeholder="Fall risk, suicide risk, restraints, safety measures..."></textarea>
+                    </div>
+                    <div class="h2t-section">
+                        <h4>Lines/Drains/Airway</h4>
+                        <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tLines', 'PIV patent, dressing CDI. ')">PIV</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLines', 'Foley patent, draining clear yellow. ')">Foley</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLines', 'O2 via NC __ L/min. ')">O2 NC</span>
+                        </div>
+                        <textarea id="h2tLines" placeholder="IV/lines, drains, O2/airway devices..."></textarea>
+                    </div>
                 </div>
                 <div class="form-group" style="margin-top:15px;">
                     <label>Psychosocial/Additional Notes</label>
                     <textarea id="h2tPsych" placeholder="Mood, behavior, support system, safety concerns, plan..."></textarea>
+                    <button type="button" onclick="insertMentalHealthSummary()" style="margin-top: 6px; background: #1f4e79; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">Insert MH Summary</button>
+                </div>
+                <div style="margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+                    <h4 style="margin: 0 0 8px 0; color: #1f4e79;">Mental Health Screening (PHQ-9 / GAD-7)</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
+                        <div>PHQ-9: Little interest or pleasure</div>
+                        <select id="phq1" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Feeling down, depressed, hopeless</div>
+                        <select id="phq2" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Trouble sleeping</div>
+                        <select id="phq3" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Feeling tired or low energy</div>
+                        <select id="phq4" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Poor appetite or overeating</div>
+                        <select id="phq5" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Feeling bad about self</div>
+                        <select id="phq6" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Trouble concentrating</div>
+                        <select id="phq7" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Psychomotor changes</div>
+                        <select id="phq8" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>PHQ-9: Thoughts of self-harm</div>
+                        <select id="phq9" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                    </div>
+                    <div style="margin-top: 6px; font-size: 12px;">PHQ-9 Total: <strong id="phq9Score">0</strong></div>
+
+                    <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
+                        <div>GAD-7: Feeling nervous or on edge</div>
+                        <select id="gad1" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>GAD-7: Not able to stop worrying</div>
+                        <select id="gad2" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>GAD-7: Worrying too much</div>
+                        <select id="gad3" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>GAD-7: Trouble relaxing</div>
+                        <select id="gad4" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>GAD-7: Restless</div>
+                        <select id="gad5" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>GAD-7: Easily annoyed</div>
+                        <select id="gad6" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        <div>GAD-7: Afraid something awful</div>
+                        <select id="gad7" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                    </div>
+                    <div style="margin-top: 6px; font-size: 12px;">GAD-7 Total: <strong id="gad7Score">0</strong></div>
                 </div>
             </div>
 
@@ -1549,6 +1735,13 @@
 
             <!-- GROUP CHAT VIEW -->
             <div id="groupChatView" role="tabpanel" aria-labelledby="tabGroupChat" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="padding: 10px 12px; background: #eef2f7; border-bottom: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center;">
+                    <select id="channelSelect" onchange="handleChannelChange(this.value)" style="flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; background: white;">
+                        <option value="general">General</option>
+                    </select>
+                    <button id="createChannelBtn" onclick="createChannel()" title="Create channel" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: #1f4e79; color: white; font-size: 16px; cursor: pointer;">+</button>
+                    <button id="deleteChannelBtn" onclick="deleteChannel()" title="Delete channel" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: #ef4444; color: white; font-size: 14px; cursor: pointer; display: none;">🗑</button>
+                </div>
                 <!-- Chat Messages -->
                 <div id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
                     <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
@@ -1572,6 +1765,11 @@
                     <div style="margin-bottom: 15px;">
                         <button onclick="showNewDMSelector()" aria-label="Start new direct message" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">
                             <span aria-hidden="true">✏️</span> New Message
+                        </button>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <button onclick="runDMSelfTest()" aria-label="Run DM self test" style="width: 100%; padding: 10px; background: #f1f5f9; color: #1f4e79; border: 1px dashed #cbd5e1; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                            DM Self-Test (safe)
                         </button>
                     </div>
                     <div id="dmConversations" style="color: #888; font-size: 12px; text-align: center;">
@@ -1614,6 +1812,16 @@
             </div>
         </div>
     </div>
+
+    <div class="mobile-action-bar" id="mobileActionBar">
+        <button class="mobile-action-btn save" onclick="saveToHistory()">Save</button>
+        <button class="mobile-action-btn copy" onclick="copyNoteToClipboard()">Copy</button>
+        <button class="mobile-action-btn pdf" onclick="generatePDF(document.getElementById('btnExportPdf'))">PDF</button>
+        <button class="mobile-action-btn word" onclick="generateWord(document.getElementById('btnExportWord'))">Word</button>
+    </div>
+    <div class="mobile-action-status" id="mobileActionStatus">Draft saved</div>
+    <button class="section-jump-btn" id="sectionJumpBtn" onclick="toggleSectionJump()">☰</button>
+    <div class="section-jump-panel" id="sectionJumpPanel"></div>
 
     <!-- Bottom Toolbar -->
     <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
@@ -1782,15 +1990,39 @@
         // ========== DOCUMENT HISTORY ==========
         let savedDocuments = [];
 
-        // Sanitize email for Firebase path
-        function sanitizeEmail(email) {
-            return email.replace(/[.@]/g, '_');
+        function getUserDocsRef() {
+            const uid = getCurrentUserUid();
+            if (!uid) return null;
+            return database.ref('userDocuments/' + uid);
+        }
+
+        async function migrateLegacyDocumentsIfNeeded() {
+            try {
+                const uid = getCurrentUserUid();
+                const email = localStorage.getItem('bsn9b_user');
+                if (!uid || !email) return;
+
+                const legacyKey = email.replace(/[.@]/g, '_');
+                const newRef = database.ref('userDocuments/' + uid);
+                const legacyRef = database.ref('userDocuments/' + legacyKey);
+
+                const newSnap = await newRef.once('value');
+                if (newSnap.exists()) return;
+
+                const legacySnap = await legacyRef.once('value');
+                if (legacySnap.exists()) {
+                    await newRef.set(legacySnap.val());
+                    await legacyRef.remove();
+                }
+            } catch (e) {
+                console.warn('Legacy document migration skipped:', e);
+            }
         }
 
         // Save current form to history
         async function saveToHistory() {
-            const user = localStorage.getItem('bsn9b_user');
-            if (!user) {
+            const uid = getCurrentUserUid();
+            if (!uid) {
                 showToast('Please log in to save documents.', 'warning');
                 return;
             }
@@ -1847,7 +2079,18 @@
                 fullContent.h2tSkin = document.getElementById('h2tSkin').value;
                 fullContent.h2tMSK = document.getElementById('h2tMSK').value;
                 fullContent.h2tPain = document.getElementById('h2tPain').value;
+                fullContent.h2tMental = document.getElementById('h2tMental').value;
+                fullContent.h2tSafety = document.getElementById('h2tSafety').value;
+                fullContent.h2tLines = document.getElementById('h2tLines').value;
                 fullContent.h2tPsych = document.getElementById('h2tPsych').value;
+                for (let i = 1; i <= 9; i++) {
+                    const el = document.getElementById('phq' + i);
+                    if (el) fullContent['phq' + i] = el.value;
+                }
+                for (let i = 1; i <= 7; i++) {
+                    const el = document.getElementById('gad' + i);
+                    if (el) fullContent['gad' + i] = el.value;
+                }
             }
 
             // Also save header info
@@ -1870,8 +2113,14 @@
             };
 
             try {
-                const userDocsRef = database.ref('userDocuments/' + sanitizeEmail(user));
+                const userDocsRef = getUserDocsRef();
+                if (!userDocsRef) {
+                    showToast('Please log in to save documents.', 'warning');
+                    return;
+                }
                 await userDocsRef.push(docData);
+                clearDraft(currentNoteType);
+                updateAutoSaveStatus('Draft cleared after save');
                 showToast('Document saved successfully!', 'success');
             } catch (error) {
                 console.error('Error saving document:', error);
@@ -1887,8 +2136,8 @@
 
         // Load document history list
         async function loadDocumentHistory() {
-            const user = localStorage.getItem('bsn9b_user');
-            if (!user) {
+            const uid = getCurrentUserUid();
+            if (!uid) {
                 document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Please log in to view saved documents.</p>';
                 return;
             }
@@ -1897,7 +2146,11 @@
             historyList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Loading...</p>';
 
             try {
-                const userDocsRef = database.ref('userDocuments/' + sanitizeEmail(user));
+                const userDocsRef = getUserDocsRef();
+                if (!userDocsRef) {
+                    document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Please log in to view saved documents.</p>';
+                    return;
+                }
                 const snapshot = await userDocsRef.orderByChild('createdAt').once('value');
 
                 if (!snapshot.exists()) {
@@ -2069,7 +2322,24 @@
                 if (content.h2tSkin) document.getElementById('h2tSkin').value = content.h2tSkin;
                 if (content.h2tMSK) document.getElementById('h2tMSK').value = content.h2tMSK;
                 if (content.h2tPain) document.getElementById('h2tPain').value = content.h2tPain;
+                if (content.h2tMental) document.getElementById('h2tMental').value = content.h2tMental;
+                if (content.h2tSafety) document.getElementById('h2tSafety').value = content.h2tSafety;
+                if (content.h2tLines) document.getElementById('h2tLines').value = content.h2tLines;
                 if (content.h2tPsych) document.getElementById('h2tPsych').value = content.h2tPsych;
+                for (let i = 1; i <= 9; i++) {
+                    const key = 'phq' + i;
+                    if (content[key] !== undefined && document.getElementById(key)) {
+                        document.getElementById(key).value = content[key];
+                    }
+                }
+                for (let i = 1; i <= 7; i++) {
+                    const key = 'gad' + i;
+                    if (content[key] !== undefined && document.getElementById(key)) {
+                        document.getElementById(key).value = content[key];
+                    }
+                }
+                updatePhq9Score();
+                updateGad7Score();
             }
 
             // Close the modal
@@ -2087,14 +2357,14 @@
                 return;
             }
 
-            const user = localStorage.getItem('bsn9b_user');
-            if (!user) {
+            const uid = getCurrentUserUid();
+            if (!uid) {
                 showToast('Please log in to delete documents.', 'warning');
                 return;
             }
 
             try {
-                const docRef = database.ref('userDocuments/' + sanitizeEmail(user) + '/' + docId);
+                const docRef = database.ref('userDocuments/' + uid + '/' + docId);
                 await docRef.remove();
                 showToast('Document deleted.', 'success');
                 loadDocumentHistory(); // Refresh the list
@@ -2118,10 +2388,58 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const database = firebase.database();
-        const chatRef = database.ref('chat/messages');
+
+        const SESSION_KEY = 'bsn9b_session_key';
+        const SESSION_START_KEY = 'bsn9b_session_start';
+        const SESSION_HEARTBEAT_MS = 60000;
+        let sessionHeartbeatTimer = null;
+
+        function updateSessionHeartbeat() {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            database.ref('loginHistory/' + sessionKey).update({
+                lastSeen: Date.now()
+            }).catch(() => {});
+        }
+
+        function startSessionHeartbeat() {
+            updateSessionHeartbeat();
+            if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+            sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+        }
+
+        function endSessionTracking(reason) {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
+            const end = Date.now();
+            const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
+            const durationMinutes = durationSeconds !== null ? Math.round(durationSeconds / 60) : null;
+            localStorage.setItem('bsn9b_session_end_sent', 'true');
+            database.ref('loginHistory/' + sessionKey).update({
+                sessionEnd: end,
+                durationSeconds: durationSeconds,
+                durationMinutes: durationMinutes,
+                endReason: reason || 'logout'
+            }).catch(() => {});
+        }
+
+        function clearSessionTracking() {
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(SESSION_START_KEY);
+            localStorage.removeItem('bsn9b_session_end_sent');
+        }
+        const channelsRef = database.ref('chat/channels');
+        const chatRootRef = database.ref('chat/messages');
+        let chatRef = null;
+        let chatListenerAttached = false;
+        let currentChannelId = localStorage.getItem('bsn9b_chat_channel') || 'general';
+        let channelsCache = {};
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
+        const userProfilesRef = database.ref('userProfiles');
 
         // Listen for announcements (alert/fyi banners - inside header)
         function setupAnnouncementListener() {
@@ -2158,8 +2476,30 @@
         console.log('Firebase initialized, chatRef path:', chatRef.toString());
 
         // Get display name (first name) - stored when user logs in
-        const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
-        const displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
+        let currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
+        let displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
+        let currentUserUid = localStorage.getItem('bsn9b_uid') || '';
+
+        function getCurrentUserEmail() {
+            return currentUsername || auth.currentUser?.email || localStorage.getItem('bsn9b_user') || '';
+        }
+
+        function getCurrentUserUid() {
+            return currentUserUid || auth.currentUser?.uid || localStorage.getItem('bsn9b_uid') || '';
+        }
+
+        function syncUserProfile(user) {
+            if (!user) return;
+            const email = user.email || getCurrentUserEmail();
+            const name = displayName || user.displayName || (email ? email.split('@')[0] : 'User');
+            const firstName = name.split(' ')[0] || name;
+            userProfilesRef.child(user.uid).update({
+                email: email,
+                displayName: name,
+                firstName: firstName,
+                updatedAt: Date.now()
+            });
+        }
 
         // Verify Firebase Auth state and re-authenticate if needed
         let firebaseAuthReady = false;
@@ -2167,6 +2507,16 @@
             if (user) {
                 console.log('Firebase Auth: Logged in as', user.email);
                 firebaseAuthReady = true;
+                currentUserUid = user.uid;
+                currentUsername = user.email || currentUsername;
+                if (user.displayName) {
+                    displayName = user.displayName;
+                }
+                localStorage.setItem('bsn9b_uid', currentUserUid);
+                localStorage.setItem('bsn9b_user', currentUsername);
+                localStorage.setItem('bsn9b_displayName', displayName);
+                syncUserProfile(user);
+                migrateLegacyDocumentsIfNeeded();
             } else {
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
                 // If we have session but no Firebase auth, redirect to login
@@ -2205,7 +2555,21 @@
         // Chat state
         let chatOpen = false;
         let unreadCount = 0;
-        let lastReadTimestamp = parseInt(localStorage.getItem('chatLastRead') || '0');
+        let lastReadByChannel = JSON.parse(localStorage.getItem('chatLastReadByChannel') || '{}');
+
+        function getLastReadTimestamp(channelId) {
+            return parseInt(lastReadByChannel[channelId] || '0');
+        }
+
+        function setLastReadTimestamp(channelId, value) {
+            lastReadByChannel[channelId] = value.toString();
+            localStorage.setItem('chatLastReadByChannel', JSON.stringify(lastReadByChannel));
+        }
+
+        function isAdminUser() {
+            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
+            return adminEmails.includes((currentUsername || '').toLowerCase());
+        }
 
         // Notification preferences (sound ON by default, browser notifications OFF by default)
         let soundEnabled = localStorage.getItem('chatSoundEnabled') !== 'false';
@@ -2327,6 +2691,125 @@
             updateNotificationToggleUI();
         });
 
+        function sanitizeChannelName(name) {
+            return (name || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
+                .slice(0, 24);
+        }
+
+        function updateChatTitle() {
+            const title = document.getElementById('chatTitle');
+            if (title) {
+                const channelName = channelsCache[currentChannelId]?.name || 'General';
+                title.textContent = `BSN9B Chat · #${channelName}`;
+            }
+        }
+
+        function updateChannelSelect() {
+            const select = document.getElementById('channelSelect');
+            if (!select) return;
+            const entries = Object.entries(channelsCache);
+            const list = entries.length ? entries : [['general', { name: 'General' }]];
+            select.innerHTML = list
+                .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                .map(([id, ch]) => `<option value="${id}">${ch.name}</option>`)
+                .join('');
+            select.value = currentChannelId;
+
+            const deleteBtn = document.getElementById('deleteChannelBtn');
+            if (deleteBtn) {
+                deleteBtn.style.display = isAdminUser() && currentChannelId !== 'general' ? 'inline-flex' : 'none';
+            }
+            const createBtn = document.getElementById('createChannelBtn');
+            if (createBtn) {
+                createBtn.style.display = isAdminUser() ? 'inline-flex' : 'none';
+            }
+        }
+
+        function attachChatRef() {
+            if (chatRef && chatListenerAttached) {
+                chatRef.off();
+                chatListenerAttached = false;
+            }
+            chatRef = chatRootRef.child(currentChannelId);
+        }
+
+        function setChannel(channelId) {
+            if (!channelId) return;
+            currentChannelId = channelId;
+            localStorage.setItem('bsn9b_chat_channel', currentChannelId);
+            attachChatRef();
+            updateChatTitle();
+            updateChannelSelect();
+            setupChatListener();
+            cleanupOldMessages();
+            debugReadMessages();
+        }
+
+        function handleChannelChange(value) {
+            setChannel(value);
+        }
+
+        function createChannel() {
+            if (!isAdminUser()) {
+                showToast('Only admins can create channels.', 'warning');
+                return;
+            }
+            const name = prompt('Channel name (e.g., meds, clinical, nclex):');
+            if (!name) return;
+            const id = sanitizeChannelName(name);
+            if (!id) {
+                showToast('Invalid channel name.', 'warning');
+                return;
+            }
+            channelsRef.child(id).set({
+                name: name.trim(),
+                createdAt: Date.now(),
+                createdBy: currentUsername
+            }).then(() => {
+                setChannel(id);
+            }).catch(err => {
+                console.error('Create channel failed:', err);
+                showToast('Failed to create channel.', 'error');
+            });
+        }
+
+        function deleteChannel() {
+            if (!isAdminUser()) return;
+            if (currentChannelId === 'general') {
+                showToast('General cannot be deleted.', 'warning');
+                return;
+            }
+            if (!confirm('Delete this channel and all its messages?')) return;
+            const id = currentChannelId;
+            const msgRef = chatRootRef.child(id);
+            Promise.all([
+                channelsRef.child(id).remove(),
+                msgRef.remove()
+            ]).then(() => {
+                setChannel('general');
+            }).catch(err => {
+                console.error('Delete channel failed:', err);
+                showToast('Failed to delete channel.', 'error');
+            });
+        }
+
+        function loadChannels() {
+            channelsRef.on('value', (snapshot) => {
+                channelsCache = snapshot.val() || {};
+                if (!channelsCache.general) {
+                    channelsCache.general = { name: 'General' };
+                }
+                updateChannelSelect();
+                if (!channelsCache[currentChannelId]) {
+                    currentChannelId = 'general';
+                }
+                setChannel(currentChannelId);
+            });
+        }
+
         // Toggle chat
         function toggleChat() {
             chatOpen = !chatOpen;
@@ -2337,8 +2820,7 @@
                 chatBox.style.flexDirection = 'column';
                 unreadCount = 0;
                 document.getElementById('chatBadge').style.display = 'none';
-                lastReadTimestamp = Date.now();
-                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                setLastReadTimestamp(currentChannelId, Date.now());
                 document.getElementById('chatInput').focus();
                 scrollToBottom();
             } else {
@@ -2358,8 +2840,7 @@
             if (!message) return;
 
             // Admin commands (admin emails only)
-            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
-            if (adminEmails.includes(currentUsername.toLowerCase())) {
+            if (isAdminUser()) {
                 // Alert command: alert/message or alert/clear
                 if (message.toLowerCase().startsWith('alert/')) {
                     const alertMsg = message.substring(6).trim();
@@ -2472,16 +2953,20 @@
         const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
         // Debug: Direct test read of messages
-        chatRef.once('value').then((snapshot) => {
-            console.log('DEBUG direct read - exists:', snapshot.exists());
-            console.log('DEBUG direct read - data:', snapshot.val());
-        }).catch((err) => {
-            console.error('DEBUG direct read error:', err);
-        });
+        function debugReadMessages() {
+            if (!chatRef) return;
+            chatRef.once('value').then((snapshot) => {
+                console.log('DEBUG direct read - exists:', snapshot.exists());
+                console.log('DEBUG direct read - data:', snapshot.val());
+            }).catch((err) => {
+                console.error('DEBUG direct read error:', err);
+            });
+        }
 
         // Clean up old messages (older than 48 hours)
         function cleanupOldMessages() {
             const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+            if (!chatRef) return;
             chatRef.once('value', (snapshot) => {
                 snapshot.forEach((child) => {
                     const msg = child.val();
@@ -2499,6 +2984,7 @@
         // Debug function - call from console: testChat()
         window.testChat = function() {
             console.log('Testing chat connection...');
+            if (!chatRef) return;
             chatRef.once('value').then((snap) => {
                 console.log('Test read success!');
                 console.log('Data exists:', snap.exists());
@@ -2520,7 +3006,13 @@
         // Listen for messages
         function setupChatListener() {
             console.log('Setting up chat listener...');
+            if (!chatRef) return;
+            if (chatListenerAttached) {
+                chatRef.off();
+                chatListenerAttached = false;
+            }
             chatRef.on('value', (snapshot) => {
+                chatListenerAttached = true;
                 console.log('=== CHAT LISTENER FIRED ===');
                 console.log('Snapshot exists:', snapshot.exists());
                 console.log('Snapshot numChildren:', snapshot.numChildren());
@@ -2576,7 +3068,7 @@
 
                 messages.forEach((msg) => {
                     const isMe = msg.user === displayName || msg.username === currentUsername;
-                    const isNew = msg.timestamp > lastReadTimestamp;
+                    const isNew = msg.timestamp > getLastReadTimestamp(currentChannelId);
 
                     if (isNew && !chatOpen) newMessages++;
 
@@ -2628,8 +3120,8 @@
             });
         }
 
-        // Initialize chat listener
-        setupChatListener();
+        // Initialize channels + chat listener
+        loadChannels();
 
         // ========== CHAT CONNECTION MONITORING ==========
         // Monitor Firebase connection state
@@ -2666,10 +3158,47 @@
         let dmUnreadCount = 0;
         let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
         const directMessagesRef = database.ref('directMessages');
+        let userProfilesByUid = {};
+        let userProfilesByEmail = {};
+        let userProfilesByName = {};
 
-        // Generate conversation ID (sorted emails)
-        function getConversationId(email1, email2) {
-            return [email1, email2].sort().join('_').replace(/[.@]/g, '_');
+        function rebuildUserProfileIndexes(profiles) {
+            userProfilesByUid = {};
+            userProfilesByEmail = {};
+            userProfilesByName = {};
+            if (!profiles) return;
+
+            Object.keys(profiles).forEach((uid) => {
+                const profile = profiles[uid] || {};
+                const email = (profile.email || '').toLowerCase();
+                const name = (profile.displayName || profile.firstName || '').toLowerCase();
+                userProfilesByUid[uid] = profile;
+                if (email) userProfilesByEmail[email] = { uid: uid, ...profile };
+                if (name) userProfilesByName[name] = { uid: uid, ...profile };
+            });
+        }
+
+        async function loadUserProfiles() {
+            try {
+                const snap = await userProfilesRef.once('value');
+                rebuildUserProfileIndexes(snap.val());
+            } catch (e) {
+                console.warn('Failed to load user profiles:', e);
+            }
+        }
+
+        function addUidsToRegisteredUsers() {
+            allRegisteredUsers = allRegisteredUsers.map((u) => {
+                const email = (u.email || '').toLowerCase();
+                const name = (u.firstName || u.name || '').toLowerCase();
+                const profile = userProfilesByEmail[email] || userProfilesByName[name];
+                return { ...u, uid: profile?.uid || '' };
+            });
+        }
+
+        // Generate conversation ID (sorted UIDs)
+        function getConversationId(uid1, uid2) {
+            return [uid1, uid2].sort().join('_');
         }
 
         // Switch between group chat and DM mode
@@ -2702,8 +3231,7 @@
                 // Reset unread for group
                 unreadCount = 0;
                 document.getElementById('chatBadge').style.display = 'none';
-                lastReadTimestamp = Date.now();
-                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                setLastReadTimestamp(currentChannelId, Date.now());
             } else {
                 groupView.style.display = 'none';
                 dmView.style.display = 'flex';
@@ -2746,17 +3274,24 @@
         }
 
         // Load user list for new DM
-        function loadDMUserList() {
+        async function loadDMUserList() {
             const container = document.getElementById('dmUserList');
 
             // Combine online users and all registered users
-            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            await loadUserProfiles();
+            addUidsToRegisteredUsers();
+            const onlineSet = new Set(onlineUsersDetailed.map(u => (u.name || '').toLowerCase()));
             let users = [];
 
             // Add online users first
-            onlineUsers.forEach(u => {
-                if (u.toLowerCase() !== displayName.toLowerCase()) {
-                    users.push({ name: u, online: true });
+            onlineUsersDetailed.forEach(u => {
+                if ((u.name || '').toLowerCase() !== displayName.toLowerCase()) {
+                    users.push({
+                        name: u.name,
+                        online: true,
+                        uid: u.uid || '',
+                        email: u.email || u.username || ''
+                    });
                 }
             });
 
@@ -2764,7 +3299,13 @@
             allRegisteredUsers.forEach(u => {
                 const firstName = u.firstName;
                 if (!onlineSet.has(firstName.toLowerCase()) && firstName.toLowerCase() !== displayName.toLowerCase()) {
-                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                    users.push({
+                        name: firstName,
+                        fullName: u.name,
+                        email: u.email,
+                        online: false,
+                        uid: u.uid || ''
+                    });
                 }
             });
 
@@ -2774,12 +3315,18 @@
         // Filter DM users by search
         function filterDMUsers() {
             const search = document.getElementById('dmUserSearch').value.toLowerCase();
-            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            const onlineSet = new Set(onlineUsersDetailed.map(u => (u.name || '').toLowerCase()));
             let users = [];
 
-            onlineUsers.forEach(u => {
-                if (u.toLowerCase() !== displayName.toLowerCase() && u.toLowerCase().includes(search)) {
-                    users.push({ name: u, online: true });
+            onlineUsersDetailed.forEach(u => {
+                const name = (u.name || '').toLowerCase();
+                if (name !== displayName.toLowerCase() && name.includes(search)) {
+                    users.push({
+                        name: u.name,
+                        online: true,
+                        uid: u.uid || '',
+                        email: u.email || u.username || ''
+                    });
                 }
             });
 
@@ -2788,7 +3335,13 @@
                 if (!onlineSet.has(firstName.toLowerCase()) &&
                     firstName.toLowerCase() !== displayName.toLowerCase() &&
                     (firstName.toLowerCase().includes(search) || u.name.toLowerCase().includes(search))) {
-                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                    users.push({
+                        name: firstName,
+                        fullName: u.name,
+                        email: u.email,
+                        online: false,
+                        uid: u.uid || ''
+                    });
                 }
             });
 
@@ -2805,7 +3358,7 @@
             }
 
             container.innerHTML = users.map(u => `
-                <div onclick="startDMConversation('${u.name}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
+                <div onclick="startDMConversation('${u.uid || ''}', '${u.name}', '${u.email || ''}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
                     <div>
                         <div style="font-weight: 600; color: #1a1a2e;">${u.name}${u.fullName && u.fullName !== u.name ? ` <span style="color:#888;font-weight:normal;font-size:12px;">(${u.fullName})</span>` : ''}</div>
                     </div>
@@ -2815,10 +3368,18 @@
         }
 
         // Start or open a DM conversation
-        function startDMConversation(partnerName) {
+        function startDMConversation(partnerUid, partnerName, partnerEmail) {
+            const currentUid = getCurrentUserUid();
+            if (!currentUid || !partnerUid) {
+                showToast('This user is not available for DMs yet. Ask them to log in once so we can link their account.', 'warning');
+                return;
+            }
+
             currentDMConversation = {
                 partnerName: partnerName,
-                conversationId: getConversationId(displayName, partnerName)
+                partnerUid: partnerUid,
+                partnerEmail: partnerEmail || '',
+                conversationId: getConversationId(currentUid, partnerUid)
             };
 
             // Update UI
@@ -2828,7 +3389,10 @@
             document.getElementById('dmPartnerName').textContent = partnerName;
 
             // Check if partner is online
-            const isOnline = onlineUsers.some(u => u.toLowerCase() === partnerName.toLowerCase());
+            const isOnline = onlineUsersDetailed.some(u =>
+                (u.uid && u.uid === partnerUid) ||
+                (u.name && u.name.toLowerCase() === partnerName.toLowerCase())
+            );
             const statusEl = document.getElementById('dmPartnerStatus');
             statusEl.textContent = isOnline ? 'online' : 'offline';
             statusEl.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
@@ -2856,6 +3420,12 @@
             container.innerHTML = '<p style="color: #888; font-size: 12px;">Loading...</p>';
 
             // Query all conversations where the current user is a participant
+            const currentUid = getCurrentUserUid();
+            if (!currentUid) {
+                container.innerHTML = '<p style="color: #888; font-size: 12px;">Please log in to view messages.</p>';
+                return;
+            }
+
             directMessagesRef.once('value', (snapshot) => {
                 dmConversations = [];
 
@@ -2867,24 +3437,20 @@
 
                     // Check if current user is in this conversation
                     const participants = data.participants || {};
-                    const isParticipant = Object.values(participants).some(p =>
-                        p && (p.toLowerCase() === displayName.toLowerCase() ||
-                        p.toLowerCase() === currentUsername.toLowerCase())
-                    );
+                    if (!participants[currentUid]) return;
 
-                    if (isParticipant && data.lastMessage) {
-                        // Get partner name
-                        let partnerName = '';
-                        Object.values(participants).forEach(p => {
-                            if (p && p.toLowerCase() !== displayName.toLowerCase() &&
-                                p.toLowerCase() !== currentUsername.toLowerCase()) {
-                                partnerName = p;
-                            }
-                        });
+                    if (data.lastMessage) {
+                        // Get partner info
+                        const partnerUid = Object.keys(participants).find(uid => uid !== currentUid);
+                        const partner = partnerUid ? (participants[partnerUid] || {}) : {};
+                        const partnerName = partner.displayName || partner.name || 'Unknown';
+                        const partnerEmail = partner.email || '';
 
                         dmConversations.push({
                             conversationId: convId,
+                            partnerUid: partnerUid || '',
                             partnerName: partnerName,
+                            partnerEmail: partnerEmail,
                             lastMessage: data.lastMessage,
                             unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
                         });
@@ -2911,18 +3477,18 @@
             container.innerHTML = dmConversations.map(conv => {
                 const time = conv.lastMessage ? formatTime(conv.lastMessage.timestamp) : '';
                 const preview = conv.lastMessage ? (conv.lastMessage.text || '').substring(0, 40) + (conv.lastMessage.text?.length > 40 ? '...' : '') : '';
-                const isUnread = conv.unread && conv.lastMessage?.sender !== displayName;
+                const isUnread = conv.unread && conv.lastMessage?.senderUid !== getCurrentUserUid();
                 if (isUnread) totalUnread++;
 
                 return `
-                    <div onclick="startDMConversation('${conv.partnerName}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
+                    <div onclick="startDMConversation('${conv.partnerUid || ''}', '${conv.partnerName}', '${conv.partnerEmail || ''}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: ${isUnread ? '700' : '600'}; color: #1a1a2e; margin-bottom: 4px;">
                                     ${isUnread ? '● ' : ''}${conv.partnerName}
                                 </div>
                                 <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${preview}
+                                    ${conv.lastMessage?.senderUid === getCurrentUserUid() ? 'You: ' : ''}${preview}
                                 </div>
                             </div>
                             <div style="font-size: 10px; color: #888; white-space: nowrap; margin-left: 10px;">
@@ -2972,12 +3538,14 @@
                 });
 
                 let html = '';
+                const currentUid = getCurrentUserUid();
                 messages.forEach(msg => {
-                    const isMe = msg.senderName === displayName || msg.sender === currentUsername;
+                    const isMe = msg.senderUid ? msg.senderUid === currentUid : (msg.senderName === displayName || msg.sender === currentUsername);
+                    const senderLabel = isMe ? 'You' : (msg.senderName || msg.sender || 'User');
 
                     html += `
                         <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.senderName}</div>
+                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${senderLabel}</div>
                             <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
                                 ${(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                             </div>
@@ -3018,9 +3586,17 @@
 
             const conversationId = currentDMConversation.conversationId;
             const partnerName = currentDMConversation.partnerName;
+            const partnerUid = currentDMConversation.partnerUid;
+            const partnerEmail = currentDMConversation.partnerEmail || '';
+            const currentUid = getCurrentUserUid();
+            if (!currentUid || !partnerUid) {
+                showToast('Unable to send DM (missing user ID). Please refresh and try again.', 'warning');
+                return;
+            }
 
             const messageData = {
-                sender: currentUsername,
+                senderUid: currentUid,
+                senderEmail: currentUsername,
                 senderName: displayName,
                 text: text,
                 timestamp: Date.now(),
@@ -3032,17 +3608,18 @@
                 directMessagesRef.child(conversationId + '/messages').push(messageData)
                     .catch(err => console.error('Error sending DM:', err));
 
-                // Update participants if not exists
-                directMessagesRef.child(conversationId + '/participants').set({
-                    user1: displayName,
-                    user2: partnerName
-                });
+                // Update participants
+                const participantsData = {};
+                participantsData[currentUid] = { displayName: displayName, email: currentUsername };
+                participantsData[partnerUid] = { displayName: partnerName, email: partnerEmail };
+                directMessagesRef.child(conversationId + '/participants').set(participantsData);
 
                 // Update last message
                 directMessagesRef.child(conversationId + '/lastMessage').set({
                     text: text,
                     timestamp: Date.now(),
-                    sender: displayName
+                    senderUid: currentUid,
+                    senderName: displayName
                 });
 
                 input.value = '';
@@ -3059,11 +3636,13 @@
 
             // Mark unread messages in Firebase as read (messages we received)
             if (snapshot && snapshot.exists()) {
+                const currentUid = getCurrentUserUid();
                 snapshot.forEach((child) => {
                     const msg = child.val();
                     const msgKey = child.key;
                     // Only mark messages from others as read
-                    if (msg && !msg.read && msg.senderName !== displayName && msg.sender !== currentUsername) {
+                    const isMine = msg && msg.senderUid ? msg.senderUid === currentUid : (msg.senderName === displayName || msg.sender === currentUsername);
+                    if (msg && !msg.read && !isMine) {
                         directMessagesRef.child(conversationId + '/messages/' + msgKey + '/read').set(true)
                             .catch(err => console.error('Error marking message as read:', err));
                     }
@@ -3074,12 +3653,50 @@
             let totalUnread = 0;
             dmConversations.forEach(conv => {
                 if (conv.conversationId !== conversationId) {
-                    if (conv.unread && conv.lastMessage?.sender !== displayName) {
+                    if (conv.unread && conv.lastMessage?.senderUid !== getCurrentUserUid()) {
                         totalUnread++;
                     }
                 }
             });
             updateDMBadge(totalUnread);
+        }
+
+        async function runDMSelfTest() {
+            const uid = getCurrentUserUid();
+            const email = getCurrentUserEmail();
+            if (!uid) {
+                showToast('Please log in to run the DM test.', 'warning');
+                return;
+            }
+
+            const convId = 'selftest_' + uid;
+            const convRef = directMessagesRef.child(convId);
+            const participantsData = {};
+            participantsData[uid] = { displayName: displayName, email: email };
+
+            const messageData = {
+                senderUid: uid,
+                senderEmail: email,
+                senderName: displayName,
+                text: 'DM self-test at ' + new Date().toLocaleTimeString(),
+                timestamp: Date.now(),
+                read: true
+            };
+
+            try {
+                await convRef.child('participants').set(participantsData);
+                await convRef.child('messages').push(messageData);
+                const snap = await convRef.child('messages').limitToLast(1).once('value');
+                if (snap.exists()) {
+                    showToast('DM self-test passed.', 'success');
+                } else {
+                    showToast('DM self-test failed. Check rules.', 'error');
+                }
+                try { await convRef.remove(); } catch (e) {}
+            } catch (e) {
+                console.error('DM self-test error:', e);
+                showToast('DM self-test failed: ' + e.message, 'error');
+            }
         }
 
         // Listen for new DMs (for notifications)
@@ -3094,15 +3711,16 @@
 
                         // Check if we're a participant
                         const participants = data.participants || {};
-                        const isParticipant = Object.values(participants).some(p =>
-                            p && (p.toLowerCase() === displayName.toLowerCase() ||
-                            p.toLowerCase() === currentUsername.toLowerCase())
-                        );
+                        const currentUid = getCurrentUserUid();
+                        if (!currentUid || !participants[currentUid]) return;
 
-                        if (!isParticipant) return;
+                        const partnerUid = Object.keys(participants).find(uid => uid !== currentUid);
+                        const partner = partnerUid ? (participants[partnerUid] || {}) : {};
+                        const partnerName = partner.displayName || partner.name || 'Unknown';
+                        const partnerEmail = partner.email || '';
 
                         // Check if it's a new message for us
-                        if (data.lastMessage && data.lastMessage.sender !== displayName) {
+                        if (data.lastMessage && data.lastMessage.senderUid !== currentUid) {
                             const lastRead = dmLastReadTimestamps[convId] || 0;
                             if (data.lastMessage.timestamp > lastRead) {
                                 // Play notification sound
@@ -3112,7 +3730,7 @@
                                     // Browser notification
                                     if (notificationsEnabled && Notification.permission === 'granted') {
                                         try {
-                                            const notification = new Notification('New DM from ' + data.lastMessage.sender, {
+                                            const notification = new Notification('New DM from ' + partnerName, {
                                                 body: (data.lastMessage.text || '').substring(0, 100),
                                                 tag: 'bsn9b-dm-' + convId
                                             });
@@ -3120,7 +3738,7 @@
                                                 window.focus();
                                                 if (!chatOpen) toggleChat();
                                                 switchChatMode('dm');
-                                                startDMConversation(data.lastMessage.sender);
+                                                startDMConversation(partnerUid || '', partnerName, partnerEmail);
                                                 notification.close();
                                             };
                                         } catch (notifErr) {
@@ -3328,6 +3946,8 @@ Important guidelines:
         myPresence.set({
             user: displayName,
             username: currentUsername,
+            uid: getCurrentUserUid(),
+            email: getCurrentUserEmail(),
             online: true
         });
         myPresence.onDisconnect().remove();
@@ -3340,6 +3960,7 @@ Important guidelines:
 
         // Store online users for @mention autocomplete
         let onlineUsers = [];
+        let onlineUsersDetailed = [];
 
         presenceRef.on('value', (snapshot) => {
             const count = snapshot.numChildren();
@@ -3347,10 +3968,17 @@ Important guidelines:
 
             // Build user list with clickable @mention
             onlineUsers = [];
+            onlineUsersDetailed = [];
             snapshot.forEach((child) => {
                 const data = child.val();
                 if (data.user) {
                     onlineUsers.push(data.user);
+                    onlineUsersDetailed.push({
+                        name: data.user,
+                        uid: data.uid || '',
+                        email: data.email || '',
+                        username: data.username || ''
+                    });
                 }
             });
 
@@ -3385,6 +4013,8 @@ Important guidelines:
                     if (Date.now() - timestamp < USER_CACHE_EXPIRY) {
                         allRegisteredUsers = users;
                         console.log('Loaded', allRegisteredUsers.length, 'users from cache');
+                        await loadUserProfiles();
+                        addUidsToRegisteredUsers();
                         return;
                     }
                 }
@@ -3408,6 +4038,8 @@ Important guidelines:
                         timestamp: Date.now()
                     }));
                     console.log('Loaded', allRegisteredUsers.length, 'users from API, cached');
+                    await loadUserProfiles();
+                    addUidsToRegisteredUsers();
                 }
             } catch (e) {
                 console.log('Could not fetch users for @mention:', e);
@@ -3416,6 +4048,8 @@ Important guidelines:
                 if (cached) {
                     allRegisteredUsers = JSON.parse(cached).users || [];
                     console.log('Using expired cache as fallback');
+                    await loadUserProfiles();
+                    addUidsToRegisteredUsers();
                 }
             }
         }
@@ -3612,11 +4246,13 @@ Important guidelines:
 
         // Logout function
         function logout() {
+            endSessionTracking('logout');
             auth.signOut().then(() => {
                 localStorage.removeItem('bsn9b_auth');
                 localStorage.removeItem('bsn9b_user');
                 localStorage.removeItem('bsn9b_displayName');
                 localStorage.removeItem('bsn9b_uid');
+                clearSessionTracking();
                 window.location.href = '/';
             });
         }
@@ -3962,10 +4598,13 @@ Important guidelines:
 
             const name = document.getElementById('medName').value.trim();
             const dose = document.getElementById('medDose').value.trim();
+            const freq = document.getElementById('medFreq').value;
             const route = document.getElementById('medRoute').value;
             const site = document.getElementById('medSite').value;
             const time = document.getElementById('medTime').value;
             const indication = document.getElementById('medIndication').value.trim();
+            const prnParams = document.getElementById('medPrnParams').value.trim();
+            const effect = document.getElementById('medEffect').value.trim();
 
             if (!name) {
                 showToast('Please enter at least a medication name.', 'warning');
@@ -3982,9 +4621,12 @@ Important guidelines:
             let medStr = name;
             if (dose) medStr += ' ' + dose;
             medStr += ' ' + route;
+            if (freq) medStr += ' ' + freq;
             if (site) medStr += ' to ' + site;
             if (timeStr) medStr += ' @ ' + timeStr;
             if (indication) medStr += ' for ' + indication;
+            if (prnParams) medStr += ' (PRN: ' + prnParams + ')';
+            if (effect) medStr += '. Response: ' + effect;
             medStr += '. Patient tolerated without adverse reaction. ';
 
             // Insert at cursor position in textarea
@@ -4000,11 +4642,49 @@ Important guidelines:
             // Clear med fields
             document.getElementById('medName').value = '';
             document.getElementById('medDose').value = '';
+            document.getElementById('medFreq').value = '';
             document.getElementById('medSite').value = '';
             document.getElementById('medTime').value = '';
             document.getElementById('medIndication').value = '';
+            document.getElementById('medPrnParams').value = '';
+            document.getElementById('medEffect').value = '';
             // Also hide the dropdown
             document.getElementById('drugDropdown').classList.remove('show');
+
+            if (name) {
+                saveMedRecent(name);
+                renderMedRecents();
+            }
+        }
+
+        const MED_RECENTS_KEY = 'bsn9b_med_recents';
+
+        function getMedRecents() {
+            try {
+                const raw = localStorage.getItem(MED_RECENTS_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveMedRecent(name) {
+            const recents = getMedRecents().filter(n => n.toLowerCase() !== name.toLowerCase());
+            recents.unshift(name);
+            localStorage.setItem(MED_RECENTS_KEY, JSON.stringify(recents.slice(0, 8)));
+        }
+
+        function renderMedRecents() {
+            const container = document.getElementById('medRecents');
+            if (!container) return;
+            const recents = getMedRecents();
+            if (recents.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = recents.map(n =>
+                `<button onclick="selectDrug('${n.replace(/'/g, "\\'")}')" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #1f4e79; padding: 3px 8px; border-radius: 999px; font-size: 11px; cursor: pointer;">${n}</button>`
+            ).join('');
         }
 
         // Drug Autocomplete using NIH RxNav API
@@ -4108,6 +4788,8 @@ Important guidelines:
         function selectDrug(drugName) {
             medNameInput.value = drugName;
             drugDropdown.classList.remove('show');
+            saveMedRecent(drugName);
+            renderMedRecents();
             // Focus the dose field after selecting
             document.getElementById('medDose').focus();
         }
@@ -4118,6 +4800,8 @@ Important guidelines:
                 drugDropdown.classList.remove('show');
             }
         });
+
+        renderMedRecents();
 
         // Load custom phrases from localStorage and global phrases from Firebase
         function loadCustomPhrases() {
@@ -4567,14 +5251,211 @@ Important guidelines:
         // Initialize
         document.getElementById('noteDate').valueAsDate = new Date();
         document.getElementById('noteTime').value = new Date().toTimeString().slice(0, 5);
+        const storedName = localStorage.getItem('bsn9b_displayName');
+        const nurseNameInput = document.getElementById('nurseName');
+        if (nurseNameInput && storedName && !nurseNameInput.value) {
+            nurseNameInput.value = storedName;
+        }
+        setNoteType(currentNoteType);
+        setupAutoSave();
+        loadDraft(currentNoteType);
+        startSessionHeartbeat();
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') updateSessionHeartbeat();
+        });
 
-        function selectNoteType(type) {
+        function setNoteType(type, cardEl = null) {
             currentNoteType = type;
             document.querySelectorAll('.note-type-card').forEach(c => c.classList.remove('active'));
-            event.target.closest('.note-type-card').classList.add('active');
+            const targetCard = cardEl || document.querySelector(`.note-type-card[onclick*="${type}"]`);
+            if (targetCard) targetCard.classList.add('active');
             document.querySelectorAll('.note-fields').forEach(f => f.classList.remove('active'));
-            document.getElementById(type + 'Fields').classList.add('active');
+            const fields = document.getElementById(type + 'Fields');
+            if (fields) fields.classList.add('active');
             document.getElementById('focusGroup').style.display = ['dar', 'darp'].includes(type) ? 'block' : 'none';
+            updateSectionJumpList();
+        }
+
+        function selectNoteType(type) {
+            saveDraft();
+            setNoteType(type, event.target.closest('.note-type-card'));
+            loadDraft(type);
+        }
+
+        const NOTE_SECTIONS = {
+            dar: [
+                { id: 'darData', label: 'Data' },
+                { id: 'darAction', label: 'Action' },
+                { id: 'darResponse', label: 'Response' }
+            ],
+            darp: [
+                { id: 'darpData', label: 'Data' },
+                { id: 'darpAction', label: 'Action' },
+                { id: 'darpResponse', label: 'Response' },
+                { id: 'darpPlan', label: 'Plan' }
+            ],
+            soap: [
+                { id: 'soapSubjective', label: 'Subjective' },
+                { id: 'soapObjective', label: 'Objective' },
+                { id: 'soapAssessment', label: 'Assessment' },
+                { id: 'soapPlan', label: 'Plan' }
+            ],
+            soapie: [
+                { id: 'soapieSubjective', label: 'Subjective' },
+                { id: 'soapieObjective', label: 'Objective' },
+                { id: 'soapieAssessment', label: 'Assessment' },
+                { id: 'soapiePlan', label: 'Plan' },
+                { id: 'soapieIntervention', label: 'Intervention' },
+                { id: 'soapieEvaluation', label: 'Evaluation' }
+            ],
+            sbar: [
+                { id: 'sbarSituation', label: 'Situation' },
+                { id: 'sbarBackground', label: 'Background' },
+                { id: 'sbarAssessment', label: 'Assessment' },
+                { id: 'sbarRecommendation', label: 'Recommendation' }
+            ],
+            pie: [
+                { id: 'pieProblem', label: 'Problem' },
+                { id: 'pieIntervention', label: 'Intervention' },
+                { id: 'pieEvaluation', label: 'Evaluation' }
+            ],
+            narrative: [
+                { id: 'narrativeText', label: 'Narrative' }
+            ],
+            h2t: [
+                { id: 'h2tNeuro', label: 'Neuro' },
+                { id: 'h2tCardio', label: 'Cardio' },
+                { id: 'h2tResp', label: 'Resp' },
+                { id: 'h2tGI', label: 'GI' },
+                { id: 'h2tGU', label: 'GU' },
+                { id: 'h2tSkin', label: 'Skin' },
+                { id: 'h2tMSK', label: 'MSK' },
+                { id: 'h2tPain', label: 'Pain' },
+                { id: 'h2tMental', label: 'Mental' },
+                { id: 'h2tSafety', label: 'Safety' },
+                { id: 'h2tLines', label: 'Lines/Drains' },
+                { id: 'h2tPsych', label: 'Psych' }
+            ]
+        };
+
+        function toggleSectionJump() {
+            const panel = document.getElementById('sectionJumpPanel');
+            if (!panel) return;
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function updateSectionJumpList() {
+            const panel = document.getElementById('sectionJumpPanel');
+            if (!panel) return;
+            const sections = NOTE_SECTIONS[currentNoteType] || [];
+            panel.innerHTML = sections.map(s => `<div class="section-jump-item" onclick="scrollToSection('${s.id}')">${s.label}</div>`).join('');
+        }
+
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            const panel = document.getElementById('sectionJumpPanel');
+            if (panel) panel.style.display = 'none';
+        }
+
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('sectionJumpPanel');
+            const btn = document.getElementById('sectionJumpBtn');
+            if (panel && btn && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn) {
+                panel.style.display = 'none';
+            }
+        });
+
+        const DRAFT_PREFIX = 'bsn9b_draft_';
+        const AUTOSAVE_DELAY = 800;
+        let autosaveTimer = null;
+
+        function collectDraftFields() {
+            const container = document.querySelector('.form-container');
+            if (!container) return {};
+            const data = {};
+            container.querySelectorAll('input, textarea, select').forEach(el => {
+                if (!el.id) return;
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    data[el.id] = el.checked;
+                } else {
+                    data[el.id] = el.value;
+                }
+            });
+            return data;
+        }
+
+        function updateAutoSaveStatus(text) {
+            const el = document.getElementById('autoSaveStatus');
+            const mobile = document.getElementById('mobileActionStatus');
+            if (el) el.textContent = text;
+            if (mobile) mobile.textContent = text;
+        }
+
+        function saveDraft() {
+            try {
+                const key = DRAFT_PREFIX + currentNoteType;
+                const payload = {
+                    noteType: currentNoteType,
+                    timestamp: Date.now(),
+                    fields: collectDraftFields()
+                };
+                localStorage.setItem(key, JSON.stringify(payload));
+                const time = new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                updateAutoSaveStatus('Draft saved ' + time);
+            } catch (e) {
+                console.warn('Autosave failed:', e);
+            }
+        }
+
+        function loadDraft(type) {
+            try {
+                const key = DRAFT_PREFIX + type;
+                const raw = localStorage.getItem(key);
+                if (!raw) {
+                    updateAutoSaveStatus('Draft not saved');
+                    return;
+                }
+                const payload = JSON.parse(raw);
+                if (!payload || !payload.fields) return;
+                Object.keys(payload.fields).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        el.checked = !!payload.fields[id];
+                    } else {
+                        el.value = payload.fields[id];
+                    }
+                });
+                updatePhq9Score();
+                updateGad7Score();
+                const time = new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                updateAutoSaveStatus('Draft restored ' + time);
+            } catch (e) {
+                console.warn('Draft load failed:', e);
+            }
+        }
+
+        function scheduleAutoSave() {
+            updateAutoSaveStatus('Saving...');
+            clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(saveDraft, AUTOSAVE_DELAY);
+        }
+
+        function setupAutoSave() {
+            const container = document.querySelector('.form-container');
+            if (!container) return;
+            container.querySelectorAll('input, textarea, select').forEach(el => {
+                if (!el.id) return;
+                el.addEventListener('input', scheduleAutoSave);
+                el.addEventListener('change', scheduleAutoSave);
+            });
+        }
+
+        function clearDraft(type) {
+            try { localStorage.removeItem(DRAFT_PREFIX + type); } catch (e) {}
         }
 
         // Debounce utility for search functions (reduces CPU usage)
@@ -4632,6 +5513,97 @@ Important guidelines:
             const field = document.getElementById(fieldId);
             field.value += text;
             field.focus();
+        }
+
+        function getSelectValue(id) {
+            const el = document.getElementById(id);
+            if (!el) return 0;
+            const val = parseInt(el.value || '0', 10);
+            return Number.isFinite(val) ? val : 0;
+        }
+
+        function hasScreeningResponses(prefix, count) {
+            for (let i = 1; i <= count; i++) {
+                const el = document.getElementById(prefix + i);
+                if (el && el.value && el.value !== '0') return true;
+            }
+            return false;
+        }
+
+        function getPhq9Total() {
+            let total = 0;
+            for (let i = 1; i <= 9; i++) total += getSelectValue('phq' + i);
+            return total;
+        }
+
+        function getGad7Total() {
+            let total = 0;
+            for (let i = 1; i <= 7; i++) total += getSelectValue('gad' + i);
+            return total;
+        }
+
+        function getPhq9Severity(score) {
+            if (score >= 20) return 'Severe';
+            if (score >= 15) return 'Moderately severe';
+            if (score >= 10) return 'Moderate';
+            if (score >= 5) return 'Mild';
+            return 'Minimal';
+        }
+
+        function getGad7Severity(score) {
+            if (score >= 15) return 'Severe';
+            if (score >= 10) return 'Moderate';
+            if (score >= 5) return 'Mild';
+            return 'Minimal';
+        }
+
+        function updatePhq9Score() {
+            const total = getPhq9Total();
+            const el = document.getElementById('phq9Score');
+            if (el) el.textContent = total;
+            return total;
+        }
+
+        function updateGad7Score() {
+            const total = getGad7Total();
+            const el = document.getElementById('gad7Score');
+            if (el) el.textContent = total;
+            return total;
+        }
+
+        function getScreeningSummary() {
+            const hasPhq = hasScreeningResponses('phq', 9);
+            const hasGad = hasScreeningResponses('gad', 7);
+            if (!hasPhq && !hasGad) return '';
+            const lines = [];
+            if (hasPhq) {
+                const phq = getPhq9Total();
+                lines.push(`PHQ-9 Total: ${phq} (${getPhq9Severity(phq)})`);
+            }
+            if (hasGad) {
+                const gad = getGad7Total();
+                lines.push(`GAD-7 Total: ${gad} (${getGad7Severity(gad)})`);
+            }
+            return lines.join('\n');
+        }
+
+        function insertMentalHealthSummary() {
+            const mental = (document.getElementById('h2tMental') || {}).value || '';
+            const safety = (document.getElementById('h2tSafety') || {}).value || '';
+            const screening = getScreeningSummary();
+            const lines = [];
+            if (mental.trim()) lines.push(`Mental status: ${mental.trim()}`);
+            if (safety.trim()) lines.push(`Safety/Risk: ${safety.trim()}`);
+            if (screening) lines.push(`Screening: ${screening}`);
+            if (lines.length === 0) {
+                showToast('Add mental status or screening scores first.', 'warning');
+                return;
+            }
+            const target = document.getElementById('h2tPsych');
+            if (!target) return;
+            const existing = target.value.trim();
+            target.value = existing ? `${existing}\n${lines.join('\n')}` : lines.join('\n');
+            target.focus();
         }
 
         function clearForm() {
@@ -4701,9 +5673,63 @@ Important guidelines:
                 c.push({l:'',t:'Skin/Integumentary',x:document.getElementById('h2tSkin').value});
                 c.push({l:'',t:'Musculoskeletal',x:document.getElementById('h2tMSK').value});
                 c.push({l:'',t:'Pain/Comfort',x:document.getElementById('h2tPain').value});
+                c.push({l:'',t:'Mental Status',x:document.getElementById('h2tMental').value});
+                c.push({l:'',t:'Safety/Risk',x:document.getElementById('h2tSafety').value});
+                c.push({l:'',t:'Lines/Drains/Airway',x:document.getElementById('h2tLines').value});
+                const screeningSummary = getScreeningSummary();
+                if (screeningSummary) {
+                    c.push({l:'',t:'Mental Health Screening',x:screeningSummary});
+                }
                 c.push({l:'',t:'Psychosocial/Notes',x:document.getElementById('h2tPsych').value});
             }
             return c.filter(i => i.x);
+        }
+
+        function buildNoteText() {
+            const d = getFormData();
+            const nc = getNoteContent();
+            if (nc.length === 0) return '';
+            const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe',narrative:'Narrative'};
+            let out = [];
+            out.push(`Note Type: ${tn[currentNoteType] || currentNoteType}`);
+            out.push(`Nurse: ${d.nurseName} ${d.credentials || ''}`.trim());
+            out.push(`Date: ${d.noteDate}  Time: ${d.noteTime}`);
+            if (d.unit) out.push(`Unit: ${d.unit}`);
+            if (d.patientId) out.push(`Patient: ${d.patientId}`);
+            if (d.patientDemo) out.push(`Demographics: ${d.patientDemo}`);
+            if (d.focus && ['dar','darp'].includes(currentNoteType)) out.push(`Focus: ${d.focus}`);
+            out.push('');
+            nc.forEach(item => {
+                const label = item.l ? `${item.l} - ${item.t}` : item.t;
+                out.push(label + ':');
+                out.push(item.x);
+                out.push('');
+            });
+            return out.join('\n').trim();
+        }
+
+        async function copyNoteToClipboard() {
+            const text = buildNoteText();
+            if (!text) {
+                showToast('Add content before copying.', 'warning');
+                return;
+            }
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                showToast('Copied to clipboard.', 'success');
+            } catch (e) {
+                console.error('Copy failed:', e);
+                showToast('Copy failed. Try manual select.', 'error');
+            }
         }
 
         async function generatePDF(btn) {

@@ -127,6 +127,45 @@
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
         }
+        .resource-navigator {
+            background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .resource-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .resource-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .resource-chip {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid #cbd5f5;
+            background: white;
+            color: #1f4e79;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .resource-chip.active {
+            background: #1f4e79;
+            color: white;
+            border-color: #1f4e79;
+        }
+        .resource-card.hidden { display: none; }
         .card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -225,6 +264,31 @@
             font-weight: 600;
             color: #1f4e79;
             display: none;
+        }
+        .planner-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .planner-input {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5f5;
+            background: white;
+            font-size: 13px;
+            resize: vertical;
+        }
+        .planner-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .planner-actions .btn {
+            flex: 1;
+            min-width: 120px;
         }
         /* Smart Drug Autocomplete */
         .drug-search-wrapper {
@@ -529,6 +593,10 @@
         [data-theme="dark"] td { border-color: var(--border); }
         [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea { background: var(--bg-input); color: var(--text-primary); border-color: var(--border); }
         [data-theme="dark"] footer { color: rgba(255,255,255,0.6); }
+        [data-theme="dark"] .resource-navigator { background: linear-gradient(135deg, #0f172a 0%, #111827 100%); border-color: #1f2937; }
+        [data-theme="dark"] .resource-chip { background: #0f172a; border-color: #1f2937; color: #93c5fd; }
+        [data-theme="dark"] .resource-chip.active { background: #2563eb; color: white; border-color: #2563eb; }
+        [data-theme="dark"] .planner-input { background: #0f172a; border-color: #1f2937; color: var(--text-primary); }
 
         /* Lock screen */
         #lockScreenOverlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
@@ -674,9 +742,31 @@
                 <p style="font-size: 12px; opacity: 0.95;">This tool is for nursing student learning purposes only. Always consult your facility's official drug guide, pharmacist, and clinical resources before administering any medication. This tool may contain incomplete or inaccurate information.</p>
             </div>
 
-            <div class="grid">
+            <div class="resource-navigator">
+                <div class="resource-meta">
+                    <strong>Resource Navigator</strong>
+                    <span id="resourceCount">Showing all resources</span>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="resourceSearch" placeholder="Search resources, tools, or skills..." oninput="filterResources()">
+                    <button type="button" onclick="clearResourceSearch()">Clear</button>
+                </div>
+                <div class="resource-filters">
+                    <button type="button" class="resource-chip active" onclick="setResourceFilter('all', this)">All</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('drugs', this)">Drugs</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('labs', this)">Labs</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('vitals', this)">Vitals</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('calculations', this)">Calculations</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('clinical', this)">Clinical Skills</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('sbar', this)">SBAR</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('checklists', this)">Checklists</button>
+                    <button type="button" class="resource-chip" onclick="setResourceFilter('study', this)">Study</button>
+                </div>
+            </div>
+
+            <div class="grid" id="resourceGrid">
                 <!-- Drug Information -->
-                <div class="card">
+                <div class="card resource-card" data-tags="drugs medication pharma reference">
                     <h2>💊 Drug Information</h2>
                     <p style="font-size: 12px; color: #c62828; background: #ffebee; padding: 8px; border-radius: 6px; margin-bottom: 12px;"><strong>Educational reference only.</strong> Verify all information with official sources.</p>
                     <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Start typing to search medications (smart spelling correction)</p>
@@ -701,7 +791,7 @@
                 </div>
 
                 <!-- Lab Values -->
-                <div class="card">
+                <div class="card resource-card" data-tags="labs cbc bmp abg coagulation cardiac reference">
                     <h2>🔬 Lab Values Reference</h2>
                     <h3 class="collapsible" onclick="toggleCollapse(this)">Complete Blood Count (CBC)</h3>
                     <div class="collapse-content">
@@ -765,7 +855,7 @@
                 </div>
 
                 <!-- Vital Signs -->
-                <div class="card">
+                <div class="card resource-card" data-tags="vitals assessment normal ranges">
                     <h2>❤️ Vital Signs Normal Ranges</h2>
                     <table>
                         <tr><th>Vital Sign</th><th>Adult Normal</th></tr>
@@ -787,7 +877,7 @@
                 </div>
 
                 <!-- IV Calculations -->
-                <div class="card">
+                <div class="card resource-card" data-tags="calculations iv drip math clinical">
                     <h2>💉 IV Drip Rate Calculator</h2>
                     <p style="font-size: 11px; color: #c62828; background: #ffebee; padding: 6px 8px; border-radius: 4px; margin-bottom: 10px;"><strong>Double-check all calculations.</strong> Verify with preceptor/RN before administration.</p>
                     <p style="font-size: 12px; color: #666; margin-bottom: 12px;">For gravity drip or pump rate calculation</p>
@@ -824,7 +914,7 @@
                 </div>
 
                 <!-- Dosage Calculator -->
-                <div class="card">
+                <div class="card resource-card" data-tags="calculations dosage math meds">
                     <h2>💊 Dosage Calculator</h2>
                     <p style="font-size: 11px; color: #c62828; background: #ffebee; padding: 6px 8px; border-radius: 4px; margin-bottom: 10px;"><strong>Double-check all calculations.</strong> Verify with preceptor/RN before administration.</p>
                     <p style="font-size: 12px; color: #666; margin-bottom: 12px;">D/H × Q (Desired ÷ Have × Quantity)</p>
@@ -870,7 +960,7 @@
                 </div>
 
                 <!-- Common Abbreviations -->
-                <div class="card">
+                <div class="card resource-card" data-tags="study abbreviations documentation">
                     <h2>📝 Common Abbreviations</h2>
                     <div class="abbrev-grid">
                         <div class="abbrev-item"><strong>AC</strong> - Before meals</div>
@@ -900,8 +990,31 @@
                     </div>
                 </div>
 
+                <!-- Clinical Prep -->
+                <div class="card resource-card" data-tags="clinical study sim prep planner">
+                    <h2>🗂️ Clinical Prep & Sim Lab</h2>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Quick checklist + planner for pre-clinical and sim days</p>
+                    <div class="checklist" id="shift-prep-checklist" style="margin-bottom: 12px;">
+                        <label class="checklist-item"><input type="checkbox"> Review patient summary, diagnosis, and H&P</label>
+                        <label class="checklist-item"><input type="checkbox"> Check latest vitals, labs, and abnormal values</label>
+                        <label class="checklist-item"><input type="checkbox"> Identify high-alert meds + top 2 nursing priorities</label>
+                        <label class="checklist-item"><input type="checkbox"> Prepare SBAR points and key questions for RN</label>
+                        <label class="checklist-item"><input type="checkbox"> Gather supplies for assigned skills (IV, wound, Foley)</label>
+                    </div>
+                    <h3>Shift Planner</h3>
+                    <div class="planner-grid">
+                        <textarea id="shiftPriority" class="planner-input" placeholder="Top 3 priorities (ex: pain control, mobility, I&O)"></textarea>
+                        <textarea id="shiftFollowup" class="planner-input" placeholder="Follow-ups & reminders (ex: recheck vitals @ 1400, med re-assessment)"></textarea>
+                    </div>
+                    <div class="planner-actions">
+                        <button class="btn" onclick="saveShiftPlan()">Save Plan</button>
+                        <button class="btn btn-secondary" onclick="copyShiftPlan()">Copy Plan</button>
+                        <button class="btn btn-secondary" onclick="clearShiftPlan()">Clear</button>
+                    </div>
+                </div>
+
                 <!-- Clinical Toolkit -->
-                <div class="card" style="grid-column: span 2;">
+                <div class="card resource-card" data-tags="clinical toolkit vitals pain apgar sbar handoff" style="grid-column: span 2;">
                     <h2>🩺 Clinical Toolkit</h2>
                     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Quick reference tools for clinical rotations</p>
 
@@ -1084,7 +1197,7 @@
                 </div>
 
                 <!-- NANDA Diagnoses Quick Reference -->
-                <div class="card">
+                <div class="card resource-card" data-tags="nanda diagnoses study care plan">
                     <h2>🩺 NANDA Nursing Diagnoses</h2>
                     <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Common nursing diagnoses by category</p>
                     <div class="nanda-list">
@@ -1123,7 +1236,7 @@
                 </div>
 
                 <!-- Procedure Checklists -->
-                <div class="card" style="grid-column: span 2;">
+                <div class="card resource-card" data-tags="checklists clinical skills procedures" style="grid-column: span 2;">
                     <h2>📋 Procedure Checklists</h2>
                     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Interactive checklists for common nursing procedures</p>
 
@@ -1236,7 +1349,7 @@
                 </div>
 
                 <!-- Medication Timer -->
-                <div class="card">
+                <div class="card resource-card" data-tags="timers clinical meds reminders">
                     <h2>⏱️ Med Pass Timer</h2>
                     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Set reminders for medication rounds or patient checks</p>
 
@@ -1270,7 +1383,7 @@
                 </div>
 
                 <!-- Additional Resources -->
-                <div class="card">
+                <div class="card resource-card" data-tags="study links reference safety">
                     <h2>🔗 Additional Resources</h2>
                     <ul class="link-list">
                         <li><a href="https://www.nursingworld.org/" target="_blank">🏥 American Nurses Association</a></li>
@@ -1410,10 +1523,12 @@
 
         // Logout function
         function logout() {
+            endSessionTracking('logout');
             localStorage.removeItem('bsn9b_auth');
             localStorage.removeItem('bsn9b_user');
             localStorage.removeItem('bsn9b_displayName');
             localStorage.removeItem('bsn9b_uid');
+            clearSessionTracking();
             window.location.href = '/';
         }
 
@@ -1916,6 +2031,102 @@ Important guidelines:
             content.classList.toggle('hidden');
         }
 
+        let activeResourceFilter = 'all';
+
+        function updateResourceCount(visible, total) {
+            const countEl = document.getElementById('resourceCount');
+            if (!countEl) return;
+            countEl.textContent = `Showing ${visible} of ${total} resources`;
+        }
+
+        function filterResources() {
+            const query = (document.getElementById('resourceSearch') || {}).value || '';
+            const q = query.trim().toLowerCase();
+            const cards = Array.from(document.querySelectorAll('.resource-card'));
+            let visible = 0;
+            cards.forEach(card => {
+                const tags = (card.dataset.tags || '').toLowerCase();
+                const text = card.textContent.toLowerCase();
+                const matchesTag = activeResourceFilter === 'all' || tags.includes(activeResourceFilter);
+                const matchesQuery = !q || tags.includes(q) || text.includes(q);
+                const show = matchesTag && matchesQuery;
+                card.classList.toggle('hidden', !show);
+                if (show) visible += 1;
+            });
+            updateResourceCount(visible, cards.length);
+        }
+
+        function setResourceFilter(tag, button) {
+            activeResourceFilter = tag;
+            document.querySelectorAll('.resource-chip').forEach(chip => chip.classList.remove('active'));
+            if (button) button.classList.add('active');
+            filterResources();
+        }
+
+        function clearResourceSearch() {
+            const input = document.getElementById('resourceSearch');
+            if (input) input.value = '';
+            filterResources();
+        }
+
+        const SHIFT_PLAN_KEY = 'bsn9b_shift_plan';
+
+        function saveShiftPlan() {
+            try {
+                const payload = {
+                    priority: document.getElementById('shiftPriority')?.value || '',
+                    followup: document.getElementById('shiftFollowup')?.value || '',
+                    savedAt: Date.now()
+                };
+                localStorage.setItem(SHIFT_PLAN_KEY, JSON.stringify(payload));
+                showToast('Shift plan saved.', 'success');
+            } catch (e) {
+                console.warn('Shift plan save failed:', e);
+                showToast('Unable to save plan.', 'error');
+            }
+        }
+
+        function loadShiftPlan() {
+            try {
+                const raw = localStorage.getItem(SHIFT_PLAN_KEY);
+                if (!raw) return;
+                const payload = JSON.parse(raw);
+                if (!payload) return;
+                if (document.getElementById('shiftPriority')) document.getElementById('shiftPriority').value = payload.priority || '';
+                if (document.getElementById('shiftFollowup')) document.getElementById('shiftFollowup').value = payload.followup || '';
+            } catch (e) {
+                console.warn('Shift plan load failed:', e);
+            }
+        }
+
+        function clearShiftPlan() {
+            if (document.getElementById('shiftPriority')) document.getElementById('shiftPriority').value = '';
+            if (document.getElementById('shiftFollowup')) document.getElementById('shiftFollowup').value = '';
+            try { localStorage.removeItem(SHIFT_PLAN_KEY); } catch (e) {}
+            showToast('Shift plan cleared.', 'info');
+        }
+
+        async function copyShiftPlan() {
+            const priority = document.getElementById('shiftPriority')?.value || '';
+            const followup = document.getElementById('shiftFollowup')?.value || '';
+            const text = `Shift Plan\n\nPriorities:\n${priority || '-'}\n\nFollow-ups:\n${followup || '-'}`;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                showToast('Shift plan copied.', 'success');
+            } catch (e) {
+                showToast('Copy failed.', 'error');
+            }
+        }
+
         function clearChecklist(checklistId) {
             const checklist = document.getElementById(checklistId);
             if (checklist) {
@@ -2208,6 +2419,13 @@ Generated: ${new Date().toLocaleString()}`;
 
             <!-- GROUP CHAT VIEW -->
             <div id="groupChatView" role="tabpanel" aria-labelledby="tabGroupChat" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="padding: 10px 12px; background: #eef2f7; border-bottom: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center;">
+                    <select id="channelSelect" onchange="handleChannelChange(this.value)" style="flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; background: white;">
+                        <option value="general">General</option>
+                    </select>
+                    <button id="createChannelBtn" onclick="createChannel()" title="Create channel" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: #1f4e79; color: white; font-size: 16px; cursor: pointer;">+</button>
+                    <button id="deleteChannelBtn" onclick="deleteChannel()" title="Delete channel" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: #ef4444; color: white; font-size: 14px; cursor: pointer; display: none;">🗑</button>
+                </div>
                 <!-- Chat Messages -->
                 <div id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
                     <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
@@ -2231,6 +2449,11 @@ Generated: ${new Date().toLocaleString()}`;
                     <div style="margin-bottom: 15px;">
                         <button onclick="showNewDMSelector()" aria-label="Start new direct message" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">
                             <span aria-hidden="true">✏️</span> New Message
+                        </button>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <button onclick="runDMSelfTest()" aria-label="Run DM self test" style="width: 100%; padding: 10px; background: #f1f5f9; color: #1f4e79; border: 1px dashed #cbd5e1; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                            DM Self-Test (safe)
                         </button>
                     </div>
                     <div id="dmConversations" style="color: #888; font-size: 12px; text-align: center;">
@@ -2324,11 +2547,59 @@ Generated: ${new Date().toLocaleString()}`;
         const auth = firebase.auth();
         const database = firebase.database();
 
+        const SESSION_KEY = 'bsn9b_session_key';
+        const SESSION_START_KEY = 'bsn9b_session_start';
+        const SESSION_HEARTBEAT_MS = 60000;
+        let sessionHeartbeatTimer = null;
+
+        function updateSessionHeartbeat() {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            database.ref('loginHistory/' + sessionKey).update({
+                lastSeen: Date.now()
+            }).catch(() => {});
+        }
+
+        function startSessionHeartbeat() {
+            updateSessionHeartbeat();
+            if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+            sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+        }
+
+        function endSessionTracking(reason) {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
+            const end = Date.now();
+            const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
+            const durationMinutes = durationSeconds !== null ? Math.round(durationSeconds / 60) : null;
+            localStorage.setItem('bsn9b_session_end_sent', 'true');
+            database.ref('loginHistory/' + sessionKey).update({
+                sessionEnd: end,
+                durationSeconds: durationSeconds,
+                durationMinutes: durationMinutes,
+                endReason: reason || 'logout'
+            }).catch(() => {});
+        }
+
+        function clearSessionTracking() {
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(SESSION_START_KEY);
+            localStorage.removeItem('bsn9b_session_end_sent');
+        }
+
         // ========== CHAT SYSTEM (INLINE FROM /app/) ==========
-        const chatRef = database.ref('chat/messages');
+        const channelsRef = database.ref('chat/channels');
+        const chatRootRef = database.ref('chat/messages');
+        let chatRef = null;
+        let chatListenerAttached = false;
+        let currentChannelId = localStorage.getItem('bsn9b_chat_channel') || 'general';
+        let channelsCache = {};
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
+        const userProfilesRef = database.ref('userProfiles');
 
         // Listen for announcements (alert/fyi banners - inside header)
         function setupAnnouncementListener() {
@@ -2365,8 +2636,30 @@ Generated: ${new Date().toLocaleString()}`;
         console.log('Firebase initialized, chatRef path:', chatRef.toString());
 
         // Get display name (first name) - stored when user logs in
-        const chatCurrentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
-        const chatDisplayName = localStorage.getItem('bsn9b_displayName') || chatCurrentUsername;
+        let chatCurrentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
+        let chatDisplayName = localStorage.getItem('bsn9b_displayName') || chatCurrentUsername;
+        let chatCurrentUserUid = localStorage.getItem('bsn9b_uid') || '';
+
+        function getCurrentUserEmail() {
+            return chatCurrentUsername || auth.currentUser?.email || localStorage.getItem('bsn9b_user') || '';
+        }
+
+        function getCurrentUserUid() {
+            return chatCurrentUserUid || auth.currentUser?.uid || localStorage.getItem('bsn9b_uid') || '';
+        }
+
+        function syncUserProfile(user) {
+            if (!user) return;
+            const email = user.email || getCurrentUserEmail();
+            const name = chatDisplayName || user.displayName || (email ? email.split('@')[0] : 'User');
+            const firstName = name.split(' ')[0] || name;
+            userProfilesRef.child(user.uid).update({
+                email: email,
+                displayName: name,
+                firstName: firstName,
+                updatedAt: Date.now()
+            });
+        }
 
         // Verify Firebase Auth state and re-authenticate if needed
         let firebaseAuthReady = false;
@@ -2374,6 +2667,15 @@ Generated: ${new Date().toLocaleString()}`;
             if (user) {
                 console.log('Firebase Auth: Logged in as', user.email);
                 firebaseAuthReady = true;
+                chatCurrentUserUid = user.uid;
+                chatCurrentUsername = user.email || chatCurrentUsername;
+                if (user.displayName) {
+                    chatDisplayName = user.displayName;
+                }
+                localStorage.setItem('bsn9b_uid', chatCurrentUserUid);
+                localStorage.setItem('bsn9b_user', chatCurrentUsername);
+                localStorage.setItem('bsn9b_displayName', chatDisplayName);
+                syncUserProfile(user);
             } else {
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
                 if (localStorage.getItem('bsn9b_auth') === 'true') {
@@ -2410,7 +2712,21 @@ Generated: ${new Date().toLocaleString()}`;
         // Chat state
         let chatOpen = false;
         let unreadCount = 0;
-        let lastReadTimestamp = parseInt(localStorage.getItem('chatLastRead') || '0');
+        let lastReadByChannel = JSON.parse(localStorage.getItem('chatLastReadByChannel') || '{}');
+
+        function getLastReadTimestamp(channelId) {
+            return parseInt(lastReadByChannel[channelId] || '0');
+        }
+
+        function setLastReadTimestamp(channelId, value) {
+            lastReadByChannel[channelId] = value.toString();
+            localStorage.setItem('chatLastReadByChannel', JSON.stringify(lastReadByChannel));
+        }
+
+        function isAdminUser() {
+            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
+            return adminEmails.includes((chatCurrentUsername || '').toLowerCase());
+        }
 
         // Notification preferences (sound ON by default, browser notifications OFF by default)
         let soundEnabled = localStorage.getItem('chatSoundEnabled') !== 'false';
@@ -2530,7 +2846,131 @@ Generated: ${new Date().toLocaleString()}`;
         document.addEventListener('DOMContentLoaded', function() {
             updateSoundToggleUI();
             updateNotificationToggleUI();
+            loadShiftPlan();
+            filterResources();
+            startSessionHeartbeat();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') updateSessionHeartbeat();
+            });
         });
+
+        function sanitizeChannelName(name) {
+            return (name || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
+                .slice(0, 24);
+        }
+
+        function updateChatTitle() {
+            const title = document.getElementById('chatTitle');
+            if (title) {
+                const channelName = channelsCache[currentChannelId]?.name || 'General';
+                title.textContent = `BSN9B Chat · #${channelName}`;
+            }
+        }
+
+        function updateChannelSelect() {
+            const select = document.getElementById('channelSelect');
+            if (!select) return;
+            const entries = Object.entries(channelsCache);
+            const list = entries.length ? entries : [['general', { name: 'General' }]];
+            select.innerHTML = list
+                .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                .map(([id, ch]) => `<option value="${id}">${ch.name}</option>`)
+                .join('');
+            select.value = currentChannelId;
+
+            const deleteBtn = document.getElementById('deleteChannelBtn');
+            if (deleteBtn) {
+                deleteBtn.style.display = isAdminUser() && currentChannelId !== 'general' ? 'inline-flex' : 'none';
+            }
+            const createBtn = document.getElementById('createChannelBtn');
+            if (createBtn) {
+                createBtn.style.display = isAdminUser() ? 'inline-flex' : 'none';
+            }
+        }
+
+        function attachChatRef() {
+            if (chatRef && chatListenerAttached) {
+                chatRef.off();
+                chatListenerAttached = false;
+            }
+            chatRef = chatRootRef.child(currentChannelId);
+        }
+
+        function setChannel(channelId) {
+            if (!channelId) return;
+            currentChannelId = channelId;
+            localStorage.setItem('bsn9b_chat_channel', currentChannelId);
+            attachChatRef();
+            updateChatTitle();
+            updateChannelSelect();
+            setupChatListener();
+            cleanupOldMessages();
+        }
+
+        function handleChannelChange(value) {
+            setChannel(value);
+        }
+
+        function createChannel() {
+            if (!isAdminUser()) {
+                showToast('Only admins can create channels.', 'warning');
+                return;
+            }
+            const name = prompt('Channel name (e.g., meds, clinical, nclex):');
+            if (!name) return;
+            const id = sanitizeChannelName(name);
+            if (!id) {
+                showToast('Invalid channel name.', 'warning');
+                return;
+            }
+            channelsRef.child(id).set({
+                name: name.trim(),
+                createdAt: Date.now(),
+                createdBy: chatCurrentUsername
+            }).then(() => {
+                setChannel(id);
+            }).catch(err => {
+                console.error('Create channel failed:', err);
+                showToast('Failed to create channel.', 'error');
+            });
+        }
+
+        function deleteChannel() {
+            if (!isAdminUser()) return;
+            if (currentChannelId === 'general') {
+                showToast('General cannot be deleted.', 'warning');
+                return;
+            }
+            if (!confirm('Delete this channel and all its messages?')) return;
+            const id = currentChannelId;
+            const msgRef = chatRootRef.child(id);
+            Promise.all([
+                channelsRef.child(id).remove(),
+                msgRef.remove()
+            ]).then(() => {
+                setChannel('general');
+            }).catch(err => {
+                console.error('Delete channel failed:', err);
+                showToast('Failed to delete channel.', 'error');
+            });
+        }
+
+        function loadChannels() {
+            channelsRef.on('value', (snapshot) => {
+                channelsCache = snapshot.val() || {};
+                if (!channelsCache.general) {
+                    channelsCache.general = { name: 'General' };
+                }
+                updateChannelSelect();
+                if (!channelsCache[currentChannelId]) {
+                    currentChannelId = 'general';
+                }
+                setChannel(currentChannelId);
+            });
+        }
 
         // Toggle chat
         function toggleChat() {
@@ -2542,8 +2982,7 @@ Generated: ${new Date().toLocaleString()}`;
                 chatBox.style.flexDirection = 'column';
                 unreadCount = 0;
                 document.getElementById('chatBadge').style.display = 'none';
-                lastReadTimestamp = Date.now();
-                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                setLastReadTimestamp(currentChannelId, Date.now());
                 document.getElementById('chatInput').focus();
                 scrollToBottom();
             } else {
@@ -2563,8 +3002,7 @@ Generated: ${new Date().toLocaleString()}`;
             if (!message) return;
 
             // Admin commands (admin emails only)
-            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
-            if (adminEmails.includes(chatCurrentUsername.toLowerCase())) {
+            if (isAdminUser()) {
                 // Alert command: alert/message or alert/clear
                 if (message.toLowerCase().startsWith('alert/')) {
                     const alertMsg = message.substring(6).trim();
@@ -2679,6 +3117,7 @@ Generated: ${new Date().toLocaleString()}`;
         // Clean up old messages (older than 7 days)
         function cleanupOldMessages() {
             const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+            if (!chatRef) return;
             chatRef.once('value', (snapshot) => {
                 snapshot.forEach((child) => {
                     const msg = child.val();
@@ -2696,7 +3135,13 @@ Generated: ${new Date().toLocaleString()}`;
         // Listen for messages
         function setupChatListener() {
             console.log('Setting up chat listener...');
+            if (!chatRef) return;
+            if (chatListenerAttached) {
+                chatRef.off();
+                chatListenerAttached = false;
+            }
             chatRef.on('value', (snapshot) => {
+                chatListenerAttached = true;
                 console.log('=== CHAT LISTENER FIRED ===');
                 console.log('Snapshot exists:', snapshot.exists());
                 console.log('Snapshot numChildren:', snapshot.numChildren());
@@ -2747,7 +3192,7 @@ Generated: ${new Date().toLocaleString()}`;
 
                 messages.forEach((msg) => {
                     const isMe = msg.user === chatDisplayName || msg.username === chatCurrentUsername;
-                    const isNew = msg.timestamp > lastReadTimestamp;
+                    const isNew = msg.timestamp > getLastReadTimestamp(currentChannelId);
 
                     if (isNew && !chatOpen) newMessages++;
 
@@ -2796,7 +3241,7 @@ Generated: ${new Date().toLocaleString()}`;
         }
 
         // Initialize chat listener
-        setupChatListener();
+        loadChannels();
 
         // Monitor Firebase connection state
         const connectedRef = database.ref('.info/connected');
@@ -2824,9 +3269,46 @@ Generated: ${new Date().toLocaleString()}`;
         let dmUnreadCount = 0;
         let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
         const directMessagesRef = database.ref('directMessages');
+        let userProfilesByUid = {};
+        let userProfilesByEmail = {};
+        let userProfilesByName = {};
 
-        function getConversationId(email1, email2) {
-            return [email1, email2].sort().join('_').replace(/[.@]/g, '_');
+        function rebuildUserProfileIndexes(profiles) {
+            userProfilesByUid = {};
+            userProfilesByEmail = {};
+            userProfilesByName = {};
+            if (!profiles) return;
+
+            Object.keys(profiles).forEach((uid) => {
+                const profile = profiles[uid] || {};
+                const email = (profile.email || '').toLowerCase();
+                const name = (profile.displayName || profile.firstName || '').toLowerCase();
+                userProfilesByUid[uid] = profile;
+                if (email) userProfilesByEmail[email] = { uid: uid, ...profile };
+                if (name) userProfilesByName[name] = { uid: uid, ...profile };
+            });
+        }
+
+        async function loadUserProfiles() {
+            try {
+                const snap = await userProfilesRef.once('value');
+                rebuildUserProfileIndexes(snap.val());
+            } catch (e) {
+                console.warn('Failed to load user profiles:', e);
+            }
+        }
+
+        function addUidsToRegisteredUsers() {
+            allRegisteredUsers = allRegisteredUsers.map((u) => {
+                const email = (u.email || '').toLowerCase();
+                const name = (u.firstName || u.name || '').toLowerCase();
+                const profile = userProfilesByEmail[email] || userProfilesByName[name];
+                return { ...u, uid: profile?.uid || '' };
+            });
+        }
+
+        function getConversationId(uid1, uid2) {
+            return [uid1, uid2].sort().join('_');
         }
 
         function switchChatMode(mode) {
@@ -2856,8 +3338,7 @@ Generated: ${new Date().toLocaleString()}`;
 
                     unreadCount = 0;
                     document.getElementById('chatBadge').style.display = 'none';
-                    lastReadTimestamp = Date.now();
-                    localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                    setLastReadTimestamp(currentChannelId, Date.now());
                 } else {
                     groupView.style.display = 'none';
                     dmView.style.display = 'flex';
@@ -2895,21 +3376,34 @@ Generated: ${new Date().toLocaleString()}`;
             showDMConversationList();
         }
 
-        function loadDMUserList() {
+        async function loadDMUserList() {
             const container = document.getElementById('dmUserList');
-            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            await loadUserProfiles();
+            addUidsToRegisteredUsers();
+            const onlineSet = new Set(onlineUsersDetailed.map(u => (u.name || '').toLowerCase()));
             let users = [];
 
-            onlineUsers.forEach(u => {
-                if (u.toLowerCase() !== chatDisplayName.toLowerCase()) {
-                    users.push({ name: u, online: true });
+            onlineUsersDetailed.forEach(u => {
+                if ((u.name || '').toLowerCase() !== chatDisplayName.toLowerCase()) {
+                    users.push({
+                        name: u.name,
+                        online: true,
+                        uid: u.uid || '',
+                        email: u.email || u.username || ''
+                    });
                 }
             });
 
             allRegisteredUsers.forEach(u => {
                 const firstName = u.firstName;
                 if (!onlineSet.has(firstName.toLowerCase()) && firstName.toLowerCase() !== chatDisplayName.toLowerCase()) {
-                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                    users.push({
+                        name: firstName,
+                        fullName: u.name,
+                        email: u.email,
+                        online: false,
+                        uid: u.uid || ''
+                    });
                 }
             });
 
@@ -2918,12 +3412,18 @@ Generated: ${new Date().toLocaleString()}`;
 
         function filterDMUsers() {
             const search = document.getElementById('dmUserSearch').value.toLowerCase();
-            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            const onlineSet = new Set(onlineUsersDetailed.map(u => (u.name || '').toLowerCase()));
             let users = [];
 
-            onlineUsers.forEach(u => {
-                if (u.toLowerCase() !== chatDisplayName.toLowerCase() && u.toLowerCase().includes(search)) {
-                    users.push({ name: u, online: true });
+            onlineUsersDetailed.forEach(u => {
+                const name = (u.name || '').toLowerCase();
+                if (name !== chatDisplayName.toLowerCase() && name.includes(search)) {
+                    users.push({
+                        name: u.name,
+                        online: true,
+                        uid: u.uid || '',
+                        email: u.email || u.username || ''
+                    });
                 }
             });
 
@@ -2932,7 +3432,13 @@ Generated: ${new Date().toLocaleString()}`;
                 if (!onlineSet.has(firstName.toLowerCase()) &&
                     firstName.toLowerCase() !== chatDisplayName.toLowerCase() &&
                     (firstName.toLowerCase().includes(search) || u.name.toLowerCase().includes(search))) {
-                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                    users.push({
+                        name: firstName,
+                        fullName: u.name,
+                        email: u.email,
+                        online: false,
+                        uid: u.uid || ''
+                    });
                 }
             });
 
@@ -2948,7 +3454,7 @@ Generated: ${new Date().toLocaleString()}`;
             }
 
             container.innerHTML = users.map(u => `
-                <div onclick="startDMConversation('${u.name}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
+                <div onclick="startDMConversation('${u.uid || ''}', '${u.name}', '${u.email || ''}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
                     <div>
                         <div style="font-weight: 600; color: #1a1a2e;">${u.name}${u.fullName && u.fullName !== u.name ? ` <span style="color:#888;font-weight:normal;font-size:12px;">(${u.fullName})</span>` : ''}</div>
                     </div>
@@ -2957,10 +3463,18 @@ Generated: ${new Date().toLocaleString()}`;
             `).join('');
         }
 
-        function startDMConversation(partnerName) {
+        function startDMConversation(partnerUid, partnerName, partnerEmail) {
+            const currentUid = getCurrentUserUid();
+            if (!currentUid || !partnerUid) {
+                showToast('This user is not available for DMs yet. Ask them to log in once so we can link their account.', 'warning');
+                return;
+            }
+
             currentDMConversation = {
                 partnerName: partnerName,
-                conversationId: getConversationId(chatDisplayName, partnerName)
+                partnerUid: partnerUid,
+                partnerEmail: partnerEmail || '',
+                conversationId: getConversationId(currentUid, partnerUid)
             };
 
             document.getElementById('dmConversationList').style.display = 'none';
@@ -2968,7 +3482,10 @@ Generated: ${new Date().toLocaleString()}`;
             document.getElementById('dmMessageView').style.display = 'flex';
             document.getElementById('dmPartnerName').textContent = partnerName;
 
-            const isOnline = onlineUsers.some(u => u.toLowerCase() === partnerName.toLowerCase());
+            const isOnline = onlineUsersDetailed.some(u =>
+                (u.uid && u.uid === partnerUid) ||
+                (u.name && u.name.toLowerCase() === partnerName.toLowerCase())
+            );
             const statusEl = document.getElementById('dmPartnerStatus');
             statusEl.textContent = isOnline ? 'online' : 'offline';
             statusEl.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
@@ -2990,6 +3507,12 @@ Generated: ${new Date().toLocaleString()}`;
 
             container.innerHTML = '<p style="color: #888; font-size: 12px;">Loading...</p>';
 
+            const currentUid = getCurrentUserUid();
+            if (!currentUid) {
+                container.innerHTML = '<p style="color: #888; font-size: 12px;">Please log in to view messages.</p>';
+                return;
+            }
+
             directMessagesRef.once('value', (snapshot) => {
                 dmConversations = [];
 
@@ -3000,23 +3523,19 @@ Generated: ${new Date().toLocaleString()}`;
                     if (!data) return;
 
                     const participants = data.participants || {};
-                    const isParticipant = Object.values(participants).some(p =>
-                        p && (p.toLowerCase() === chatDisplayName.toLowerCase() ||
-                        p.toLowerCase() === chatCurrentUsername.toLowerCase())
-                    );
+                    if (!participants[currentUid]) return;
 
-                    if (isParticipant && data.lastMessage) {
-                        let partnerName = '';
-                        Object.values(participants).forEach(p => {
-                            if (p && p.toLowerCase() !== chatDisplayName.toLowerCase() &&
-                                p.toLowerCase() !== chatCurrentUsername.toLowerCase()) {
-                                partnerName = p;
-                            }
-                        });
+                    if (data.lastMessage) {
+                        const partnerUid = Object.keys(participants).find(uid => uid !== currentUid);
+                        const partner = partnerUid ? (participants[partnerUid] || {}) : {};
+                        const partnerName = partner.displayName || partner.name || 'Unknown';
+                        const partnerEmail = partner.email || '';
 
                         dmConversations.push({
                             conversationId: convId,
+                            partnerUid: partnerUid || '',
                             partnerName: partnerName,
+                            partnerEmail: partnerEmail,
                             lastMessage: data.lastMessage,
                             unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
                         });
@@ -3040,18 +3559,18 @@ Generated: ${new Date().toLocaleString()}`;
             container.innerHTML = dmConversations.map(conv => {
                 const time = conv.lastMessage ? formatTime(conv.lastMessage.timestamp) : '';
                 const preview = conv.lastMessage ? (conv.lastMessage.text || '').substring(0, 40) + (conv.lastMessage.text?.length > 40 ? '...' : '') : '';
-                const isUnread = conv.unread && conv.lastMessage?.sender !== chatDisplayName;
+                const isUnread = conv.unread && conv.lastMessage?.senderUid !== getCurrentUserUid();
                 if (isUnread) totalUnread++;
 
                 return `
-                    <div onclick="startDMConversation('${conv.partnerName}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
+                    <div onclick="startDMConversation('${conv.partnerUid || ''}', '${conv.partnerName}', '${conv.partnerEmail || ''}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: ${isUnread ? '700' : '600'}; color: #1a1a2e; margin-bottom: 4px;">
                                     ${isUnread ? '● ' : ''}${conv.partnerName}
                                 </div>
                                 <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${conv.lastMessage?.sender === chatDisplayName ? 'You: ' : ''}${preview}
+                                    ${conv.lastMessage?.senderUid === getCurrentUserUid() ? 'You: ' : ''}${preview}
                                 </div>
                             </div>
                             <div style="font-size: 10px; color: #888; white-space: nowrap; margin-left: 10px;">
@@ -3098,12 +3617,14 @@ Generated: ${new Date().toLocaleString()}`;
                 });
 
                 let html = '';
+                const currentUid = getCurrentUserUid();
                 messages.forEach(msg => {
-                    const isMe = msg.senderName === chatDisplayName || msg.sender === chatCurrentUsername;
+                    const isMe = msg.senderUid ? msg.senderUid === currentUid : (msg.senderName === chatDisplayName || msg.sender === chatCurrentUsername);
+                    const senderLabel = isMe ? 'You' : (msg.senderName || msg.sender || 'User');
 
                     html += `
                         <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.senderName}</div>
+                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${senderLabel}</div>
                             <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
                                 ${(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                             </div>
@@ -3142,9 +3663,17 @@ Generated: ${new Date().toLocaleString()}`;
 
             const conversationId = currentDMConversation.conversationId;
             const partnerName = currentDMConversation.partnerName;
+            const partnerUid = currentDMConversation.partnerUid;
+            const partnerEmail = currentDMConversation.partnerEmail || '';
+            const currentUid = getCurrentUserUid();
+            if (!currentUid || !partnerUid) {
+                showToast('Unable to send DM (missing user ID). Please refresh and try again.', 'warning');
+                return;
+            }
 
             const messageData = {
-                sender: chatCurrentUsername,
+                senderUid: currentUid,
+                senderEmail: chatCurrentUsername,
                 senderName: chatDisplayName,
                 text: text,
                 timestamp: Date.now(),
@@ -3155,15 +3684,16 @@ Generated: ${new Date().toLocaleString()}`;
                 directMessagesRef.child(conversationId + '/messages').push(messageData)
                     .catch(err => console.error('Error sending DM:', err));
 
-                directMessagesRef.child(conversationId + '/participants').set({
-                    user1: chatDisplayName,
-                    user2: partnerName
-                });
+                const participantsData = {};
+                participantsData[currentUid] = { displayName: chatDisplayName, email: chatCurrentUsername };
+                participantsData[partnerUid] = { displayName: partnerName, email: partnerEmail };
+                directMessagesRef.child(conversationId + '/participants').set(participantsData);
 
                 directMessagesRef.child(conversationId + '/lastMessage').set({
                     text: text,
                     timestamp: Date.now(),
-                    sender: chatDisplayName
+                    senderUid: currentUid,
+                    senderName: chatDisplayName
                 });
 
                 input.value = '';
@@ -3178,10 +3708,12 @@ Generated: ${new Date().toLocaleString()}`;
             localStorage.setItem('dmLastRead', JSON.stringify(dmLastReadTimestamps));
 
             if (snapshot && snapshot.exists()) {
+                const currentUid = getCurrentUserUid();
                 snapshot.forEach((child) => {
                     const msg = child.val();
                     const msgKey = child.key;
-                    if (msg && !msg.read && msg.senderName !== chatDisplayName && msg.sender !== chatCurrentUsername) {
+                    const isMine = msg && msg.senderUid ? msg.senderUid === currentUid : (msg.senderName === chatDisplayName || msg.sender === chatCurrentUsername);
+                    if (msg && !msg.read && !isMine) {
                         directMessagesRef.child(conversationId + '/messages/' + msgKey + '/read').set(true)
                             .catch(err => console.error('Error marking message as read:', err));
                     }
@@ -3191,12 +3723,50 @@ Generated: ${new Date().toLocaleString()}`;
             let totalUnread = 0;
             dmConversations.forEach(conv => {
                 if (conv.conversationId !== conversationId) {
-                    if (conv.unread && conv.lastMessage?.sender !== chatDisplayName) {
+                    if (conv.unread && conv.lastMessage?.senderUid !== getCurrentUserUid()) {
                         totalUnread++;
                     }
                 }
             });
             updateDMBadge(totalUnread);
+        }
+
+        async function runDMSelfTest() {
+            const uid = getCurrentUserUid();
+            const email = getCurrentUserEmail();
+            if (!uid) {
+                showToast('Please log in to run the DM test.', 'warning');
+                return;
+            }
+
+            const convId = 'selftest_' + uid;
+            const convRef = directMessagesRef.child(convId);
+            const participantsData = {};
+            participantsData[uid] = { displayName: chatDisplayName, email: email };
+
+            const messageData = {
+                senderUid: uid,
+                senderEmail: email,
+                senderName: chatDisplayName,
+                text: 'DM self-test at ' + new Date().toLocaleTimeString(),
+                timestamp: Date.now(),
+                read: true
+            };
+
+            try {
+                await convRef.child('participants').set(participantsData);
+                await convRef.child('messages').push(messageData);
+                const snap = await convRef.child('messages').limitToLast(1).once('value');
+                if (snap.exists()) {
+                    showToast('DM self-test passed.', 'success');
+                } else {
+                    showToast('DM self-test failed. Check rules.', 'error');
+                }
+                try { await convRef.remove(); } catch (e) {}
+            } catch (e) {
+                console.error('DM self-test error:', e);
+                showToast('DM self-test failed: ' + e.message, 'error');
+            }
         }
 
         function setupDMListener() {
@@ -3209,14 +3779,15 @@ Generated: ${new Date().toLocaleString()}`;
                         if (!data) return;
 
                         const participants = data.participants || {};
-                        const isParticipant = Object.values(participants).some(p =>
-                            p && (p.toLowerCase() === chatDisplayName.toLowerCase() ||
-                            p.toLowerCase() === chatCurrentUsername.toLowerCase())
-                        );
+                        const currentUid = getCurrentUserUid();
+                        if (!currentUid || !participants[currentUid]) return;
 
-                        if (!isParticipant) return;
+                        const partnerUid = Object.keys(participants).find(uid => uid !== currentUid);
+                        const partner = partnerUid ? (participants[partnerUid] || {}) : {};
+                        const partnerName = partner.displayName || partner.name || 'Unknown';
+                        const partnerEmail = partner.email || '';
 
-                        if (data.lastMessage && data.lastMessage.sender !== chatDisplayName) {
+                        if (data.lastMessage && data.lastMessage.senderUid !== currentUid) {
                             const lastRead = dmLastReadTimestamps[convId] || 0;
                             if (data.lastMessage.timestamp > lastRead) {
                                 if (!chatOpen || chatMode !== 'dm' || currentDMConversation?.conversationId !== convId) {
@@ -3224,7 +3795,7 @@ Generated: ${new Date().toLocaleString()}`;
 
                                     if (notificationsEnabled && Notification.permission === 'granted') {
                                         try {
-                                            const notification = new Notification('New DM from ' + data.lastMessage.sender, {
+                                            const notification = new Notification('New DM from ' + partnerName, {
                                                 body: (data.lastMessage.text || '').substring(0, 100),
                                                 tag: 'bsn9b-dm-' + convId
                                             });
@@ -3232,7 +3803,7 @@ Generated: ${new Date().toLocaleString()}`;
                                                 window.focus();
                                                 if (!chatOpen) toggleChat();
                                                 switchChatMode('dm');
-                                                startDMConversation(data.lastMessage.sender);
+                                                startDMConversation(partnerUid || '', partnerName, partnerEmail);
                                                 notification.close();
                                             };
                                         } catch (notifErr) {
@@ -3262,6 +3833,8 @@ Generated: ${new Date().toLocaleString()}`;
         myPresence.set({
             user: chatDisplayName,
             username: chatCurrentUsername,
+            uid: getCurrentUserUid(),
+            email: getCurrentUserEmail(),
             online: true
         });
         myPresence.onDisconnect().remove();
@@ -3274,16 +3847,24 @@ Generated: ${new Date().toLocaleString()}`;
 
         // Store online users for @mention autocomplete
         let onlineUsers = [];
+        let onlineUsersDetailed = [];
 
         presenceRef.on('value', (snapshot) => {
             const count = snapshot.numChildren();
             document.getElementById('onlineCount').textContent = count + ' online (click to see)';
 
             onlineUsers = [];
+            onlineUsersDetailed = [];
             snapshot.forEach((child) => {
                 const data = child.val();
                 if (data.user) {
                     onlineUsers.push(data.user);
+                    onlineUsersDetailed.push({
+                        name: data.user,
+                        uid: data.uid || '',
+                        email: data.email || '',
+                        username: data.username || ''
+                    });
                 }
             });
 
@@ -3315,6 +3896,8 @@ Generated: ${new Date().toLocaleString()}`;
                     if (Date.now() - timestamp < USER_CACHE_EXPIRY) {
                         allRegisteredUsers = users;
                         console.log('Loaded', allRegisteredUsers.length, 'users from cache');
+                        await loadUserProfiles();
+                        addUidsToRegisteredUsers();
                         return;
                     }
                 }
@@ -3337,6 +3920,8 @@ Generated: ${new Date().toLocaleString()}`;
                         timestamp: Date.now()
                     }));
                     console.log('Loaded', allRegisteredUsers.length, 'users from API, cached');
+                    await loadUserProfiles();
+                    addUidsToRegisteredUsers();
                 }
             } catch (e) {
                 console.log('Could not fetch users for @mention:', e);
@@ -3345,6 +3930,8 @@ Generated: ${new Date().toLocaleString()}`;
                 if (cached) {
                     allRegisteredUsers = JSON.parse(cached).users || [];
                     console.log('Using expired cache as fallback');
+                    await loadUserProfiles();
+                    addUidsToRegisteredUsers();
                 }
             }
         }

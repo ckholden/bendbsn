@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Resources to cache for offline use
@@ -62,6 +62,12 @@ self.addEventListener('fetch', (event) => {
 
     // Skip cross-origin requests (Firebase, APIs, etc.)
     if (!event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+
+    // Always fetch admin fresh to avoid stale cached UI
+    if (event.request.url.includes('/admin/')) {
+        event.respondWith(fetch(event.request));
         return;
     }
 

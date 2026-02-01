@@ -253,6 +253,16 @@
                         <input type="text" id="regName" placeholder="e.g. Jane Smith" required>
                     </div>
                     <div class="form-group">
+                        <label for="regRole">Role</label>
+                        <select id="regRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;">
+                            <option value="" disabled selected>Select your role</option>
+                            <option value="RN Student">RN Student</option>
+                            <option value="Instructor">Instructor</option>
+                            <option value="RN">RN</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="regEmail">Email</label>
                         <input type="email" id="regEmail" placeholder="your.email@example.com" required>
                     </div>
@@ -291,6 +301,16 @@
                     <div class="form-group">
                         <label for="createName">Full Name</label>
                         <input type="text" id="createName" placeholder="e.g. Jane Smith" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="createRole">Role</label>
+                        <select id="createRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;">
+                            <option value="" disabled selected>Select your role</option>
+                            <option value="RN Student">RN Student</option>
+                            <option value="Instructor">Instructor</option>
+                            <option value="RN">RN</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="createEmail">Email</label>
@@ -612,6 +632,7 @@
             event.preventDefault();
 
             const name = document.getElementById('regName').value.trim();
+            const role = document.getElementById('regRole').value;
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const regBtn = document.getElementById('regBtn');
@@ -640,6 +661,14 @@
                 // Update display name in Firebase
                 await user.updateProfile({ displayName: name });
 
+                // Save user profile to Firebase for role/DM usage
+                await database.ref('userProfiles/' + user.uid).set({
+                    displayName: name,
+                    email: email,
+                    role: role,
+                    createdAt: Date.now()
+                });
+
                 // Save user profile to Google Sheet (no password stored)
                 const params = new URLSearchParams({
                     action: 'addUser',
@@ -647,18 +676,20 @@
                     password: '[Firebase Auth]', // Placeholder - password handled by Firebase
                     status: 'approved',
                     name: name,
-                    email: email
+                    email: email,
+                    role: role
                 });
                 await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
                 // Send email notification to admin
-                await sendEmailNotification(name, email, email, 'new_registration');
+                await sendEmailNotification(name, email, email, 'new_registration', role);
 
                 // Send welcome email to new user
                 await sendWelcomeEmail(name, email);
 
                 // Clear form and close modal
                 document.getElementById('regName').value = '';
+                document.getElementById('regRole').value = '';
                 document.getElementById('regEmail').value = '';
                 document.getElementById('regPassword').value = '';
                 regBtn.disabled = false;
@@ -697,6 +728,7 @@
             event.preventDefault();
 
             const name = document.getElementById('createName').value.trim();
+            const role = document.getElementById('createRole').value;
             const email = document.getElementById('createEmail').value.trim();
             const username = document.getElementById('createUsername').value.toLowerCase().trim();
             const password = document.getElementById('createPassword').value;
@@ -733,13 +765,14 @@
                     password: hashedPassword,
                     status: status,
                     name: name,
-                    email: email
+                    email: email,
+                    role: role
                 });
 
                 await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
                 // Send email notification to admin for auditing
-                await sendEmailNotification(name, email, username, 'new_registration');
+                await sendEmailNotification(name, email, username, 'new_registration', role);
 
                 successMsg.textContent = 'Account created! Welcome, ' + name.split(' ')[0] + '!';
                 successMsg.classList.add('show');
@@ -821,7 +854,7 @@
             return false;
         }
 
-        async function sendEmailNotification(name, email, username, type) {
+        async function sendEmailNotification(name, email, username, type, role) {
             const adminUrl = 'https://bendbsn.com/app.html?admin=true';
             let subject;
             if (type === 'auto_approved') {
@@ -848,6 +881,7 @@
 Name: ${name}
 Email: ${email}
 Username: ${username}
+Role: ${role || 'N/A'}
 
 This user was automatically approved. No action needed.
 
@@ -858,6 +892,7 @@ View all users: ${adminUrl}`;
 
 Name: ${name}
 Email: ${email}
+Role: ${role || 'N/A'}
 
 This user has been auto-approved and can now log in.
 
@@ -924,14 +959,24 @@ Review users anytime: ${adminUrl}`;
 
             // Log to Firebase (existing)
             const loginRef = database.ref('loginHistory');
-            loginRef.push({
+            const payload = {
                 username: username,
                 displayName: displayName || username,
                 timestamp: timestamp,
                 date: new Date().toLocaleString(),
                 success: success,
                 userAgent: navigator.userAgent.substring(0, 100)
-            });
+            };
+
+            if (success) {
+                const sessionRef = loginRef.push();
+                sessionRef.set(payload);
+                localStorage.setItem('bsn9b_session_key', sessionRef.key || '');
+                localStorage.setItem('bsn9b_session_start', String(timestamp));
+                localStorage.removeItem('bsn9b_session_end_sent');
+            } else {
+                loginRef.push(payload);
+            }
 
             // Also log to Google Sheet LoginHistory tab
             try {

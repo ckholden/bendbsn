@@ -1,0 +1,60 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "chat": {
+      "channels": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.token.email == \"christiankholden@gmail.com\" || auth.token.email == \"holdenc\")"
+      },
+      "messages": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      },
+      "presence": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "directMessages": {
+      "$convId": {
+        ".read": "auth != null && data.child('participants').child(auth.uid).exists()",
+        ".write": "auth != null && (!data.exists() ? newData.child('participants').child(auth.uid).exists() : data.child('participants').child(auth.uid).exists() || newData.child('participants').child(auth.uid).exists())"
+      }
+    },
+    "community": {
+      "posts": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "userDocuments": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "userProfiles": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "announcements": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\""
+    },
+    "banned": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\""
+    },
+    "globalPhrases": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\""
+    },
+    "loginHistory": {
+      ".read": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+      ".write": "auth != null"
+    }
+  }
+}

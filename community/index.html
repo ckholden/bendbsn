@@ -177,6 +177,21 @@
             background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, var(--bg-secondary) 100%);
         }
 
+        .post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .tag-chip {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-weight: 600;
+        }
+
         .post-header {
             display: flex;
             justify-content: space-between;
@@ -210,6 +225,25 @@
         .badge-nclex { background: #fce7f3; color: #9d174d; }
         .badge-question { background: #e0e7ff; color: #3730a3; }
         .badge-general { background: #f3f4f6; color: #374151; }
+
+        .tag-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .tag-select label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+        .tag-select input { accent-color: #7c3aed; }
 
         /* Replies/Comments Section */
         .replies-section {
@@ -813,11 +847,11 @@
                 <span>+</span> Create Post
             </button>
 
-            <!-- Pinned Section -->
+            <!-- Bulletin Board Section -->
             <div id="pinnedSection" style="display: none;">
                 <div class="section-header">
-                    <span>&#128204;</span>
-                    <h2>Pinned</h2>
+                    <span>&#128227;</span>
+                    <h2>Bulletin Board</h2>
                 </div>
                 <div id="pinnedPosts"></div>
             </div>
@@ -857,6 +891,18 @@
                     <option value="question">Questions</option>
                     <option value="general">General</option>
                 </select>
+
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Tags (optional)</label>
+                <div class="tag-select" id="postTags">
+                    <label><input type="checkbox" value="clinical"> Clinical</label>
+                    <label><input type="checkbox" value="meds"> Meds</label>
+                    <label><input type="checkbox" value="care-plans"> Care Plans</label>
+                    <label><input type="checkbox" value="nclex"> NCLEX</label>
+                    <label><input type="checkbox" value="skills"> Skills</label>
+                    <label><input type="checkbox" value="documentation"> Documentation</label>
+                    <label><input type="checkbox" value="rotations"> Rotations</label>
+                    <label><input type="checkbox" value="study"> Study</label>
+                </div>
 
                 <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Content</label>
                 <textarea id="postContent" required placeholder="Share your thoughts, tips, or questions..."></textarea>
@@ -913,6 +959,18 @@
                     <option value="question">Questions</option>
                     <option value="general">General</option>
                 </select>
+
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Tags (optional)</label>
+                <div class="tag-select" id="editPostTags">
+                    <label><input type="checkbox" value="clinical"> Clinical</label>
+                    <label><input type="checkbox" value="meds"> Meds</label>
+                    <label><input type="checkbox" value="care-plans"> Care Plans</label>
+                    <label><input type="checkbox" value="nclex"> NCLEX</label>
+                    <label><input type="checkbox" value="skills"> Skills</label>
+                    <label><input type="checkbox" value="documentation"> Documentation</label>
+                    <label><input type="checkbox" value="rotations"> Rotations</label>
+                    <label><input type="checkbox" value="study"> Study</label>
+                </div>
 
                 <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Content</label>
                 <textarea id="editPostContent" required placeholder="Share your thoughts, tips, or questions..."></textarea>
@@ -1055,6 +1113,13 @@
 
             <!-- GROUP CHAT VIEW -->
             <div id="groupChatView" role="tabpanel" aria-labelledby="tabGroupChat" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="padding: 10px 12px; background: #eef2f7; border-bottom: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center;">
+                    <select id="channelSelect" onchange="handleChannelChange(this.value)" style="flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; background: white;">
+                        <option value="general">General</option>
+                    </select>
+                    <button id="createChannelBtn" onclick="createChannel()" title="Create channel" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: #1f4e79; color: white; font-size: 16px; cursor: pointer;">+</button>
+                    <button id="deleteChannelBtn" onclick="deleteChannel()" title="Delete channel" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: #ef4444; color: white; font-size: 14px; cursor: pointer; display: none;">🗑</button>
+                </div>
                 <!-- Chat Messages -->
                 <div id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc;">
                     <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
@@ -1078,6 +1143,11 @@
                     <div style="margin-bottom: 15px;">
                         <button onclick="showNewDMSelector()" aria-label="Start new direct message" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;">
                             <span aria-hidden="true">✏️</span> New Message
+                        </button>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <button onclick="runDMSelfTest()" aria-label="Run DM self test" style="width: 100%; padding: 10px; background: #f1f5f9; color: #1f4e79; border: 1px dashed #cbd5e1; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                            DM Self-Test (safe)
                         </button>
                     </div>
                     <div id="dmConversations" style="color: #888; font-size: 12px; text-align: center;">
@@ -1173,11 +1243,59 @@
         const database = firebase.database();
         const postsRef = database.ref('community/posts');
 
+        const SESSION_KEY = 'bsn9b_session_key';
+        const SESSION_START_KEY = 'bsn9b_session_start';
+        const SESSION_HEARTBEAT_MS = 60000;
+        let sessionHeartbeatTimer = null;
+
+        function updateSessionHeartbeat() {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            database.ref('loginHistory/' + sessionKey).update({
+                lastSeen: Date.now()
+            }).catch(() => {});
+        }
+
+        function startSessionHeartbeat() {
+            updateSessionHeartbeat();
+            if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+            sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+        }
+
+        function endSessionTracking(reason) {
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
+            const end = Date.now();
+            const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
+            const durationMinutes = durationSeconds !== null ? Math.round(durationSeconds / 60) : null;
+            localStorage.setItem('bsn9b_session_end_sent', 'true');
+            database.ref('loginHistory/' + sessionKey).update({
+                sessionEnd: end,
+                durationSeconds: durationSeconds,
+                durationMinutes: durationMinutes,
+                endReason: reason || 'logout'
+            }).catch(() => {});
+        }
+
+        function clearSessionTracking() {
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(SESSION_START_KEY);
+            localStorage.removeItem('bsn9b_session_end_sent');
+        }
+
         // ========== CHAT SYSTEM (INLINE FROM /app/) ==========
-        const chatRef = database.ref('chat/messages');
+        const channelsRef = database.ref('chat/channels');
+        const chatRootRef = database.ref('chat/messages');
+        let chatRef = null;
+        let chatListenerAttached = false;
+        let currentChannelId = localStorage.getItem('bsn9b_chat_channel') || 'general';
+        let channelsCache = {};
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
+        const userProfilesRef = database.ref('userProfiles');
 
         // Listen for announcements (alert/fyi banners - inside header)
         function setupAnnouncementListener() {
@@ -1214,8 +1332,30 @@
         console.log('Firebase initialized, chatRef path:', chatRef.toString());
 
         // Get display name (first name) - stored when user logs in
-        const currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
-        const displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
+        let currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
+        let displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
+        let currentUserUid = localStorage.getItem('bsn9b_uid') || '';
+
+        function getCurrentUserEmail() {
+            return currentUsername || auth.currentUser?.email || localStorage.getItem('bsn9b_user') || '';
+        }
+
+        function getCurrentUserUid() {
+            return currentUserUid || auth.currentUser?.uid || localStorage.getItem('bsn9b_uid') || '';
+        }
+
+        function syncUserProfile(user) {
+            if (!user) return;
+            const email = user.email || getCurrentUserEmail();
+            const name = displayName || user.displayName || (email ? email.split('@')[0] : 'User');
+            const firstName = name.split(' ')[0] || name;
+            userProfilesRef.child(user.uid).update({
+                email: email,
+                displayName: name,
+                firstName: firstName,
+                updatedAt: Date.now()
+            });
+        }
 
         // Verify Firebase Auth state and re-authenticate if needed
         let firebaseAuthReady = false;
@@ -1223,6 +1363,15 @@
             if (user) {
                 console.log('Firebase Auth: Logged in as', user.email);
                 firebaseAuthReady = true;
+                currentUserUid = user.uid;
+                currentUsername = user.email || currentUsername;
+                if (user.displayName) {
+                    displayName = user.displayName;
+                }
+                localStorage.setItem('bsn9b_uid', currentUserUid);
+                localStorage.setItem('bsn9b_user', currentUsername);
+                localStorage.setItem('bsn9b_displayName', displayName);
+                syncUserProfile(user);
             } else {
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
                 if (localStorage.getItem('bsn9b_auth') === 'true') {
@@ -1259,7 +1408,21 @@
         // Chat state
         let chatOpen = false;
         let unreadCount = 0;
-        let lastReadTimestamp = parseInt(localStorage.getItem('chatLastRead') || '0');
+        let lastReadByChannel = JSON.parse(localStorage.getItem('chatLastReadByChannel') || '{}');
+
+        function getLastReadTimestamp(channelId) {
+            return parseInt(lastReadByChannel[channelId] || '0');
+        }
+
+        function setLastReadTimestamp(channelId, value) {
+            lastReadByChannel[channelId] = value.toString();
+            localStorage.setItem('chatLastReadByChannel', JSON.stringify(lastReadByChannel));
+        }
+
+        function isAdminUser() {
+            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
+            return adminEmails.includes((currentUsername || '').toLowerCase());
+        }
 
         // Notification preferences (sound ON by default, browser notifications OFF by default)
         let soundEnabled = localStorage.getItem('chatSoundEnabled') !== 'false';
@@ -1379,7 +1542,129 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateSoundToggleUI();
             updateNotificationToggleUI();
+            startSessionHeartbeat();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') updateSessionHeartbeat();
+            });
         });
+
+        function sanitizeChannelName(name) {
+            return (name || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
+                .slice(0, 24);
+        }
+
+        function updateChatTitle() {
+            const title = document.getElementById('chatTitle');
+            if (title) {
+                const channelName = channelsCache[currentChannelId]?.name || 'General';
+                title.textContent = `BSN9B Chat · #${channelName}`;
+            }
+        }
+
+        function updateChannelSelect() {
+            const select = document.getElementById('channelSelect');
+            if (!select) return;
+            const entries = Object.entries(channelsCache);
+            const list = entries.length ? entries : [['general', { name: 'General' }]];
+            select.innerHTML = list
+                .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                .map(([id, ch]) => `<option value="${id}">${ch.name}</option>`)
+                .join('');
+            select.value = currentChannelId;
+
+            const deleteBtn = document.getElementById('deleteChannelBtn');
+            if (deleteBtn) {
+                deleteBtn.style.display = isAdminUser() && currentChannelId !== 'general' ? 'inline-flex' : 'none';
+            }
+            const createBtn = document.getElementById('createChannelBtn');
+            if (createBtn) {
+                createBtn.style.display = isAdminUser() ? 'inline-flex' : 'none';
+            }
+        }
+
+        function attachChatRef() {
+            if (chatRef && chatListenerAttached) {
+                chatRef.off();
+                chatListenerAttached = false;
+            }
+            chatRef = chatRootRef.child(currentChannelId);
+        }
+
+        function setChannel(channelId) {
+            if (!channelId) return;
+            currentChannelId = channelId;
+            localStorage.setItem('bsn9b_chat_channel', currentChannelId);
+            attachChatRef();
+            updateChatTitle();
+            updateChannelSelect();
+            setupChatListener();
+            cleanupOldMessages();
+        }
+
+        function handleChannelChange(value) {
+            setChannel(value);
+        }
+
+        function createChannel() {
+            if (!isAdminUser()) {
+                showToast('Only admins can create channels.', 'warning');
+                return;
+            }
+            const name = prompt('Channel name (e.g., meds, clinical, nclex):');
+            if (!name) return;
+            const id = sanitizeChannelName(name);
+            if (!id) {
+                showToast('Invalid channel name.', 'warning');
+                return;
+            }
+            channelsRef.child(id).set({
+                name: name.trim(),
+                createdAt: Date.now(),
+                createdBy: currentUsername
+            }).then(() => {
+                setChannel(id);
+            }).catch(err => {
+                console.error('Create channel failed:', err);
+                showToast('Failed to create channel.', 'error');
+            });
+        }
+
+        function deleteChannel() {
+            if (!isAdminUser()) return;
+            if (currentChannelId === 'general') {
+                showToast('General cannot be deleted.', 'warning');
+                return;
+            }
+            if (!confirm('Delete this channel and all its messages?')) return;
+            const id = currentChannelId;
+            const msgRef = chatRootRef.child(id);
+            Promise.all([
+                channelsRef.child(id).remove(),
+                msgRef.remove()
+            ]).then(() => {
+                setChannel('general');
+            }).catch(err => {
+                console.error('Delete channel failed:', err);
+                showToast('Failed to delete channel.', 'error');
+            });
+        }
+
+        function loadChannels() {
+            channelsRef.on('value', (snapshot) => {
+                channelsCache = snapshot.val() || {};
+                if (!channelsCache.general) {
+                    channelsCache.general = { name: 'General' };
+                }
+                updateChannelSelect();
+                if (!channelsCache[currentChannelId]) {
+                    currentChannelId = 'general';
+                }
+                setChannel(currentChannelId);
+            });
+        }
 
         // Toggle chat
         function toggleChat() {
@@ -1391,8 +1676,7 @@
                 chatBox.style.flexDirection = 'column';
                 unreadCount = 0;
                 document.getElementById('chatBadge').style.display = 'none';
-                lastReadTimestamp = Date.now();
-                localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                setLastReadTimestamp(currentChannelId, Date.now());
                 document.getElementById('chatInput').focus();
                 scrollToBottom();
             } else {
@@ -1412,8 +1696,7 @@
             if (!message) return;
 
             // Admin commands (admin emails only)
-            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
-            if (adminEmails.includes(currentUsername.toLowerCase())) {
+            if (isAdminUser()) {
                 // Alert command: alert/message or alert/clear
                 if (message.toLowerCase().startsWith('alert/')) {
                     const alertMsg = message.substring(6).trim();
@@ -1528,6 +1811,7 @@
         // Clean up old messages (older than 7 days)
         function cleanupOldMessages() {
             const cutoff = Date.now() - MESSAGE_RETENTION_MS;
+            if (!chatRef) return;
             chatRef.once('value', (snapshot) => {
                 snapshot.forEach((child) => {
                     const msg = child.val();
@@ -1545,7 +1829,13 @@
         // Listen for messages
         function setupChatListener() {
             console.log('Setting up chat listener...');
+            if (!chatRef) return;
+            if (chatListenerAttached) {
+                chatRef.off();
+                chatListenerAttached = false;
+            }
             chatRef.on('value', (snapshot) => {
+                chatListenerAttached = true;
                 console.log('=== CHAT LISTENER FIRED ===');
                 console.log('Snapshot exists:', snapshot.exists());
                 console.log('Snapshot numChildren:', snapshot.numChildren());
@@ -1596,7 +1886,7 @@
 
                 messages.forEach((msg) => {
                     const isMe = msg.user === displayName || msg.username === currentUsername;
-                    const isNew = msg.timestamp > lastReadTimestamp;
+                    const isNew = msg.timestamp > getLastReadTimestamp(currentChannelId);
 
                     if (isNew && !chatOpen) newMessages++;
 
@@ -1645,7 +1935,7 @@
         }
 
         // Initialize chat listener
-        setupChatListener();
+        loadChannels();
 
         // Monitor Firebase connection state
         const connectedRef = database.ref('.info/connected');
@@ -1673,9 +1963,46 @@
         let dmUnreadCount = 0;
         let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
         const directMessagesRef = database.ref('directMessages');
+        let userProfilesByUid = {};
+        let userProfilesByEmail = {};
+        let userProfilesByName = {};
 
-        function getConversationId(email1, email2) {
-            return [email1, email2].sort().join('_').replace(/[.@]/g, '_');
+        function rebuildUserProfileIndexes(profiles) {
+            userProfilesByUid = {};
+            userProfilesByEmail = {};
+            userProfilesByName = {};
+            if (!profiles) return;
+
+            Object.keys(profiles).forEach((uid) => {
+                const profile = profiles[uid] || {};
+                const email = (profile.email || '').toLowerCase();
+                const name = (profile.displayName || profile.firstName || '').toLowerCase();
+                userProfilesByUid[uid] = profile;
+                if (email) userProfilesByEmail[email] = { uid: uid, ...profile };
+                if (name) userProfilesByName[name] = { uid: uid, ...profile };
+            });
+        }
+
+        async function loadUserProfiles() {
+            try {
+                const snap = await userProfilesRef.once('value');
+                rebuildUserProfileIndexes(snap.val());
+            } catch (e) {
+                console.warn('Failed to load user profiles:', e);
+            }
+        }
+
+        function addUidsToRegisteredUsers() {
+            allRegisteredUsers = allRegisteredUsers.map((u) => {
+                const email = (u.email || '').toLowerCase();
+                const name = (u.firstName || u.name || '').toLowerCase();
+                const profile = userProfilesByEmail[email] || userProfilesByName[name];
+                return { ...u, uid: profile?.uid || '' };
+            });
+        }
+
+        function getConversationId(uid1, uid2) {
+            return [uid1, uid2].sort().join('_');
         }
 
         function switchChatMode(mode) {
@@ -1705,8 +2032,7 @@
 
                     unreadCount = 0;
                     document.getElementById('chatBadge').style.display = 'none';
-                    lastReadTimestamp = Date.now();
-                    localStorage.setItem('chatLastRead', lastReadTimestamp.toString());
+                    setLastReadTimestamp(currentChannelId, Date.now());
                 } else {
                     groupView.style.display = 'none';
                     dmView.style.display = 'flex';
@@ -1744,21 +2070,34 @@
             showDMConversationList();
         }
 
-        function loadDMUserList() {
+        async function loadDMUserList() {
             const container = document.getElementById('dmUserList');
-            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            await loadUserProfiles();
+            addUidsToRegisteredUsers();
+            const onlineSet = new Set(onlineUsersDetailed.map(u => (u.name || '').toLowerCase()));
             let users = [];
 
-            onlineUsers.forEach(u => {
-                if (u.toLowerCase() !== displayName.toLowerCase()) {
-                    users.push({ name: u, online: true });
+            onlineUsersDetailed.forEach(u => {
+                if ((u.name || '').toLowerCase() !== displayName.toLowerCase()) {
+                    users.push({
+                        name: u.name,
+                        online: true,
+                        uid: u.uid || '',
+                        email: u.email || u.username || ''
+                    });
                 }
             });
 
             allRegisteredUsers.forEach(u => {
                 const firstName = u.firstName;
                 if (!onlineSet.has(firstName.toLowerCase()) && firstName.toLowerCase() !== displayName.toLowerCase()) {
-                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                    users.push({
+                        name: firstName,
+                        fullName: u.name,
+                        email: u.email,
+                        online: false,
+                        uid: u.uid || ''
+                    });
                 }
             });
 
@@ -1767,12 +2106,18 @@
 
         function filterDMUsers() {
             const search = document.getElementById('dmUserSearch').value.toLowerCase();
-            const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
+            const onlineSet = new Set(onlineUsersDetailed.map(u => (u.name || '').toLowerCase()));
             let users = [];
 
-            onlineUsers.forEach(u => {
-                if (u.toLowerCase() !== displayName.toLowerCase() && u.toLowerCase().includes(search)) {
-                    users.push({ name: u, online: true });
+            onlineUsersDetailed.forEach(u => {
+                const name = (u.name || '').toLowerCase();
+                if (name !== displayName.toLowerCase() && name.includes(search)) {
+                    users.push({
+                        name: u.name,
+                        online: true,
+                        uid: u.uid || '',
+                        email: u.email || u.username || ''
+                    });
                 }
             });
 
@@ -1781,7 +2126,13 @@
                 if (!onlineSet.has(firstName.toLowerCase()) &&
                     firstName.toLowerCase() !== displayName.toLowerCase() &&
                     (firstName.toLowerCase().includes(search) || u.name.toLowerCase().includes(search))) {
-                    users.push({ name: firstName, fullName: u.name, email: u.email, online: false });
+                    users.push({
+                        name: firstName,
+                        fullName: u.name,
+                        email: u.email,
+                        online: false,
+                        uid: u.uid || ''
+                    });
                 }
             });
 
@@ -1797,7 +2148,7 @@
             }
 
             container.innerHTML = users.map(u => `
-                <div onclick="startDMConversation('${u.name}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
+                <div onclick="startDMConversation('${u.uid || ''}', '${u.name}', '${u.email || ''}')" style="padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='#e2e8f0'">
                     <div>
                         <div style="font-weight: 600; color: #1a1a2e;">${u.name}${u.fullName && u.fullName !== u.name ? ` <span style="color:#888;font-weight:normal;font-size:12px;">(${u.fullName})</span>` : ''}</div>
                     </div>
@@ -1806,10 +2157,18 @@
             `).join('');
         }
 
-        function startDMConversation(partnerName) {
+        function startDMConversation(partnerUid, partnerName, partnerEmail) {
+            const currentUid = getCurrentUserUid();
+            if (!currentUid || !partnerUid) {
+                showToast('This user is not available for DMs yet. Ask them to log in once so we can link their account.', 'warning');
+                return;
+            }
+
             currentDMConversation = {
                 partnerName: partnerName,
-                conversationId: getConversationId(displayName, partnerName)
+                partnerUid: partnerUid,
+                partnerEmail: partnerEmail || '',
+                conversationId: getConversationId(currentUid, partnerUid)
             };
 
             document.getElementById('dmConversationList').style.display = 'none';
@@ -1817,7 +2176,10 @@
             document.getElementById('dmMessageView').style.display = 'flex';
             document.getElementById('dmPartnerName').textContent = partnerName;
 
-            const isOnline = onlineUsers.some(u => u.toLowerCase() === partnerName.toLowerCase());
+            const isOnline = onlineUsersDetailed.some(u =>
+                (u.uid && u.uid === partnerUid) ||
+                (u.name && u.name.toLowerCase() === partnerName.toLowerCase())
+            );
             const statusEl = document.getElementById('dmPartnerStatus');
             statusEl.textContent = isOnline ? 'online' : 'offline';
             statusEl.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
@@ -1839,6 +2201,12 @@
 
             container.innerHTML = '<p style="color: #888; font-size: 12px;">Loading...</p>';
 
+            const currentUid = getCurrentUserUid();
+            if (!currentUid) {
+                container.innerHTML = '<p style="color: #888; font-size: 12px;">Please log in to view messages.</p>';
+                return;
+            }
+
             directMessagesRef.once('value', (snapshot) => {
                 dmConversations = [];
 
@@ -1849,23 +2217,19 @@
                     if (!data) return;
 
                     const participants = data.participants || {};
-                    const isParticipant = Object.values(participants).some(p =>
-                        p && (p.toLowerCase() === displayName.toLowerCase() ||
-                        p.toLowerCase() === currentUsername.toLowerCase())
-                    );
+                    if (!participants[currentUid]) return;
 
-                    if (isParticipant && data.lastMessage) {
-                        let partnerName = '';
-                        Object.values(participants).forEach(p => {
-                            if (p && p.toLowerCase() !== displayName.toLowerCase() &&
-                                p.toLowerCase() !== currentUsername.toLowerCase()) {
-                                partnerName = p;
-                            }
-                        });
+                    if (data.lastMessage) {
+                        const partnerUid = Object.keys(participants).find(uid => uid !== currentUid);
+                        const partner = partnerUid ? (participants[partnerUid] || {}) : {};
+                        const partnerName = partner.displayName || partner.name || 'Unknown';
+                        const partnerEmail = partner.email || '';
 
                         dmConversations.push({
                             conversationId: convId,
+                            partnerUid: partnerUid || '',
                             partnerName: partnerName,
+                            partnerEmail: partnerEmail,
                             lastMessage: data.lastMessage,
                             unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
                         });
@@ -1889,18 +2253,18 @@
             container.innerHTML = dmConversations.map(conv => {
                 const time = conv.lastMessage ? formatTime(conv.lastMessage.timestamp) : '';
                 const preview = conv.lastMessage ? (conv.lastMessage.text || '').substring(0, 40) + (conv.lastMessage.text?.length > 40 ? '...' : '') : '';
-                const isUnread = conv.unread && conv.lastMessage?.sender !== displayName;
+                const isUnread = conv.unread && conv.lastMessage?.senderUid !== getCurrentUserUid();
                 if (isUnread) totalUnread++;
 
                 return `
-                    <div onclick="startDMConversation('${conv.partnerName}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
+                    <div onclick="startDMConversation('${conv.partnerUid || ''}', '${conv.partnerName}', '${conv.partnerEmail || ''}')" style="padding: 12px; background: ${isUnread ? '#f0f7ff' : 'white'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : '#e2e8f0'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : '#e2e8f0'}'">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: ${isUnread ? '700' : '600'}; color: #1a1a2e; margin-bottom: 4px;">
                                     ${isUnread ? '● ' : ''}${conv.partnerName}
                                 </div>
                                 <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${preview}
+                                    ${conv.lastMessage?.senderUid === getCurrentUserUid() ? 'You: ' : ''}${preview}
                                 </div>
                             </div>
                             <div style="font-size: 10px; color: #888; white-space: nowrap; margin-left: 10px;">
@@ -1947,12 +2311,14 @@
                 });
 
                 let html = '';
+                const currentUid = getCurrentUserUid();
                 messages.forEach(msg => {
-                    const isMe = msg.senderName === displayName || msg.sender === currentUsername;
+                    const isMe = msg.senderUid ? msg.senderUid === currentUid : (msg.senderName === displayName || msg.sender === currentUsername);
+                    const senderLabel = isMe ? 'You' : (msg.senderName || msg.sender || 'User');
 
                     html += `
                         <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isMe ? 'You' : msg.senderName}</div>
+                            <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${senderLabel}</div>
                             <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#e2e8f0'}; color: ${isMe ? 'white' : '#333'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 80%; word-wrap: break-word; font-size: 14px;">
                                 ${(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                             </div>
@@ -1991,9 +2357,17 @@
 
             const conversationId = currentDMConversation.conversationId;
             const partnerName = currentDMConversation.partnerName;
+            const partnerUid = currentDMConversation.partnerUid;
+            const partnerEmail = currentDMConversation.partnerEmail || '';
+            const currentUid = getCurrentUserUid();
+            if (!currentUid || !partnerUid) {
+                showToast('Unable to send DM (missing user ID). Please refresh and try again.', 'warning');
+                return;
+            }
 
             const messageData = {
-                sender: currentUsername,
+                senderUid: currentUid,
+                senderEmail: currentUsername,
                 senderName: displayName,
                 text: text,
                 timestamp: Date.now(),
@@ -2004,15 +2378,16 @@
                 directMessagesRef.child(conversationId + '/messages').push(messageData)
                     .catch(err => console.error('Error sending DM:', err));
 
-                directMessagesRef.child(conversationId + '/participants').set({
-                    user1: displayName,
-                    user2: partnerName
-                });
+                const participantsData = {};
+                participantsData[currentUid] = { displayName: displayName, email: currentUsername };
+                participantsData[partnerUid] = { displayName: partnerName, email: partnerEmail };
+                directMessagesRef.child(conversationId + '/participants').set(participantsData);
 
                 directMessagesRef.child(conversationId + '/lastMessage').set({
                     text: text,
                     timestamp: Date.now(),
-                    sender: displayName
+                    senderUid: currentUid,
+                    senderName: displayName
                 });
 
                 input.value = '';
@@ -2027,10 +2402,12 @@
             localStorage.setItem('dmLastRead', JSON.stringify(dmLastReadTimestamps));
 
             if (snapshot && snapshot.exists()) {
+                const currentUid = getCurrentUserUid();
                 snapshot.forEach((child) => {
                     const msg = child.val();
                     const msgKey = child.key;
-                    if (msg && !msg.read && msg.senderName !== displayName && msg.sender !== currentUsername) {
+                    const isMine = msg && msg.senderUid ? msg.senderUid === currentUid : (msg.senderName === displayName || msg.sender === currentUsername);
+                    if (msg && !msg.read && !isMine) {
                         directMessagesRef.child(conversationId + '/messages/' + msgKey + '/read').set(true)
                             .catch(err => console.error('Error marking message as read:', err));
                     }
@@ -2040,12 +2417,50 @@
             let totalUnread = 0;
             dmConversations.forEach(conv => {
                 if (conv.conversationId !== conversationId) {
-                    if (conv.unread && conv.lastMessage?.sender !== displayName) {
+                    if (conv.unread && conv.lastMessage?.senderUid !== getCurrentUserUid()) {
                         totalUnread++;
                     }
                 }
             });
             updateDMBadge(totalUnread);
+        }
+
+        async function runDMSelfTest() {
+            const uid = getCurrentUserUid();
+            const email = getCurrentUserEmail();
+            if (!uid) {
+                showToast('Please log in to run the DM test.', 'warning');
+                return;
+            }
+
+            const convId = 'selftest_' + uid;
+            const convRef = directMessagesRef.child(convId);
+            const participantsData = {};
+            participantsData[uid] = { displayName: displayName, email: email };
+
+            const messageData = {
+                senderUid: uid,
+                senderEmail: email,
+                senderName: displayName,
+                text: 'DM self-test at ' + new Date().toLocaleTimeString(),
+                timestamp: Date.now(),
+                read: true
+            };
+
+            try {
+                await convRef.child('participants').set(participantsData);
+                await convRef.child('messages').push(messageData);
+                const snap = await convRef.child('messages').limitToLast(1).once('value');
+                if (snap.exists()) {
+                    showToast('DM self-test passed.', 'success');
+                } else {
+                    showToast('DM self-test failed. Check rules.', 'error');
+                }
+                try { await convRef.remove(); } catch (e) {}
+            } catch (e) {
+                console.error('DM self-test error:', e);
+                showToast('DM self-test failed: ' + e.message, 'error');
+            }
         }
 
         function setupDMListener() {
@@ -2058,14 +2473,15 @@
                         if (!data) return;
 
                         const participants = data.participants || {};
-                        const isParticipant = Object.values(participants).some(p =>
-                            p && (p.toLowerCase() === displayName.toLowerCase() ||
-                            p.toLowerCase() === currentUsername.toLowerCase())
-                        );
+                        const currentUid = getCurrentUserUid();
+                        if (!currentUid || !participants[currentUid]) return;
 
-                        if (!isParticipant) return;
+                        const partnerUid = Object.keys(participants).find(uid => uid !== currentUid);
+                        const partner = partnerUid ? (participants[partnerUid] || {}) : {};
+                        const partnerName = partner.displayName || partner.name || 'Unknown';
+                        const partnerEmail = partner.email || '';
 
-                        if (data.lastMessage && data.lastMessage.sender !== displayName) {
+                        if (data.lastMessage && data.lastMessage.senderUid !== currentUid) {
                             const lastRead = dmLastReadTimestamps[convId] || 0;
                             if (data.lastMessage.timestamp > lastRead) {
                                 if (!chatOpen || chatMode !== 'dm' || currentDMConversation?.conversationId !== convId) {
@@ -2073,7 +2489,7 @@
 
                                     if (notificationsEnabled && Notification.permission === 'granted') {
                                         try {
-                                            const notification = new Notification('New DM from ' + data.lastMessage.sender, {
+                                            const notification = new Notification('New DM from ' + partnerName, {
                                                 body: (data.lastMessage.text || '').substring(0, 100),
                                                 tag: 'bsn9b-dm-' + convId
                                             });
@@ -2081,7 +2497,7 @@
                                                 window.focus();
                                                 if (!chatOpen) toggleChat();
                                                 switchChatMode('dm');
-                                                startDMConversation(data.lastMessage.sender);
+                                                startDMConversation(partnerUid || '', partnerName, partnerEmail);
                                                 notification.close();
                                             };
                                         } catch (notifErr) {
@@ -2111,6 +2527,8 @@
         myPresence.set({
             user: displayName,
             username: currentUsername,
+            uid: getCurrentUserUid(),
+            email: getCurrentUserEmail(),
             online: true
         });
         myPresence.onDisconnect().remove();
@@ -2123,16 +2541,24 @@
 
         // Store online users for @mention autocomplete
         let onlineUsers = [];
+        let onlineUsersDetailed = [];
 
         presenceRef.on('value', (snapshot) => {
             const count = snapshot.numChildren();
             document.getElementById('onlineCount').textContent = count + ' online (click to see)';
 
             onlineUsers = [];
+            onlineUsersDetailed = [];
             snapshot.forEach((child) => {
                 const data = child.val();
                 if (data.user) {
                     onlineUsers.push(data.user);
+                    onlineUsersDetailed.push({
+                        name: data.user,
+                        uid: data.uid || '',
+                        email: data.email || '',
+                        username: data.username || ''
+                    });
                 }
             });
 
@@ -2164,6 +2590,8 @@
                     if (Date.now() - timestamp < USER_CACHE_EXPIRY) {
                         allRegisteredUsers = users;
                         console.log('Loaded', allRegisteredUsers.length, 'users from cache');
+                        await loadUserProfiles();
+                        addUidsToRegisteredUsers();
                         return;
                     }
                 }
@@ -2186,6 +2614,8 @@
                         timestamp: Date.now()
                     }));
                     console.log('Loaded', allRegisteredUsers.length, 'users from API, cached');
+                    await loadUserProfiles();
+                    addUidsToRegisteredUsers();
                 }
             } catch (e) {
                 console.log('Could not fetch users for @mention:', e);
@@ -2194,6 +2624,8 @@
                 if (cached) {
                     allRegisteredUsers = JSON.parse(cached).users || [];
                     console.log('Using expired cache as fallback');
+                    await loadUserProfiles();
+                    addUidsToRegisteredUsers();
                 }
             }
         }
@@ -2384,11 +2816,13 @@
 
         // Logout
         function logout() {
+            endSessionTracking('logout');
             auth.signOut().then(() => {
                 localStorage.removeItem('bsn9b_auth');
                 localStorage.removeItem('bsn9b_user');
                 localStorage.removeItem('bsn9b_displayName');
                 localStorage.removeItem('bsn9b_uid');
+                clearSessionTracking();
                 window.location.href = '/';
             });
         }
@@ -2402,6 +2836,22 @@
             document.getElementById('createPostModal').classList.add('hidden');
             document.getElementById('postTitle').value = '';
             document.getElementById('postContent').value = '';
+            setSelectedTags('postTags', []);
+        }
+
+        function getSelectedTags(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return [];
+            return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+        }
+
+        function setSelectedTags(containerId, tags) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const set = new Set((tags || []).map(t => t.toLowerCase()));
+            container.querySelectorAll('input[type="checkbox"]').forEach(i => {
+                i.checked = set.has(i.value.toLowerCase());
+            });
         }
 
         function createPost(event) {
@@ -2409,6 +2859,7 @@
             const title = document.getElementById('postTitle').value.trim();
             const category = document.getElementById('postCategory').value;
             const content = document.getElementById('postContent').value.trim();
+            const tags = getSelectedTags('postTags');
 
             if (!title || !content) return;
 
@@ -2416,6 +2867,7 @@
                 title: title,
                 content: content,
                 category: category,
+                tags: tags,
                 author: displayName,
                 authorEmail: currentUsername,
                 pinned: false,
@@ -2480,20 +2932,30 @@
 
             // Filter by search term
             if (searchTerm) {
-                filteredPosts = filteredPosts.filter(p =>
-                    p.title.toLowerCase().includes(searchTerm) ||
-                    p.content.toLowerCase().includes(searchTerm) ||
-                    p.author.toLowerCase().includes(searchTerm)
-                );
+                filteredPosts = filteredPosts.filter(p => {
+                    const tags = (p.tags || []).join(' ').toLowerCase();
+                    return (
+                        p.title.toLowerCase().includes(searchTerm) ||
+                        p.content.toLowerCase().includes(searchTerm) ||
+                        p.author.toLowerCase().includes(searchTerm) ||
+                        tags.includes(searchTerm)
+                    );
+                });
             }
 
-            const pinned = filteredPosts.filter(p => p.pinned);
-            const regular = filteredPosts.filter(p => !p.pinned);
+            const bulletin = filteredPosts.filter(p => p.pinned || p.category === 'announcement');
+            const bulletinIds = new Set(bulletin.map(p => p.id));
+            const regular = filteredPosts.filter(p => !bulletinIds.has(p.id));
 
-            // Pinned posts
-            if (pinned.length > 0) {
+            // Bulletin board (pinned + announcements)
+            if (bulletin.length > 0) {
+                const sorted = bulletin.sort((a, b) => {
+                    if (a.pinned && !b.pinned) return -1;
+                    if (!a.pinned && b.pinned) return 1;
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                });
                 pinnedSection.style.display = 'block';
-                pinnedContainer.innerHTML = pinned.map(post => createPostCard(post, true)).join('');
+                pinnedContainer.innerHTML = sorted.map(post => createPostCard(post, post.pinned)).join('');
             } else {
                 pinnedSection.style.display = 'none';
             }
@@ -2515,6 +2977,9 @@
         function createPostCard(post, isPinned) {
             const replyCount = post.replyCount || 0;
             const isAuthor = post.authorEmail === currentUsername;
+            const tagsHtml = (post.tags || []).length
+                ? `<div class="post-tags">${post.tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>`
+                : '';
             const authorActions = isAuthor ? `
                 <div class="post-author-actions">
                     <button class="post-action-btn edit-btn" onclick="editPost('${post.id}')" aria-label="Edit post" title="Edit">&#9998;</button>
@@ -2534,6 +2999,7 @@
                         </div>
                     </div>
                     <div class="post-content" id="content-${post.id}">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
+                    ${tagsHtml}
                     <div class="post-footer">
                         <div class="post-actions">
                             <button class="post-action" onclick="likePost('${post.id}')" aria-label="Like post">
@@ -2667,11 +3133,13 @@
             document.getElementById('editPostTitle').value = post.title;
             document.getElementById('editPostCategory').value = post.category;
             document.getElementById('editPostContent').value = post.content;
+            setSelectedTags('editPostTags', post.tags || []);
             document.getElementById('editPostModal').classList.remove('hidden');
         }
 
         function hideEditPostModal() {
             document.getElementById('editPostModal').classList.add('hidden');
+            setSelectedTags('editPostTags', []);
         }
 
         function saveEditedPost(event) {
@@ -2680,6 +3148,7 @@
             const title = document.getElementById('editPostTitle').value.trim();
             const category = document.getElementById('editPostCategory').value;
             const content = document.getElementById('editPostContent').value.trim();
+            const tags = getSelectedTags('editPostTags');
 
             if (!title || !content) {
                 showToast('Please fill in all fields', 'warning');
@@ -2690,6 +3159,7 @@
                 title: title,
                 category: category,
                 content: content,
+                tags: tags,
                 editedAt: Date.now()
             }).then(() => {
                 hideEditPostModal();
