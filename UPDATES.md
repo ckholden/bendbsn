@@ -2,6 +2,12 @@
 
 ## 2026-02-01
 
+### Latest Session Summary (Admin/Profiles)
+- Added per-user role editor in Admin (role dropdown + Save Role) backed by `userProfiles/{uid}`.
+- Admin role updates require Firebase Sign-In; if profile missing, user must log in once to create it.
+- Login now auto-creates/updates `userProfiles/{uid}` for existing users on every sign-in.
+- Firebase rules updated to allow admin read/write at `userProfiles` root for normalization/role edits.
+
 ### Security Hardening
 - Added strict Firebase Realtime Database rules in `database.rules.json`.
 - Default database access is now denied; access is scoped to authenticated users and admin-only paths.
