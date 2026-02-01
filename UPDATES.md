@@ -7,6 +7,7 @@
 - Admin role updates require Firebase Sign-In; if profile missing, user must log in once to create it.
 - Login now auto-creates/updates `userProfiles/{uid}` for existing users on every sign-in.
 - Firebase rules updated to allow admin read/write at `userProfiles` root for normalization/role edits.
+- Chat/AI widgets intermittently not opening; console errors still being investigated (reported after rules changes and cache refresh).
 
 ### Security Hardening
 - Added strict Firebase Realtime Database rules in `database.rules.json`.
