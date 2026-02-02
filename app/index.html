@@ -2459,24 +2459,47 @@
         const SESSION_HEARTBEAT_MS = 60000;
         let sessionHeartbeatTimer = null;
 
+        let sessionValidated = false;
+
         function updateSessionHeartbeat() {
             const sessionKey = localStorage.getItem(SESSION_KEY);
             if (!sessionKey) return;
+
+            // Only update if session is validated (exists in Firebase)
+            if (!sessionValidated) return;
+
             database.ref('loginHistory/' + sessionKey).update({
                 lastSeen: Date.now()
             }).catch(() => {});
         }
 
         function startSessionHeartbeat() {
-            updateSessionHeartbeat();
-            if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
-            sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+
+            // Validate session exists in Firebase before starting heartbeat
+            database.ref('loginHistory/' + sessionKey).once('value', (snapshot) => {
+                if (snapshot.exists() && snapshot.val().timestamp) {
+                    sessionValidated = true;
+                    updateSessionHeartbeat();
+                    if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+                    sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+                } else {
+                    // Invalid session key - clear it
+                    console.warn('Invalid session key, clearing');
+                    clearSessionTracking();
+                }
+            }).catch(() => {
+                // Can't validate, don't start heartbeat
+            });
         }
 
         function endSessionTracking(reason) {
             const sessionKey = localStorage.getItem(SESSION_KEY);
             if (!sessionKey) return;
             if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            if (!sessionValidated) return; // Don't end invalid sessions
+
             const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
             const end = Date.now();
             const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;

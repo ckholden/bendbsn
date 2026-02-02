@@ -1247,24 +1247,34 @@
         const SESSION_START_KEY = 'bsn9b_session_start';
         const SESSION_HEARTBEAT_MS = 60000;
         let sessionHeartbeatTimer = null;
+        let sessionValidated = false;
 
         function updateSessionHeartbeat() {
             const sessionKey = localStorage.getItem(SESSION_KEY);
-            if (!sessionKey) return;
+            if (!sessionKey || !sessionValidated) return;
             database.ref('loginHistory/' + sessionKey).update({
                 lastSeen: Date.now()
             }).catch(() => {});
         }
 
         function startSessionHeartbeat() {
-            updateSessionHeartbeat();
-            if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
-            sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+            const sessionKey = localStorage.getItem(SESSION_KEY);
+            if (!sessionKey) return;
+            database.ref('loginHistory/' + sessionKey).once('value', (snapshot) => {
+                if (snapshot.exists() && snapshot.val().timestamp) {
+                    sessionValidated = true;
+                    updateSessionHeartbeat();
+                    if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+                    sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
+                } else {
+                    clearSessionTracking();
+                }
+            }).catch(() => {});
         }
 
         function endSessionTracking(reason) {
             const sessionKey = localStorage.getItem(SESSION_KEY);
-            if (!sessionKey) return;
+            if (!sessionKey || !sessionValidated) return;
             if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
             const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
             const end = Date.now();

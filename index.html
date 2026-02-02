@@ -976,11 +976,17 @@ Review users anytime: ${adminUrl}`;
         function logLoginEvent(username, displayName, success) {
             const timestamp = Date.now();
 
-            // Log to Firebase (existing)
+            // Ensure we have valid data
+            const safeUsername = username || 'unknown';
+            const safeDisplayName = displayName || username || 'Unknown User';
+
+            console.log('Logging login event:', { username: safeUsername, displayName: safeDisplayName, success, timestamp });
+
+            // Log to Firebase
             const loginRef = database.ref('loginHistory');
             const payload = {
-                username: username,
-                displayName: displayName || username,
+                username: safeUsername,
+                displayName: safeDisplayName,
                 timestamp: timestamp,
                 date: new Date().toLocaleString(),
                 success: success,
@@ -989,18 +995,22 @@ Review users anytime: ${adminUrl}`;
 
             if (success) {
                 const sessionRef = loginRef.push();
-                sessionRef.set(payload);
+                sessionRef.set(payload)
+                    .then(() => console.log('Login history saved successfully'))
+                    .catch((err) => console.error('Failed to save login history:', err));
                 localStorage.setItem('bsn9b_session_key', sessionRef.key || '');
                 localStorage.setItem('bsn9b_session_start', String(timestamp));
                 localStorage.removeItem('bsn9b_session_end_sent');
             } else {
-                loginRef.push(payload);
+                loginRef.push(payload)
+                    .then(() => console.log('Failed login recorded'))
+                    .catch((err) => console.error('Failed to record login attempt:', err));
             }
 
             // Also log to Google Sheet LoginHistory tab
             try {
-                fetch(API_URL + '?action=logLogin&email=' + encodeURIComponent(username) +
-                    '&name=' + encodeURIComponent(displayName || username) +
+                fetch(API_URL + '?action=logLogin&email=' + encodeURIComponent(safeUsername) +
+                    '&name=' + encodeURIComponent(safeDisplayName) +
                     '&success=' + success + '&timestamp=' + timestamp, {
                     method: 'POST',
                     mode: 'no-cors'
