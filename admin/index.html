@@ -948,6 +948,7 @@
                                         <button class="btn btn-sm btn-primary" onclick="updateUserRole('${profileUid}', '${user.email || ''}', this.previousElementSibling.value)">Save Role</button>
                                     ` : ''}
                                     <button class="btn btn-danger btn-sm" onclick="banUser('${user.username}')">Ban</button>
+                                    <button class="btn btn-sm" style="background:#dc3545;color:white;" onclick="deleteUser('${user.username}', '${user.email || ''}', '${profileUid}', '${user.name || user.username}')" title="Permanently delete user">🗑️</button>
                                 </div>
                             </div>
                         `;
@@ -1062,6 +1063,74 @@
                 } catch (e) {
                     showToast('Error: ' + e.message, 'error');
                 }
+            }
+        }
+
+        // Delete user completely
+        async function deleteUser(username, email, uid, displayName) {
+            const confirmMsg = `PERMANENTLY DELETE "${displayName || username}"?\n\nThis will remove:\n• User profile from database\n• User from Google Sheet\n\nYou'll also need to delete from Firebase Auth Console.\n\nThis cannot be undone!`;
+
+            if (!confirm(confirmMsg)) return;
+            if (!confirm('Are you REALLY sure? Type OK to confirm.')) return;
+
+            let deletedItems = [];
+            let errors = [];
+
+            try {
+                // 1. Delete from Firebase userProfiles (if uid exists)
+                if (uid && uid !== 'undefined' && uid !== '') {
+                    try {
+                        await userProfilesRef.child(uid).remove();
+                        deletedItems.push('Firebase profile');
+                    } catch (e) {
+                        errors.push('Firebase profile: ' + e.message);
+                    }
+                }
+
+                // 2. Delete from Google Sheet
+                try {
+                    const params = new URLSearchParams({
+                        action: 'deleteUser',
+                        username: username,
+                        email: email
+                    });
+                    await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                    deletedItems.push('Google Sheet');
+                } catch (e) {
+                    errors.push('Google Sheet: ' + e.message);
+                }
+
+                // 3. Remove from banned list if present
+                try {
+                    const bannedSnapshot = await bannedRef.once('value');
+                    bannedSnapshot.forEach((child) => {
+                        if (child.val().username === username || child.val().username === email) {
+                            child.ref.remove();
+                        }
+                    });
+                } catch (e) {
+                    // Ignore ban removal errors
+                }
+
+                // 4. Show results
+                if (deletedItems.length > 0) {
+                    showToast(`Deleted from: ${deletedItems.join(', ')}`, 'success');
+                }
+                if (errors.length > 0) {
+                    showToast(`Errors: ${errors.join('; ')}`, 'warning');
+                }
+
+                // 5. Open Firebase Console for Auth deletion
+                const openConsole = confirm('User data deleted!\n\nOpen Firebase Console to delete the Auth account?\n\n(Required to fully remove the user)');
+                if (openConsole) {
+                    window.open('https://console.firebase.google.com/project/bendbsn-17377/authentication/users', '_blank');
+                }
+
+                // Refresh user list
+                loadRegisteredUsers();
+
+            } catch (e) {
+                showToast('Error deleting user: ' + e.message, 'error');
             }
         }
 
