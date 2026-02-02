@@ -356,3 +356,111 @@ communityPostsRef.on('value', () => loadCommunityPosts());
 - Delete operations require confirmation
 - Clear All requires double confirmation
 - Admin password required to access panel
+
+---
+
+## Session Notes (Feb 2026)
+
+### Completed This Session
+
+#### 1. Chat Channels Redesign (Slack-style)
+- Replaced dropdown channel selector with sidebar list
+- Added per-channel unread badges
+- Collapsible "CHANNELS" and "DIRECT MESSAGES" sections
+- Visual channel/DM switching
+- Files modified: `/app/index.html`
+
+#### 2. Admin Login History Management
+- Added "Clear All" button to delete all login history
+- Added 🗑️ delete button for individual entries
+- Checkbox selection for bulk delete
+- Files modified: `/admin/index.html`
+
+#### 3. Login History Bug Fixes
+- Fixed race condition: login history write now completes before redirect
+- Made `logLoginEvent` async and awaited in login handler
+- Added session validation on all pages to prevent corrupted entries from heartbeat
+- Files modified: `/index.html`, `/app/index.html`, `/home/index.html`, `/community/index.html`, `/resources/index.html`, `/admin/index.html`
+
+#### 4. PDF/Word Export Date Fix
+- Fixed date parsing in `getFormData()` - now correctly parses MM/DD/YYYY format
+- Added `noteDateForFilename` for safe filenames (no slashes)
+- Fixed `clearForm()` to use `formatDateDisplay()` instead of broken `valueAsDate`
+- Files modified: `/app/index.html`
+
+#### 5. Delete User Feature
+- Added 🗑️ delete button next to each user in Registered Users
+- Deletes from Firebase userProfiles, Google Sheet, and banned list
+- Opens Firebase Console link for Auth account deletion
+- Files modified: `/admin/index.html`
+
+#### 6. Role Update Without Login
+- Modified `updateUserRole()` to work even if user hasn't logged in
+- Updates both Firebase profile (if exists) AND Google Sheet
+- Files modified: `/admin/index.html`
+
+### Pending / To Test Tomorrow
+
+#### 1. Test Role Update for Ann
+- Change Ann's role from "RN Student" to "Instructor"
+- Verify toast shows "Role updated to Instructor"
+
+#### 2. Google Apps Script Actions Needed
+Add these actions to your Google Apps Script:
+
+**deleteUser action:**
+```javascript
+if (action === 'deleteUser') {
+  var username = e.parameter.username;
+  var email = e.parameter.email;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  var data = sheet.getDataRange().getValues();
+
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === username || data[i][4] === email) {
+      sheet.deleteRow(i + 1);
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({success: false, error: 'User not found'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+**updateRole action:**
+```javascript
+if (action === 'updateRole') {
+  var email = e.parameter.email;
+  var role = e.parameter.role;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  var data = sheet.getDataRange().getValues();
+
+  var roleColIndex = 6;  // Adjust to your role column (0-indexed)
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][4] === email) {  // Adjust email column index
+      sheet.getRange(i + 1, roleColIndex + 1).setValue(role);
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({success: false, error: 'User not found'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+#### 3. Service Worker Cache
+- Current version: `v13`
+- If seeing stale code, hard refresh (`Ctrl+Shift+R`) or clear site data
+
+### Key Files Modified This Session
+| File | Changes |
+|------|---------|
+| `/index.html` | Async login event, awaited before redirect |
+| `/app/index.html` | Chat sidebar redesign, date fix, session validation |
+| `/home/index.html` | Session validation fix |
+| `/community/index.html` | Session validation fix |
+| `/resources/index.html` | Session validation fix |
+| `/admin/index.html` | Login history delete, user delete, role update |
+| `/sw.js` | Cache version v13, added login/admin to stale-while-revalidate |
