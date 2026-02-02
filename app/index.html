@@ -882,12 +882,12 @@
                 <div class="form-group">
                     <label>Date <span style="font-weight: normal; font-size: 10px; color: #666;">(T=today, T+1, T-3)</span></label>
                     <input type="text" id="noteDateText" placeholder="T for today" style="display:none;">
-                    <input type="date" id="noteDate" onfocus="showDateShortcut()" onblur="hideDateShortcut()">
+                    <input type="date" id="noteDate">
                 </div>
                 <div class="form-group">
                     <label>Time <span style="font-weight: normal; font-size: 10px; color: #666;">(N=now, N-30, N+15)</span></label>
                     <input type="text" id="noteTimeText" placeholder="N for now" style="display:none;">
-                    <input type="time" id="noteTime" onfocus="showTimeShortcut()" onblur="hideTimeShortcut()">
+                    <input type="time" id="noteTime">
                 </div>
                 <div class="form-group">
                     <label>Unit</label>
@@ -907,35 +907,35 @@
 
             <h2 class="section-title">Documentation Format</h2>
             <div class="note-type-grid">
-                <div class="note-type-card active" onclick="selectNoteType('dar')">
+                <div class="note-type-card active" data-note-type="dar">
                     <h3>DAR</h3>
                     <p>Data, Action, Response</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('darp')">
+                <div class="note-type-card" data-note-type="darp">
                     <h3>DARP</h3>
                     <p>DAR + Plan</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('soap')">
+                <div class="note-type-card" data-note-type="soap">
                     <h3>SOAP</h3>
                     <p>Subj, Obj, Assess, Plan</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('sbar')">
+                <div class="note-type-card" data-note-type="sbar">
                     <h3>SBAR</h3>
                     <p>Situation, Background</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('pie')">
+                <div class="note-type-card" data-note-type="pie">
                     <h3>PIE</h3>
                     <p>Problem, Intervention</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('h2t')">
+                <div class="note-type-card" data-note-type="h2t">
                     <h3>H2T</h3>
                     <p>Head-to-Toe Assessment</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('soapie')">
+                <div class="note-type-card" data-note-type="soapie">
                     <h3>SOAPIE</h3>
                     <p>SOAP + I, E</p>
                 </div>
-                <div class="note-type-card" onclick="selectNoteType('narrative')">
+                <div class="note-type-card" data-note-type="narrative">
                     <h3>Narrative</h3>
                     <p>Free-form Note</p>
                 </div>
@@ -5083,20 +5083,21 @@ Important guidelines:
         ];
 
         // Date/Time Shortcut Functions
-        function showDateShortcut() {
+        function showDateShortcut(prefill = '') {
             const dateInput = document.getElementById('noteDate');
             const textInput = document.getElementById('noteDateText');
+            if (textInput.style.display === 'block') return;
             textInput.style.display = 'block';
             dateInput.style.display = 'none';
-            textInput.value = '';
+            textInput.value = prefill ? String(prefill).toUpperCase() : '';
             textInput.focus();
-            textInput.addEventListener('blur', processDateShortcut);
-            textInput.addEventListener('keydown', function(e) {
+            textInput.onblur = processDateShortcut;
+            textInput.onkeydown = function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     processDateShortcut();
                 }
-            });
+            };
         }
 
         function hideDateShortcut() {
@@ -5131,23 +5132,25 @@ Important guidelines:
 
             textInput.style.display = 'none';
             dateInput.style.display = 'block';
-            textInput.removeEventListener('blur', processDateShortcut);
+            textInput.onblur = null;
+            textInput.onkeydown = null;
         }
 
-        function showTimeShortcut() {
+        function showTimeShortcut(prefill = '') {
             const timeInput = document.getElementById('noteTime');
             const textInput = document.getElementById('noteTimeText');
+            if (textInput.style.display === 'block') return;
             textInput.style.display = 'block';
             timeInput.style.display = 'none';
-            textInput.value = '';
+            textInput.value = prefill ? String(prefill).toUpperCase() : '';
             textInput.focus();
-            textInput.addEventListener('blur', processTimeShortcut);
-            textInput.addEventListener('keydown', function(e) {
+            textInput.onblur = processTimeShortcut;
+            textInput.onkeydown = function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     processTimeShortcut();
                 }
-            });
+            };
         }
 
         function hideTimeShortcut() {
@@ -5181,24 +5184,26 @@ Important guidelines:
 
             textInput.style.display = 'none';
             timeInput.style.display = 'block';
-            textInput.removeEventListener('blur', processTimeShortcut);
+            textInput.onblur = null;
+            textInput.onkeydown = null;
         }
 
         // Med Time shortcuts (same logic as note time)
-        function showMedTimeShortcut() {
+        function showMedTimeShortcut(prefill = '') {
             const timeInput = document.getElementById('medTime');
             const textInput = document.getElementById('medTimeText');
+            if (textInput.style.display === 'block') return;
             textInput.style.display = 'block';
             timeInput.style.display = 'none';
-            textInput.value = '';
+            textInput.value = prefill ? String(prefill).toUpperCase() : '';
             textInput.focus();
-            textInput.addEventListener('blur', processMedTimeShortcut);
-            textInput.addEventListener('keydown', function(e) {
+            textInput.onblur = processMedTimeShortcut;
+            textInput.onkeydown = function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     processMedTimeShortcut();
                 }
-            });
+            };
         }
 
         function hideMedTimeShortcut() {
@@ -5231,7 +5236,8 @@ Important guidelines:
 
             textInput.style.display = 'none';
             timeInput.style.display = 'block';
-            textInput.removeEventListener('blur', processMedTimeShortcut);
+            textInput.onblur = null;
+            textInput.onkeydown = null;
         }
 
         // Toggle collapsible panels
@@ -5252,6 +5258,39 @@ Important guidelines:
         // Initialize
         document.getElementById('noteDate').valueAsDate = new Date();
         document.getElementById('noteTime').value = new Date().toTimeString().slice(0, 5);
+        document.querySelectorAll('.note-type-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const type = card.dataset.noteType;
+                if (type) selectNoteType(type, card);
+            });
+        });
+        const noteDateInput = document.getElementById('noteDate');
+        const noteTimeInput = document.getElementById('noteTime');
+        if (noteDateInput) {
+            noteDateInput.addEventListener('keydown', (e) => {
+                if (e.key && e.key.toUpperCase() === 'T') {
+                    e.preventDefault();
+                    showDateShortcut('T');
+                }
+            });
+        }
+        if (noteTimeInput) {
+            noteTimeInput.addEventListener('keydown', (e) => {
+                if (e.key && e.key.toUpperCase() === 'N') {
+                    e.preventDefault();
+                    showTimeShortcut('N');
+                }
+            });
+        }
+        const medTimeInput = document.getElementById('medTime');
+        if (medTimeInput) {
+            medTimeInput.addEventListener('keydown', (e) => {
+                if (e.key && e.key.toUpperCase() === 'N') {
+                    e.preventDefault();
+                    showMedTimeShortcut('N');
+                }
+            });
+        }
         const storedName = localStorage.getItem('bsn9b_displayName');
         const nurseNameInput = document.getElementById('nurseName');
         if (nurseNameInput && storedName && !nurseNameInput.value) {
@@ -5268,7 +5307,7 @@ Important guidelines:
         function setNoteType(type, cardEl = null) {
             currentNoteType = type;
             document.querySelectorAll('.note-type-card').forEach(c => c.classList.remove('active'));
-            const targetCard = cardEl || document.querySelector(`.note-type-card[onclick*="${type}"]`);
+            const targetCard = cardEl || document.querySelector(`.note-type-card[data-note-type="${type}"]`);
             if (targetCard) targetCard.classList.add('active');
             document.querySelectorAll('.note-fields').forEach(f => f.classList.remove('active'));
             const fields = document.getElementById(type + 'Fields');
@@ -5277,9 +5316,9 @@ Important guidelines:
             updateSectionJumpList();
         }
 
-        function selectNoteType(type) {
+        function selectNoteType(type, cardEl = null) {
             saveDraft();
-            setNoteType(type, event.target.closest('.note-type-card'));
+            setNoteType(type, cardEl && cardEl.classList ? cardEl : null);
             loadDraft(type);
         }
 
