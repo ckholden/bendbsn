@@ -5219,46 +5219,7 @@ Important guidelines:
             }
         }
 
-        // Initialize
-        setupDateTimeShortcuts();
-        setupMedTimeShortcut();
-        document.querySelectorAll('.note-type-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const type = card.dataset.noteType;
-                if (type) selectNoteType(type, card);
-            });
-        });
-        const storedName = localStorage.getItem('bsn9b_displayName');
-        const nurseNameInput = document.getElementById('nurseName');
-        if (nurseNameInput && storedName && !nurseNameInput.value) {
-            nurseNameInput.value = storedName;
-        }
-        setNoteType(currentNoteType);
-        setupAutoSave();
-        loadDraft(currentNoteType);
-        startSessionHeartbeat();
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') updateSessionHeartbeat();
-        });
-
-        function setNoteType(type, cardEl = null) {
-            currentNoteType = type;
-            document.querySelectorAll('.note-type-card').forEach(c => c.classList.remove('active'));
-            const targetCard = cardEl || document.querySelector(`.note-type-card[data-note-type="${type}"]`);
-            if (targetCard) targetCard.classList.add('active');
-            document.querySelectorAll('.note-fields').forEach(f => f.classList.remove('active'));
-            const fields = document.getElementById(type + 'Fields');
-            if (fields) fields.classList.add('active');
-            document.getElementById('focusGroup').style.display = ['dar', 'darp'].includes(type) ? 'block' : 'none';
-            updateSectionJumpList();
-        }
-
-        function selectNoteType(type, cardEl = null) {
-            saveDraft();
-            setNoteType(type, cardEl && cardEl.classList ? cardEl : null);
-            loadDraft(type);
-        }
-
+        // Note sections for jump list (must be defined before setNoteType)
         const NOTE_SECTIONS = {
             dar: [
                 { id: 'darData', label: 'Data' },
@@ -5344,6 +5305,24 @@ Important guidelines:
                 panel.style.display = 'none';
             }
         });
+
+        function setNoteType(type, cardEl = null) {
+            currentNoteType = type;
+            document.querySelectorAll('.note-type-card').forEach(c => c.classList.remove('active'));
+            const targetCard = cardEl || document.querySelector(`.note-type-card[data-note-type="${type}"]`);
+            if (targetCard) targetCard.classList.add('active');
+            document.querySelectorAll('.note-fields').forEach(f => f.classList.remove('active'));
+            const fields = document.getElementById(type + 'Fields');
+            if (fields) fields.classList.add('active');
+            document.getElementById('focusGroup').style.display = ['dar', 'darp'].includes(type) ? 'block' : 'none';
+            updateSectionJumpList();
+        }
+
+        function selectNoteType(type, cardEl = null) {
+            saveDraft();
+            setNoteType(type, cardEl && cardEl.classList ? cardEl : null);
+            loadDraft(type);
+        }
 
         const DRAFT_PREFIX = 'bsn9b_draft_';
         const AUTOSAVE_DELAY = 800;
@@ -5434,6 +5413,28 @@ Important guidelines:
         function clearDraft(type) {
             try { localStorage.removeItem(DRAFT_PREFIX + type); } catch (e) {}
         }
+
+        // Initialize the app
+        setupDateTimeShortcuts();
+        setupMedTimeShortcut();
+        document.querySelectorAll('.note-type-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const type = card.dataset.noteType;
+                if (type) selectNoteType(type, card);
+            });
+        });
+        const storedName = localStorage.getItem('bsn9b_displayName');
+        const nurseNameInput = document.getElementById('nurseName');
+        if (nurseNameInput && storedName && !nurseNameInput.value) {
+            nurseNameInput.value = storedName;
+        }
+        setNoteType(currentNoteType);
+        setupAutoSave();
+        loadDraft(currentNoteType);
+        startSessionHeartbeat();
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') updateSessionHeartbeat();
+        });
 
         // Debounce utility for search functions (reduces CPU usage)
         function debounce(func, wait) {
