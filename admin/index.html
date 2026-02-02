@@ -327,10 +327,19 @@
             <div style="max-width: 900px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
                 <div style="background: #1f4e79; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin: 0; font-size: 18px;">Login History</h2>
-                    <div>
-                        <button onclick="exportLoginHistory()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-right: 10px;">Export CSV</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="exportLoginHistory()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Export CSV</button>
+                        <button onclick="clearAllLoginHistory()" style="background: #ff9800; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Clear All</button>
                         <button onclick="closeLoginHistory()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
                     </div>
+                </div>
+                <!-- Bulk Actions Bar -->
+                <div id="loginHistoryBulkBar" style="display: none; padding: 10px 20px; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="selectAllLoginHistory" onchange="toggleSelectAllLoginHistory()">
+                        <span style="font-size: 13px; font-weight: 600;">Select All</span>
+                    </label>
+                    <button id="deleteSelectedBtn" onclick="deleteSelectedLoginHistory()" style="background: #dc3545; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; display: none;">Delete Selected (<span id="selectedCount">0</span>)</button>
                 </div>
                 <div id="loginHistoryContent" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
                     <p>Loading...</p>
@@ -1099,15 +1108,20 @@
             return `${sec}s`;
         }
 
+        let loginHistoryKeys = {}; // Map of index to Firebase key
+
         function loadLoginHistory() {
             const container = document.getElementById('loginHistoryContent');
+            const bulkBar = document.getElementById('loginHistoryBulkBar');
             container.innerHTML = '<p>Loading...</p>';
+            loginHistoryKeys = {};
 
             // Check if Firebase Auth is signed in (required by database rules)
             const currentUser = auth.currentUser;
             console.log('Login History - Current user:', currentUser ? currentUser.email : 'none');
 
             if (!currentUser) {
+                bulkBar.style.display = 'none';
                 container.innerHTML = '<div style="text-align: center; padding: 20px;"><p style="color: #dc3545; font-weight: bold;">Firebase authentication required</p><p style="color: #666; margin: 10px 0;">Click the "Firebase Auth" button in the header to sign in with your admin credentials.</p><button onclick="closeLoginHistory(); openFirebaseAuthModal();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Sign in to Firebase</button></div>';
                 return;
             }
@@ -1116,28 +1130,39 @@
 
             loginHistoryRef.orderByChild('timestamp').limitToLast(200).once('value', (snapshot) => {
                 if (!snapshot.exists()) {
+                    bulkBar.style.display = 'none';
                     container.innerHTML = '<p style="color: #666; text-align: center;">No login history found</p>';
                     return;
                 }
 
                 loginHistoryData = [];
+                let idx = 0;
                 snapshot.forEach((child) => {
-                    loginHistoryData.push(child.val());
+                    loginHistoryData.push({ key: child.key, ...child.val() });
+                    loginHistoryKeys[idx] = child.key;
+                    idx++;
                 });
 
                 // Sort newest first
                 loginHistoryData.sort((a, b) => b.timestamp - a.timestamp);
 
+                // Show bulk bar
+                bulkBar.style.display = 'flex';
+                document.getElementById('selectAllLoginHistory').checked = false;
+                document.getElementById('deleteSelectedBtn').style.display = 'none';
+
                 let html = '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
                 html += '<thead><tr style="background: #f0f0f0;">';
+                html += '<th style="padding: 10px; width: 40px; text-align: center; border-bottom: 2px solid #ddd;"></th>';
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Date/Time</th>';
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Username</th>';
                 html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Display Name</th>';
                 html += '<th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Duration</th>';
                 html += '<th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Status</th>';
+                html += '<th style="padding: 10px; width: 50px; text-align: center; border-bottom: 2px solid #ddd;"></th>';
                 html += '</tr></thead><tbody>';
 
-                loginHistoryData.forEach((login) => {
+                loginHistoryData.forEach((login, index) => {
                     const date = new Date(login.timestamp).toLocaleString();
                     const statusColor = login.success ? '#28a745' : '#dc3545';
                     const statusText = login.success ? 'Success' : 'Failed';
@@ -1150,12 +1175,14 @@
                     const durationLabel = durationSeconds
                         ? formatDuration(durationSeconds)
                         : (login.success ? 'Active' : '—');
-                    html += `<tr style="border-bottom: 1px solid #eee;">
+                    html += `<tr style="border-bottom: 1px solid #eee;" data-key="${login.key}">
+                        <td style="padding: 8px 10px; text-align: center;"><input type="checkbox" class="login-history-checkbox" data-key="${login.key}" onchange="updateSelectedCount()"></td>
                         <td style="padding: 8px 10px;">${date}</td>
                         <td style="padding: 8px 10px; font-weight: 500;">${login.username || 'N/A'}</td>
                         <td style="padding: 8px 10px;">${login.displayName || 'N/A'}</td>
                         <td style="padding: 8px 10px; text-align: center;">${durationLabel}</td>
                         <td style="padding: 8px 10px; text-align: center;"><span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${statusText}</span></td>
+                        <td style="padding: 8px 10px; text-align: center;"><button onclick="deleteLoginHistoryEntry('${login.key}')" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Delete entry">🗑️</button></td>
                     </tr>`;
                 });
 
@@ -1163,6 +1190,7 @@
                 container.innerHTML = html;
             }).catch((error) => {
                 console.error('Login history error:', error);
+                bulkBar.style.display = 'none';
                 const userEmail = auth.currentUser ? auth.currentUser.email : 'not signed in';
                 container.innerHTML = `<div style="text-align: center; padding: 20px;">
                     <p style="color: #dc3545; font-weight: bold;">Permission denied</p>
@@ -1172,6 +1200,79 @@
                     <button onclick="closeLoginHistory(); openFirebaseAuthModal();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Sign in to Firebase</button>
                 </div>`;
             });
+        }
+
+        function clearAllLoginHistory() {
+            if (!confirm('Delete ALL login history records? This cannot be undone.')) return;
+            if (!confirm('Are you REALLY sure? This will permanently delete all login history.')) return;
+
+            loginHistoryRef.remove()
+                .then(() => {
+                    showToast('All login history deleted', 'success');
+                    loadLoginHistory();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function deleteLoginHistoryEntry(key) {
+            if (!confirm('Delete this login history entry?')) return;
+
+            loginHistoryRef.child(key).remove()
+                .then(() => {
+                    showToast('Entry deleted', 'success');
+                    loadLoginHistory();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
+        }
+
+        function toggleSelectAllLoginHistory() {
+            const selectAll = document.getElementById('selectAllLoginHistory').checked;
+            const checkboxes = document.querySelectorAll('.login-history-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAll);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.login-history-checkbox:checked');
+            const count = checkboxes.length;
+            const deleteBtn = document.getElementById('deleteSelectedBtn');
+            const countSpan = document.getElementById('selectedCount');
+
+            if (count > 0) {
+                deleteBtn.style.display = 'inline-block';
+                countSpan.textContent = count;
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.login-history-checkbox');
+            const selectAllCb = document.getElementById('selectAllLoginHistory');
+            if (allCheckboxes.length > 0 && count === allCheckboxes.length) {
+                selectAllCb.checked = true;
+            } else {
+                selectAllCb.checked = false;
+            }
+        }
+
+        function deleteSelectedLoginHistory() {
+            const checkboxes = document.querySelectorAll('.login-history-checkbox:checked');
+            const keys = Array.from(checkboxes).map(cb => cb.dataset.key);
+
+            if (keys.length === 0) {
+                showToast('No entries selected', 'info');
+                return;
+            }
+
+            if (!confirm(`Delete ${keys.length} selected login history entries?`)) return;
+
+            const promises = keys.map(key => loginHistoryRef.child(key).remove());
+            Promise.all(promises)
+                .then(() => {
+                    showToast(`${keys.length} entries deleted`, 'success');
+                    loadLoginHistory();
+                })
+                .catch((e) => showToast('Error: ' + e.message, 'error'));
         }
 
         function exportLoginHistory() {
