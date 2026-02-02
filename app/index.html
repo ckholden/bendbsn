@@ -880,20 +880,12 @@
             </div>
             <div class="form-row three-col">
                 <div class="form-group">
-                    <label>Date <span style="font-weight: normal; font-size: 10px; color: #666;">(click T for shortcuts)</span></label>
-                    <div style="display: flex; gap: 5px;">
-                        <input type="text" id="noteDateText" placeholder="T, T+1, T-3..." style="display:none; flex:1;">
-                        <input type="date" id="noteDate" style="flex:1;">
-                        <button type="button" onclick="showDateShortcut('T')" style="padding: 8px 12px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">T</button>
-                    </div>
+                    <label>Date <span style="font-weight: normal; font-size: 10px; color: #666;">(t=today, t-2, t+1)</span></label>
+                    <input type="text" id="noteDate" placeholder="t, t-2, t+1, or MM/DD/YYYY">
                 </div>
                 <div class="form-group">
-                    <label>Time <span style="font-weight: normal; font-size: 10px; color: #666;">(click N for shortcuts)</span></label>
-                    <div style="display: flex; gap: 5px;">
-                        <input type="text" id="noteTimeText" placeholder="N, N+15, N-30..." style="display:none; flex:1;">
-                        <input type="time" id="noteTime" style="flex:1;">
-                        <button type="button" onclick="showTimeShortcut('N')" style="padding: 8px 12px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">N</button>
-                    </div>
+                    <label>Time <span style="font-weight: normal; font-size: 10px; color: #666;">(n=now, n-30, n+15)</span></label>
+                    <input type="text" id="noteTime" placeholder="n, n-30, n+15, or HH:MM">
                 </div>
                 <div class="form-group">
                     <label>Unit</label>
@@ -5088,162 +5080,128 @@ Important guidelines:
             {name: "Noncompliance", category: "Health Promotion", def: "Behavior that fails to coincide with therapeutic plan"}
         ];
 
-        // Date/Time Shortcut Functions
-        function showDateShortcut(prefill = '') {
-            const dateInput = document.getElementById('noteDate');
-            const textInput = document.getElementById('noteDateText');
-            if (textInput.style.display === 'block') return;
-            textInput.style.display = 'block';
-            dateInput.style.display = 'none';
-            textInput.value = prefill ? String(prefill).toUpperCase() : '';
-            textInput.focus();
-            textInput.onblur = processDateShortcut;
-            textInput.onkeydown = function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    processDateShortcut();
-                }
-            };
+        // Epic-style Date/Time Shortcut Functions
+        // Parses shortcuts like t, t-2, t+1 for dates and n, n-30, n+15 for times
+
+        function formatDateDisplay(date) {
+            // Format as MM/DD/YYYY for display
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${month}/${day}/${year}`;
         }
 
-        function hideDateShortcut() {
-            // This is called but we process in processDateShortcut
+        function formatTimeDisplay(date) {
+            // Format as HH:MM (24hr) for display
+            const hours = String(date.getHours()).padStart(2, '0');
+            const mins = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${mins}`;
         }
 
-        function processDateShortcut() {
-            const textInput = document.getElementById('noteDateText');
-            const dateInput = document.getElementById('noteDate');
-            const val = textInput.value.trim().toUpperCase();
+        function parseDateInput(input) {
+            // Parse Epic-style date shortcuts: t, t-2, t+1, etc.
+            const val = input.trim().toLowerCase();
+            const today = new Date();
 
-            if (val) {
-                const today = new Date();
-                let targetDate = today;
-
-                if (val === 'T' || val === 'TODAY') {
-                    targetDate = today;
-                } else if (val.match(/^T\s*[\+\-]\s*\d+$/)) {
-                    const match = val.match(/^T\s*([\+\-])\s*(\d+)$/);
-                    const sign = match[1] === '+' ? 1 : -1;
-                    const days = parseInt(match[2]);
-                    targetDate = new Date(today);
-                    targetDate.setDate(today.getDate() + (sign * days));
-                }
-
-                // Format as YYYY-MM-DD for input
-                const year = targetDate.getFullYear();
-                const month = String(targetDate.getMonth() + 1).padStart(2, '0');
-                const day = String(targetDate.getDate()).padStart(2, '0');
-                dateInput.value = `${year}-${month}-${day}`;
+            if (val === 't' || val === 'today') {
+                return formatDateDisplay(today);
             }
 
-            textInput.style.display = 'none';
-            dateInput.style.display = 'block';
-            textInput.onblur = null;
-            textInput.onkeydown = null;
-        }
-
-        function showTimeShortcut(prefill = '') {
-            const timeInput = document.getElementById('noteTime');
-            const textInput = document.getElementById('noteTimeText');
-            if (textInput.style.display === 'block') return;
-            textInput.style.display = 'block';
-            timeInput.style.display = 'none';
-            textInput.value = prefill ? String(prefill).toUpperCase() : '';
-            textInput.focus();
-            textInput.onblur = processTimeShortcut;
-            textInput.onkeydown = function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    processTimeShortcut();
-                }
-            };
-        }
-
-        function hideTimeShortcut() {
-            // This is called but we process in processTimeShortcut
-        }
-
-        function processTimeShortcut() {
-            const textInput = document.getElementById('noteTimeText');
-            const timeInput = document.getElementById('noteTime');
-            const val = textInput.value.trim().toUpperCase();
-
-            if (val) {
-                const now = new Date();
-                let targetTime = now;
-
-                if (val === 'N' || val === 'NOW') {
-                    targetTime = now;
-                } else if (val.match(/^N\s*[\+\-]\s*\d+$/)) {
-                    const match = val.match(/^N\s*([\+\-])\s*(\d+)$/);
-                    const sign = match[1] === '+' ? 1 : -1;
-                    const minutes = parseInt(match[2]);
-                    targetTime = new Date(now);
-                    targetTime.setMinutes(now.getMinutes() + (sign * minutes));
-                }
-
-                // Format as HH:MM for input
-                const hours = String(targetTime.getHours()).padStart(2, '0');
-                const mins = String(targetTime.getMinutes()).padStart(2, '0');
-                timeInput.value = `${hours}:${mins}`;
+            // Match t-2, t+1, t-10, etc.
+            const match = val.match(/^t\s*([\+\-])\s*(\d+)$/);
+            if (match) {
+                const sign = match[1] === '+' ? 1 : -1;
+                const days = parseInt(match[2]);
+                const targetDate = new Date(today);
+                targetDate.setDate(today.getDate() + (sign * days));
+                return formatDateDisplay(targetDate);
             }
 
-            textInput.style.display = 'none';
-            timeInput.style.display = 'block';
-            textInput.onblur = null;
-            textInput.onkeydown = null;
+            // If not a shortcut, return as-is (user may have entered a date directly)
+            return input;
+        }
+
+        function parseTimeInput(input) {
+            // Parse Epic-style time shortcuts: n, n-30, n+15, etc.
+            const val = input.trim().toLowerCase();
+            const now = new Date();
+
+            if (val === 'n' || val === 'now') {
+                return formatTimeDisplay(now);
+            }
+
+            // Match n-30, n+15, n-5, etc.
+            const match = val.match(/^n\s*([\+\-])\s*(\d+)$/);
+            if (match) {
+                const sign = match[1] === '+' ? 1 : -1;
+                const minutes = parseInt(match[2]);
+                const targetTime = new Date(now);
+                targetTime.setMinutes(now.getMinutes() + (sign * minutes));
+                return formatTimeDisplay(targetTime);
+            }
+
+            // If not a shortcut, return as-is
+            return input;
+        }
+
+        function setupDateTimeShortcuts() {
+            const dateInput = document.getElementById('noteDate');
+            const timeInput = document.getElementById('noteTime');
+
+            if (dateInput) {
+                // Set initial value to today
+                dateInput.value = formatDateDisplay(new Date());
+
+                // Parse on blur
+                dateInput.addEventListener('blur', function() {
+                    this.value = parseDateInput(this.value);
+                });
+
+                // Parse on Enter
+                dateInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.value = parseDateInput(this.value);
+                        this.blur();
+                    }
+                });
+            }
+
+            if (timeInput) {
+                // Set initial value to now
+                timeInput.value = formatTimeDisplay(new Date());
+
+                // Parse on blur
+                timeInput.addEventListener('blur', function() {
+                    this.value = parseTimeInput(this.value);
+                });
+
+                // Parse on Enter
+                timeInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.value = parseTimeInput(this.value);
+                        this.blur();
+                    }
+                });
+            }
         }
 
         // Med Time shortcuts (same logic as note time)
-        function showMedTimeShortcut(prefill = '') {
-            const timeInput = document.getElementById('medTime');
-            const textInput = document.getElementById('medTimeText');
-            if (textInput.style.display === 'block') return;
-            textInput.style.display = 'block';
-            timeInput.style.display = 'none';
-            textInput.value = prefill ? String(prefill).toUpperCase() : '';
-            textInput.focus();
-            textInput.onblur = processMedTimeShortcut;
-            textInput.onkeydown = function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    processMedTimeShortcut();
-                }
-            };
-        }
-
-        function hideMedTimeShortcut() {
-            // Handled in processMedTimeShortcut
-        }
-
-        function processMedTimeShortcut() {
-            const textInput = document.getElementById('medTimeText');
-            const timeInput = document.getElementById('medTime');
-            const val = textInput.value.trim().toUpperCase();
-
-            if (val) {
-                const now = new Date();
-                let targetTime = now;
-
-                if (val === 'N' || val === 'NOW') {
-                    targetTime = now;
-                } else if (val.match(/^N\s*[\+\-]\s*\d+$/)) {
-                    const match = val.match(/^N\s*([\+\-])\s*(\d+)$/);
-                    const sign = match[1] === '+' ? 1 : -1;
-                    const minutes = parseInt(match[2]);
-                    targetTime = new Date(now);
-                    targetTime.setMinutes(now.getMinutes() + (sign * minutes));
-                }
-
-                const hours = String(targetTime.getHours()).padStart(2, '0');
-                const mins = String(targetTime.getMinutes()).padStart(2, '0');
-                timeInput.value = `${hours}:${mins}`;
+        function setupMedTimeShortcut() {
+            const medTimeInput = document.getElementById('medTime');
+            if (medTimeInput) {
+                medTimeInput.addEventListener('blur', function() {
+                    this.value = parseTimeInput(this.value);
+                });
+                medTimeInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.value = parseTimeInput(this.value);
+                        this.blur();
+                    }
+                });
             }
-
-            textInput.style.display = 'none';
-            timeInput.style.display = 'block';
-            textInput.onblur = null;
-            textInput.onkeydown = null;
         }
 
         // Toggle collapsible panels
@@ -5262,41 +5220,14 @@ Important guidelines:
         }
 
         // Initialize
-        document.getElementById('noteDate').valueAsDate = new Date();
-        document.getElementById('noteTime').value = new Date().toTimeString().slice(0, 5);
+        setupDateTimeShortcuts();
+        setupMedTimeShortcut();
         document.querySelectorAll('.note-type-card').forEach(card => {
             card.addEventListener('click', () => {
                 const type = card.dataset.noteType;
                 if (type) selectNoteType(type, card);
             });
         });
-        const noteDateInput = document.getElementById('noteDate');
-        const noteTimeInput = document.getElementById('noteTime');
-        if (noteDateInput) {
-            noteDateInput.addEventListener('keydown', (e) => {
-                if (e.key && e.key.toUpperCase() === 'T') {
-                    e.preventDefault();
-                    showDateShortcut('T');
-                }
-            });
-        }
-        if (noteTimeInput) {
-            noteTimeInput.addEventListener('keydown', (e) => {
-                if (e.key && e.key.toUpperCase() === 'N') {
-                    e.preventDefault();
-                    showTimeShortcut('N');
-                }
-            });
-        }
-        const medTimeInput = document.getElementById('medTime');
-        if (medTimeInput) {
-            medTimeInput.addEventListener('keydown', (e) => {
-                if (e.key && e.key.toUpperCase() === 'N') {
-                    e.preventDefault();
-                    showMedTimeShortcut('N');
-                }
-            });
-        }
         const storedName = localStorage.getItem('bsn9b_displayName');
         const nurseNameInput = document.getElementById('nurseName');
         if (nurseNameInput && storedName && !nurseNameInput.value) {
