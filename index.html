@@ -593,8 +593,8 @@
                 }
                 database.ref('userProfiles/' + user.uid).update(profileUpdate).catch(() => {});
 
-                // Log successful login (fire and forget - don't await)
-                logLoginEvent(user.email, displayName, true);
+                // Log successful login - await to ensure session key is saved before redirect
+                await logLoginEvent(user.email, displayName, true);
 
                 // If no displayName in Firebase, try to get from Google Sheet in background
                 // This will update the profile for next login
@@ -973,7 +973,7 @@ Review users anytime: ${adminUrl}`;
             }
         }
 
-        function logLoginEvent(username, displayName, success) {
+        async function logLoginEvent(username, displayName, success) {
             const timestamp = Date.now();
 
             // Ensure we have valid data
@@ -995,13 +995,18 @@ Review users anytime: ${adminUrl}`;
 
             if (success) {
                 const sessionRef = loginRef.push();
-                sessionRef.set(payload)
-                    .then(() => console.log('Login history saved successfully'))
-                    .catch((err) => console.error('Failed to save login history:', err));
-                localStorage.setItem('bsn9b_session_key', sessionRef.key || '');
-                localStorage.setItem('bsn9b_session_start', String(timestamp));
-                localStorage.removeItem('bsn9b_session_end_sent');
+                // Wait for write to complete before saving session key
+                try {
+                    await sessionRef.set(payload);
+                    console.log('Login history saved successfully');
+                    localStorage.setItem('bsn9b_session_key', sessionRef.key || '');
+                    localStorage.setItem('bsn9b_session_start', String(timestamp));
+                    localStorage.removeItem('bsn9b_session_end_sent');
+                } catch (err) {
+                    console.error('Failed to save login history:', err);
+                }
             } else {
+                // Failed login - fire and forget
                 loginRef.push(payload)
                     .then(() => console.log('Failed login recorded'))
                     .catch((err) => console.error('Failed to record login attempt:', err));
