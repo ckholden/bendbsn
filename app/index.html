@@ -5895,8 +5895,8 @@ Important guidelines:
         function clearForm() {
             if (!confirm('Clear all fields?')) return;
             document.querySelectorAll('input:not([type="date"]):not([type="time"]), textarea').forEach(el => el.value = '');
-            document.getElementById('noteDate').valueAsDate = new Date();
-            document.getElementById('noteTime').value = new Date().toTimeString().slice(0, 5);
+            document.getElementById('noteDate').value = formatDateDisplay(new Date());
+            document.getElementById('noteTime').value = formatTimeDisplay(new Date());
             selectedDiagnoses = [];
             renderDiagnoses();
         }
@@ -5904,11 +5904,38 @@ Important guidelines:
         function formatTimeForFilename(t) { return t ? t.replace(':', '') : ''; }
 
         function getFormData() {
+            // Handle date - format is MM/DD/YYYY from the input field
+            let noteDate = 'N/A';
+            let noteDateForFilename = '';
+            const dateValue = document.getElementById('noteDate').value.trim();
+            if (dateValue) {
+                // Date field uses MM/DD/YYYY format - parse it correctly
+                const parts = dateValue.split('/');
+                if (parts.length === 3) {
+                    const month = parseInt(parts[0], 10);
+                    const day = parseInt(parts[1], 10);
+                    const year = parseInt(parts[2], 10);
+                    if (!isNaN(month) && !isNaN(day) && !isNaN(year)) {
+                        // Format for display: M/D/YY
+                        noteDate = `${month}/${day}/${String(year).slice(-2)}`;
+                        // Format for filename: MMDDYYYY (no slashes)
+                        noteDateForFilename = `${String(month).padStart(2,'0')}${String(day).padStart(2,'0')}${year}`;
+                    }
+                }
+            }
+            // Fallback to current date if empty or invalid
+            if (noteDate === 'N/A') {
+                const now = new Date();
+                noteDate = now.toLocaleDateString('en-US', {month:'numeric',day:'numeric',year:'2-digit'});
+                noteDateForFilename = `${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${now.getFullYear()}`;
+            }
+
             return {
                 nurseName: document.getElementById('nurseName').value || 'N/A',
                 credentials: document.getElementById('credentials').value,
-                noteDate: new Date(document.getElementById('noteDate').value + 'T00:00:00').toLocaleDateString('en-US', {month:'numeric',day:'numeric',year:'2-digit'}),
-                noteTime: formatTimeForFilename(document.getElementById('noteTime').value),
+                noteDate: noteDate,
+                noteDateForFilename: noteDateForFilename,
+                noteTime: formatTimeForFilename(document.getElementById('noteTime').value) || new Date().toTimeString().slice(0, 5).replace(':', ''),
                 unit: document.getElementById('unit').value || '',
                 patientId: document.getElementById('patientId').value || 'N/A',
                 patientDemo: document.getElementById('patientDemo').value || '',
@@ -6143,7 +6170,7 @@ Important guidelines:
             // Get last name from nurse name (last word)
             const nameParts = d.nurseName.trim().split(' ');
             const lastName = nameParts[nameParts.length - 1] || 'Student';
-            doc.save(`${document.getElementById('noteDate').value}_${d.noteTime}_${currentNoteType.toUpperCase()}_${lastName}.pdf`);
+            doc.save(`${d.noteDateForFilename}_${d.noteTime}_${currentNoteType.toUpperCase()}_${lastName}.pdf`);
             } catch(e) {
                 console.error('PDF export error:', e);
                 showToast('Error generating PDF: ' + e.message, 'error');
@@ -6249,7 +6276,7 @@ Important guidelines:
                 // Get last name from nurse name (last word)
                 const nameParts = d.nurseName.trim().split(' ');
                 const lastName = nameParts[nameParts.length - 1] || 'Student';
-                saveAs(blob, document.getElementById('noteDate').value + '_' + d.noteTime + '_' + currentNoteType.toUpperCase() + '_' + lastName + '.docx');
+                saveAs(blob, d.noteDateForFilename + '_' + d.noteTime + '_' + currentNoteType.toUpperCase() + '_' + lastName + '.docx');
 
             } catch(e) {
                 console.error('Word export error:', e);
