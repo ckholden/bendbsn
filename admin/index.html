@@ -1163,7 +1163,17 @@
                 html += '</tr></thead><tbody>';
 
                 loginHistoryData.forEach((login, index) => {
-                    const date = new Date(login.timestamp).toLocaleString();
+                    // Handle missing or invalid timestamps
+                    let date = 'Invalid entry';
+                    if (login.timestamp && typeof login.timestamp === 'number') {
+                        const dateObj = new Date(login.timestamp);
+                        if (!isNaN(dateObj.getTime())) {
+                            date = dateObj.toLocaleString();
+                        }
+                    } else if (login.date) {
+                        date = login.date; // Fallback to stored date string
+                    }
+
                     const statusColor = login.success ? '#28a745' : '#dc3545';
                     const statusText = login.success ? 'Success' : 'Failed';
                     const start = login.timestamp || 0;
@@ -1175,9 +1185,14 @@
                     const durationLabel = durationSeconds
                         ? formatDuration(durationSeconds)
                         : (login.success ? 'Active' : '—');
-                    html += `<tr style="border-bottom: 1px solid #eee;" data-key="${login.key}">
+
+                    // Mark invalid entries with warning style
+                    const isInvalid = date === 'Invalid entry';
+                    const rowStyle = isInvalid ? 'background: #fff5f5;' : '';
+
+                    html += `<tr style="border-bottom: 1px solid #eee; ${rowStyle}" data-key="${login.key}">
                         <td style="padding: 8px 10px; text-align: center;"><input type="checkbox" class="login-history-checkbox" data-key="${login.key}" onchange="updateSelectedCount()"></td>
-                        <td style="padding: 8px 10px;">${date}</td>
+                        <td style="padding: 8px 10px;">${date}${isInvalid ? ' <span style="color:#dc3545;font-size:10px;">(corrupted)</span>' : ''}</td>
                         <td style="padding: 8px 10px; font-weight: 500;">${login.username || 'N/A'}</td>
                         <td style="padding: 8px 10px;">${login.displayName || 'N/A'}</td>
                         <td style="padding: 8px 10px; text-align: center;">${durationLabel}</td>

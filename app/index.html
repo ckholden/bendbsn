@@ -2495,6 +2495,22 @@
             localStorage.removeItem(SESSION_START_KEY);
             localStorage.removeItem('bsn9b_session_end_sent');
         }
+
+        // End session when user closes tab/browser
+        window.addEventListener('pagehide', function(e) {
+            endSessionTracking('tab_close');
+        });
+        window.addEventListener('beforeunload', function(e) {
+            endSessionTracking('tab_close');
+        });
+        // Also end session after inactivity (5 min without heartbeat = session ended)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                // User switched away - record potential end time
+                updateSessionHeartbeat();
+            }
+        });
+
         const channelsRef = database.ref('chat/channels');
         const chatRootRef = database.ref('chat/messages');
         let chatRef = null;
