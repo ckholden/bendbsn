@@ -147,6 +147,10 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            width: 100%;
+        }
+        .grid > * {
+            width: 100%;
         }
         .resource-navigator {
             background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
@@ -3353,6 +3357,9 @@ Generated: ${new Date().toLocaleString()}`;
         let channelUnreadCounts = {};
         let channelListeners = {};
         let dmSidebarUnreadCounts = {};
+        let currentDMConversation = null;
+        let dmConversations = [];
+        let onlineUsersDetailed = [];
 
         function getLastReadTimestamp(channelId) {
             return parseInt(lastReadByChannel[channelId] || '0');
@@ -4096,9 +4103,6 @@ Generated: ${new Date().toLocaleString()}`;
         });
 
         // ========== DIRECT MESSAGES ==========
-        let chatMode = 'group';
-        let currentDMConversation = null;
-        let dmConversations = [];
         let dmUnreadCount = 0;
         let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
         const directMessagesRef = database.ref('directMessages');
@@ -4670,7 +4674,7 @@ Generated: ${new Date().toLocaleString()}`;
 
         // Store online users for @mention autocomplete
         let onlineUsers = [];
-        let onlineUsersDetailed = [];
+        onlineUsersDetailed = [];  // Reset (declared in sidebar state)
 
         presenceRef.on('value', (snapshot) => {
             const count = snapshot.numChildren();

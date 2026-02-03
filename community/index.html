@@ -1499,6 +1499,9 @@
         let channelUnreadCounts = {};
         let channelListeners = {};
         let dmSidebarUnreadCounts = {};
+        let currentDMConversation = null;
+        let dmConversations = [];
+        let onlineUsersDetailed = [];
 
         function getLastReadTimestamp(channelId) {
             return parseInt(lastReadByChannel[channelId] || '0');
@@ -2240,9 +2243,6 @@
         });
 
         // ========== DIRECT MESSAGES ==========
-        let chatMode = 'group';
-        let currentDMConversation = null;
-        let dmConversations = [];
         let dmUnreadCount = 0;
         let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
         const directMessagesRef = database.ref('directMessages');
@@ -2814,7 +2814,6 @@
 
         // Store online users for @mention autocomplete
         let onlineUsers = [];
-        let onlineUsersDetailed = [];
 
         presenceRef.on('value', (snapshot) => {
             const count = snapshot.numChildren();
