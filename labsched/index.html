@@ -12,11 +12,6 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title>Lab Check-Off Schedule Generator - BSN9B</title>
-    <script>
-        if (localStorage.getItem('bsn9b_auth') !== 'true') {
-            window.location.href = '/';
-        }
-    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -373,7 +368,7 @@
 
         // Initialize first room
         function init() {
-            rooms = [{ instructor: '', entries: [] }];
+            rooms = [{ instructor: '', roomNumber: '', entries: [] }];
             renderRooms();
         }
 
@@ -386,7 +381,7 @@
 
             // Adjust rooms array
             while (rooms.length < roomCount) {
-                rooms.push({ instructor: '', entries: [] });
+                rooms.push({ instructor: '', roomNumber: '', entries: [] });
             }
             while (rooms.length > roomCount) {
                 rooms.pop();
@@ -401,19 +396,30 @@
                 <div class="room-card" id="room-${index}">
                     <div class="room-header">
                         <h4>Room ${index + 1}</h4>
-                        <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="text" placeholder="Room # (e.g., 101b)" value="${room.roomNumber || ''}"
+                                onchange="updateRoomNumber(${index}, this.value)"
+                                style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; width: 120px;">
                             <input type="text" placeholder="Instructor Name" value="${room.instructor}"
                                 onchange="updateInstructor(${index}, this.value)"
                                 style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; width: 180px;">
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <input type="text" id="studentName-${index}" placeholder="Student Name"
                             style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
                         <input type="text" id="studentTime-${index}" placeholder="Time (e.g., 0900)"
                             style="width: 100px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
                         <button class="btn btn-primary" onclick="addStudent(${index})">Add Student</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+                        <span style="font-size: 13px; color: #666; font-weight: 600;">Break:</span>
+                        <input type="text" id="breakStart-${index}" placeholder="Start (e.g., 1000)"
+                            style="width: 100px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <span style="color: #666;">-</span>
+                        <input type="text" id="breakEnd-${index}" placeholder="End (e.g., 1015)"
+                            style="width: 100px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
                         <button class="btn btn-secondary" onclick="addBreak(${index})" style="background: #ff9800;">Add Break</button>
                     </div>
 
@@ -437,6 +443,10 @@
             rooms[roomIndex].instructor = value;
         }
 
+        function updateRoomNumber(roomIndex, value) {
+            rooms[roomIndex].roomNumber = value;
+        }
+
         function addStudent(roomIndex) {
             const nameInput = document.getElementById(`studentName-${roomIndex}`);
             const timeInput = document.getElementById(`studentTime-${roomIndex}`);
@@ -457,11 +467,24 @@
         }
 
         function addBreak(roomIndex) {
-            const timeInput = document.getElementById(`studentTime-${roomIndex}`);
-            const time = timeInput.value.trim();
+            const startInput = document.getElementById(`breakStart-${roomIndex}`);
+            const endInput = document.getElementById(`breakEnd-${roomIndex}`);
+            const startTime = startInput.value.trim();
+            const endTime = endInput.value.trim();
 
-            rooms[roomIndex].entries.push({ type: 'break', name: 'BREAK', time: time || '' });
-            timeInput.value = '';
+            // Format time display: "1000-1015" or just "1000" or empty
+            let timeDisplay = '';
+            if (startTime && endTime) {
+                timeDisplay = `${startTime}-${endTime}`;
+            } else if (startTime) {
+                timeDisplay = startTime;
+            } else if (endTime) {
+                timeDisplay = endTime;
+            }
+
+            rooms[roomIndex].entries.push({ type: 'break', name: 'BREAK', time: timeDisplay });
+            startInput.value = '';
+            endInput.value = '';
             renderRooms();
         }
 
@@ -492,9 +515,13 @@
             rooms.forEach((room, index) => {
                 if (room.entries.length === 0) return;
 
+                // Build room title: "Room 101b - Instructor" or "Room 1 - Instructor" or just "Room 1"
+                const roomLabel = room.roomNumber ? `Room ${room.roomNumber}` : `Room ${index + 1}`;
+                const roomTitle = roomLabel + (room.instructor ? ' - ' + room.instructor : '');
+
                 html += `
                     <div class="preview-room">
-                        <h4>Room ${index + 1}${room.instructor ? ' - ' + room.instructor : ''}</h4>
+                        <h4>${roomTitle}</h4>
                         <table class="preview-table">
                             <thead>
                                 <tr>
@@ -566,7 +593,8 @@
                 doc.setTextColor(255);
                 doc.setFontSize(12);
                 doc.setFont('helvetica', 'bold');
-                const roomTitle = `Room ${roomIndex + 1}${room.instructor ? ' - ' + room.instructor : ''}`;
+                const roomLabel = room.roomNumber ? `Room ${room.roomNumber}` : `Room ${roomIndex + 1}`;
+                const roomTitle = roomLabel + (room.instructor ? ' - ' + room.instructor : '');
                 doc.rect(margin, y, pw - margin * 2, 8, 'F');
                 doc.text(roomTitle, margin + 5, y + 5.5);
                 y += 12;
@@ -621,7 +649,7 @@
 
         function clearAll() {
             if (!confirm('Clear all rooms and entries?')) return;
-            rooms = [{ instructor: '', entries: [] }];
+            rooms = [{ instructor: '', roomNumber: '', entries: [] }];
             roomCount = 1;
             document.getElementById('roomCount').textContent = '1';
             document.getElementById('scheduleTitle').value = '';
