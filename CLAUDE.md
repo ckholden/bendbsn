@@ -464,3 +464,45 @@ if (action === 'updateRole') {
 | `/resources/index.html` | Session validation fix |
 | `/admin/index.html` | Login history delete, user delete, role update |
 | `/sw.js` | Cache version v13, added login/admin to stale-while-revalidate |
+
+---
+
+## Session Notes (Feb 2, 2026 - Evening)
+
+### Completed Tonight
+
+#### Resources Page Accordion Layout Fix
+**Problem:** Resource cards were displaying incorrectly - horizontal layout instead of vertical stacking.
+
+**Root Cause:** CSS class conflict between generic `.collapsible` rule (line ~500) and `.resource-card.collapsible`. The generic rule applied `display: flex`, `justify-content: space-between`, and `:after` chevron to all collapsible elements, including the resource cards.
+
+**Fix Applied:**
+1. Added `display: block` to override inherited flex layout
+2. Added `cursor: default` so card itself doesn't look clickable
+3. Added `.resource-card.collapsible:after { content: none }` to hide duplicate chevron
+
+#### Resources Page UI/UX Improvements
+Enhanced the accordion card styling:
+- **Spacing:** Added 12px margin between cards
+- **Hover effect:** Subtle lift (translateY -2px) with stronger shadow
+- **Expanded indicator:** Blue left border when card is open
+- **Chevron button:** Pill-shaped background with hover highlight
+- **Smooth animations:** max-height transition instead of display:none
+- **Tactile feedback:** Scale-down on header click
+- **Dark mode:** Matching styles with lighter blue accent
+- **Mobile:** Adjusted padding for better touch targets
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `/resources/index.html` | Accordion CSS fix + UI/UX enhancements |
+
+### Future Improvements to Consider
+The accordion looks better but could be refined further:
+- Category color-coding (different header gradients per card type?)
+- Search/filter highlight animation
+- Keyboard navigation (arrow keys to move between cards)
+- "Expand all / Collapse all" button
+- Remember expanded state in localStorage
+- Subtle entry animation when page loads
+- Icon variations instead of just emoji
