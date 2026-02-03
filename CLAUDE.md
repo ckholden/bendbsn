@@ -506,3 +506,105 @@ The accordion looks better but could be refined further:
 - Remember expanded state in localStorage
 - Subtle entry animation when page loads
 - Icon variations instead of just emoji
+
+---
+
+## Known Issues To Fix (Feb 2, 2026)
+
+### 1. Medication Search in Med Admin Panel
+**Status:** Needs debugging
+**Symptom:** Search not working (need more details from user)
+**Possible causes:**
+- JS error preventing code from running (check console)
+- DOM elements not found (added null checks)
+- API endpoint issue (tested - API works fine)
+**Next step:** User to test and report what they see (Searching... text? Dropdown? Console errors?)
+
+### 2. Direct Messages Not Working
+**Status:** Investigation complete - found likely cause
+**Root cause:** DM requires valid Firebase UID for both sender and recipient. If `partnerUid` is empty/undefined, DM fails with "This user is not available for DMs yet" toast.
+
+**Code location:** `app/index.html` line 3774-3778
+```javascript
+if (!currentUid || !partnerUid) {
+    showToast('This user is not available for DMs yet...', 'warning');
+    return;
+}
+```
+
+**Why UIDs might be missing:**
+- User registered before UID tracking was added
+- User hasn't logged in since the UID-based system was implemented
+- Presence data doesn't include UID for older sessions
+
+**Proposed fixes:**
+1. When user logs in, ensure their UID is stored in their profile
+2. Fall back to email-based conversation ID if UID unavailable
+3. Update presence to always include UID from `auth.currentUser.uid`
+
+### 3. Online Users - Duplicates & No Timeout
+**Status:** Investigation complete
+
+**Problem 1: Duplicate users**
+- Current code uses `presenceRef.push()` which creates NEW entry each time
+- Multiple tabs = multiple entries for same user
+- If disconnect doesn't fire cleanly, stale entries remain
+
+**Fix:** Use `presenceRef.child(uid)` instead of `presenceRef.push()` so each user only has ONE entry regardless of tabs
+
+**Problem 2: No idle timeout**
+- Currently users stay "online" until browser tab closes or explicit logout
+- No heartbeat/activity tracking
+- Stale presence entries can accumulate
+
+**Proposed fix - Add heartbeat system:**
+```javascript
+// On presence set, include timestamp
+myPresence.set({
+    user: displayName,
+    uid: getCurrentUserUid(),
+    lastActive: firebase.database.ServerValue.TIMESTAMP
+});
+
+// Update lastActive every 5 minutes while active
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        myPresence.update({ lastActive: firebase.database.ServerValue.TIMESTAMP });
+    }
+}, 5 * 60 * 1000);
+
+// Server-side or client-side cleanup: remove entries older than 30 mins
+```
+
+**Alternative:** Firebase Cloud Function to periodically clean stale presence entries
+
+### 4. Session Timeout Question
+**Current behavior:** No auto-logout. Session persists until:
+- User clicks Logout
+- User clicks Lock
+- Browser tab closes (presence removed via onDisconnect)
+- localStorage is cleared
+
+**Options to implement:**
+1. **Idle timeout (recommended):** Auto-lock after X minutes of inactivity
+2. **Session expiry:** Logout after X hours regardless of activity
+3. **Visibility-based:** Mark as "away" when tab not visible, remove after longer period
+
+**Suggested implementation:**
+```javascript
+let idleTimeout;
+const IDLE_LIMIT = 30 * 60 * 1000; // 30 minutes
+
+function resetIdleTimer() {
+    clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => {
+        lockScreen(); // or logout()
+    }, IDLE_LIMIT);
+}
+
+// Reset on user activity
+['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+    document.addEventListener(event, resetIdleTimer, { passive: true });
+});
+resetIdleTimer(); // Start timer
+```
