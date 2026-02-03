@@ -401,14 +401,10 @@ communityPostsRef.on('value', () => loadCommunityPosts());
 - Updates both Firebase profile (if exists) AND Google Sheet
 - Files modified: `/admin/index.html`
 
-### Pending / To Test Tomorrow
+### Still Pending (as of Feb 3, 2026)
 
-#### 1. Test Role Update for Ann
-- Change Ann's role from "RN Student" to "Instructor"
-- Verify toast shows "Role updated to Instructor"
-
-#### 2. Google Apps Script Actions Needed
-Add these actions to your Google Apps Script:
+#### 1. Google Apps Script Actions Needed
+Add these actions to your Google Apps Script (required for admin panel delete/role features):
 
 **deleteUser action:**
 ```javascript
@@ -452,7 +448,7 @@ if (action === 'updateRole') {
 }
 ```
 
-#### 3. Service Worker Cache
+#### 2. Service Worker Cache
 - Current version: `v13`
 - If seeing stale code, hard refresh (`Ctrl+Shift+R`) or clear site data
 
