@@ -543,68 +543,105 @@ if (!currentUid || !partnerUid) {
 3. Update presence to always include UID from `auth.currentUser.uid`
 
 ### 3. Online Users - Duplicates & No Timeout
-**Status:** Investigation complete
+**Status:** ✅ FIXED (Feb 2, 2026)
 
-**Problem 1: Duplicate users**
-- Current code uses `presenceRef.push()` which creates NEW entry each time
-- Multiple tabs = multiple entries for same user
-- If disconnect doesn't fire cleanly, stale entries remain
-
-**Fix:** Use `presenceRef.child(uid)` instead of `presenceRef.push()` so each user only has ONE entry regardless of tabs
-
-**Problem 2: No idle timeout**
-- Currently users stay "online" until browser tab closes or explicit logout
-- No heartbeat/activity tracking
-- Stale presence entries can accumulate
-
-**Proposed fix - Add heartbeat system:**
-```javascript
-// On presence set, include timestamp
-myPresence.set({
-    user: displayName,
-    uid: getCurrentUserUid(),
-    lastActive: firebase.database.ServerValue.TIMESTAMP
-});
-
-// Update lastActive every 5 minutes while active
-setInterval(() => {
-    if (document.visibilityState === 'visible') {
-        myPresence.update({ lastActive: firebase.database.ServerValue.TIMESTAMP });
-    }
-}, 5 * 60 * 1000);
-
-// Server-side or client-side cleanup: remove entries older than 30 mins
-```
-
-**Alternative:** Firebase Cloud Function to periodically clean stale presence entries
+Fixed in presence system overhaul - see Session Notes below.
 
 ### 4. Session Timeout Question
-**Current behavior:** No auto-logout. Session persists until:
-- User clicks Logout
-- User clicks Lock
-- Browser tab closes (presence removed via onDisconnect)
-- localStorage is cleared
+**Status:** ✅ FIXED (Feb 2, 2026)
 
-**Options to implement:**
-1. **Idle timeout (recommended):** Auto-lock after X minutes of inactivity
-2. **Session expiry:** Logout after X hours regardless of activity
-3. **Visibility-based:** Mark as "away" when tab not visible, remove after longer period
+Fixed in presence system overhaul - see Session Notes below.
 
-**Suggested implementation:**
+---
+
+## Session Notes (Feb 2, 2026 - Late Night)
+
+### Presence System Overhaul - COMPLETED
+
+Implemented comprehensive presence system with status states, idle timeout, and deduplication.
+
+#### Changes Made to All 4 Pages (`/app`, `/home`, `/community`, `/resources`):
+
+**1. New Constants:**
 ```javascript
-let idleTimeout;
-const IDLE_LIMIT = 30 * 60 * 1000; // 30 minutes
-
-function resetIdleTimer() {
-    clearTimeout(idleTimeout);
-    idleTimeout = setTimeout(() => {
-        lockScreen(); // or logout()
-    }, IDLE_LIMIT);
-}
-
-// Reset on user activity
-['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-    document.addEventListener(event, resetIdleTimer, { passive: true });
-});
-resetIdleTimer(); // Start timer
+const IDLE_TIMEOUT = 10 * 60 * 1000;   // 10 minutes → Away
+const LOGOUT_TIMEOUT = 30 * 60 * 1000; // 30 minutes → Logout
+const ACTIVITY_DEBOUNCE = 30000;       // 30 seconds debounce
 ```
+
+**2. New Presence Functions:**
+- `setPresence(status)` - Uses `presenceRef.child(uid)` instead of `push()` for deduplication
+- `updatePresenceStatus(status)` - Updates status without full rewrite
+- `recordActivity()` - Debounced activity detection with idle/logout timers
+- `initActivityTracking()` - Event listeners for mouse, keyboard, scroll, touch, visibility
+
+**3. Updated Presence Listener:**
+- Parses `status` field from presence data
+- Sorts users: online first, then away, by name
+- Shows count as "X online, Y away (click to see)"
+- Renders colored status dots: green (#22c55e) for online, yellow (#eab308) for away
+
+**4. Updated Logout Function:**
+- Cleans presence before signing out
+- Clears idle/logout timers
+
+**5. Added CSS:**
+```css
+.status-online { background: #22c55e; }  /* Green */
+.status-away { background: #eab308; }    /* Yellow */
+.status-offline { background: #6b7280; } /* Gray */
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+```
+
+#### Key Behavior:
+- Users show as **online** (green dot) when active
+- After **10 min idle** → status changes to **away** (yellow dot)
+- After **30 min total idle** → user is **logged out** automatically
+- **Multiple tabs** show user only ONCE (UID-based key)
+- Closing all tabs removes user (onDisconnect handler)
+- Activity resets timers and returns away users to online
+
+#### Firebase Path:
+`chat/presence/{uid}` (was `chat/presence/{pushId}`)
+
+#### New Data Structure:
+```javascript
+{
+  user: "Christian",
+  username: "chris@email.com",
+  uid: "abc123",
+  status: "online",  // "online" | "away"
+  lastActive: 1706918400000
+}
+```
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `/app/index.html` | Full presence system implementation |
+| `/home/index.html` | Presence system copy |
+| `/community/index.html` | Presence system copy |
+| `/resources/index.html` | Presence system copy (with chat-prefixed vars) |
+
+---
+
+## Future Upgrades to Consider
+
+### High Priority
+- [ ] **Firebase Cloud Function for stale presence cleanup** - Periodic cleanup of entries older than 1 hour (backup for failed onDisconnect)
+- [ ] **Warning before auto-logout** - Show toast at 25 min: "You'll be logged out in 5 minutes due to inactivity"
+- [ ] **Custom notification sounds** - Let users choose from different tones or upload their own
+
+### Medium Priority
+- [ ] **Typing indicators** - Show "User is typing..." in chat
+- [ ] **Read receipts for DMs** - Show when messages have been read
+- [ ] **User avatars/profile pictures** - Display in chat and presence list
+- [ ] **Online user count in header** - Show green dot + count persistently
+
+### Low Priority / Nice to Have
+- [ ] **Custom status messages** - "In class", "Studying", "Do not disturb"
+- [ ] **Invisible mode** - Appear offline while still using the app
+- [ ] **Last seen timestamp** - "Last active 2 hours ago"
+- [ ] **Push notifications** - Native mobile notifications when app is closed
+- [ ] **Message reactions** - Emoji reactions to chat messages
+- [ ] **Thread replies** - Reply to specific messages in chat
