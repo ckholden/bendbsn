@@ -5309,150 +5309,38 @@ Important guidelines:
 
         async function searchDrugs(query) {
             try {
-                // Use drugs endpoint for better brand/generic pairing
-                const drugsResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(query)}`);
-                const drugsData = await drugsResponse.json();
+                const results = new Map();
 
-                let drugMap = new Map(); // Use map to store unique drugs with their info
-                let brandToGeneric = new Map(); // Map brand names to their generic equivalents
-                let genericToBrand = new Map(); // Map generic names to brand names
-
-                // Process drug group data - collect all ingredients and brands
-                if (drugsData.drugGroup && drugsData.drugGroup.conceptGroup) {
-                    drugsData.drugGroup.conceptGroup.forEach(group => {
-                        const tty = group.tty;
-                        if (group.conceptProperties) {
-                            group.conceptProperties.forEach(prop => {
-                                const name = prop.name;
-                                const rxcui = prop.rxcui;
-                                if (name) {
-                                    if (tty === 'IN' || tty === 'MIN') {
-                                        // Generic/ingredient
-                                        drugMap.set(name.toLowerCase(), {
-                                            name: name,
-                                            type: 'generic',
-                                            rxcui: rxcui
-                                        });
-                                    } else if (tty === 'BN') {
-                                        // Brand name
-                                        drugMap.set(name.toLowerCase(), {
-                                            name: name,
-                                            type: 'brand',
-                                            rxcui: rxcui
-                                        });
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-
-                // Try to get brand/generic relationships for top results
-                const genericDrugs = Array.from(drugMap.values()).filter(d => d.type === 'generic').slice(0, 5);
-                const brandDrugs = Array.from(drugMap.values()).filter(d => d.type === 'brand').slice(0, 5);
-
-                // For each generic, try to find brand names
-                for (const drug of genericDrugs) {
-                    try {
-                        const relatedResp = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui/${drug.rxcui}/related.json?tty=BN`);
-                        const relatedData = await relatedResp.json();
-                        if (relatedData.relatedGroup?.conceptGroup) {
-                            relatedData.relatedGroup.conceptGroup.forEach(grp => {
-                                if (grp.conceptProperties) {
-                                    grp.conceptProperties.slice(0, 2).forEach(bp => {
-                                        genericToBrand.set(drug.name.toLowerCase(), bp.name);
-                                    });
-                                }
-                            });
-                        }
-                    } catch (e) { /* Continue if relationship lookup fails */ }
-                }
-
-                // For each brand, try to find generic names
-                for (const drug of brandDrugs) {
-                    try {
-                        const relatedResp = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui/${drug.rxcui}/related.json?tty=IN`);
-                        const relatedData = await relatedResp.json();
-                        if (relatedData.relatedGroup?.conceptGroup) {
-                            relatedData.relatedGroup.conceptGroup.forEach(grp => {
-                                if (grp.conceptProperties) {
-                                    grp.conceptProperties.slice(0, 1).forEach(gp => {
-                                        brandToGeneric.set(drug.name.toLowerCase(), gp.name);
-                                    });
-                                }
-                            });
-                        }
-                    } catch (e) { /* Continue if relationship lookup fails */ }
-                }
-
-                // Also try spelling suggestions for better matching
+                // 1. Spelling suggestions (handles typos)
                 const spellResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(query)}`);
                 const spellData = await spellResponse.json();
+
                 if (spellData.suggestionGroup?.suggestionList?.suggestion) {
-                    spellData.suggestionGroup.suggestionList.suggestion.slice(0, 5).forEach(s => {
-                        if (!drugMap.has(s.toLowerCase())) {
-                            drugMap.set(s.toLowerCase(), { name: s, type: 'drug' });
+                    spellData.suggestionGroup.suggestionList.suggestion.slice(0, 8).forEach(s => {
+                        results.set(s.toLowerCase(), { name: s, type: 'suggestion' });
+                    });
+                }
+
+                // 2. Approximate term matching (fuzzy search)
+                const approxResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(query)}&maxEntries=10`);
+                const approxData = await approxResponse.json();
+
+                if (approxData.approximateGroup?.candidate) {
+                    approxData.approximateGroup.candidate.forEach(c => {
+                        if (c.name && !results.has(c.name.toLowerCase())) {
+                            results.set(c.name.toLowerCase(), { name: c.name, type: 'match' });
                         }
                     });
                 }
 
-                // Build final suggestions with Generic (Brand) format
-                let suggestions = [];
-                const processed = new Set();
-
-                // Add generic drugs with their brand names
-                drugMap.forEach((drug, key) => {
-                    if (processed.has(key)) return;
-
-                    let displayName = drug.name;
-                    let searchTerms = drug.name.toLowerCase();
-
-                    if (drug.type === 'generic') {
-                        const brandName = genericToBrand.get(key);
-                        if (brandName) {
-                            displayName = `${drug.name} (${brandName})`;
-                            searchTerms += ' ' + brandName.toLowerCase();
-                        }
-                    } else if (drug.type === 'brand') {
-                        const genericName = brandToGeneric.get(key);
-                        if (genericName) {
-                            // Format as Generic (Brand) - generic first per user request
-                            displayName = `${genericName} (${drug.name})`;
-                            searchTerms += ' ' + genericName.toLowerCase();
-                        }
-                    }
-
-                    suggestions.push({
-                        name: drug.name,
-                        displayName: displayName,
-                        type: drug.type,
-                        searchTerms: searchTerms
-                    });
-                    processed.add(key);
-                });
-
-                // Sort: exact matches first, then by length
-                const queryLower = query.toLowerCase();
-                suggestions.sort((a, b) => {
-                    const aStartsWith = a.searchTerms.startsWith(queryLower) || a.name.toLowerCase().startsWith(queryLower);
-                    const bStartsWith = b.searchTerms.startsWith(queryLower) || b.name.toLowerCase().startsWith(queryLower);
-                    if (aStartsWith && !bStartsWith) return -1;
-                    if (!aStartsWith && bStartsWith) return 1;
-                    // Prefer generics over brands
-                    if (a.type === 'generic' && b.type !== 'generic') return -1;
-                    if (b.type === 'generic' && a.type !== 'generic') return 1;
-                    return a.displayName.length - b.displayName.length;
-                });
-
-                // Limit to 12 results
-                suggestions = suggestions.slice(0, 12);
+                // Build dropdown
+                const suggestions = Array.from(results.values()).slice(0, 12);
 
                 if (suggestions.length === 0) {
                     drugDropdown.innerHTML = '<div class="drug-loading">No matches found. You can still type manually.</div>';
                 } else {
                     drugDropdown.innerHTML = suggestions.map(drug => {
-                        const typeColor = drug.type === 'generic' ? '#388e3c' : drug.type === 'brand' ? '#1976d2' : '#666';
-                        return `<div class="drug-item" onclick="selectDrug('${drug.displayName.replace(/'/g, "\\'")}')" style="border-left: 3px solid ${typeColor}; padding-left: 10px;">${drug.displayName}</div>`;
+                        return `<div class="drug-item" onclick="selectDrug('${drug.name.replace(/'/g, "\\'")}')">${drug.name}</div>`;
                     }).join('');
                 }
                 drugDropdown.classList.add('show');
@@ -6290,10 +6178,15 @@ Important guidelines:
         function clearForm() {
             if (!confirm('Clear all fields?')) return;
             document.querySelectorAll('input:not([type="date"]):not([type="time"]), textarea').forEach(el => el.value = '');
+            // Reset select elements to first option
+            document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
             document.getElementById('noteDate').value = formatDateDisplay(new Date());
             document.getElementById('noteTime').value = formatTimeDisplay(new Date());
             selectedDiagnoses = [];
             renderDiagnoses();
+            // Clear saved medications display
+            savedMedications = [];
+            renderSavedMedications();
         }
 
         function formatTimeForFilename(t) { return t ? t.replace(':', '') : ''; }
