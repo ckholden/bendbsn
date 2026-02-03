@@ -196,31 +196,40 @@
         .resource-card.collapsible {
             padding: 0;
             overflow: hidden;
-            border-radius: 10px;
+            border-radius: 12px;
             border: none;
+            border-left: 4px solid transparent;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: box-shadow 0.2s;
-            display: block;              /* Override flex from generic .collapsible */
-            cursor: default;             /* Card itself shouldn't look clickable */
+            transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+            display: block;
+            cursor: default;
+            margin-bottom: 12px;
         }
-        /* Hide the duplicate chevron from generic .collapsible:after */
         .resource-card.collapsible:after {
             content: none;
         }
         .resource-card.collapsible:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+        .resource-card.collapsible.expanded {
+            border-left-color: #3b82f6;
         }
         .resource-card.collapsible .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            padding: 16px 20px;
+            padding: 18px 20px;
             background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
             transition: all 0.2s;
+            user-select: none;
         }
         .resource-card.collapsible .card-header:hover {
             background: linear-gradient(135deg, #2d5a87 0%, #3d6a97 100%);
+        }
+        .resource-card.collapsible .card-header:active {
+            transform: scale(0.995);
         }
         .resource-card.collapsible .card-header h2 {
             color: white;
@@ -232,34 +241,52 @@
             flex: 1;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+        .resource-card.collapsible .card-header h2::first-letter {
+            font-size: 1.3em;
         }
         .resource-card.collapsible .card-header .expand-icon {
-            color: rgba(255,255,255,0.8);
-            font-size: 12px;
-            transition: transform 0.3s ease;
-            margin-left: 15px;
+            color: white;
+            font-size: 10px;
+            transition: transform 0.3s ease, background 0.2s;
             font-weight: bold;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 10px;
+            border-radius: 20px;
+            min-width: 28px;
+            text-align: center;
+        }
+        .resource-card.collapsible .card-header:hover .expand-icon {
+            background: rgba(255,255,255,0.25);
         }
         .resource-card.collapsible.expanded .card-header .expand-icon {
             transform: rotate(180deg);
+            background: rgba(255,255,255,0.25);
         }
         .resource-card.collapsible .card-content {
-            display: none;
-            padding: 20px;
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 20px;
             background: #fafbfc;
             border-top: 1px solid #e2e8f0;
-            animation: slideDown 0.2s ease;
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+            opacity: 0;
         }
         .resource-card.collapsible.expanded .card-content {
-            display: block;
+            max-height: 2000px;
+            padding: 20px;
+            opacity: 1;
         }
+        /* Dark mode styles */
         [data-theme="dark"] .resource-card.collapsible {
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        [data-theme="dark"] .resource-card.collapsible:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        [data-theme="dark"] .resource-card.collapsible.expanded {
+            border-left-color: #60a5fa;
         }
         [data-theme="dark"] .resource-card.collapsible .card-header {
             background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
@@ -270,6 +297,15 @@
         [data-theme="dark"] .resource-card.collapsible .card-content {
             background: #16213e;
             border-top-color: #2d3748;
+        }
+        /* Mobile touch targets */
+        @media (max-width: 600px) {
+            .resource-card.collapsible .card-header {
+                padding: 16px 16px;
+            }
+            .resource-card.collapsible.expanded .card-content {
+                padding: 16px;
+            }
         }
 
         .card {
