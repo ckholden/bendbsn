@@ -93,6 +93,19 @@
             --chat-msg-other-text: #e6e6e6;
         }
 
+        /* Status indicator colors for presence */
+        .status-online { background: #22c55e; }  /* Green */
+        .status-away { background: #eab308; }    /* Yellow */
+        .status-offline { background: #6b7280; } /* Gray */
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
         /* Dark mode chat widget styles */
         [data-theme="dark"] #chatBox {
             background: var(--bg-primary) !important;
@@ -2559,6 +2572,17 @@
         const SESSION_HEARTBEAT_MS = 60000;
         let sessionHeartbeatTimer = null;
 
+        // Presence/Activity timeout constants
+        const IDLE_TIMEOUT = 10 * 60 * 1000;   // 10 minutes → Away
+        const LOGOUT_TIMEOUT = 30 * 60 * 1000; // 30 minutes → Logout
+        const ACTIVITY_DEBOUNCE = 30000;       // Debounce Firebase updates
+        let idleTimer = null;
+        let logoutTimer = null;
+        let activityDebounceTimer = null;
+        let lastActivityTime = Date.now();
+        let currentPresenceStatus = 'online';
+        let myPresenceRef = null;
+
         let sessionValidated = false;
 
         function updateSessionHeartbeat() {
@@ -4347,16 +4371,94 @@ Important guidelines:
         `;
         document.head.appendChild(aiStyle);
 
-        // Track online presence - use display name (first name)
-        const myPresence = presenceRef.push();
-        myPresence.set({
-            user: displayName,
-            username: currentUsername,
-            uid: getCurrentUserUid(),
-            email: getCurrentUserEmail(),
-            online: true
-        });
-        myPresence.onDisconnect().remove();
+        // ========== PRESENCE SYSTEM ==========
+        // Set presence using UID as key (prevents duplicates across tabs)
+        function setPresence(status = 'online') {
+            const uid = getCurrentUserUid();
+            if (!uid) return;
+
+            myPresenceRef = presenceRef.child(uid);
+            myPresenceRef.set({
+                user: displayName,
+                username: currentUsername,
+                uid: uid,
+                status: status,
+                lastActive: firebase.database.ServerValue.TIMESTAMP
+            });
+            myPresenceRef.onDisconnect().remove();
+            currentPresenceStatus = status;
+        }
+
+        // Update status without full rewrite
+        function updatePresenceStatus(status) {
+            const uid = getCurrentUserUid();
+            if (!uid) return;
+            presenceRef.child(uid).update({
+                status: status,
+                lastActive: firebase.database.ServerValue.TIMESTAMP
+            }).catch(() => {});
+            currentPresenceStatus = status;
+        }
+
+        // Activity detection - reset idle timers (debounced)
+        function recordActivity() {
+            lastActivityTime = Date.now();
+
+            // Reset idle/logout timers immediately (local)
+            clearTimeout(idleTimer);
+            clearTimeout(logoutTimer);
+
+            // Set idle timer (10 min)
+            idleTimer = setTimeout(() => {
+                updatePresenceStatus('away');
+
+                // Set logout timer (additional 20 min = 30 min total)
+                logoutTimer = setTimeout(() => {
+                    logout(); // Full logout
+                }, LOGOUT_TIMEOUT - IDLE_TIMEOUT);
+            }, IDLE_TIMEOUT);
+
+            // Debounce Firebase updates (don't spam on every mouse move)
+            if (activityDebounceTimer) return;
+
+            // If was away, go back online immediately
+            if (currentPresenceStatus === 'away') {
+                updatePresenceStatus('online');
+            }
+
+            activityDebounceTimer = setTimeout(() => {
+                activityDebounceTimer = null;
+                // Update lastActive timestamp periodically while active
+                const uid = getCurrentUserUid();
+                if (currentPresenceStatus === 'online' && uid) {
+                    presenceRef.child(uid).update({
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                    }).catch(() => {});
+                }
+            }, ACTIVITY_DEBOUNCE);
+        }
+
+        // Initialize activity listeners
+        function initActivityTracking() {
+            const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+            events.forEach(event => {
+                document.addEventListener(event, recordActivity, { passive: true });
+            });
+
+            // Also track visibility
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    recordActivity();
+                }
+            });
+
+            // Start initial timer
+            recordActivity();
+        }
+
+        // Initialize presence (called after auth check)
+        setPresence('online');
+        initActivityTracking();
 
         let userListVisible = false;
         function toggleUserList() {
@@ -4369,27 +4471,57 @@ Important guidelines:
         let onlineUsersDetailed = [];
 
         presenceRef.on('value', (snapshot) => {
-            const count = snapshot.numChildren();
-            document.getElementById('onlineCount').textContent = count + ' online (click to see)';
-
-            // Build user list with clickable @mention
-            onlineUsers = [];
-            onlineUsersDetailed = [];
+            const users = [];
             snapshot.forEach((child) => {
                 const data = child.val();
                 if (data.user) {
-                    onlineUsers.push(data.user);
-                    onlineUsersDetailed.push({
+                    users.push({
                         name: data.user,
-                        uid: data.uid || '',
+                        uid: data.uid || child.key,
                         email: data.email || '',
-                        username: data.username || ''
+                        username: data.username || '',
+                        status: data.status || 'online',
+                        lastActive: data.lastActive || 0
                     });
                 }
             });
 
-            document.getElementById('userListNames').innerHTML = onlineUsers.length > 0
-                ? onlineUsers.map(u => `<div style="padding: 4px 0; cursor: pointer;" onclick="insertMention('${u}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">• ${u} <span style="font-size:10px;opacity:0.6;">(click to @mention)</span></div>`).join('')
+            // Sort: online first, then away, then by name
+            users.sort((a, b) => {
+                const statusOrder = { online: 0, away: 1, offline: 2 };
+                if (statusOrder[a.status] !== statusOrder[b.status]) {
+                    return statusOrder[a.status] - statusOrder[b.status];
+                }
+                return a.name.localeCompare(b.name);
+            });
+
+            // Update count - only count online + away (not offline)
+            const activeCount = users.filter(u => u.status !== 'offline').length;
+            const onlineOnlyCount = users.filter(u => u.status === 'online').length;
+            const awayCount = users.filter(u => u.status === 'away').length;
+
+            let countText = onlineOnlyCount + ' online';
+            if (awayCount > 0) countText += ', ' + awayCount + ' away';
+            document.getElementById('onlineCount').textContent = countText + ' (click to see)';
+
+            // Build user list for @mention autocomplete
+            onlineUsers = users.map(u => u.name);
+            onlineUsersDetailed = users;
+
+            // Render with status indicators
+            document.getElementById('userListNames').innerHTML = users.length > 0
+                ? users.map(u => {
+                    const color = u.status === 'online' ? '#22c55e' :
+                                  u.status === 'away' ? '#eab308' : '#6b7280';
+                    const statusText = u.status === 'away' ? ' (away)' : '';
+                    return `<div style="padding: 6px 0; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                                 onclick="insertMention('${u.name}')"
+                                 onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                                 onmouseout="this.style.background='transparent'">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; flex-shrink: 0;"></span>
+                        <span>${u.name}${statusText}</span>
+                    </div>`;
+                }).join('')
                 : '<div style="opacity: 0.7;">No users online</div>';
         });
 
@@ -4654,6 +4786,16 @@ Important guidelines:
         // Logout function
         function logout() {
             endSessionTracking('logout');
+            // Clean presence before signing out
+            const uid = getCurrentUserUid();
+            if (uid) {
+                presenceRef.child(uid).remove().catch(() => {});
+            }
+            // Clear idle/logout timers
+            clearTimeout(idleTimer);
+            clearTimeout(logoutTimer);
+            clearTimeout(activityDebounceTimer);
+
             auth.signOut().then(() => {
                 localStorage.removeItem('bsn9b_auth');
                 localStorage.removeItem('bsn9b_user');
