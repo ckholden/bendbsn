@@ -144,9 +144,9 @@
             border-radius: 0 0 16px 16px;
         }
         .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         .resource-navigator {
             background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
@@ -188,19 +188,26 @@
         }
         .resource-card.hidden { display: none; }
 
-        /* Collapsible card styles - ALL resource cards use this */
+        /* Collapsible card styles - Accordion layout */
         .resource-card.collapsible {
             padding: 0;
             overflow: hidden;
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: box-shadow 0.2s;
+        }
+        .resource-card.collapsible:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
         .resource-card.collapsible .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            padding: 18px 20px;
+            padding: 16px 20px;
             background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
         .resource-card.collapsible .card-header:hover {
             background: linear-gradient(135deg, #2d5a87 0%, #3d6a97 100%);
@@ -210,14 +217,19 @@
             margin: 0;
             padding: 0;
             border: none;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 600;
             flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .resource-card.collapsible .card-header .expand-icon {
-            color: white;
-            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            font-size: 12px;
             transition: transform 0.3s ease;
             margin-left: 15px;
+            font-weight: bold;
         }
         .resource-card.collapsible.expanded .card-header .expand-icon {
             transform: rotate(180deg);
@@ -225,15 +237,29 @@
         .resource-card.collapsible .card-content {
             display: none;
             padding: 20px;
+            background: #fafbfc;
+            border-top: 1px solid #e2e8f0;
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .resource-card.collapsible.expanded .card-content {
             display: block;
+        }
+        [data-theme="dark"] .resource-card.collapsible {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         [data-theme="dark"] .resource-card.collapsible .card-header {
             background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
         }
         [data-theme="dark"] .resource-card.collapsible .card-header:hover {
             background: linear-gradient(135deg, #2d4a6f 0%, #3d5a7f 100%);
+        }
+        [data-theme="dark"] .resource-card.collapsible .card-content {
+            background: #16213e;
+            border-top-color: #2d3748;
         }
 
         .card {
@@ -1129,7 +1155,7 @@
                 </div>
 
                 <!-- Clinical Toolkit -->
-                <div class="card resource-card collapsible collapsed" data-tags="clinical toolkit vitals pain apgar sbar handoff" style="grid-column: span 2;">
+                <div class="card resource-card collapsible collapsed" data-tags="clinical toolkit vitals pain apgar sbar handoff">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🩺 Clinical Toolkit</h2>
                         <span class="expand-icon">▼</span>
@@ -1361,7 +1387,7 @@
                 </div>
 
                 <!-- Procedure Checklists -->
-                <div class="card resource-card collapsible collapsed" data-tags="checklists clinical skills procedures" style="grid-column: span 2;">
+                <div class="card resource-card collapsible collapsed" data-tags="checklists clinical skills procedures">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>📋 Procedure Checklists</h2>
                         <span class="expand-icon">▼</span>
@@ -1518,7 +1544,7 @@
                 </div>
 
                 <!-- EKG Reference Guide -->
-                <div class="card resource-card collapsible collapsed" data-tags="ekg ecg cardiac arrhythmia rhythm strips" style="grid-column: span 2;">
+                <div class="card resource-card collapsible collapsed" data-tags="ekg ecg cardiac arrhythmia rhythm strips">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>💓 EKG/ECG Reference Guide</h2>
                         <span class="expand-icon">▼</span>
