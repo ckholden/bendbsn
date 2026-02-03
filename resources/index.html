@@ -166,6 +166,59 @@
             border-color: #1f4e79;
         }
         .resource-card.hidden { display: none; }
+
+        /* Collapsible card styles */
+        .collapsible .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 15px 20px;
+            margin: -20px -20px 0 -20px;
+            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            border-radius: 12px 12px 0 0;
+            transition: border-radius 0.3s;
+        }
+        .collapsible.collapsed .card-header {
+            border-radius: 12px;
+            margin-bottom: -20px;
+        }
+        .collapsible .card-header h2 {
+            color: white;
+            margin: 0;
+            padding: 0;
+            border: none;
+            font-size: 16px;
+        }
+        .collapsible .card-header .expand-icon {
+            color: white;
+            font-size: 12px;
+            transition: transform 0.3s ease;
+            margin-left: 10px;
+        }
+        .collapsible.expanded .card-header .expand-icon {
+            transform: rotate(180deg);
+        }
+        .collapsible .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.3s ease;
+            padding-top: 0;
+        }
+        .collapsible.expanded .card-content {
+            max-height: none;
+            padding-top: 20px;
+        }
+        .collapsible .card-header:hover {
+            background: linear-gradient(135deg, #2d5a87 0%, #3d6a97 100%);
+        }
+        .collapsible .card-header .expand-hint {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
         .card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -791,8 +844,13 @@
                 </div>
 
                 <!-- Lab Values -->
-                <div class="card resource-card" data-tags="labs cbc bmp abg coagulation cardiac reference">
-                    <h2>🔬 Lab Values Reference</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="labs cbc bmp abg coagulation cardiac reference">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🔬 Lab Values Reference</h2>
+                        <span class="expand-hint">Click to expand</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <h3 class="collapsible" onclick="toggleCollapse(this)">Complete Blood Count (CBC)</h3>
                     <div class="collapse-content">
                         <table>
@@ -874,6 +932,7 @@
                         <tr><td>HTN Stage 2</td><td>≥140</td><td>≥90</td></tr>
                         <tr><td>Crisis</td><td>&gt;180</td><td>&gt;120</td></tr>
                     </table>
+                    </div><!-- end card-content -->
                 </div>
 
                 <!-- IV Calculations -->
@@ -960,8 +1019,13 @@
                 </div>
 
                 <!-- Common Abbreviations -->
-                <div class="card resource-card" data-tags="study abbreviations documentation">
-                    <h2>📝 Common Abbreviations</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="study abbreviations documentation">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>📝 Common Abbreviations</h2>
+                        <span class="expand-hint">Click to expand</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <div class="abbrev-grid">
                         <div class="abbrev-item"><strong>AC</strong> - Before meals</div>
                         <div class="abbrev-item"><strong>PC</strong> - After meals</div>
@@ -988,6 +1052,7 @@
                         <div class="abbrev-item"><strong>GT</strong> - Gastrostomy tube</div>
                         <div class="abbrev-item"><strong>NG</strong> - Nasogastric</div>
                     </div>
+                    </div><!-- end card-content -->
                 </div>
 
                 <!-- Clinical Prep -->
@@ -1014,8 +1079,13 @@
                 </div>
 
                 <!-- Clinical Toolkit -->
-                <div class="card resource-card" data-tags="clinical toolkit vitals pain apgar sbar handoff" style="grid-column: span 2;">
-                    <h2>🩺 Clinical Toolkit</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="clinical toolkit vitals pain apgar sbar handoff" style="grid-column: span 2;">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🩺 Clinical Toolkit</h2>
+                        <span class="expand-hint">Click to expand</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Quick reference tools for clinical rotations</p>
 
                     <!-- Pediatric Vital Signs -->
@@ -1194,11 +1264,17 @@
                         </div>
                     </div>
 
+                    </div><!-- end card-content -->
                 </div>
 
                 <!-- NANDA Diagnoses Quick Reference -->
-                <div class="card resource-card" data-tags="nanda diagnoses study care plan">
-                    <h2>🩺 NANDA Nursing Diagnoses</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="nanda diagnoses study care plan">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🩺 NANDA Nursing Diagnoses</h2>
+                        <span class="expand-hint">Click to expand</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Common nursing diagnoses by category</p>
                     <div class="nanda-list">
                         <div class="nanda-category">Activity/Rest</div>
@@ -1233,6 +1309,7 @@
                         <div class="nanda-item">Impaired urinary elimination</div>
                     </div>
                     <a href="/app/" class="btn" style="display: block; text-align: center; margin-top: 15px;">Full NANDA Database →</a>
+                    </div><!-- end card-content -->
                 </div>
 
                 <!-- Procedure Checklists -->
@@ -1383,8 +1460,13 @@
                 </div>
 
                 <!-- EKG Reference Guide -->
-                <div class="card resource-card" data-tags="ekg ecg cardiac arrhythmia rhythm strips" style="grid-column: span 2;">
-                    <h2>💓 EKG/ECG Reference Guide</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="ekg ecg cardiac arrhythmia rhythm strips" style="grid-column: span 2;">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>💓 EKG/ECG Reference Guide</h2>
+                        <span class="expand-hint">Click to expand</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
 
                     <!-- Visual Rhythm Strips Section -->
                     <h3 style="color: #1f4e79; margin-bottom: 15px; border-bottom: 2px solid #1f4e79; padding-bottom: 8px;">Visual Rhythm Strips</h3>
@@ -1690,6 +1772,7 @@
                     <p style="margin-top: 15px; font-size: 11px; color: #666; text-align: center;">
                         <strong>Remember:</strong> Always correlate EKG findings with patient assessment. "Treat the patient, not the monitor."
                     </p>
+                    </div><!-- end card-content -->
                 </div>
 
                 <!-- Additional Resources -->
@@ -1703,6 +1786,90 @@
                         <li><a href="https://www.ahrq.gov/patient-safety/index.html" target="_blank">🛡️ AHRQ Patient Safety</a></li>
                     </ul>
                 </div>
+
+                <!-- Cited Sources Button -->
+                <div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
+                    <button onclick="openCitedSources()" class="btn" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
+                        📚 View Cited Sources (APA Format)
+                    </button>
+                    <p style="font-size: 10px; color: #666; margin-top: 8px;">Academic citations for all clinical reference content</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cited Sources Modal -->
+    <div id="citedSourcesModal" class="modal-overlay hidden" onclick="if(event.target === this) closeCitedSources()">
+        <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; background: white; padding-bottom: 10px; border-bottom: 2px solid #1f4e79;">
+                <h2 style="color: #1f4e79; font-size: 20px;">📚 Cited Sources</h2>
+                <button onclick="closeCitedSources()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #666;">&times;</button>
+            </div>
+
+            <p style="font-size: 12px; color: #666; margin-bottom: 20px;">All clinical reference content on this page is based on the following academic sources, formatted in APA 7th edition.</p>
+
+            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Assessment Tools</h3>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Apgar, V. (1953). A proposal for a new method of evaluation of the newborn infant. <em>Current Researches in Anesthesia & Analgesia, 32</em>(4), 260-267.
+            </p>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                McCaffery, M., & Beebe, A. (1989). <em>Pain: Clinical manual for nursing practice</em>. Mosby.
+            </p>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Merkel, S. I., Voepel-Lewis, T., Shayevitz, J. R., & Malviya, S. (1997). The FLACC: A behavioral scale for scoring postoperative pain in young children. <em>Pediatric Nursing, 23</em>(3), 293-297.
+            </p>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Teasdale, G., & Jennett, B. (1974). Assessment of coma and impaired consciousness: A practical scale. <em>The Lancet, 304</em>(7872), 81-84. https://doi.org/10.1016/S0140-6736(74)91639-0
+            </p>
+
+            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Vital Signs & Clinical Guidelines</h3>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                American Heart Association. (2020). <em>Pediatric Advanced Life Support (PALS) provider manual</em>. American Heart Association.
+            </p>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Whelton, P. K., Carey, R. M., Aronow, W. S., Casey, D. E., Collins, K. J., Himmelfarb, C. D., ... & Wright, J. T. (2018). 2017 ACC/AHA/AAPA/ABC/ACPM/AGS/APhA/ASH/ASPC/NMA/PCNA guideline for the prevention, detection, evaluation, and management of high blood pressure in adults. <em>Hypertension, 71</em>(6), e13-e115.
+            </p>
+
+            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Laboratory Values</h3>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Pagana, K. D., Pagana, T. J., & Pagana, T. N. (2022). <em>Mosby's manual of diagnostic and laboratory tests</em> (7th ed.). Elsevier.
+            </p>
+
+            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Communication & Safety</h3>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Haig, K. M., Sutton, S., & Whittington, J. (2006). SBAR: A shared mental model for improving communication between clinicians. <em>The Joint Commission Journal on Quality and Patient Safety, 32</em>(3), 167-175.
+            </p>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Institute for Safe Medication Practices. (2021). <em>ISMP guidelines for safe medication practices</em>. https://www.ismp.org
+            </p>
+
+            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Nursing Diagnoses</h3>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                Herdman, T. H., Kamitsuru, S., & Lopes, C. T. (Eds.). (2021). <em>NANDA International nursing diagnoses: Definitions and classification 2021-2023</em> (12th ed.). Thieme.
+            </p>
+
+            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Cardiac/EKG Reference</h3>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                McGee, J. E. (2024). <em>EKG essentials: A student handbook</em>. University of Arkansas. CC BY-NC 4.0. https://uark.pressbooks.pub/ekgmanual/
+            </p>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                University of Utah Health. (n.d.). <em>ECG learning center</em>. https://ecg.utah.edu/
+            </p>
+
+            <div style="margin-top: 25px; padding: 12px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #1f4e79;">
+                <p style="font-size: 11px; color: #333; margin: 0;"><strong>Note:</strong> This resource is intended for educational purposes only. Always verify clinical information with current institutional protocols and authoritative sources. Content is updated periodically to reflect current evidence-based practice.</p>
             </div>
         </div>
     </div>
@@ -2343,6 +2510,24 @@ Important guidelines:
             element.classList.toggle('collapsed');
             const content = element.nextElementSibling;
             content.classList.toggle('hidden');
+        }
+
+        // Toggle collapsible resource cards
+        function toggleResourceCard(header) {
+            const card = header.closest('.collapsible');
+            if (!card) return;
+            card.classList.toggle('expanded');
+            card.classList.toggle('collapsed');
+        }
+
+        // Open cited sources modal
+        function openCitedSources() {
+            document.getElementById('citedSourcesModal').classList.remove('hidden');
+        }
+
+        // Close cited sources modal
+        function closeCitedSources() {
+            document.getElementById('citedSourcesModal').classList.add('hidden');
         }
 
         let activeResourceFilter = 'all';
