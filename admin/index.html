@@ -554,7 +554,7 @@
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
         const userProfilesRef = database.ref('userProfiles');
-        const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Other'];
+        const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Admin', 'Other'];
         let userProfilesByEmail = {};
         let userProfilesByUid = {};
 
@@ -776,8 +776,22 @@
             initAdmin();
         }
 
+        // Auto-login for admin email - bypass password
+        auth.onAuthStateChanged((user) => {
+            if (user && user.email === 'christiankholden@gmail.com') {
+                // Auto-bypass admin password for this email
+                if (sessionStorage.getItem('bsn9b_admin') !== 'true') {
+                    sessionStorage.setItem('bsn9b_admin', 'true');
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('adminContent').style.display = 'block';
+                    initAdmin();
+                    showToast('Auto-authenticated as admin', 'success');
+                }
+            }
+            updateFirebaseAuthStatus();
+        });
+
         function initAdmin() {
-            auth.onAuthStateChanged(() => updateFirebaseAuthStatus());
             updateFirebaseAuthStatus();
             loadOnlineUsers();
             loadBannedUsers();
