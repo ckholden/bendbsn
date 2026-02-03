@@ -120,7 +120,7 @@
 
 **Naming Convention Options:**
 - "Bend BSN 9B" (current)
-- "Sumner-Bend-2024-Fall"
+- "Bend-2024-Fall"
 - User-defined by admin
 
 ### Phase 7: Study Tools

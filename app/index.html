@@ -688,6 +688,80 @@
             }
         }
 
+        /* Enhanced mobile styles for quick entry panels */
+        @media (max-width: 768px) {
+            .vitals-panel, .med-panel {
+                padding: 12px 15px;
+            }
+
+            .vitals-panel h3, .med-panel h3 {
+                font-size: 14px;
+            }
+
+            /* Stack buttons vertically on mobile */
+            .vitals-panel > div:first-child,
+            .med-panel > div:first-child {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .vitals-panel > div:first-child > div,
+            .med-panel > div:first-child > div {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+
+            /* Make quick entry buttons full width on small screens */
+            .vitals-panel button,
+            .med-panel button {
+                flex: 1 1 auto;
+                min-width: 120px;
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+
+            /* Better grid for vitals on mobile */
+            #vitalsContent > div:first-child {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* Better grid for medication fields on mobile */
+            #medContent > div:first-child {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Larger touch targets for saved entries */
+            #savedVitalsEntries > div,
+            #savedMedsEntries > div {
+                padding: 12px 14px;
+            }
+
+            #savedVitalsEntries button,
+            #savedMedsEntries button {
+                padding: 8px 12px;
+                min-height: 36px;
+            }
+        }
+
+        /* Tablet-specific improvements */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            /* Better grid layout for vitals on tablet */
+            #vitalsContent > div:first-child {
+                grid-template-columns: repeat(4, 1fr) !important;
+            }
+
+            /* Better form layout on tablets */
+            .form-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .form-row.three-col {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
         /* Landscape phone orientation */
         @media (max-height: 500px) and (orientation: landscape) {
             .header { padding: 10px 20px; }
@@ -786,7 +860,7 @@
             <div id="userDisplayContainer" style="position: absolute; top: 15px; right: 20px;">
                 <span id="userDisplay" style="color: rgba(255,255,255,0.8); font-size: 12px;"></span>
             </div>
-            <h1>Sumner BSN9B Nursing Documentation</h1>
+            <h1>BendBSN Nursing Documentation</h1>
             <p>Progress Notes | Head-to-Toe | NANDA Diagnoses</p>
             <a href="/resources/" style="display: inline-block; margin-top: 15px; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; text-decoration: none; padding: 14px 30px; border-radius: 25px; font-size: 16px; font-weight: 700; transition: all 0.3s; box-shadow: 0 4px 15px rgba(255,107,53,0.4); animation: pulse-btn 2s infinite;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(255,107,53,0.6)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255,107,53,0.4)'">📚 RN Resources - Click Here!</a>
         </div>
@@ -916,8 +990,8 @@
                     <input type="text" id="noteDate">
                 </div>
                 <div class="form-group">
-                    <label>Time <span style="font-weight: normal; font-size: 10px; color: #666;">(n=now, n-30, n+15)</span></label>
-                    <input type="text" id="noteTime">
+                    <label>Time <span style="font-weight: normal; font-size: 10px; color: #666;">(HHMM: n=now, n-30, n+15)</span></label>
+                    <input type="text" id="noteTime" placeholder="e.g., 1430">
                 </div>
                 <div class="form-group">
                     <label>Unit</label>
@@ -988,7 +1062,10 @@
             <div class="vitals-panel" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #4caf50; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('vitalsContent', this)">
                     <h3 style="color: #2e7d32; margin: 0;">🩺 Quick Vitals Entry <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                    <button onclick="event.stopPropagation(); insertVitals()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Insert Vitals ➜</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); saveVitals()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertVitals()" style="background: #4caf50; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                    </div>
                 </div>
                 <div id="vitalsContent" style="display: none;">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
@@ -1049,7 +1126,15 @@
                         <input type="text" id="vsPain" placeholder="0" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="2">
                     </div>
                 </div>
-                <p style="margin-top: 8px; font-size: 11px; color: #558b2f;">Click in a text field first, then click "Insert Vitals" to add formatted vitals.</p>
+                <p style="margin-top: 8px; font-size: 11px; color: #558b2f;">Click "Save for Export" to save vitals to include in PDF/Word export, or "Insert Now" to add directly to your current text field.</p>
+                </div>
+                <!-- Saved Vitals List -->
+                <div id="savedVitalsList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #4caf50;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #2e7d32;">Saved Vitals (will be included in export):</span>
+                        <button onclick="clearSavedVitals()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedVitalsEntries"></div>
                 </div>
             </div>
 
@@ -1057,7 +1142,10 @@
             <div class="med-panel" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #1976d2; border-radius: 10px; padding: 15px 20px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('medContent', this)">
                     <h3 style="color: #1565c0; margin: 0;">💊 Medication Administration <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                    <button onclick="event.stopPropagation(); insertMedication()" style="background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Insert Med ➜</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); saveMedication()" style="background: #2e7d32; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertMedication()" style="background: #1976d2; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                    </div>
                 </div>
                 <div id="medContent" style="display: none;">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
@@ -1152,7 +1240,15 @@
                         <input type="text" id="medEffect" placeholder="e.g., pain improved to 3/10" style="width: 100%; padding: 8px; font-size: 13px;">
                     </div>
                 </div>
-                <p style="margin-top: 8px; font-size: 11px; color: #1565c0;">Click in a text field first, then click "Insert Med" to add medication documentation. Time: N=now, N+15, N-30</p>
+                <p style="margin-top: 8px; font-size: 11px; color: #1565c0;">Click "Save for Export" to save medications to include in PDF/Word export, or "Insert Now" to add directly to your current text field.</p>
+                </div>
+                <!-- Saved Medications List -->
+                <div id="savedMedsList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #1976d2;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #1565c0;">Saved Medications (will be included in export):</span>
+                        <button onclick="clearSavedMedications()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedMedsEntries"></div>
                 </div>
             </div>
 
@@ -4964,6 +5060,190 @@ Important guidelines:
             }
         }
 
+        // ========== SAVED VITALS & MEDICATIONS FOR EXPORT ==========
+        let savedVitals = [];
+        let savedMedications = [];
+
+        function saveVitals() {
+            const bpSys = document.getElementById('vsBpSys').value.trim();
+            const bpDia = document.getElementById('vsBpDia').value.trim();
+            const hr = document.getElementById('vsHr').value.trim();
+            const rr = document.getElementById('vsRr').value.trim();
+            const temp = document.getElementById('vsTemp').value.trim();
+            const o2 = document.getElementById('vsO2').value.trim();
+            const o2Source = document.getElementById('vsO2Source').value;
+            const pain = document.getElementById('vsPain').value.trim();
+
+            // Build vitals object
+            let parts = [];
+            if (bpSys && bpDia) parts.push(`BP ${bpSys}/${bpDia}`);
+            if (hr) parts.push(`HR ${hr}`);
+            if (rr) parts.push(`RR ${rr}`);
+            if (temp) parts.push(`T ${temp}°F`);
+            if (o2) parts.push(`O2 ${o2}% ${o2Source}`);
+            if (pain) parts.push(`Pain ${pain}/10`);
+
+            if (parts.length === 0) {
+                showToast('Please enter at least one vital sign.', 'warning');
+                return;
+            }
+
+            const vitalsStr = 'VS: ' + parts.join(' | ');
+            const time = formatTimeDisplay(new Date());
+
+            savedVitals.push({
+                display: vitalsStr,
+                time: time,
+                timestamp: Date.now()
+            });
+
+            // Clear fields
+            document.getElementById('vsBpSys').value = '';
+            document.getElementById('vsBpDia').value = '';
+            document.getElementById('vsHr').value = '';
+            document.getElementById('vsRr').value = '';
+            document.getElementById('vsTemp').value = '';
+            document.getElementById('vsO2').value = '';
+            document.getElementById('vsPain').value = '';
+
+            renderSavedVitals();
+            showToast('Vitals saved! Will be included in PDF/Word export.', 'success');
+        }
+
+        function renderSavedVitals() {
+            const list = document.getElementById('savedVitalsList');
+            const entries = document.getElementById('savedVitalsEntries');
+
+            if (savedVitals.length === 0) {
+                list.style.display = 'none';
+                return;
+            }
+
+            list.style.display = 'block';
+            entries.innerHTML = savedVitals.map((v, i) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 12px;">
+                    <div>
+                        <span style="color: #2e7d32; font-weight: 600;">${v.time}</span>
+                        <span style="margin-left: 8px; color: #333;">${v.display}</span>
+                    </div>
+                    <button onclick="removeSavedVitals(${i})" style="background: #ffebee; border: none; color: #d32f2f; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function removeSavedVitals(index) {
+            savedVitals.splice(index, 1);
+            renderSavedVitals();
+        }
+
+        function clearSavedVitals() {
+            if (!confirm('Clear all saved vitals?')) return;
+            savedVitals = [];
+            renderSavedVitals();
+        }
+
+        function saveMedication() {
+            const name = document.getElementById('medName').value.trim();
+            const dose = document.getElementById('medDose').value.trim();
+            const freq = document.getElementById('medFreq').value;
+            const route = document.getElementById('medRoute').value;
+            const site = document.getElementById('medSite').value;
+            const time = document.getElementById('medTime').value;
+            const indication = document.getElementById('medIndication').value.trim();
+            const prnParams = document.getElementById('medPrnParams').value.trim();
+            const effect = document.getElementById('medEffect').value.trim();
+
+            if (!name) {
+                showToast('Please enter at least a medication name.', 'warning');
+                return;
+            }
+
+            // Format time
+            let timeStr = '';
+            if (time) {
+                timeStr = time.replace(':', '');
+            }
+
+            // Build medication string
+            let medStr = name;
+            if (dose) medStr += ' ' + dose;
+            medStr += ' ' + route;
+            if (freq) medStr += ' ' + freq;
+            if (site) medStr += ' to ' + site;
+            if (timeStr) medStr += ' @ ' + timeStr;
+            if (indication) medStr += ' for ' + indication;
+            if (prnParams) medStr += ' (PRN: ' + prnParams + ')';
+            if (effect) medStr += ' → ' + effect;
+
+            savedMedications.push({
+                display: medStr,
+                name: name,
+                time: timeStr || formatTimeDisplay(new Date()),
+                timestamp: Date.now()
+            });
+
+            // Clear fields
+            document.getElementById('medName').value = '';
+            document.getElementById('medDose').value = '';
+            document.getElementById('medFreq').value = '';
+            document.getElementById('medSite').value = '';
+            document.getElementById('medTime').value = '';
+            document.getElementById('medIndication').value = '';
+            document.getElementById('medPrnParams').value = '';
+            document.getElementById('medEffect').value = '';
+            document.getElementById('drugDropdown').classList.remove('show');
+
+            if (name) {
+                saveMedRecent(name);
+                renderMedRecents();
+            }
+
+            renderSavedMedications();
+            showToast('Medication saved! Will be included in PDF/Word export.', 'success');
+        }
+
+        function renderSavedMedications() {
+            const list = document.getElementById('savedMedsList');
+            const entries = document.getElementById('savedMedsEntries');
+
+            if (savedMedications.length === 0) {
+                list.style.display = 'none';
+                return;
+            }
+
+            list.style.display = 'block';
+            entries.innerHTML = savedMedications.map((m, i) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 12px;">
+                    <div>
+                        <span style="color: #1565c0; font-weight: 600;">${m.time}</span>
+                        <span style="margin-left: 8px; color: #333;">${m.display}</span>
+                    </div>
+                    <button onclick="removeSavedMedication(${i})" style="background: #e3f2fd; border: none; color: #d32f2f; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function removeSavedMedication(index) {
+            savedMedications.splice(index, 1);
+            renderSavedMedications();
+        }
+
+        function clearSavedMedications() {
+            if (!confirm('Clear all saved medications?')) return;
+            savedMedications = [];
+            renderSavedMedications();
+        }
+
+        function getSavedVitalsText() {
+            if (savedVitals.length === 0) return '';
+            return savedVitals.map(v => `${v.time}: ${v.display}`).join('\n');
+        }
+
+        function getSavedMedicationsText() {
+            if (savedMedications.length === 0) return '';
+            return savedMedications.map(m => `${m.time}: ${m.display}`).join('\n');
+        }
+
         const MED_RECENTS_KEY = 'bsn9b_med_recents';
 
         function getMedRecents() {
@@ -5030,23 +5310,75 @@ Important guidelines:
                 const drugsData = await drugsResponse.json();
 
                 let drugMap = new Map(); // Use map to store unique drugs with their info
+                let brandToGeneric = new Map(); // Map brand names to their generic equivalents
+                let genericToBrand = new Map(); // Map generic names to brand names
 
-                // Process drug group data
+                // Process drug group data - collect all ingredients and brands
                 if (drugsData.drugGroup && drugsData.drugGroup.conceptGroup) {
                     drugsData.drugGroup.conceptGroup.forEach(group => {
+                        const tty = group.tty;
                         if (group.conceptProperties) {
                             group.conceptProperties.forEach(prop => {
                                 const name = prop.name;
-                                const tty = prop.tty; // IN=ingredient, BN=brand, SBD=branded drug, etc.
-                                if (name && !drugMap.has(name.toLowerCase())) {
-                                    drugMap.set(name.toLowerCase(), {
-                                        name: name,
-                                        type: tty === 'BN' ? 'brand' : tty === 'IN' ? 'generic' : 'drug'
-                                    });
+                                const rxcui = prop.rxcui;
+                                if (name) {
+                                    if (tty === 'IN' || tty === 'MIN') {
+                                        // Generic/ingredient
+                                        drugMap.set(name.toLowerCase(), {
+                                            name: name,
+                                            type: 'generic',
+                                            rxcui: rxcui
+                                        });
+                                    } else if (tty === 'BN') {
+                                        // Brand name
+                                        drugMap.set(name.toLowerCase(), {
+                                            name: name,
+                                            type: 'brand',
+                                            rxcui: rxcui
+                                        });
+                                    }
                                 }
                             });
                         }
                     });
+                }
+
+                // Try to get brand/generic relationships for top results
+                const genericDrugs = Array.from(drugMap.values()).filter(d => d.type === 'generic').slice(0, 5);
+                const brandDrugs = Array.from(drugMap.values()).filter(d => d.type === 'brand').slice(0, 5);
+
+                // For each generic, try to find brand names
+                for (const drug of genericDrugs) {
+                    try {
+                        const relatedResp = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui/${drug.rxcui}/related.json?tty=BN`);
+                        const relatedData = await relatedResp.json();
+                        if (relatedData.relatedGroup?.conceptGroup) {
+                            relatedData.relatedGroup.conceptGroup.forEach(grp => {
+                                if (grp.conceptProperties) {
+                                    grp.conceptProperties.slice(0, 2).forEach(bp => {
+                                        genericToBrand.set(drug.name.toLowerCase(), bp.name);
+                                    });
+                                }
+                            });
+                        }
+                    } catch (e) { /* Continue if relationship lookup fails */ }
+                }
+
+                // For each brand, try to find generic names
+                for (const drug of brandDrugs) {
+                    try {
+                        const relatedResp = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui/${drug.rxcui}/related.json?tty=IN`);
+                        const relatedData = await relatedResp.json();
+                        if (relatedData.relatedGroup?.conceptGroup) {
+                            relatedData.relatedGroup.conceptGroup.forEach(grp => {
+                                if (grp.conceptProperties) {
+                                    grp.conceptProperties.slice(0, 1).forEach(gp => {
+                                        brandToGeneric.set(drug.name.toLowerCase(), gp.name);
+                                    });
+                                }
+                            });
+                        }
+                    } catch (e) { /* Continue if relationship lookup fails */ }
                 }
 
                 // Also try spelling suggestions for better matching
@@ -5060,17 +5392,52 @@ Important guidelines:
                     });
                 }
 
-                // Convert to array and clean up
-                let suggestions = Array.from(drugMap.values());
+                // Build final suggestions with Generic (Brand) format
+                let suggestions = [];
+                const processed = new Set();
+
+                // Add generic drugs with their brand names
+                drugMap.forEach((drug, key) => {
+                    if (processed.has(key)) return;
+
+                    let displayName = drug.name;
+                    let searchTerms = drug.name.toLowerCase();
+
+                    if (drug.type === 'generic') {
+                        const brandName = genericToBrand.get(key);
+                        if (brandName) {
+                            displayName = `${drug.name} (${brandName})`;
+                            searchTerms += ' ' + brandName.toLowerCase();
+                        }
+                    } else if (drug.type === 'brand') {
+                        const genericName = brandToGeneric.get(key);
+                        if (genericName) {
+                            // Format as Generic (Brand) - generic first per user request
+                            displayName = `${genericName} (${drug.name})`;
+                            searchTerms += ' ' + genericName.toLowerCase();
+                        }
+                    }
+
+                    suggestions.push({
+                        name: drug.name,
+                        displayName: displayName,
+                        type: drug.type,
+                        searchTerms: searchTerms
+                    });
+                    processed.add(key);
+                });
 
                 // Sort: exact matches first, then by length
                 const queryLower = query.toLowerCase();
                 suggestions.sort((a, b) => {
-                    const aStartsWith = a.name.toLowerCase().startsWith(queryLower);
-                    const bStartsWith = b.name.toLowerCase().startsWith(queryLower);
+                    const aStartsWith = a.searchTerms.startsWith(queryLower) || a.name.toLowerCase().startsWith(queryLower);
+                    const bStartsWith = b.searchTerms.startsWith(queryLower) || b.name.toLowerCase().startsWith(queryLower);
                     if (aStartsWith && !bStartsWith) return -1;
                     if (!aStartsWith && bStartsWith) return 1;
-                    return a.name.length - b.name.length;
+                    // Prefer generics over brands
+                    if (a.type === 'generic' && b.type !== 'generic') return -1;
+                    if (b.type === 'generic' && a.type !== 'generic') return 1;
+                    return a.displayName.length - b.displayName.length;
                 });
 
                 // Limit to 12 results
@@ -5080,9 +5447,8 @@ Important guidelines:
                     drugDropdown.innerHTML = '<div class="drug-loading">No matches found. You can still type manually.</div>';
                 } else {
                     drugDropdown.innerHTML = suggestions.map(drug => {
-                        const typeLabel = drug.type === 'brand' ? ' <span style="color:#1976d2;font-size:10px;">(Brand)</span>' :
-                                         drug.type === 'generic' ? ' <span style="color:#388e3c;font-size:10px;">(Generic)</span>' : '';
-                        return `<div class="drug-item" onclick="selectDrug('${drug.name.replace(/'/g, "\\'")}')">${drug.name}${typeLabel}</div>`;
+                        const typeColor = drug.type === 'generic' ? '#388e3c' : drug.type === 'brand' ? '#1976d2' : '#666';
+                        return `<div class="drug-item" onclick="selectDrug('${drug.displayName.replace(/'/g, "\\'")}')" style="border-left: 3px solid ${typeColor}; padding-left: 10px;">${drug.displayName}</div>`;
                     }).join('');
                 }
                 drugDropdown.classList.add('show');
@@ -5400,10 +5766,10 @@ Important guidelines:
         }
 
         function formatTimeDisplay(date) {
-            // Format as HH:MM (24hr) for display
+            // Format as HHMM (24hr military time without colon) for display
             const hours = String(date.getHours()).padStart(2, '0');
             const mins = String(date.getMinutes()).padStart(2, '0');
-            return `${hours}:${mins}`;
+            return `${hours}${mins}`;
         }
 
         function parseDateInput(input) {
@@ -5431,6 +5797,7 @@ Important guidelines:
 
         function parseTimeInput(input) {
             // Parse Epic-style time shortcuts: n, n-30, n+15, etc.
+            // Also handles various time formats and normalizes to HHMM
             const val = input.trim().toLowerCase();
             const now = new Date();
 
@@ -5448,7 +5815,31 @@ Important guidelines:
                 return formatTimeDisplay(targetTime);
             }
 
-            // If not a shortcut, return as-is
+            // Handle HH:MM format (with colon) - convert to HHMM
+            const colonMatch = val.match(/^(\d{1,2}):(\d{2})$/);
+            if (colonMatch) {
+                const hours = String(parseInt(colonMatch[1])).padStart(2, '0');
+                const mins = colonMatch[2];
+                return `${hours}${mins}`;
+            }
+
+            // Handle plain 4-digit HHMM format - validate and normalize
+            const fourDigitMatch = val.match(/^(\d{4})$/);
+            if (fourDigitMatch) {
+                const hours = parseInt(val.substring(0, 2));
+                const mins = parseInt(val.substring(2, 4));
+                if (hours >= 0 && hours <= 23 && mins >= 0 && mins <= 59) {
+                    return val; // Already valid HHMM format
+                }
+            }
+
+            // Handle 3-digit format like 830 -> 0830
+            const threeDigitMatch = val.match(/^(\d{3})$/);
+            if (threeDigitMatch) {
+                return '0' + val;
+            }
+
+            // If not a recognized format, return as-is
             return input;
         }
 
@@ -6066,7 +6457,7 @@ Important guidelines:
             doc.setTextColor(255);
             doc.setFontSize(18);
             doc.setFont('helvetica','bold');
-            doc.text('Sumner College - Bend Nursing Progress Note', pw/2, 12, {align:'center'});
+            doc.text('Nursing Progress Note', pw/2, 12, {align:'center'});
             doc.setFontSize(11);
             doc.setFont('helvetica','normal');
             doc.text(tn[currentNoteType], pw/2, 22, {align:'center'});
@@ -6112,6 +6503,46 @@ Important guidelines:
                 dxLines.forEach(line => { doc.text(line, m + 4, dy); dy += 4; });
                 y += dxH + 4;
                 doc.setTextColor(0);
+            }
+
+            // Saved Vitals
+            if (savedVitals.length > 0) {
+                doc.setFillColor(232, 245, 233);
+                doc.setDrawColor(76, 175, 80);
+                const vitalsTitle = 'Vital Signs:';
+                const vitalsContent = savedVitals.map(v => `${v.time}: ${v.display}`).join('\n');
+                const vitalsLines = doc.splitTextToSize(vitalsContent, cw - 12);
+                const vitalsH = 10 + vitalsLines.length * 4;
+                doc.roundedRect(m, y, cw, vitalsH, 2, 2, 'FD');
+                doc.setFontSize(9);
+                doc.setFont('helvetica','bold');
+                doc.setTextColor(46, 125, 50);
+                doc.text(vitalsTitle, m + 4, y + 6);
+                doc.setFont('helvetica','normal');
+                doc.setTextColor(0);
+                let vy = y + 10;
+                vitalsLines.forEach(line => { doc.text(line, m + 4, vy); vy += 4; });
+                y += vitalsH + 4;
+            }
+
+            // Saved Medications
+            if (savedMedications.length > 0) {
+                doc.setFillColor(227, 242, 253);
+                doc.setDrawColor(25, 118, 210);
+                const medsTitle = 'Medications Administered:';
+                const medsContent = savedMedications.map(m => `${m.time}: ${m.display}`).join('\n');
+                const medsLines = doc.splitTextToSize(medsContent, cw - 12);
+                const medsH = 10 + medsLines.length * 4;
+                doc.roundedRect(m, y, cw, medsH, 2, 2, 'FD');
+                doc.setFontSize(9);
+                doc.setFont('helvetica','bold');
+                doc.setTextColor(21, 101, 192);
+                doc.text(medsTitle, m + 4, y + 6);
+                doc.setFont('helvetica','normal');
+                doc.setTextColor(0);
+                let my = y + 10;
+                medsLines.forEach(line => { doc.text(line, m + 4, my); my += 4; });
+                y += medsH + 4;
             }
 
             // Focus
@@ -6171,6 +6602,9 @@ Important guidelines:
             const nameParts = d.nurseName.trim().split(' ');
             const lastName = nameParts[nameParts.length - 1] || 'Student';
             doc.save(`${d.noteDateForFilename}_${d.noteTime}_${currentNoteType.toUpperCase()}_${lastName}.pdf`);
+
+            // Log export to Firebase for admin tracking
+            logExportHistory('PDF', currentNoteType, d.patientId);
             } catch(e) {
                 console.error('PDF export error:', e);
                 showToast('Error generating PDF: ' + e.message, 'error');
@@ -6197,7 +6631,7 @@ Important guidelines:
 
                 // Title
                 ch.push(new Paragraph({
-                    children: [new TextRun({text: 'Sumner College - Bend Nursing Progress Note', bold: true, size: 32, color: '1f4e79'})],
+                    children: [new TextRun({text: 'Nursing Progress Note', bold: true, size: 32, color: '1f4e79'})],
                     alignment: AlignmentType.CENTER,
                     spacing: {after: 100}
                 }));
@@ -6239,6 +6673,40 @@ Important guidelines:
                     }));
                 }
 
+                // Saved Vitals
+                if (savedVitals.length > 0) {
+                    ch.push(new Paragraph({
+                        children: [new TextRun({text: 'Vital Signs:', bold: true, color: '2e7d32'})],
+                        spacing: {before: 100, after: 50}
+                    }));
+                    savedVitals.forEach(v => {
+                        ch.push(new Paragraph({
+                            children: [
+                                new TextRun({text: v.time + ': ', bold: true, color: '2e7d32'}),
+                                new TextRun(v.display)
+                            ],
+                            spacing: {after: 40}
+                        }));
+                    });
+                }
+
+                // Saved Medications
+                if (savedMedications.length > 0) {
+                    ch.push(new Paragraph({
+                        children: [new TextRun({text: 'Medications Administered:', bold: true, color: '1565c0'})],
+                        spacing: {before: 100, after: 50}
+                    }));
+                    savedMedications.forEach(m => {
+                        ch.push(new Paragraph({
+                            children: [
+                                new TextRun({text: m.time + ': ', bold: true, color: '1565c0'}),
+                                new TextRun(m.display)
+                            ],
+                            spacing: {after: 40}
+                        }));
+                    });
+                }
+
                 // Focus (for DAR/DARP)
                 if (['dar','darp'].includes(currentNoteType) && d.focus) {
                     ch.push(new Paragraph({
@@ -6278,6 +6746,9 @@ Important guidelines:
                 const lastName = nameParts[nameParts.length - 1] || 'Student';
                 saveAs(blob, d.noteDateForFilename + '_' + d.noteTime + '_' + currentNoteType.toUpperCase() + '_' + lastName + '.docx');
 
+                // Log export to Firebase for admin tracking
+                logExportHistory('Word', currentNoteType, d.patientId);
+
             } catch(e) {
                 console.error('Word export error:', e);
                 showToast('Error generating Word document: ' + e.message + '. Please try PDF export instead.', 'error');
@@ -6289,6 +6760,32 @@ Important guidelines:
         document.addEventListener('click', e => {
             if (!e.target.closest('.nanda-search')) document.getElementById('nandaDropdown').classList.remove('show');
         });
+
+        // ========== EXPORT HISTORY TRACKING ==========
+        function logExportHistory(exportFormat, noteType, patientId) {
+            const uid = localStorage.getItem('bsn9b_uid');
+            const userEmail = localStorage.getItem('bsn9b_user') || 'anonymous';
+            const displayName = localStorage.getItem('bsn9b_displayName') || userEmail;
+
+            if (!uid) {
+                console.log('No UID for export logging');
+                return;
+            }
+
+            try {
+                database.ref('userExportHistory/' + uid).push({
+                    timestamp: Date.now(),
+                    date: new Date().toLocaleString(),
+                    exportFormat: exportFormat,
+                    noteType: noteType,
+                    patientId: patientId || 'N/A',
+                    userEmail: userEmail,
+                    displayName: displayName
+                });
+            } catch (e) {
+                console.log('Export logging failed:', e);
+            }
+        }
 
         // ========== FIREBASE LISTENER CLEANUP ==========
         function cleanupFirebaseListeners() {

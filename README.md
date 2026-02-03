@@ -1,8 +1,8 @@
 # BENDBSN - Nursing Documentation & Collaboration Platform
 
-**Created by Christian Holden for Sumner College BSN9B**
+**Created by Christian Holden**
 
-A comprehensive web-based nursing documentation tool with real-time collaboration features designed for Sumner College nursing students.
+A comprehensive web-based nursing documentation tool with real-time collaboration features designed for nursing students.
 
 **Live URL:** [bendbsn.com](https://bendbsn.com)
 

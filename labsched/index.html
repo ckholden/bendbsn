@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#1f4e79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSN9B">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <title>Lab Check-Off Schedule Generator - BSN9B</title>
+    <script>
+        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+            window.location.href = '/';
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 16px 16px 0 0;
+            text-align: center;
+        }
+        .header h1 { font-size: 26px; margin-bottom: 5px; }
+        .header p { opacity: 0.9; font-size: 13px; }
+        .back-btn {
+            display: inline-block;
+            margin-top: 12px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 16px 16px;
+        }
+        .form-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-section h3 {
+            color: #1f4e79;
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1f4e79;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1f4e79;
+            box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.1);
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(31, 78, 121, 0.3); }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3); }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .btn-danger:hover { background: #c82333; }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover { background: #5a6268; }
+        .room-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .room-card.active {
+            border-color: #1f4e79;
+        }
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .room-header h4 {
+            color: #1f4e79;
+            font-size: 16px;
+        }
+        .entries-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .entry-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid #1f4e79;
+        }
+        .entry-item.break {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+        .entry-item .name {
+            font-weight: 600;
+            color: #333;
+        }
+        .entry-item .time {
+            font-size: 12px;
+            color: #666;
+            margin-left: 10px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+        .preview-section {
+            margin-top: 30px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .preview-section h3 {
+            color: #1f4e79;
+            margin-bottom: 15px;
+        }
+        #schedulePreview {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+        }
+        .preview-room {
+            margin-bottom: 20px;
+        }
+        .preview-room h4 {
+            background: #1f4e79;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .preview-table th, .preview-table td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .preview-table th {
+            background: #e2e8f0;
+            font-weight: 600;
+        }
+        .preview-table tr.break-row {
+            background: #fff3e0;
+            font-style: italic;
+        }
+        /* Bottom Toolbar */
+        .bottom-toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .toolbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            color: #666;
+            text-decoration: none;
+            font-size: 10px;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .toolbar-item:hover { color: #1f4e79; }
+        .toolbar-item.active { color: #e94560; }
+        .toolbar-item .icon { font-size: 24px; margin-bottom: 2px; }
+        .toolbar-item .label { font-weight: 600; }
+        @media print {
+            body { background: white; padding: 0; }
+            .container { max-width: 100%; }
+            .header, .form-section, .action-buttons, .bottom-toolbar { display: none !important; }
+            .content { border-radius: 0; padding: 10px; }
+            .preview-section { border: none; background: white; padding: 0; margin: 0; }
+            #schedulePreview { border: none; }
+        }
+        @media (max-width: 768px) {
+            .form-row { flex-direction: column; }
+            .form-group { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lab Check-Off Schedule Generator</h1>
+            <p>Create and print lab room schedules with students and time slots</p>
+            <a href="/home/" class="back-btn">Back to Home</a>
+        </div>
+
+        <div class="content">
+            <!-- Schedule Info -->
+            <div class="form-section">
+                <h3>Schedule Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Schedule Title</label>
+                        <input type="text" id="scheduleTitle" placeholder="e.g., Skills Lab Check-Off Week 3">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="scheduleDate">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Management -->
+            <div class="form-section">
+                <h3>Lab Rooms</h3>
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 0 0 auto; min-width: auto;">
+                        <label>Number of Rooms</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button class="btn btn-secondary" onclick="changeRoomCount(-1)" style="padding: 8px 15px;">-</button>
+                            <span id="roomCount" style="font-size: 20px; font-weight: bold; min-width: 30px; text-align: center;">1</span>
+                            <button class="btn btn-primary" onclick="changeRoomCount(1)" style="padding: 8px 15px;">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="roomsContainer"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="updatePreview()">Preview Schedule</button>
+                <button class="btn btn-success" onclick="generatePDF()">Download PDF</button>
+                <button class="btn btn-secondary" onclick="window.print()">Print</button>
+                <button class="btn btn-danger" onclick="clearAll()">Clear All</button>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <h3>Schedule Preview</h3>
+                <div id="schedulePreview">
+                    <p style="color: #666; text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Toolbar -->
+    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
+        <a href="/home/" class="toolbar-item" aria-label="Home">
+            <span class="icon" aria-hidden="true">&#127968;</span>
+            <span class="label">Home</span>
+        </a>
+        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
+            <span class="icon" aria-hidden="true">&#128221;</span>
+            <span class="label">RN Notes</span>
+        </a>
+        <a href="/resources/" class="toolbar-item" aria-label="Resources">
+            <span class="icon" aria-hidden="true">&#128218;</span>
+            <span class="label">Resources</span>
+        </a>
+        <a href="/labsched/" class="toolbar-item active" aria-label="Lab Schedule">
+            <span class="icon" aria-hidden="true">&#128197;</span>
+            <span class="label">Lab Sched</span>
+        </a>
+    </nav>
+
+    <script>
+        // Schedule state
+        let rooms = [];
+        let roomCount = 1;
+
+        // Initialize with today's date
+        document.getElementById('scheduleDate').valueAsDate = new Date();
+
+        // Initialize first room
+        function init() {
+            rooms = [{ instructor: '', entries: [] }];
+            renderRooms();
+        }
+
+        function changeRoomCount(delta) {
+            const newCount = roomCount + delta;
+            if (newCount < 1 || newCount > 10) return;
+
+            roomCount = newCount;
+            document.getElementById('roomCount').textContent = roomCount;
+
+            // Adjust rooms array
+            while (rooms.length < roomCount) {
+                rooms.push({ instructor: '', entries: [] });
+            }
+            while (rooms.length > roomCount) {
+                rooms.pop();
+            }
+
+            renderRooms();
+        }
+
+        function renderRooms() {
+            const container = document.getElementById('roomsContainer');
+            container.innerHTML = rooms.map((room, index) => `
+                <div class="room-card" id="room-${index}">
+                    <div class="room-header">
+                        <h4>Room ${index + 1}</h4>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" placeholder="Instructor Name" value="${room.instructor}"
+                                onchange="updateInstructor(${index}, this.value)"
+                                style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; width: 180px;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <input type="text" id="studentName-${index}" placeholder="Student Name"
+                            style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" id="studentTime-${index}" placeholder="Time (e.g., 0900)"
+                            style="width: 100px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <button class="btn btn-primary" onclick="addStudent(${index})">Add Student</button>
+                        <button class="btn btn-secondary" onclick="addBreak(${index})" style="background: #ff9800;">Add Break</button>
+                    </div>
+
+                    <div class="entries-list" id="entries-${index}">
+                        ${room.entries.length === 0 ? '<p style="color: #888; text-align: center; padding: 20px;">No entries yet. Add students or breaks above.</p>' :
+                        room.entries.map((entry, entryIndex) => `
+                            <div class="entry-item ${entry.type === 'break' ? 'break' : ''}">
+                                <div>
+                                    <span class="name">${entry.type === 'break' ? '--- BREAK ---' : entry.name}</span>
+                                    <span class="time">${entry.time}</span>
+                                </div>
+                                <button class="btn btn-danger" onclick="removeEntry(${index}, ${entryIndex})">Remove</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateInstructor(roomIndex, value) {
+            rooms[roomIndex].instructor = value;
+        }
+
+        function addStudent(roomIndex) {
+            const nameInput = document.getElementById(`studentName-${roomIndex}`);
+            const timeInput = document.getElementById(`studentTime-${roomIndex}`);
+            const name = nameInput.value.trim();
+            const time = timeInput.value.trim();
+
+            if (!name) {
+                alert('Please enter a student name.');
+                nameInput.focus();
+                return;
+            }
+
+            rooms[roomIndex].entries.push({ type: 'student', name, time: time || '' });
+            nameInput.value = '';
+            timeInput.value = '';
+            nameInput.focus();
+            renderRooms();
+        }
+
+        function addBreak(roomIndex) {
+            const timeInput = document.getElementById(`studentTime-${roomIndex}`);
+            const time = timeInput.value.trim();
+
+            rooms[roomIndex].entries.push({ type: 'break', name: 'BREAK', time: time || '' });
+            timeInput.value = '';
+            renderRooms();
+        }
+
+        function removeEntry(roomIndex, entryIndex) {
+            rooms[roomIndex].entries.splice(entryIndex, 1);
+            renderRooms();
+        }
+
+        function updatePreview() {
+            const title = document.getElementById('scheduleTitle').value || 'Lab Check-Off Schedule';
+            const date = document.getElementById('scheduleDate').value;
+            const formattedDate = date ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+            const preview = document.getElementById('schedulePreview');
+
+            if (rooms.every(r => r.entries.length === 0)) {
+                preview.innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">Add students to rooms to see the preview.</p>';
+                return;
+            }
+
+            let html = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #1f4e79; margin-bottom: 5px;">${title}</h2>
+                    <p style="color: #666;">${formattedDate}</p>
+                </div>
+            `;
+
+            rooms.forEach((room, index) => {
+                if (room.entries.length === 0) return;
+
+                html += `
+                    <div class="preview-room">
+                        <h4>Room ${index + 1}${room.instructor ? ' - ' + room.instructor : ''}</h4>
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">Time</th>
+                                    <th>Student Name</th>
+                                    <th style="width: 120px;">Signature</th>
+                                    <th style="width: 80px;">Pass/Fail</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${room.entries.map(entry => `
+                                    <tr class="${entry.type === 'break' ? 'break-row' : ''}">
+                                        <td>${entry.time || '-'}</td>
+                                        <td>${entry.type === 'break' ? 'BREAK' : entry.name}</td>
+                                        <td>${entry.type === 'break' ? '' : ''}</td>
+                                        <td>${entry.type === 'break' ? '' : ''}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+
+            preview.innerHTML = html;
+        }
+
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+
+            const title = document.getElementById('scheduleTitle').value || 'Lab Check-Off Schedule';
+            const date = document.getElementById('scheduleDate').value;
+            const formattedDate = date ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+            // Create landscape PDF
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+            const pw = doc.internal.pageSize.getWidth();
+            const ph = doc.internal.pageSize.getHeight();
+            const margin = 15;
+            let y = margin;
+
+            // Header
+            doc.setFillColor(31, 78, 121);
+            doc.rect(0, 0, pw, 20, 'F');
+            doc.setTextColor(255);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, pw / 2, 12, { align: 'center' });
+
+            doc.setTextColor(0);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            y = 28;
+            doc.text(formattedDate, pw / 2, y, { align: 'center' });
+            y += 10;
+
+            // Generate table for each room
+            rooms.forEach((room, roomIndex) => {
+                if (room.entries.length === 0) return;
+
+                // Check if we need a new page
+                if (y > ph - 60) {
+                    doc.addPage();
+                    y = margin;
+                }
+
+                // Room header
+                doc.setFillColor(31, 78, 121);
+                doc.setTextColor(255);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                const roomTitle = `Room ${roomIndex + 1}${room.instructor ? ' - ' + room.instructor : ''}`;
+                doc.rect(margin, y, pw - margin * 2, 8, 'F');
+                doc.text(roomTitle, margin + 5, y + 5.5);
+                y += 12;
+
+                // Table header
+                doc.setFillColor(226, 232, 240);
+                doc.setTextColor(0);
+                doc.setFontSize(10);
+                doc.rect(margin, y, pw - margin * 2, 7, 'F');
+                doc.text('Time', margin + 3, y + 5);
+                doc.text('Student Name', margin + 35, y + 5);
+                doc.text('Signature', margin + 140, y + 5);
+                doc.text('Pass/Fail', margin + 200, y + 5);
+                y += 9;
+
+                // Table rows
+                doc.setFont('helvetica', 'normal');
+                room.entries.forEach(entry => {
+                    if (y > ph - 20) {
+                        doc.addPage();
+                        y = margin;
+                    }
+
+                    if (entry.type === 'break') {
+                        doc.setFillColor(255, 243, 224);
+                        doc.rect(margin, y - 1, pw - margin * 2, 7, 'F');
+                        doc.setFont('helvetica', 'italic');
+                        doc.text(entry.time || '-', margin + 3, y + 4);
+                        doc.text('BREAK', margin + 35, y + 4);
+                        doc.setFont('helvetica', 'normal');
+                    } else {
+                        doc.setDrawColor(200);
+                        doc.line(margin, y + 6, pw - margin, y + 6);
+                        doc.text(entry.time || '-', margin + 3, y + 4);
+                        doc.text(entry.name, margin + 35, y + 4);
+                    }
+                    y += 8;
+                });
+
+                y += 10;
+            });
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Generated by BendBSN Lab Schedule Generator', pw / 2, ph - 8, { align: 'center' });
+
+            // Save
+            const dateStr = date ? date.replace(/-/g, '') : new Date().toISOString().split('T')[0].replace(/-/g, '');
+            doc.save(`Lab_Schedule_${dateStr}.pdf`);
+        }
+
+        function clearAll() {
+            if (!confirm('Clear all rooms and entries?')) return;
+            rooms = [{ instructor: '', entries: [] }];
+            roomCount = 1;
+            document.getElementById('roomCount').textContent = '1';
+            document.getElementById('scheduleTitle').value = '';
+            document.getElementById('scheduleDate').valueAsDate = new Date();
+            document.getElementById('schedulePreview').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>';
+            renderRooms();
+        }
+
+        // Enter key handlers for quick entry
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.id && e.target.id.startsWith('studentName-')) {
+                const roomIndex = parseInt(e.target.id.split('-')[1]);
+                addStudent(roomIndex);
+            }
+        });
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
