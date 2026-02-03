@@ -167,55 +167,52 @@
         }
         .resource-card.hidden { display: none; }
 
-        /* Collapsible card styles */
-        .collapsible .card-header {
+        /* Collapsible card styles - ALL resource cards use this */
+        .resource-card.collapsible {
+            padding: 0;
+            overflow: hidden;
+        }
+        .resource-card.collapsible .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            padding: 15px 20px;
-            margin: -20px -20px 20px -20px;
+            padding: 18px 20px;
             background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
-            border-radius: 12px 12px 0 0;
-            transition: border-radius 0.3s;
+            transition: background 0.2s;
         }
-        .collapsible.collapsed .card-header {
-            border-radius: 12px;
-            margin-bottom: 0;
+        .resource-card.collapsible .card-header:hover {
+            background: linear-gradient(135deg, #2d5a87 0%, #3d6a97 100%);
         }
-        .collapsible.collapsed {
-            padding-bottom: 0;
-        }
-        .collapsible .card-header h2 {
+        .resource-card.collapsible .card-header h2 {
             color: white;
             margin: 0;
             padding: 0;
             border: none;
             font-size: 16px;
+            flex: 1;
         }
-        .collapsible .card-header .expand-icon {
+        .resource-card.collapsible .card-header .expand-icon {
             color: white;
-            font-size: 12px;
+            font-size: 14px;
             transition: transform 0.3s ease;
-            margin-left: 10px;
+            margin-left: 15px;
         }
-        .collapsible.expanded .card-header .expand-icon {
+        .resource-card.collapsible.expanded .card-header .expand-icon {
             transform: rotate(180deg);
         }
-        .collapsible .card-content {
+        .resource-card.collapsible .card-content {
             display: none;
+            padding: 20px;
         }
-        .collapsible.expanded .card-content {
+        .resource-card.collapsible.expanded .card-content {
             display: block;
         }
-        .collapsible .card-header:hover {
-            background: linear-gradient(135deg, #2d5a87 0%, #3d6a97 100%);
+        [data-theme="dark"] .resource-card.collapsible .card-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
         }
-        .collapsible .card-header .expand-hint {
-            font-size: 11px;
-            opacity: 0.8;
-            margin-left: auto;
-            margin-right: 10px;
+        [data-theme="dark"] .resource-card.collapsible .card-header:hover {
+            background: linear-gradient(135deg, #2d4a6f 0%, #3d5a7f 100%);
         }
 
         .card {
@@ -818,8 +815,12 @@
 
             <div class="grid" id="resourceGrid">
                 <!-- Drug Information -->
-                <div class="card resource-card" data-tags="drugs medication pharma reference">
-                    <h2>💊 Drug Information</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="drugs medication pharma reference">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>💊 Drug Information</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 12px; color: #c62828; background: #ffebee; padding: 8px; border-radius: 6px; margin-bottom: 12px;"><strong>Educational reference only.</strong> Verify all information with official sources.</p>
                     <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Start typing to search medications (smart spelling correction)</p>
                     <div class="drug-search-wrapper">
@@ -840,13 +841,13 @@
                         <li><a href="https://www.nursingcenter.com/clinical-resources" target="_blank">📚 Lippincott Clinical Resources</a></li>
                         <li><a href="https://medlineplus.gov/druginformation.html" target="_blank">🔗 MedlinePlus Drugs (NIH)</a></li>
                     </ul>
+                    </div>
                 </div>
 
                 <!-- Lab Values -->
                 <div class="card resource-card collapsible collapsed" data-tags="labs cbc bmp abg coagulation cardiac reference">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🔬 Lab Values Reference</h2>
-                        <span class="expand-hint">Click to expand</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -912,8 +913,12 @@
                 </div>
 
                 <!-- Vital Signs -->
-                <div class="card resource-card" data-tags="vitals assessment normal ranges">
-                    <h2>❤️ Vital Signs Normal Ranges</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>❤️ Vital Signs Normal Ranges</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <table>
                         <tr><th>Vital Sign</th><th>Adult Normal</th></tr>
                         <tr><td>Heart Rate</td><td>60-100 bpm</td></tr>
@@ -931,12 +936,16 @@
                         <tr><td>HTN Stage 2</td><td>≥140</td><td>≥90</td></tr>
                         <tr><td>Crisis</td><td>&gt;180</td><td>&gt;120</td></tr>
                     </table>
-                    </div><!-- end card-content -->
+                    </div>
                 </div>
 
                 <!-- IV Calculations -->
-                <div class="card resource-card" data-tags="calculations iv drip math clinical">
-                    <h2>💉 IV Drip Rate Calculator</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="calculations iv drip math clinical">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>💉 IV Drip Rate Calculator</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 11px; color: #c62828; background: #ffebee; padding: 6px 8px; border-radius: 4px; margin-bottom: 10px;"><strong>Double-check all calculations.</strong> Verify with preceptor/RN before administration.</p>
                     <p style="font-size: 12px; color: #666; margin-bottom: 12px;">For gravity drip or pump rate calculation</p>
                     <div class="input-group">
@@ -969,11 +978,16 @@
                         <tr><td>Blood tubing</td><td>10 gtt/mL</td><td>Blood products</td></tr>
                     </table>
                     <p style="font-size: 11px; color: #666; margin-top: 10px;"><strong>Tip:</strong> For IV pumps, you only need mL/hr (no drop factor needed). Microdrip: gtt/min = mL/hr</p>
+                    </div>
                 </div>
 
                 <!-- Dosage Calculator -->
-                <div class="card resource-card" data-tags="calculations dosage math meds">
-                    <h2>💊 Dosage Calculator</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="calculations dosage math meds">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>💊 Dosage Calculator</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 11px; color: #c62828; background: #ffebee; padding: 6px 8px; border-radius: 4px; margin-bottom: 10px;"><strong>Double-check all calculations.</strong> Verify with preceptor/RN before administration.</p>
                     <p style="font-size: 12px; color: #666; margin-bottom: 12px;">D/H × Q (Desired ÷ Have × Quantity)</p>
                     <div class="input-group">
@@ -1015,13 +1029,13 @@
                     </div>
                     <button onclick="calculateWeightDose()" style="width: 100%;">Calculate Weight-Based Dose</button>
                     <div id="weightDoseResult" class="calc-result"></div>
+                    </div>
                 </div>
 
                 <!-- Common Abbreviations -->
                 <div class="card resource-card collapsible collapsed" data-tags="study abbreviations documentation">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>📝 Common Abbreviations</h2>
-                        <span class="expand-hint">Click to expand</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1055,8 +1069,12 @@
                 </div>
 
                 <!-- Clinical Prep -->
-                <div class="card resource-card" data-tags="clinical study sim prep planner">
-                    <h2>🗂️ Clinical Prep & Sim Lab</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="clinical study sim prep planner">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🗂️ Clinical Prep & Sim Lab</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Quick checklist + planner for pre-clinical and sim days</p>
                     <div class="checklist" id="shift-prep-checklist" style="margin-bottom: 12px;">
                         <label class="checklist-item"><input type="checkbox"> Review patient summary, diagnosis, and H&P</label>
@@ -1075,13 +1093,13 @@
                         <button class="btn btn-secondary" onclick="copyShiftPlan()">Copy Plan</button>
                         <button class="btn btn-secondary" onclick="clearShiftPlan()">Clear</button>
                     </div>
+                    </div>
                 </div>
 
                 <!-- Clinical Toolkit -->
                 <div class="card resource-card collapsible collapsed" data-tags="clinical toolkit vitals pain apgar sbar handoff" style="grid-column: span 2;">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🩺 Clinical Toolkit</h2>
-                        <span class="expand-hint">Click to expand</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1270,7 +1288,6 @@
                 <div class="card resource-card collapsible collapsed" data-tags="nanda diagnoses study care plan">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🩺 NANDA Nursing Diagnoses</h2>
-                        <span class="expand-hint">Click to expand</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1312,8 +1329,12 @@
                 </div>
 
                 <!-- Procedure Checklists -->
-                <div class="card resource-card" data-tags="checklists clinical skills procedures" style="grid-column: span 2;">
-                    <h2>📋 Procedure Checklists</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="checklists clinical skills procedures" style="grid-column: span 2;">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>📋 Procedure Checklists</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Interactive checklists for common nursing procedures</p>
 
                     <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🩺 Foley Catheter Insertion</h3>
@@ -1422,11 +1443,16 @@
                         </div>
                         <button onclick="clearChecklist('trach-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
                     </div>
+                    </div>
                 </div>
 
                 <!-- Medication Timer -->
-                <div class="card resource-card" data-tags="timers clinical meds reminders">
-                    <h2>⏱️ Med Pass Timer</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="timers clinical meds reminders">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>⏱️ Med Pass Timer</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Set reminders for medication rounds or patient checks</p>
 
                     <div style="display: grid; gap: 12px;">
@@ -1456,13 +1482,13 @@
                         <strong>Note:</strong> Enable browser notifications for alerts when timer completes.
                         <button onclick="requestNotificationPermission()" style="background: none; border: none; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 11px;">Enable Notifications</button>
                     </p>
+                    </div>
                 </div>
 
                 <!-- EKG Reference Guide -->
                 <div class="card resource-card collapsible collapsed" data-tags="ekg ecg cardiac arrhythmia rhythm strips" style="grid-column: span 2;">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>💓 EKG/ECG Reference Guide</h2>
-                        <span class="expand-hint">Click to expand</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1775,8 +1801,12 @@
                 </div>
 
                 <!-- Additional Resources -->
-                <div class="card resource-card" data-tags="study links reference safety">
-                    <h2>🔗 Additional Resources</h2>
+                <div class="card resource-card collapsible collapsed" data-tags="study links reference safety">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🔗 Additional Resources</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                     <ul class="link-list">
                         <li><a href="https://www.nursingworld.org/" target="_blank">🏥 American Nurses Association</a></li>
                         <li><a href="https://www.ncsbn.org/nclex.htm" target="_blank">📚 NCLEX Resources (NCSBN)</a></li>
@@ -1784,6 +1814,7 @@
                         <li><a href="https://www.jointcommission.org/resources/patient-safety-topics/patient-safety/" target="_blank">⚕️ Joint Commission Patient Safety</a></li>
                         <li><a href="https://www.ahrq.gov/patient-safety/index.html" target="_blank">🛡️ AHRQ Patient Safety</a></li>
                     </ul>
+                    </div>
                 </div>
 
                 <!-- Cited Sources Button -->
