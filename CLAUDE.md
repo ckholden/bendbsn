@@ -700,11 +700,45 @@ Added a new APA 7th Edition paper generator accessible via the "More" menu on al
 | `sortReferences()` | Sort references alphabetically by author |
 | `updatePreview()` | Render live preview of document |
 | `exportToWord()` | Generate and download .docx file |
+| `fetchCitationFromUrl()` | Fetch metadata from URL and auto-populate form |
+| `formatAuthorsAPA(authors)` | Convert author array to APA format |
+| `populateJournalForm(citation)` | Fill journal article form from citation data |
+| `populateBookForm(citation)` | Fill book form from citation data |
+| `populateChapterForm(citation)` | Fill book chapter form from citation data |
+| `populateWebsiteForm(citation)` | Fill website form from citation data |
 
 ### APA Formatting Notes
 - Title page: Centered, starts ~3 inches from top, includes all required student paper elements
 - Body: First-line indent 0.5", double-spaced, left-aligned
 - References: "References" centered and bold, hanging indent 0.5", alphabetized, double-spaced
+
+### URL-Based Citation Auto-Fetch - NEW FEATURE
+
+Added ability to paste a URL and automatically populate citation fields.
+
+#### How It Works:
+1. User pastes URL (DOI, PubMed, article link, etc.) into "Quick Add from URL" field
+2. Clicks "Fetch Citation" button
+3. System calls Wikipedia's Citoid API to extract metadata
+4. Auto-detects source type (journal, book, chapter, website)
+5. Populates the appropriate reference form with extracted data
+6. User reviews/edits fields, then clicks "Add Reference"
+
+#### Supported Sources:
+- DOI links (`https://doi.org/10.xxxx/xxxxx`)
+- PubMed articles
+- Google Books / ISBN lookups
+- News articles and blog posts
+- Academic journal websites
+- Most general web pages with proper metadata
+
+#### API Used:
+Wikipedia Citoid API: `https://en.wikipedia.org/api/rest_v1/data/citation/mediawiki/{url}`
+
+#### Author Formatting:
+The `formatAuthorsAPA()` function converts various author formats to APA style:
+- Input: `[{firstName: "John", lastName: "Smith"}, {firstName: "Jane", lastName: "Doe"}]`
+- Output: `"Smith, J., & Doe, J."`
 
 ### Typing Indicators - NEW FEATURE
 
