@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <script>
+        // Auth check - must be logged in
+        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+            window.location.href = '/';
+        }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#1f4e79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSN9B">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <title>APA Paper Generator - BSN9B</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #fafafa;
+            --bg-input: #fafafa;
+            --text-primary: #1a1a2e;
+            --text-secondary: #666666;
+            --accent: #1f4e79;
+            --accent-light: #2d5a87;
+            --shadow: rgba(0,0,0,0.4);
+            --border: #e0e0e0;
+        }
+
+        [data-theme="dark"] {
+            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #1e2a3a;
+            --bg-input: #16213e;
+            --text-primary: #e6e6e6;
+            --text-secondary: #aaaaaa;
+            --accent: #4a90d9;
+            --accent-light: #5a9fe8;
+            --shadow: rgba(0,0,0,0.6);
+            --border: #2d3748;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-page);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 16px 16px 0 0;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 26px; margin-bottom: 5px; }
+        .header p { opacity: 0.9; font-size: 13px; }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 12px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        .content {
+            background: var(--bg-primary);
+            padding: 30px;
+            border-radius: 0 0 16px 16px;
+            color: var(--text-primary);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .tab:hover { color: var(--accent); }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .form-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-section h3 {
+            color: var(--accent);
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group.full-width {
+            flex: 100%;
+            min-width: 100%;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 78, 121, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover { background: #5a6268; }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover { background: #c82333; }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        /* Reference Builder */
+        .reference-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .ref-type-btn {
+            padding: 15px 10px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .ref-type-btn:hover {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        .ref-type-btn.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: white;
+        }
+
+        .ref-type-btn .icon { font-size: 24px; display: block; margin-bottom: 5px; }
+        .ref-type-btn .label { font-size: 12px; font-weight: 600; }
+
+        .reference-form { display: none; }
+        .reference-form.active { display: block; }
+
+        .reference-list {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .reference-item {
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .reference-item:last-child { margin-bottom: 0; }
+
+        .reference-text {
+            flex: 1;
+            font-size: 13px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .reference-text .hanging {
+            padding-left: 36px;
+            text-indent: -36px;
+        }
+
+        .delete-ref {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .delete-ref:hover { background: #c82333; }
+
+        /* Preview */
+        .preview-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 40px 60px;
+            min-height: 400px;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 2;
+            color: #000;
+        }
+
+        .preview-title-page {
+            text-align: center;
+            padding-top: 200px;
+        }
+
+        .preview-title {
+            font-weight: bold;
+            margin-bottom: 24pt;
+        }
+
+        .preview-page-break {
+            border-top: 2px dashed #ccc;
+            margin: 30px 0;
+            text-align: center;
+            color: #999;
+            font-size: 10px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .preview-body {
+            text-indent: 0.5in;
+        }
+
+        .preview-body p {
+            margin-bottom: 0;
+            text-indent: 0.5in;
+        }
+
+        .preview-references {
+            padding-top: 24pt;
+        }
+
+        .preview-references h2 {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 24pt;
+        }
+
+        .preview-ref-entry {
+            padding-left: 0.5in;
+            text-indent: -0.5in;
+            margin-bottom: 0;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: toastSlideIn 0.3s ease;
+            color: white;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .toast.hiding { animation: toastSlideOut 0.3s ease forwards; }
+        .toast-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .toast-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .toast-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .toast-info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .toast-icon { font-size: 18px; flex-shrink: 0; }
+        .toast-content { flex: 1; }
+        .toast-close { background: none; border: none; color: white; opacity: 0.7; cursor: pointer; font-size: 18px; padding: 0; }
+        .toast-close:hover { opacity: 1; }
+
+        @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+        /* Bottom Toolbar */
+        .bottom-toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .toolbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 10px;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .toolbar-item:hover { color: var(--accent); }
+        .toolbar-item.active { color: var(--accent); }
+        .toolbar-item .icon { font-size: 24px; margin-bottom: 2px; }
+        .toolbar-item .label { font-weight: 600; }
+
+        /* More Menu */
+        .more-menu {
+            position: fixed;
+            bottom: 70px;
+            right: 10px;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 8px 0;
+            display: none;
+            z-index: 1001;
+            min-width: 160px;
+            border: 1px solid var(--border);
+        }
+
+        .more-menu.show { display: block; }
+
+        .more-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .more-menu-item:hover { background: var(--bg-secondary); }
+        .more-menu-item .menu-icon { font-size: 18px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-row { flex-direction: column; }
+            .form-group { min-width: 100%; }
+            .tabs { overflow-x: auto; }
+            .tab { padding: 10px 16px; font-size: 13px; white-space: nowrap; }
+            .preview-container { padding: 20px 30px; }
+        }
+
+        @media (max-width: 480px) {
+            .content { padding: 20px 15px; }
+            .reference-type-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* Helper text */
+        .helper-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        [data-theme="dark"] .info-box {
+            background: #1e3a5f;
+            border-color: #2d5a87;
+            color: #90caf9;
+        }
+
+        [data-theme="dark"] .preview-container {
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>APA Paper Generator</h1>
+            <p>Create properly formatted APA 7th Edition papers with ease</p>
+            <a href="/home/" class="back-btn">Back to Home</a>
+        </div>
+
+        <div class="content">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('title')">Title Page</button>
+                <button class="tab" onclick="switchTab('body')">Body</button>
+                <button class="tab" onclick="switchTab('references')">References</button>
+                <button class="tab" onclick="switchTab('preview')">Preview</button>
+            </div>
+
+            <!-- Title Page Tab -->
+            <div id="tab-title" class="tab-content active">
+                <div class="info-box">
+                    APA 7th Edition title page includes: paper title, author name, institutional affiliation, course, instructor, and due date - all centered and double-spaced.
+                </div>
+
+                <div class="form-section">
+                    <h3>Title Page Information</h3>
+
+                    <div class="form-group full-width">
+                        <label>Paper Title</label>
+                        <input type="text" id="paperTitle" placeholder="Enter your paper title (bold, title case)">
+                        <div class="helper-text">Use title case - capitalize major words</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Author Name</label>
+                            <input type="text" id="authorName" placeholder="First Last">
+                        </div>
+                        <div class="form-group">
+                            <label>Institutional Affiliation</label>
+                            <input type="text" id="institution" placeholder="e.g., Oregon Health & Science University">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Course Number and Name</label>
+                            <input type="text" id="courseName" placeholder="e.g., NUR 320: Health Assessment">
+                        </div>
+                        <div class="form-group">
+                            <label>Instructor Name</label>
+                            <input type="text" id="instructorName" placeholder="e.g., Professor Jane Smith">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="dueDate">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body Tab -->
+            <div id="tab-body" class="tab-content">
+                <div class="info-box">
+                    The body of your APA paper should be double-spaced with 1-inch margins. Each new paragraph should be indented 0.5 inches. Use 12-point Times New Roman font.
+                </div>
+
+                <div class="form-section">
+                    <h3>Paper Body</h3>
+
+                    <div class="form-group full-width">
+                        <label>Paper Content</label>
+                        <textarea id="bodyContent" rows="15" placeholder="Enter your paper content here...
+
+Start each paragraph with a topic sentence. The Word document will automatically format with proper indentation.
+
+To create a new paragraph, simply press Enter twice to leave a blank line between paragraphs.
+
+Your content will be exported with:
+- 12pt Times New Roman font
+- Double spacing
+- 1-inch margins
+- 0.5-inch first-line indent for each paragraph
+- Running head with page numbers"></textarea>
+                        <div class="helper-text">Separate paragraphs with a blank line. Indentation will be added automatically.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- References Tab -->
+            <div id="tab-references" class="tab-content">
+                <div class="info-box">
+                    References should be listed alphabetically by author's last name, with a hanging indent (first line flush left, subsequent lines indented 0.5 inches).
+                </div>
+
+                <div class="form-section">
+                    <h3>Reference Generator</h3>
+                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">Select a source type to generate a properly formatted APA reference:</p>
+
+                    <div class="reference-type-grid">
+                        <button class="ref-type-btn active" onclick="selectRefType('journal')" data-type="journal">
+                            <span class="icon">📄</span>
+                            <span class="label">Journal Article</span>
+                        </button>
+                        <button class="ref-type-btn" onclick="selectRefType('book')" data-type="book">
+                            <span class="icon">📚</span>
+                            <span class="label">Book</span>
+                        </button>
+                        <button class="ref-type-btn" onclick="selectRefType('website')" data-type="website">
+                            <span class="icon">🌐</span>
+                            <span class="label">Website</span>
+                        </button>
+                        <button class="ref-type-btn" onclick="selectRefType('chapter')" data-type="chapter">
+                            <span class="icon">📖</span>
+                            <span class="label">Book Chapter</span>
+                        </button>
+                    </div>
+
+                    <!-- Journal Article Form -->
+                    <div id="ref-journal" class="reference-form active">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Author(s)</label>
+                                <input type="text" id="journalAuthors" placeholder="Last, F. M., & Last, F. M.">
+                                <div class="helper-text">Format: Last, F. M. Use & before last author</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Publication Year</label>
+                                <input type="text" id="journalYear" placeholder="2024">
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Article Title</label>
+                            <input type="text" id="journalTitle" placeholder="Article title in sentence case">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Journal Name</label>
+                                <input type="text" id="journalName" placeholder="Journal Name in Title Case (italicized)">
+                            </div>
+                            <div class="form-group">
+                                <label>Volume(Issue)</label>
+                                <input type="text" id="journalVolume" placeholder="12(3)">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Page Range</label>
+                                <input type="text" id="journalPages" placeholder="45-67">
+                            </div>
+                            <div class="form-group">
+                                <label>DOI (if available)</label>
+                                <input type="text" id="journalDoi" placeholder="https://doi.org/10.xxxx/xxxxx">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addReference('journal')" style="margin-top: 10px;">Add Reference</button>
+                    </div>
+
+                    <!-- Book Form -->
+                    <div id="ref-book" class="reference-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Author(s)</label>
+                                <input type="text" id="bookAuthors" placeholder="Last, F. M., & Last, F. M.">
+                            </div>
+                            <div class="form-group">
+                                <label>Publication Year</label>
+                                <input type="text" id="bookYear" placeholder="2024">
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Book Title</label>
+                            <input type="text" id="bookTitle" placeholder="Book title in sentence case (italicized)">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Edition (if not first)</label>
+                                <input type="text" id="bookEdition" placeholder="2nd ed.">
+                            </div>
+                            <div class="form-group">
+                                <label>Publisher</label>
+                                <input type="text" id="bookPublisher" placeholder="Publisher Name">
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>DOI or URL (if available)</label>
+                            <input type="text" id="bookDoi" placeholder="https://doi.org/10.xxxx/xxxxx">
+                        </div>
+                        <button class="btn btn-primary" onclick="addReference('book')" style="margin-top: 10px;">Add Reference</button>
+                    </div>
+
+                    <!-- Website Form -->
+                    <div id="ref-website" class="reference-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Author(s) or Organization</label>
+                                <input type="text" id="websiteAuthors" placeholder="Organization Name or Last, F. M.">
+                            </div>
+                            <div class="form-group">
+                                <label>Date (Year, Month Day)</label>
+                                <input type="text" id="websiteDate" placeholder="2024, January 15 or n.d.">
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Page/Article Title</label>
+                            <input type="text" id="websiteTitle" placeholder="Title of the webpage or article">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Website Name</label>
+                            <input type="text" id="websiteName" placeholder="Website Name (italicized)">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>URL</label>
+                            <input type="text" id="websiteUrl" placeholder="https://www.example.com/page">
+                        </div>
+                        <button class="btn btn-primary" onclick="addReference('website')" style="margin-top: 10px;">Add Reference</button>
+                    </div>
+
+                    <!-- Book Chapter Form -->
+                    <div id="ref-chapter" class="reference-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Chapter Author(s)</label>
+                                <input type="text" id="chapterAuthors" placeholder="Last, F. M., & Last, F. M.">
+                            </div>
+                            <div class="form-group">
+                                <label>Publication Year</label>
+                                <input type="text" id="chapterYear" placeholder="2024">
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Chapter Title</label>
+                            <input type="text" id="chapterTitle" placeholder="Chapter title in sentence case">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Editor(s)</label>
+                                <input type="text" id="chapterEditors" placeholder="F. M. Last & F. M. Last (Eds.)">
+                            </div>
+                            <div class="form-group">
+                                <label>Book Title</label>
+                                <input type="text" id="chapterBookTitle" placeholder="Book title (italicized)">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Page Range</label>
+                                <input type="text" id="chapterPages" placeholder="pp. 100-150">
+                            </div>
+                            <div class="form-group">
+                                <label>Publisher</label>
+                                <input type="text" id="chapterPublisher" placeholder="Publisher Name">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addReference('chapter')" style="margin-top: 10px;">Add Reference</button>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Your References</h3>
+                    <div class="reference-list" id="referenceList">
+                        <p style="color: var(--text-secondary); text-align: center; padding: 20px;">No references added yet. Use the form above to add references.</p>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="sortReferences()">Sort Alphabetically</button>
+                        <button class="btn btn-danger" onclick="clearReferences()">Clear All</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Tab -->
+            <div id="tab-preview" class="tab-content">
+                <div class="form-section">
+                    <h3>Document Preview</h3>
+                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">This preview shows how your paper will look. The exported Word document will have proper APA formatting.</p>
+
+                    <div class="preview-container" id="previewContainer">
+                        <div class="preview-title-page">
+                            <p class="preview-title" id="previewTitle">Paper Title</p>
+                            <p id="previewAuthor">Author Name</p>
+                            <p id="previewInstitution">Institution</p>
+                            <p id="previewCourse">Course</p>
+                            <p id="previewInstructor">Instructor</p>
+                            <p id="previewDate">Date</p>
+                        </div>
+
+                        <div class="preview-page-break">--- Page Break ---</div>
+
+                        <div class="preview-body" id="previewBody">
+                            <p>Your paper content will appear here...</p>
+                        </div>
+
+                        <div class="preview-page-break">--- Page Break ---</div>
+
+                        <div class="preview-references" id="previewReferences">
+                            <h2>References</h2>
+                            <p class="preview-ref-entry">Your references will appear here in APA format with hanging indent...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="updatePreview()">Update Preview</button>
+                <button class="btn btn-success" onclick="exportToWord()">Export to Word (.docx)</button>
+                <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Toolbar -->
+    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
+        <a href="/home/" class="toolbar-item" aria-label="Home">
+            <span class="icon" aria-hidden="true">&#127968;</span>
+            <span class="label">Home</span>
+        </a>
+        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
+            <span class="icon" aria-hidden="true">&#128221;</span>
+            <span class="label">RN Notes</span>
+        </a>
+        <a href="/resources/" class="toolbar-item" aria-label="Resources">
+            <span class="icon" aria-hidden="true">&#128218;</span>
+            <span class="label">Resources</span>
+        </a>
+        <a href="/apa/" class="toolbar-item active" aria-label="APA Generator">
+            <span class="icon" aria-hidden="true">&#128196;</span>
+            <span class="label">APA Paper</span>
+        </a>
+        <button class="toolbar-item" onclick="toggleMoreMenu()" aria-label="More options" aria-expanded="false" aria-controls="moreMenu">
+            <span class="icon" aria-hidden="true">&#8943;</span>
+            <span class="label">More</span>
+        </button>
+    </nav>
+
+    <!-- More Menu -->
+    <div id="moreMenu" class="more-menu" role="menu" aria-label="More options menu">
+        <button class="more-menu-item" onclick="toggleDarkMode(); toggleMoreMenu();" role="menuitem" aria-label="Toggle dark mode">
+            <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">&#127769;</span>
+            <span id="themeMenuText">Dark Mode</span>
+        </button>
+        <a href="/labsched/" class="more-menu-item" role="menuitem" aria-label="Lab Schedule Generator" style="text-decoration: none; color: inherit;">
+            <span class="menu-icon" aria-hidden="true">&#128197;</span>
+            <span>Sched Generator</span>
+        </a>
+        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" style="text-decoration: none; color: inherit;">
+            <span class="menu-icon" aria-hidden="true">&#128196;</span>
+            <span>APA Generator</span>
+        </a>
+    </div>
+
+    <!-- Load docx library for Word export -->
+    <script src="https://unpkg.com/docx@8.2.2/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.firebasestorage.app",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const userProfilesRef = database.ref('userProfiles');
+
+        // State
+        let references = [];
+        let currentRefType = 'journal';
+        let userRole = null;
+
+        // Check user role - redirect instructors
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    const snapshot = await userProfilesRef.child(user.uid).once('value');
+                    const profile = snapshot.val();
+                    userRole = profile?.role || 'RN Student';
+
+                    // Redirect instructors away from this page
+                    if (userRole === 'Instructor') {
+                        alert('This tool is only available for students.');
+                        window.location.href = '/home/';
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Could not fetch user profile:', e);
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            document.getElementById('dueDate').valueAsDate = new Date();
+            updatePreview();
+        });
+
+        // Theme Management
+        function initTheme() {
+            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon();
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('bsn9b_theme', newTheme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const themeMenuIcon = document.getElementById('themeMenuIcon');
+            const themeMenuText = document.getElementById('themeMenuText');
+            if (themeMenuIcon) themeMenuIcon.innerHTML = isDark ? '&#9728;' : '&#127769;';
+            if (themeMenuText) themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+        }
+
+        // More Menu
+        function toggleMoreMenu() {
+            const menu = document.getElementById('moreMenu');
+            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
+            const isExpanded = menu.classList.toggle('show');
+            if (moreBtn) moreBtn.setAttribute('aria-expanded', isExpanded);
+        }
+
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('moreMenu');
+            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
+            if (!menu.contains(e.target) && !e.target.closest('[aria-controls="moreMenu"]')) {
+                menu.classList.remove('show');
+                if (moreBtn) moreBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Toast Notifications
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const icons = { success: '&#10003;', error: '&#10007;', warning: '&#9888;', info: '&#8505;' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <div class="toast-content"><div class="toast-message">${message}</div></div>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); }, duration);
+        }
+
+        // Tab Navigation
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            if (tabName === 'preview') {
+                updatePreview();
+            }
+        }
+
+        // Reference Type Selection
+        function selectRefType(type) {
+            currentRefType = type;
+            document.querySelectorAll('.ref-type-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.ref-type-btn[data-type="${type}"]`).classList.add('active');
+            document.querySelectorAll('.reference-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(`ref-${type}`).classList.add('active');
+        }
+
+        // Add Reference
+        function addReference(type) {
+            let refText = '';
+            let sortKey = '';
+
+            if (type === 'journal') {
+                const authors = document.getElementById('journalAuthors').value.trim();
+                const year = document.getElementById('journalYear').value.trim();
+                const title = document.getElementById('journalTitle').value.trim();
+                const journal = document.getElementById('journalName').value.trim();
+                const volume = document.getElementById('journalVolume').value.trim();
+                const pages = document.getElementById('journalPages').value.trim();
+                const doi = document.getElementById('journalDoi').value.trim();
+
+                if (!authors || !year || !title || !journal) {
+                    showToast('Please fill in required fields: Authors, Year, Title, Journal', 'warning');
+                    return;
+                }
+
+                sortKey = authors.split(',')[0].toLowerCase();
+                refText = `${authors} (${year}). ${title}. <i>${journal}</i>`;
+                if (volume) refText += `, <i>${volume}</i>`;
+                if (pages) refText += `, ${pages}`;
+                refText += '.';
+                if (doi) refText += ` ${doi}`;
+
+                // Clear form
+                ['journalAuthors', 'journalYear', 'journalTitle', 'journalName', 'journalVolume', 'journalPages', 'journalDoi'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+
+            } else if (type === 'book') {
+                const authors = document.getElementById('bookAuthors').value.trim();
+                const year = document.getElementById('bookYear').value.trim();
+                const title = document.getElementById('bookTitle').value.trim();
+                const edition = document.getElementById('bookEdition').value.trim();
+                const publisher = document.getElementById('bookPublisher').value.trim();
+                const doi = document.getElementById('bookDoi').value.trim();
+
+                if (!authors || !year || !title || !publisher) {
+                    showToast('Please fill in required fields: Authors, Year, Title, Publisher', 'warning');
+                    return;
+                }
+
+                sortKey = authors.split(',')[0].toLowerCase();
+                refText = `${authors} (${year}). <i>${title}</i>`;
+                if (edition) refText += ` (${edition})`;
+                refText += `. ${publisher}.`;
+                if (doi) refText += ` ${doi}`;
+
+                ['bookAuthors', 'bookYear', 'bookTitle', 'bookEdition', 'bookPublisher', 'bookDoi'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+
+            } else if (type === 'website') {
+                const authors = document.getElementById('websiteAuthors').value.trim();
+                const date = document.getElementById('websiteDate').value.trim();
+                const title = document.getElementById('websiteTitle').value.trim();
+                const siteName = document.getElementById('websiteName').value.trim();
+                const url = document.getElementById('websiteUrl').value.trim();
+
+                if (!authors || !title || !url) {
+                    showToast('Please fill in required fields: Author/Org, Title, URL', 'warning');
+                    return;
+                }
+
+                sortKey = authors.split(',')[0].toLowerCase();
+                refText = `${authors} (${date || 'n.d.'}). ${title}`;
+                if (siteName && siteName !== authors) refText += `. <i>${siteName}</i>`;
+                refText += `. ${url}`;
+
+                ['websiteAuthors', 'websiteDate', 'websiteTitle', 'websiteName', 'websiteUrl'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+
+            } else if (type === 'chapter') {
+                const authors = document.getElementById('chapterAuthors').value.trim();
+                const year = document.getElementById('chapterYear').value.trim();
+                const title = document.getElementById('chapterTitle').value.trim();
+                const editors = document.getElementById('chapterEditors').value.trim();
+                const bookTitle = document.getElementById('chapterBookTitle').value.trim();
+                const pages = document.getElementById('chapterPages').value.trim();
+                const publisher = document.getElementById('chapterPublisher').value.trim();
+
+                if (!authors || !year || !title || !bookTitle || !publisher) {
+                    showToast('Please fill in required fields: Authors, Year, Title, Book Title, Publisher', 'warning');
+                    return;
+                }
+
+                sortKey = authors.split(',')[0].toLowerCase();
+                refText = `${authors} (${year}). ${title}. In `;
+                if (editors) refText += `${editors}, `;
+                refText += `<i>${bookTitle}</i>`;
+                if (pages) refText += ` (${pages})`;
+                refText += `. ${publisher}.`;
+
+                ['chapterAuthors', 'chapterYear', 'chapterTitle', 'chapterEditors', 'chapterBookTitle', 'chapterPages', 'chapterPublisher'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+            }
+
+            references.push({ text: refText, sortKey: sortKey, plainText: refText.replace(/<[^>]*>/g, '') });
+            renderReferences();
+            showToast('Reference added successfully!', 'success');
+        }
+
+        // Render References List
+        function renderReferences() {
+            const list = document.getElementById('referenceList');
+            if (references.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No references added yet.</p>';
+                return;
+            }
+
+            list.innerHTML = references.map((ref, index) => `
+                <div class="reference-item">
+                    <div class="reference-text"><div class="hanging">${ref.text}</div></div>
+                    <button class="delete-ref" onclick="deleteReference(${index})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        // Delete Reference
+        function deleteReference(index) {
+            references.splice(index, 1);
+            renderReferences();
+            showToast('Reference removed', 'info');
+        }
+
+        // Sort References Alphabetically
+        function sortReferences() {
+            references.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+            renderReferences();
+            showToast('References sorted alphabetically', 'success');
+        }
+
+        // Clear All References
+        function clearReferences() {
+            if (references.length === 0) return;
+            if (!confirm('Are you sure you want to clear all references?')) return;
+            references = [];
+            renderReferences();
+            showToast('All references cleared', 'info');
+        }
+
+        // Update Preview
+        function updatePreview() {
+            const title = document.getElementById('paperTitle').value || 'Paper Title';
+            const author = document.getElementById('authorName').value || 'Author Name';
+            const institution = document.getElementById('institution').value || 'Institution';
+            const course = document.getElementById('courseName').value || 'Course';
+            const instructor = document.getElementById('instructorName').value || 'Instructor';
+            const dateInput = document.getElementById('dueDate').value;
+            const date = dateInput ? new Date(dateInput + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Date';
+            const body = document.getElementById('bodyContent').value || 'Your paper content will appear here...';
+
+            document.getElementById('previewTitle').textContent = title;
+            document.getElementById('previewAuthor').textContent = author;
+            document.getElementById('previewInstitution').textContent = institution;
+            document.getElementById('previewCourse').textContent = course;
+            document.getElementById('previewInstructor').textContent = instructor;
+            document.getElementById('previewDate').textContent = date;
+
+            // Format body - split into paragraphs
+            const paragraphs = body.split(/\n\s*\n/).filter(p => p.trim());
+            document.getElementById('previewBody').innerHTML = paragraphs.map(p =>
+                `<p>${escapeHtml(p.trim())}</p>`
+            ).join('');
+
+            // Format references
+            const refsDiv = document.getElementById('previewReferences');
+            if (references.length === 0) {
+                refsDiv.innerHTML = '<h2>References</h2><p class="preview-ref-entry">Your references will appear here...</p>';
+            } else {
+                const sortedRefs = [...references].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+                refsDiv.innerHTML = '<h2>References</h2>' + sortedRefs.map(ref =>
+                    `<p class="preview-ref-entry">${ref.text}</p>`
+                ).join('');
+            }
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Export to Word Document
+        async function exportToWord() {
+            const title = document.getElementById('paperTitle').value.trim();
+            const author = document.getElementById('authorName').value.trim();
+            const institution = document.getElementById('institution').value.trim();
+            const course = document.getElementById('courseName').value.trim();
+            const instructor = document.getElementById('instructorName').value.trim();
+            const dateInput = document.getElementById('dueDate').value;
+            const date = dateInput ? new Date(dateInput + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+            const bodyContent = document.getElementById('bodyContent').value.trim();
+
+            if (!title) {
+                showToast('Please enter a paper title', 'warning');
+                return;
+            }
+
+            try {
+                const { Document, Packer, Paragraph, TextRun, AlignmentType, Header, PageNumber, NumberFormat, convertInchesToTwip } = docx;
+
+                // Create title page content
+                const titlePageChildren = [
+                    // Add spacing at top (approximately 3 inches down)
+                    ...Array(8).fill(null).map(() => new Paragraph({ spacing: { after: 480 } })),
+
+                    // Title (bold, centered)
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 480, line: 480 }, // Double spacing = 480
+                        children: [
+                            new TextRun({
+                                text: title,
+                                bold: true,
+                                font: 'Times New Roman',
+                                size: 24, // 12pt
+                            }),
+                        ],
+                    }),
+
+                    // Blank line
+                    new Paragraph({ spacing: { after: 480, line: 480 } }),
+
+                    // Author
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 480, line: 480 },
+                        children: [
+                            new TextRun({
+                                text: author || 'Author Name',
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    }),
+
+                    // Institution
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 480, line: 480 },
+                        children: [
+                            new TextRun({
+                                text: institution || 'Institution',
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    }),
+
+                    // Course
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 480, line: 480 },
+                        children: [
+                            new TextRun({
+                                text: course || 'Course',
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    }),
+
+                    // Instructor
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 480, line: 480 },
+                        children: [
+                            new TextRun({
+                                text: instructor || 'Instructor',
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    }),
+
+                    // Date
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 480, line: 480 },
+                        children: [
+                            new TextRun({
+                                text: date || 'Date',
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    }),
+                ];
+
+                // Create body content paragraphs
+                const bodyParagraphs = bodyContent.split(/\n\s*\n/).filter(p => p.trim()).map(paragraph =>
+                    new Paragraph({
+                        alignment: AlignmentType.LEFT,
+                        spacing: { after: 0, line: 480 }, // Double spacing
+                        indent: { firstLine: convertInchesToTwip(0.5) }, // 0.5 inch first line indent
+                        children: [
+                            new TextRun({
+                                text: paragraph.trim().replace(/\n/g, ' '),
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    })
+                );
+
+                // If no body content, add placeholder
+                if (bodyParagraphs.length === 0) {
+                    bodyParagraphs.push(
+                        new Paragraph({
+                            alignment: AlignmentType.LEFT,
+                            spacing: { after: 0, line: 480 },
+                            indent: { firstLine: convertInchesToTwip(0.5) },
+                            children: [
+                                new TextRun({
+                                    text: '[Your paper content here]',
+                                    font: 'Times New Roman',
+                                    size: 24,
+                                }),
+                            ],
+                        })
+                    );
+                }
+
+                // Create references content
+                const referencesChildren = [
+                    // "References" heading (centered, bold)
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 480, line: 480 },
+                        children: [
+                            new TextRun({
+                                text: 'References',
+                                bold: true,
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    }),
+                ];
+
+                // Sort and add references with hanging indent
+                const sortedRefs = [...references].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+                if (sortedRefs.length === 0) {
+                    referencesChildren.push(
+                        new Paragraph({
+                            alignment: AlignmentType.LEFT,
+                            spacing: { after: 0, line: 480 },
+                            indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.5) },
+                            children: [
+                                new TextRun({
+                                    text: '[Add your references here]',
+                                    font: 'Times New Roman',
+                                    size: 24,
+                                }),
+                            ],
+                        })
+                    );
+                } else {
+                    sortedRefs.forEach(ref => {
+                        // Parse the reference text to handle italics
+                        const parts = [];
+                        let remaining = ref.text;
+                        const italicRegex = /<i>([^<]*)<\/i>/g;
+                        let lastIndex = 0;
+                        let match;
+
+                        while ((match = italicRegex.exec(ref.text)) !== null) {
+                            // Add text before italic
+                            if (match.index > lastIndex) {
+                                parts.push(new TextRun({
+                                    text: ref.text.substring(lastIndex, match.index),
+                                    font: 'Times New Roman',
+                                    size: 24,
+                                }));
+                            }
+                            // Add italic text
+                            parts.push(new TextRun({
+                                text: match[1],
+                                font: 'Times New Roman',
+                                size: 24,
+                                italics: true,
+                            }));
+                            lastIndex = match.index + match[0].length;
+                        }
+
+                        // Add remaining text
+                        if (lastIndex < ref.text.length) {
+                            parts.push(new TextRun({
+                                text: ref.text.substring(lastIndex).replace(/<[^>]*>/g, ''),
+                                font: 'Times New Roman',
+                                size: 24,
+                            }));
+                        }
+
+                        if (parts.length === 0) {
+                            parts.push(new TextRun({
+                                text: ref.plainText,
+                                font: 'Times New Roman',
+                                size: 24,
+                            }));
+                        }
+
+                        referencesChildren.push(
+                            new Paragraph({
+                                alignment: AlignmentType.LEFT,
+                                spacing: { after: 0, line: 480 },
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.5) },
+                                children: parts,
+                            })
+                        );
+                    });
+                }
+
+                // Create the document
+                const doc = new Document({
+                    sections: [
+                        // Title page (no header)
+                        {
+                            properties: {
+                                page: {
+                                    margin: {
+                                        top: convertInchesToTwip(1),
+                                        right: convertInchesToTwip(1),
+                                        bottom: convertInchesToTwip(1),
+                                        left: convertInchesToTwip(1),
+                                    },
+                                },
+                            },
+                            children: titlePageChildren,
+                        },
+                        // Body pages with page numbers
+                        {
+                            properties: {
+                                page: {
+                                    margin: {
+                                        top: convertInchesToTwip(1),
+                                        right: convertInchesToTwip(1),
+                                        bottom: convertInchesToTwip(1),
+                                        left: convertInchesToTwip(1),
+                                    },
+                                },
+                            },
+                            headers: {
+                                default: new Header({
+                                    children: [
+                                        new Paragraph({
+                                            alignment: AlignmentType.RIGHT,
+                                            children: [
+                                                new TextRun({
+                                                    font: 'Times New Roman',
+                                                    size: 24,
+                                                    children: [PageNumber.CURRENT],
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            },
+                            children: bodyParagraphs,
+                        },
+                        // References page
+                        {
+                            properties: {
+                                page: {
+                                    margin: {
+                                        top: convertInchesToTwip(1),
+                                        right: convertInchesToTwip(1),
+                                        bottom: convertInchesToTwip(1),
+                                        left: convertInchesToTwip(1),
+                                    },
+                                },
+                            },
+                            headers: {
+                                default: new Header({
+                                    children: [
+                                        new Paragraph({
+                                            alignment: AlignmentType.RIGHT,
+                                            children: [
+                                                new TextRun({
+                                                    font: 'Times New Roman',
+                                                    size: 24,
+                                                    children: [PageNumber.CURRENT],
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            },
+                            children: referencesChildren,
+                        },
+                    ],
+                });
+
+                // Generate and save
+                const blob = await Packer.toBlob(doc);
+                const fileName = title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_') || 'APA_Paper';
+                saveAs(blob, `${fileName}.docx`);
+
+                showToast('Word document exported successfully!', 'success');
+
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('Error exporting document. Please try again.', 'error');
+            }
+        }
+
+        // Clear All
+        function clearAll() {
+            if (!confirm('Clear all form data and references?')) return;
+
+            // Clear all inputs
+            document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(input => {
+                input.value = '';
+            });
+
+            // Reset date to today
+            document.getElementById('dueDate').valueAsDate = new Date();
+
+            // Clear references
+            references = [];
+            renderReferences();
+
+            // Update preview
+            updatePreview();
+
+            showToast('All data cleared', 'info');
+        }
+    </script>
+</body>
+</html>

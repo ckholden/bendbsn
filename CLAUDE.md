@@ -20,6 +20,8 @@
 - `/app/` - Main documentation generator
 - `/resources/` - Clinical references, calculators, drug lookup
 - `/community/` - Community hub with posts, announcements
+- `/labsched/` - Lab schedule generator
+- `/apa/` - APA 7th Edition paper generator (students only - instructors redirected)
 
 ## Performance & Accessibility Improvements (Jan 2026)
 
@@ -645,3 +647,65 @@ const ACTIVITY_DEBOUNCE = 30000;       // 30 seconds debounce
 - [ ] **Push notifications** - Native mobile notifications when app is closed
 - [ ] **Message reactions** - Emoji reactions to chat messages
 - [ ] **Thread replies** - Reply to specific messages in chat
+
+---
+
+## Session Notes (Feb 3, 2026)
+
+### APA Paper Generator - NEW FEATURE
+
+Added a new APA 7th Edition paper generator accessible via the "More" menu on all pages.
+
+#### Features:
+- **Title Page Generator**: Collects paper title, author name, institution, course, instructor, and due date
+- **Body Section**: Text area for paper content with proper paragraph formatting
+- **Reference Generator**: Built-in tool to create properly formatted APA references for:
+  - Journal articles
+  - Books
+  - Websites
+  - Book chapters
+- **Live Preview**: Shows how the paper will look with APA formatting
+- **Word Export**: Exports to .docx format with:
+  - 12pt Times New Roman font
+  - Double spacing (480 twips)
+  - 1-inch margins
+  - 0.5-inch first-line paragraph indent
+  - Hanging indent on references
+  - Page numbers on body and reference pages
+  - Proper title page formatting
+
+#### Access Control:
+- Only available to students (non-instructors)
+- Instructors are redirected to `/home/` with an alert message
+- Role check via Firebase `userProfiles/{uid}/role`
+- APA menu link hidden for instructors on all pages
+
+#### Implementation:
+- Uses `docx` library (v8.2.2) for Word document generation
+- Uses `FileSaver.js` for download functionality
+- Firebase auth for role-based access control
+
+### Files Modified/Created
+| File | Changes |
+|------|---------|
+| `/apa/index.html` | **NEW** - Full APA generator page |
+| `/home/index.html` | Added APA link to More menu + instructor check |
+| `/app/index.html` | Added APA link to More menu + instructor check |
+| `/community/index.html` | Added APA link to More menu + instructor check |
+| `/resources/index.html` | Added APA link to More menu + instructor check |
+| `CLAUDE.md` | Updated site structure + session notes |
+
+### Key Functions in APA Page
+| Function | Purpose |
+|----------|---------|
+| `switchTab(tabName)` | Navigate between Title/Body/References/Preview tabs |
+| `selectRefType(type)` | Switch reference type form (journal/book/website/chapter) |
+| `addReference(type)` | Parse form and add formatted reference to list |
+| `sortReferences()` | Sort references alphabetically by author |
+| `updatePreview()` | Render live preview of document |
+| `exportToWord()` | Generate and download .docx file |
+
+### APA Formatting Notes
+- Title page: Centered, starts ~3 inches from top, includes all required student paper elements
+- Body: First-line indent 0.5", double-spaced, left-aligned
+- References: "References" centered and bold, hanging indent 0.5", alphabetized, double-spaced

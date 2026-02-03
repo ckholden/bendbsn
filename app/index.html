@@ -2043,6 +2043,10 @@
             <span class="menu-icon" aria-hidden="true">📅</span>
             <span>Sched Generator</span>
         </a>
+        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" id="apaMenuLink" style="text-decoration: none; color: inherit;">
+            <span class="menu-icon" aria-hidden="true">📄</span>
+            <span>APA Generator</span>
+        </a>
         <button class="more-menu-item" role="menuitem" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();">
             <span class="menu-icon" aria-hidden="true">💡</span>
             <span>Feedback</span>
@@ -2745,6 +2749,15 @@
                 localStorage.setItem('bsn9b_displayName', displayName);
                 syncUserProfile(user);
                 migrateLegacyDocumentsIfNeeded();
+
+                // Check user role and hide APA link for instructors
+                userProfilesRef.child(user.uid).once('value').then((snap) => {
+                    const profile = snap.val();
+                    if (profile && profile.role === 'Instructor') {
+                        const apaLink = document.getElementById('apaMenuLink');
+                        if (apaLink) apaLink.style.display = 'none';
+                    }
+                });
             } else {
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
                 // If we have session but no Firebase auth, redirect to login
