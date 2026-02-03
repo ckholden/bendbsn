@@ -627,11 +627,11 @@ const ACTIVITY_DEBOUNCE = 30000;       // 30 seconds debounce
 
 ### High Priority
 - [ ] **Firebase Cloud Function for stale presence cleanup** - Periodic cleanup of entries older than 1 hour (backup for failed onDisconnect)
-- [ ] **Warning before auto-logout** - Show toast at 25 min: "You'll be logged out in 5 minutes due to inactivity"
+- [x] **Warning before auto-logout** - ✅ COMPLETED (Feb 3, 2026) - Toast shown at 25 min warning logout in 5 minutes
 - [ ] **Custom notification sounds** - Let users choose from different tones or upload their own
 
 ### Medium Priority
-- [ ] **Typing indicators** - Show "User is typing..." in chat
+- [x] **Typing indicators** - ✅ COMPLETED (Feb 3, 2026) - Shows "User is typing..." in chat
 - [ ] **Read receipts for DMs** - Show when messages have been read
 - [ ] **User avatars/profile pictures** - Display in chat and presence list
 - [ ] **Online user count in header** - Show green dot + count persistently
@@ -705,3 +705,62 @@ Added a new APA 7th Edition paper generator accessible via the "More" menu on al
 - Title page: Centered, starts ~3 inches from top, includes all required student paper elements
 - Body: First-line indent 0.5", double-spaced, left-aligned
 - References: "References" centered and bold, hanging indent 0.5", alphabetized, double-spaced
+
+### Typing Indicators - NEW FEATURE
+
+Added real-time typing indicators to all chat-enabled pages.
+
+#### How It Works:
+- When a user starts typing, their typing status is written to Firebase `chat/typing/{channelId}/{uid}`
+- Other users see "User is typing..." appear above the chat input
+- Typing status auto-clears after 3 seconds of inactivity
+- Status is cleared immediately when message is sent
+
+#### Firebase Path:
+`chat/typing/{channelId}/{uid}`
+
+#### Data Structure:
+```javascript
+{
+  user: "Display Name",
+  timestamp: 1706918400000
+}
+```
+
+#### Key Functions:
+| Function | Purpose |
+|----------|---------|
+| `setTyping(channelId)` | Sets typing status in Firebase (called on input) |
+| `clearTyping(channelId)` | Removes typing status from Firebase |
+| `setupTypingListener(channelId)` | Listens for typing status changes and updates UI |
+
+#### Display Logic:
+- 1 user typing: "User is typing..."
+- 2 users typing: "User1 and User2 are typing..."
+- 3+ users typing: "Several people are typing..."
+
+#### Files Modified:
+| File | Changes |
+|------|---------|
+| `/app/index.html` | Added typing indicator HTML, JS functions, oninput handler |
+| `/home/index.html` | Added typing indicator HTML, JS functions, oninput handler |
+| `/community/index.html` | Added typing indicator HTML, JS functions, oninput handler |
+| `/resources/index.html` | Added typing indicator HTML, JS functions (with prefixed vars) |
+
+### Other Fixes This Session
+
+#### 1. Direct Messages - Email Fallback
+- Fixed DM not working when `partnerUid` is missing
+- Added `getDMIdentifier(uid, email)` helper function
+- Falls back to email-based conversation ID when UID unavailable
+- Added `lookupUidByEmail()` to find UID from cached profiles
+
+#### 2. Medication Search Fix
+- Added null checks to drug search event listeners
+- Added null check to `selectDrugInfo()` function
+- Prevents silent failures when elements are not found
+
+#### 3. Auto-Logout Warning Toast
+- Shows toast warning at 25 minutes of inactivity
+- Message: "You will be logged out in 5 minutes due to inactivity..."
+- Toast displays for 10 seconds with warning style

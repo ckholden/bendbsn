@@ -1908,12 +1908,15 @@
                         <p style="text-align: center; color: #888; font-size: 12px;">Loading messages...</p>
                     </div>
 
+                    <!-- Typing Indicator -->
+                    <div id="typingIndicator" style="display: none; padding: 4px 12px; font-size: 11px; color: #666; font-style: italic; background: #f8fafc; border-top: 1px solid #e2e8f0;"></div>
+
                     <!-- Chat Input -->
                     <div style="padding: 10px 12px; border-top: 1px solid #e2e8f0; background: #f8fafc; position: relative;">
                         <!-- @Mention Autocomplete Dropdown -->
                         <div id="mentionDropdown" role="listbox" aria-label="Mention suggestions" style="display: none; position: absolute; bottom: 100%; left: 12px; right: 60px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); max-height: 150px; overflow-y: auto; z-index: 100;"></div>
                         <form onsubmit="sendMessage(event)" style="display: flex; gap: 8px;">
-                            <input type="text" id="chatInput" aria-label="Chat message input" placeholder="Message #general" style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; background: white;" maxlength="500" autocomplete="off">
+                            <input type="text" id="chatInput" aria-label="Chat message input" placeholder="Message #general" style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; background: white;" maxlength="500" autocomplete="off" oninput="setTyping(currentChannelId)">
                             <button type="submit" aria-label="Send message" style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white; border: none; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 14px;"><span aria-hidden="true">➤</span></button>
                         </form>
                     </div>
@@ -2579,9 +2582,11 @@
         // Presence/Activity timeout constants
         const IDLE_TIMEOUT = 10 * 60 * 1000;   // 10 minutes → Away
         const LOGOUT_TIMEOUT = 30 * 60 * 1000; // 30 minutes → Logout
+        const LOGOUT_WARNING_TIMEOUT = 25 * 60 * 1000; // 25 minutes → Show warning
         const ACTIVITY_DEBOUNCE = 30000;       // Debounce Firebase updates
         let idleTimer = null;
         let logoutTimer = null;
+        let logoutWarningTimer = null;
         let activityDebounceTimer = null;
         let lastActivityTime = Date.now();
         let currentPresenceStatus = 'online';
@@ -2669,9 +2674,15 @@
         let currentChannelId = localStorage.getItem('bsn9b_chat_channel') || 'general';
         let channelsCache = {};
         const presenceRef = database.ref('chat/presence');
+        const typingRef = database.ref('chat/typing');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
         const userProfilesRef = database.ref('userProfiles');
+
+        // Typing indicator state
+        let typingTimeout = null;
+        let isTyping = false;
+        let typingListenerAttached = false;
 
         // Listen for announcements (alert/fyi banners - inside header)
         function setupAnnouncementListener() {
@@ -3151,6 +3162,7 @@
             updateChatTitle();
             updateChannelSelect();
             setupChatListener();
+            setupTypingListener(channelId);
             cleanupOldMessages();
             debugReadMessages();
         }
@@ -3281,11 +3293,73 @@
             chatToggle.setAttribute('aria-label', chatOpen ? 'Close chat' : 'Open chat');
         }
 
+        // Typing indicator functions
+        function setTyping(channelId) {
+            const uid = getCurrentUserUid();
+            if (!uid || !channelId) return;
+
+            if (!isTyping) {
+                isTyping = true;
+                typingRef.child(channelId).child(uid).set({
+                    name: displayName || currentUsername,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+
+            // Clear typing after 3 seconds of no input
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                clearTyping(channelId);
+            }, 3000);
+        }
+
+        function clearTyping(channelId) {
+            const uid = getCurrentUserUid();
+            if (!uid || !channelId) return;
+            isTyping = false;
+            typingRef.child(channelId).child(uid).remove().catch(() => {});
+        }
+
+        function setupTypingListener(channelId) {
+            if (typingListenerAttached) return;
+            typingListenerAttached = true;
+
+            typingRef.child(channelId).on('value', (snapshot) => {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (!typingIndicator) return;
+
+                const data = snapshot.val() || {};
+                const currentUid = getCurrentUserUid();
+
+                // Filter out current user and stale entries (older than 5 seconds)
+                const now = Date.now();
+                const typingUsers = Object.entries(data)
+                    .filter(([uid, info]) => uid !== currentUid && info.timestamp && (now - info.timestamp) < 5000)
+                    .map(([uid, info]) => info.name || 'Someone');
+
+                if (typingUsers.length === 0) {
+                    typingIndicator.style.display = 'none';
+                } else if (typingUsers.length === 1) {
+                    typingIndicator.textContent = `${typingUsers[0]} is typing...`;
+                    typingIndicator.style.display = 'block';
+                } else if (typingUsers.length === 2) {
+                    typingIndicator.textContent = `${typingUsers[0]} and ${typingUsers[1]} are typing...`;
+                    typingIndicator.style.display = 'block';
+                } else {
+                    typingIndicator.textContent = `${typingUsers.length} people are typing...`;
+                    typingIndicator.style.display = 'block';
+                }
+            });
+        }
+
         // Send message
         function sendMessage(event) {
             event.preventDefault();
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
+
+            // Clear typing indicator on send
+            clearTyping(currentChannelId);
 
             if (!message) return;
 
@@ -3646,9 +3720,24 @@
             });
         }
 
-        // Generate conversation ID (sorted UIDs)
-        function getConversationId(uid1, uid2) {
-            return [uid1, uid2].sort().join('_');
+        // Generate conversation ID (sorted UIDs or sanitized emails as fallback)
+        function getConversationId(id1, id2) {
+            return [id1, id2].sort().join('_');
+        }
+
+        // Get a unique identifier for DM - prefer UID, fallback to sanitized email
+        function getDMIdentifier(uid, email) {
+            if (uid && uid.length > 5) return uid;
+            if (email) return 'email_' + email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            return null;
+        }
+
+        // Try to look up UID from userProfiles by email
+        function lookupUidByEmail(email) {
+            if (!email) return null;
+            const emailKey = email.toLowerCase();
+            const profile = userProfilesByEmail[emailKey];
+            return profile?.uid || null;
         }
 
         // Switch between group chat and DM mode
@@ -3810,16 +3899,28 @@
         // Start or open a DM conversation
         function startDMConversation(partnerUid, partnerName, partnerEmail) {
             const currentUid = getCurrentUserUid();
-            if (!currentUid || !partnerUid) {
-                showToast('This user is not available for DMs yet. Ask them to log in once so we can link their account.', 'warning');
+            const currentEmail = currentUsername;
+
+            // Try to resolve partner UID if not provided
+            let resolvedPartnerUid = partnerUid;
+            if (!resolvedPartnerUid && partnerEmail) {
+                resolvedPartnerUid = lookupUidByEmail(partnerEmail);
+            }
+
+            // Get identifiers for conversation ID (use UID if available, email fallback)
+            const currentId = getDMIdentifier(currentUid, currentEmail);
+            const partnerId = getDMIdentifier(resolvedPartnerUid, partnerEmail);
+
+            if (!currentId || !partnerId) {
+                showToast('Unable to start DM. Please make sure both users have logged in.', 'warning');
                 return;
             }
 
             currentDMConversation = {
                 partnerName: partnerName,
-                partnerUid: partnerUid,
+                partnerUid: resolvedPartnerUid || '',
                 partnerEmail: partnerEmail || '',
-                conversationId: getConversationId(currentUid, partnerUid)
+                conversationId: getConversationId(currentId, partnerId)
             };
 
             // Update UI
@@ -4032,13 +4133,18 @@
             const partnerUid = currentDMConversation.partnerUid;
             const partnerEmail = currentDMConversation.partnerEmail || '';
             const currentUid = getCurrentUserUid();
-            if (!currentUid || !partnerUid) {
-                showToast('Unable to send DM (missing user ID). Please refresh and try again.', 'warning');
+
+            // Get identifiers (same logic as startDMConversation)
+            const currentId = getDMIdentifier(currentUid, currentUsername);
+            const partnerId = getDMIdentifier(partnerUid, partnerEmail);
+
+            if (!conversationId || !currentId) {
+                showToast('Unable to send DM. Please refresh and try again.', 'warning');
                 return;
             }
 
             const messageData = {
-                senderUid: currentUid,
+                senderUid: currentUid || currentId,
                 senderEmail: currentUsername,
                 senderName: displayName,
                 text: text,
@@ -4051,10 +4157,10 @@
                 directMessagesRef.child(conversationId + '/messages').push(messageData)
                     .catch(err => console.error('Error sending DM:', err));
 
-                // Update participants
+                // Update participants (use identifier as key if UID not available)
                 const participantsData = {};
-                participantsData[currentUid] = { displayName: displayName, email: currentUsername };
-                participantsData[partnerUid] = { displayName: partnerName, email: partnerEmail };
+                participantsData[currentId] = { displayName: displayName, email: currentUsername };
+                participantsData[partnerId] = { displayName: partnerName, email: partnerEmail };
                 directMessagesRef.child(conversationId + '/participants').set(participantsData);
 
                 // Update last message
@@ -4417,9 +4523,10 @@ Important guidelines:
         function recordActivity() {
             lastActivityTime = Date.now();
 
-            // Reset idle/logout timers immediately (local)
+            // Reset idle/logout/warning timers immediately (local)
             clearTimeout(idleTimer);
             clearTimeout(logoutTimer);
+            clearTimeout(logoutWarningTimer);
 
             // Set idle timer (10 min)
             idleTimer = setTimeout(() => {
@@ -4430,6 +4537,11 @@ Important guidelines:
                     logout(); // Full logout
                 }, LOGOUT_TIMEOUT - IDLE_TIMEOUT);
             }, IDLE_TIMEOUT);
+
+            // Set warning timer (25 min = 5 min before logout)
+            logoutWarningTimer = setTimeout(() => {
+                showToast('You will be logged out in 5 minutes due to inactivity. Move your mouse or press a key to stay logged in.', 'warning', 10000);
+            }, LOGOUT_WARNING_TIMEOUT);
 
             // Debounce Firebase updates (don't spam on every mouse move)
             if (activityDebounceTimer) return;
@@ -4804,9 +4916,10 @@ Important guidelines:
             if (uid) {
                 presenceRef.child(uid).remove().catch(() => {});
             }
-            // Clear idle/logout timers
+            // Clear idle/logout/warning timers
             clearTimeout(idleTimer);
             clearTimeout(logoutTimer);
+            clearTimeout(logoutWarningTimer);
             clearTimeout(activityDebounceTimer);
 
             auth.signOut().then(() => {
