@@ -798,3 +798,124 @@ Added real-time typing indicators to all chat-enabled pages.
 - Shows toast warning at 25 minutes of inactivity
 - Message: "You will be logged out in 5 minutes due to inactivity..."
 - Toast displays for 10 seconds with warning style
+
+---
+
+## Session Notes (Feb 5, 2026)
+
+### Major Redesign: Chat/AI Pages + H2T Enhancements + Global Branding + Resources Redesign
+
+This session implemented a comprehensive redesign with three major parts plus a bonus resources page update.
+
+### Completed This Session
+
+#### 1. Global Branding (All Pages)
+Added consistent branding across all 10 pages (8 existing + 2 new):
+- **Favicon**: Created `/favicon.png` - Medical equipment icon with heart, stethoscope, syringe (1024×1024)
+- **Logo**: Created `/logo.png` - Full "BendBSN.com - FOR FUTURE NURSES" branding (1024×1024)
+- **Site Header**: Added to all pages with logo linking to home
+  - CSS: `.site-header { display:flex; align-items:center; padding:12px 20px; background:#0f172a; }`
+  - Logo height: 38px, auto width
+- **Hero Logo**: Added large logo to login page
+
+Files modified: All HTML pages
+
+#### 2. H2T Assessment Enhancements (`/app/index.html`)
+Replaced inline forms with structured collapsible panels:
+
+**PHQ-9 Depression Screening Panel**
+- Pink gradient (`#fce4ec` → `#f8bbd0`), border `#e91e63`
+- 9-question scoring (0-3 scale), auto-calculates total with severity
+- Save for Export / Insert Now buttons
+
+**GAD-7 Anxiety Screening Panel**
+- Purple gradient (`#ede7f6` → `#d1c4e9`), border `#7c4dff`
+- 7-question scoring, same save/insert pattern
+
+**Lines/Drains/Airways Structured Panel**
+- Orange gradient (`#fff3e0` → `#ffe0b2`), border `#ff9800`
+- Structured fields: Type (dropdown with optgroups), Location, Size, Status, Output, Dressing, Notes
+- Hidden textarea maintained for export compatibility
+
+**New JavaScript Functions**:
+- `savedScreenings[]` and `savedLinesDA[]` arrays
+- `saveScreening()`, `insertScreening()`, `renderSavedScreenings()`, `removeSavedScreening()`, `clearSavedScreenings()`
+- `saveLine()`, `insertLine()`, `renderSavedLines()`, `removeSavedLine()`, `clearSavedLines()`
+- Export integration in `generatePDF()` and `generateWord()`
+
+#### 3. Chat & AI as Dedicated Pages
+
+**Created `/chat/index.html`** (2,675 lines)
+- Full-page Slack-style chat with left sidebar (180px)
+- Channels list, DM list, online users
+- Mobile: sidebar overlay on <600px width
+- All functionality: channels, DMs, typing indicators, @mentions, admin commands, notifications, presence
+
+**Created `/ai/index.html`** (706 lines)
+- Full-page AI nursing assistant
+- Quick actions: Drug Info, Care Plan, NCLEX Q, Labs
+- Conversation history (last 20 exchanges)
+- Google Apps Script API integration
+
+**Updated Bottom Toolbar** (All Pages)
+- Expanded to 7 items: Home, RN Notes, **Chat**, **AI**, Community, Resources, More
+- Chat & AI open in new tabs
+- Reduced padding: `6px 8px` for mobile fit
+- Cross-tab badge synchronization
+
+**Removed Floating Widgets**
+- Removed ~6,400 lines of inline chat/AI code from 4 pages
+- File size reductions: home (-68%), app (-33%), community (-54%), resources (-41%)
+- Preserved: announcements, presence, session tracking, toasts, theme, lock, logout
+
+**Service Worker**: Updated to v15, added chat/ai pages to cache
+
+#### 4. Resources Page Redesign (`/resources/index.html`)
+
+**Page Container**: max-width 1200px, padding 24px
+
+**Warning Banners**: Slimmer (10px padding, 13px font), dismissible with localStorage
+
+**Resource Navigator**: Padding 20px, chip gap 10px, better hover states
+
+**Accordion Cards**:
+- Margin 16px, subtle borders/backgrounds, stronger shadows
+- Headers: 14px padding, subtle backgrounds, circular expand button (32px)
+- Content: 18px padding, line-height 1.6, top border divider
+- Dark mode: enhanced styling with rgba colors
+
+**All functionality preserved**: search, filters, calculators, drug lookup, timers, references, etc.
+
+### Files Created/Modified
+
+| File | Status | Lines | Notes |
+|------|--------|-------|-------|
+| `/favicon.png` | Created | - | 1024×1024 medical icon |
+| `/logo.png` | Created | - | 1024×1024 branding logo |
+| `/chat/index.html` | Created | 2,675 | Full-page chat |
+| `/ai/index.html` | Created | 706 | Full-page AI assistant |
+| `/home/index.html` | Modified | 1,028 | Widgets removed, branding added |
+| `/app/index.html` | Modified | 5,022 | H2T panels, widgets removed |
+| `/community/index.html` | Modified | 1,872 | Widgets removed |
+| `/resources/index.html` | Modified | 3,175 | Widgets removed, redesigned |
+| `/apa/index.html` | Modified | - | Branding + toolbar |
+| `/labsched/index.html` | Modified | - | Branding + toolbar |
+| `/admin/index.html` | Modified | - | Branding + toolbar |
+| `/index.html` | Modified | - | Branding + hero logo |
+| `/sw.js` | Modified | - | v15, chat/ai cached |
+
+### Deployment
+- Commits: `533deff`, `7e1aad7`, `4ef268f`, `40b3e18`, `0249594`
+- Service worker: v15
+- Total code removed: ~6,400 lines
+- Total code added: ~3,500 lines
+- Net change: -2,900 lines
+
+### Key Technical Notes
+- Static HTML site - no shared templates, branding added to each page individually
+- Firebase inline code required (not external files) for timing/initialization
+- Cross-tab badges use localStorage events for synchronization
+- Collapsible panels use shared `togglePanel()` function
+- Export integration maintains backward compatibility
+- All ARIA labels and keyboard navigation preserved
+- Dark mode fully supported across all new features
