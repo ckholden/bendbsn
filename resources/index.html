@@ -71,11 +71,11 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-page);
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
             padding-bottom: 80px;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .header {
@@ -108,7 +108,7 @@
         .grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
             width: 100%;
         }
         .grid > * {
@@ -118,8 +118,8 @@
             background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
             border: 1px solid #e2e8f0;
             border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 20px;
+            padding: 20px;
+            margin-bottom: 28px;
         }
         .resource-meta {
             display: flex;
@@ -133,7 +133,7 @@
         .resource-filters {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             margin-top: 10px;
         }
         .resource-chip {
@@ -145,12 +145,17 @@
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
+        }
+        .resource-chip:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         .resource-chip.active {
             background: #1f4e79;
             color: white;
             border-color: #1f4e79;
+            box-shadow: 0 2px 8px rgba(31, 78, 121, 0.3);
         }
         .resource-card.hidden { display: none; }
 
@@ -158,47 +163,47 @@
         .resource-card.collapsible {
             padding: 0;
             overflow: hidden;
-            border-radius: 12px;
-            border: none;
-            border-left: 4px solid transparent;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
             transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
             display: block;
             cursor: default;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
         .resource-card.collapsible:after {
             content: none;
         }
         .resource-card.collapsible:hover {
-            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             transform: translateY(-2px);
         }
         .resource-card.collapsible.expanded {
-            border-left-color: #3b82f6;
+            border-color: rgba(31, 78, 121, 0.3);
         }
         .resource-card.collapsible .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            padding: 18px 20px;
-            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            padding: 14px 18px;
+            background: rgba(31, 78, 121, 0.08);
             transition: all 0.2s;
             user-select: none;
         }
         .resource-card.collapsible .card-header:hover {
-            background: linear-gradient(135deg, #2d5a87 0%, #3d6a97 100%);
+            background: rgba(31, 78, 121, 0.12);
         }
         .resource-card.collapsible .card-header:active {
             transform: scale(0.995);
         }
         .resource-card.collapsible .card-header h2 {
-            color: white;
+            color: var(--text-primary);
             margin: 0;
             padding: 0;
             border: none;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             flex: 1;
             display: flex;
@@ -209,56 +214,74 @@
             font-size: 1.3em;
         }
         .resource-card.collapsible .card-header .expand-icon {
-            color: white;
+            color: var(--text-primary);
             font-size: 10px;
             transition: transform 0.3s ease, background 0.2s;
             font-weight: bold;
-            background: rgba(255,255,255,0.15);
-            padding: 6px 10px;
-            border-radius: 20px;
-            min-width: 28px;
-            text-align: center;
+            background: rgba(31,78,121,0.15);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .resource-card.collapsible .card-header:hover .expand-icon {
-            background: rgba(255,255,255,0.25);
+            background: rgba(31,78,121,0.25);
         }
         .resource-card.collapsible.expanded .card-header .expand-icon {
             transform: rotate(180deg);
-            background: rgba(255,255,255,0.25);
+            background: rgba(31,78,121,0.25);
         }
         .resource-card.collapsible .card-content {
             max-height: 0;
             overflow: hidden;
             padding: 0 20px;
             background: #fafbfc;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid rgba(0,0,0,0.08);
             transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
             opacity: 0;
+            line-height: 1.6;
         }
         .resource-card.collapsible.expanded .card-content {
             max-height: 2000px;
-            padding: 20px;
+            padding: 18px 20px;
             opacity: 1;
         }
         /* Dark mode styles */
         [data-theme="dark"] .resource-card.collapsible {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4);
         }
         [data-theme="dark"] .resource-card.collapsible:hover {
-            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
         [data-theme="dark"] .resource-card.collapsible.expanded {
-            border-left-color: #60a5fa;
+            border-color: rgba(74, 144, 217, 0.3);
         }
         [data-theme="dark"] .resource-card.collapsible .card-header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+            background: rgba(74, 144, 217, 0.12);
         }
         [data-theme="dark"] .resource-card.collapsible .card-header:hover {
-            background: linear-gradient(135deg, #2d4a6f 0%, #3d5a7f 100%);
+            background: rgba(74, 144, 217, 0.18);
+        }
+        [data-theme="dark"] .resource-card.collapsible .card-header .expand-icon {
+            background: rgba(74, 144, 217, 0.2);
+        }
+        [data-theme="dark"] .resource-card.collapsible .card-header:hover .expand-icon {
+            background: rgba(74, 144, 217, 0.3);
+        }
+        [data-theme="dark"] .resource-card.collapsible.expanded .card-header .expand-icon {
+            background: rgba(74, 144, 217, 0.3);
         }
         [data-theme="dark"] .resource-card.collapsible .card-content {
-            background: #16213e;
-            border-top-color: #2d3748;
+            background: var(--bg-secondary);
+            border-top-color: rgba(255,255,255,0.08);
+        }
+        [data-theme="dark"] .resource-navigator {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
         }
         /* Mobile touch targets */
         @media (max-width: 600px) {
@@ -606,13 +629,32 @@
         }
         .timer-cancel:hover { background: #c62828; color: white; }
 
-        @keyframes alertFlash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        /* Banner close button */
+        .banner-dismiss {
+            position: absolute;
+            right: 45px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: inherit;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        body.has-alert { padding-top: 50px; }
-        body.has-fyi { padding-top: 50px; }
-        body.has-alert.has-fyi { padding-top: 100px; }
+        .banner-dismiss:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        body.has-alert { padding-top: 48px; }
+        body.has-fyi { padding-top: 48px; }
+        body.has-alert.has-fyi { padding-top: 92px; }
 
         /* Bottom Toolbar */
         .bottom-toolbar {
@@ -697,7 +739,6 @@
         [data-theme="dark"] td { border-color: var(--border); }
         [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea { background: var(--bg-input); color: var(--text-primary); border-color: var(--border); }
         [data-theme="dark"] footer { color: rgba(255,255,255,0.6); }
-        [data-theme="dark"] .resource-navigator { background: linear-gradient(135deg, #0f172a 0%, #111827 100%); border-color: #1f2937; }
         [data-theme="dark"] .resource-chip { background: #0f172a; border-color: #1f2937; color: #93c5fd; }
         [data-theme="dark"] .resource-chip.active { background: #2563eb; color: white; border-color: #2563eb; }
         [data-theme="dark"] .planner-input { background: #0f172a; border-color: #1f2937; color: var(--text-primary); }
@@ -742,6 +783,13 @@
 
             .resource-grid { grid-template-columns: 1fr; }
             .calc-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Mobile responsive padding */
+        @media (max-width: 600px) {
+            body {
+                padding: 16px;
+            }
         }
 
         /* Landscape orientation */
@@ -794,12 +842,14 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- Alert/FYI Banners -->
-    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: alertFlash 1s infinite;">
+    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 10px 20px; text-align: center; font-weight: 600; font-size: 13px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);">
         <span id="alertText"></span>
+        <button class="banner-dismiss" onclick="dismissBanner('alert')" aria-label="Dismiss alert">×</button>
         <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.8;">⚠️ ALERT</span>
     </div>
-    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
+    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; padding: 10px 20px; text-align: center; font-weight: 600; font-size: 13px; z-index: 9999; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
         <span id="fyiText"></span>
+        <button class="banner-dismiss" onclick="dismissBanner('fyi')" aria-label="Dismiss notification">×</button>
         <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
     </div>
 
@@ -2901,6 +2951,32 @@ Generated: ${new Date().toLocaleString()}`;
         const userProfilesRef = database.ref('userProfiles');
 
         // Listen for announcements (alert/fyi banners)
+        // Hash function for banner messages
+        function hashBannerMessage(message) {
+            let hash = 0;
+            for (let i = 0; i < message.length; i++) {
+                const char = message.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString();
+        }
+
+        // Dismiss banner function
+        function dismissBanner(type) {
+            const banner = document.getElementById(type === 'alert' ? 'alertBanner' : 'fyiBanner');
+            const text = document.getElementById(type === 'alert' ? 'alertText' : 'fyiText');
+            const message = text.textContent;
+            const messageHash = hashBannerMessage(message);
+
+            // Save dismissal to localStorage
+            localStorage.setItem(`bsn9b_${type}_dismissed_${messageHash}`, 'true');
+
+            // Hide banner
+            banner.style.display = 'none';
+            document.body.classList.remove(`has-${type}`);
+        }
+
         function setupAnnouncementListener() {
             announcementsRef.on('value', (snapshot) => {
                 const data = snapshot.val() || {};
@@ -2911,9 +2987,17 @@ Generated: ${new Date().toLocaleString()}`;
 
                 // Handle alert banner
                 if (data.alert && data.alert.message) {
-                    alertText.textContent = data.alert.message;
-                    alertBanner.style.display = 'block';
-                    document.body.classList.add('has-alert');
+                    const messageHash = hashBannerMessage(data.alert.message);
+                    const isDismissed = localStorage.getItem(`bsn9b_alert_dismissed_${messageHash}`) === 'true';
+
+                    if (!isDismissed) {
+                        alertText.textContent = data.alert.message;
+                        alertBanner.style.display = 'block';
+                        document.body.classList.add('has-alert');
+                    } else {
+                        alertBanner.style.display = 'none';
+                        document.body.classList.remove('has-alert');
+                    }
                 } else {
                     alertBanner.style.display = 'none';
                     document.body.classList.remove('has-alert');
@@ -2921,10 +3005,18 @@ Generated: ${new Date().toLocaleString()}`;
 
                 // Handle FYI banner (offset if alert is showing)
                 if (data.fyi && data.fyi.message) {
-                    fyiText.textContent = data.fyi.message;
-                    fyiBanner.style.display = 'block';
-                    fyiBanner.style.top = (data.alert && data.alert.message) ? '50px' : '0';
-                    document.body.classList.add('has-fyi');
+                    const messageHash = hashBannerMessage(data.fyi.message);
+                    const isDismissed = localStorage.getItem(`bsn9b_fyi_dismissed_${messageHash}`) === 'true';
+
+                    if (!isDismissed) {
+                        fyiText.textContent = data.fyi.message;
+                        fyiBanner.style.display = 'block';
+                        fyiBanner.style.top = (data.alert && data.alert.message && alertBanner.style.display === 'block') ? '44px' : '0';
+                        document.body.classList.add('has-fyi');
+                    } else {
+                        fyiBanner.style.display = 'none';
+                        document.body.classList.remove('has-fyi');
+                    }
                 } else {
                     fyiBanner.style.display = 'none';
                     document.body.classList.remove('has-fyi');
