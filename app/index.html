@@ -1160,6 +1160,96 @@
                 </div>
             </div>
 
+            <!-- Lines/Drains/Airways Structured Panel -->
+            <div class="lines-panel" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800; border-radius: 10px; padding: 15px 20px; margin-top: 15px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('linesContent', this)">
+                    <h3 style="color: #e65100; margin: 0;">🔗 Lines / Drains / Airways <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); saveLine()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertLine()" style="background: #ff9800; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                    </div>
+                </div>
+                <div id="linesContent" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #e65100;">Type</label>
+                            <select id="lineType" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                                <optgroup label="IV Access">
+                                    <option value="PIV">PIV (Peripheral IV)</option>
+                                    <option value="PICC">PICC Line</option>
+                                    <option value="Central Line">Central Line</option>
+                                    <option value="Midline">Midline</option>
+                                    <option value="Port">Port-a-Cath</option>
+                                </optgroup>
+                                <optgroup label="Drains">
+                                    <option value="Foley">Foley Catheter</option>
+                                    <option value="JP Drain">JP Drain</option>
+                                    <option value="Hemovac">Hemovac</option>
+                                    <option value="Chest Tube">Chest Tube</option>
+                                    <option value="NG Tube">NG Tube</option>
+                                    <option value="Wound Vac">Wound Vac</option>
+                                </optgroup>
+                                <optgroup label="GI Tubes">
+                                    <option value="G-Tube">G-Tube</option>
+                                    <option value="PEG Tube">PEG Tube</option>
+                                    <option value="Dobhoff">Dobhoff</option>
+                                </optgroup>
+                                <optgroup label="Airway">
+                                    <option value="NC">Nasal Cannula</option>
+                                    <option value="Simple Mask">Simple Mask</option>
+                                    <option value="Non-Rebreather">Non-Rebreather</option>
+                                    <option value="Trach">Tracheostomy</option>
+                                    <option value="ETT">ETT (Intubated)</option>
+                                    <option value="CPAP/BiPAP">CPAP/BiPAP</option>
+                                    <option value="High-Flow NC">High-Flow NC</option>
+                                </optgroup>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #e65100;">Location / Site</label>
+                            <input type="text" id="lineLocation" placeholder="e.g. R forearm, L subclavian" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #e65100;">Size / Gauge</label>
+                            <input type="text" id="lineSize" placeholder="e.g. 20g, 18g, 7Fr" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #e65100;">Status</label>
+                            <select id="lineStatus" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                                <option value="Patent">Patent</option>
+                                <option value="Infusing">Infusing</option>
+                                <option value="Capped/Saline locked">Capped/Saline locked</option>
+                                <option value="Clamped">Clamped</option>
+                                <option value="To suction">To suction</option>
+                                <option value="To gravity">To gravity</option>
+                                <option value="Discontinued">Discontinued</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #e65100;">Output / Appearance</label>
+                            <input type="text" id="lineOutput" placeholder="e.g. clear yellow, serosanguinous 50mL" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: #e65100;">Dressing</label>
+                            <input type="text" id="lineDressing" placeholder="e.g. CDI, transparent, dated" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #e65100;">Notes</label>
+                        <input type="text" id="lineNotes" placeholder="Additional details..." style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                    </div>
+                </div>
+                <div id="savedLinesList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ff9800;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #e65100;">Saved Lines/Drains/Airways (will be included in export):</span>
+                        <button onclick="clearSavedLines()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedLinesEntries"></div>
+                </div>
+            </div>
+
+
             <h2 class="section-title">Documentation</h2>
 
             <div class="form-group" id="focusGroup">
@@ -1302,12 +1392,43 @@
                     <div class="h2t-section">
                         <h4>Mental Status</h4>
                         <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Alert. ')">Alert</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'A&O x4. ')">A&O x4</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'A&O x3. ')">A&O x3</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Speech clear. ')">Speech clear</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Mood euthymic. ')">Mood euthymic</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Cooperative. ')">Cooperative</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Memory intact. ')">Memory intact</span>
                         </div>
-                        <textarea id="h2tMental" placeholder="Appearance, behavior, mood/affect, thought process, orientation..."></textarea>
+                        <textarea id="h2tMental" placeholder="LOC (alert/drowsy/lethargic/stuporous), orientation (person/place/time/situation), mood/affect, memory..."></textarea>
+                    </div>
+                    <div class="h2t-section">
+                        <h4>HEENT</h4>
+                        <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Hair/scalp WNL. ')">Hair/Scalp WNL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'PERRLA. ')">PERRLA</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'EOM intact. ')">EOM intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'No nystagmus. ')">No nystagmus</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Ears clear bilat. ')">Ears clear</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Nose patent. ')">Nose patent</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Oral mucosa moist, pink. ')">Mucosa moist</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Dentation intact. ')">Dentation intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Sinuses non-tender. ')">Sinuses NT</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Smile symmetric. ')">Smile symmetric</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Tongue midline. ')">Tongue midline</span>
+                        </div>
+                        <textarea id="h2tHeent" placeholder="Hair/scalp, eyes (pupils, EOM, nystagmus), ears, nose/smell, mouth, tongue, mucous membranes, dentation, sinuses..."></textarea>
+                    </div>
+                    <div class="h2t-section">
+                        <h4>Neck</h4>
+                        <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tNeck', 'Lymph nodes non-palpable. ')">Lymph nodes NP</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeck', 'Thyroid midline, non-enlarged. ')">Thyroid WNL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeck', 'No JVD. ')">No JVD</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeck', 'Trachea midline. ')">Trachea midline</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeck', 'Carotid pulses equal bilat. ')">Carotid equal</span>
+                        </div>
+                        <textarea id="h2tNeck" placeholder="Lymph nodes, thyroid, JVD, trachea midline, carotid pulses..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Neurological</h4>
@@ -1317,19 +1438,26 @@
                             <span class="quick-fill" onclick="appendToField('h2tNeuro', 'GCS 15. ')">GCS 15</span>
                             <span class="quick-fill" onclick="appendToField('h2tNeuro', 'MAE x4, strength 5/5. ')">MAE</span>
                             <span class="quick-fill" onclick="appendToField('h2tNeuro', 'No focal deficits. ')">No deficits</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'EOM intact, no nystagmus. ')">EOM intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'Sensation intact bilat. ')">Sensation intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'CN II-XII grossly intact. ')">CN intact</span>
                         </div>
-                        <textarea id="h2tNeuro" placeholder="LOC, orientation, pupils, motor/sensory..."></textarea>
+                        <textarea id="h2tNeuro" placeholder="LOC, orientation, pupils, EOM, cranial nerves, motor/sensory, GCS, sensation..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Cardiovascular</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tCardio', 'S1S2, RRR, no murmur. ')">S1S2 RRR</span>
-                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Radial pulses 2+ bilat. ')">Pulses 2+</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Radial pulses 2+ bilat. ')">Radial 2+</span>
                             <span class="quick-fill" onclick="appendToField('h2tCardio', 'Cap refill <3 sec. ')">Cap refill <3s</span>
                             <span class="quick-fill" onclick="appendToField('h2tCardio', 'No peripheral edema. ')">No edema</span>
                             <span class="quick-fill" onclick="appendToField('h2tCardio', 'Pedal pulses palpable bilat. ')">Pedal pulses</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Apical pulse regular. ')">Apical regular</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'No murmur, gallop, or rub. ')">No MGR</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Brachial pulses 2+ bilat. ')">Brachial 2+</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Extremities warm bilat. ')">Warm bilat</span>
                         </div>
-                        <textarea id="h2tCardio" placeholder="Heart sounds, pulses, edema, cap refill..."></textarea>
+                        <textarea id="h2tCardio" placeholder="Heart sounds (aortic/pulmonic/Erb's/tricuspid/mitral), apical pulse, radial/brachial/pedal pulses, edema, cap refill, extremity temp..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Respiratory</h4>
@@ -1339,19 +1467,25 @@
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'RA, SpO2 WNL. ')">RA</span>
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'O2 via NC _L/min. ')">O2 NC</span>
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'No cough, no SOB. ')">No cough/SOB</span>
+                            <span class="quick-fill" onclick="appendToField('h2tResp', 'Chest expansion symmetric. ')">Chest symmetric</span>
+                            <span class="quick-fill" onclick="appendToField('h2tResp', 'No sputum production. ')">No sputum</span>
+                            <span class="quick-fill" onclick="appendToField('h2tResp', 'Skin turgor elastic. ')">Turgor elastic</span>
                         </div>
-                        <textarea id="h2tResp" placeholder="Breath sounds, effort, O2, cough..."></textarea>
+                        <textarea id="h2tResp" placeholder="Breath sounds (front/back, upper/mid/lower), effort, O2, cough/sputum, chest symmetry, skin turgor..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Gastrointestinal</h4>
                         <div class="quick-fills">
-                            <span class="quick-fill" onclick="appendToField('h2tGI', 'BS active x4 quads. ')">BS active</span>
+                            <span class="quick-fill" onclick="appendToField('h2tGI', 'BS active x4 quads. ')">BS active x4</span>
                             <span class="quick-fill" onclick="appendToField('h2tGI', 'Soft, non-tender, non-distended. ')">Soft NT ND</span>
                             <span class="quick-fill" onclick="appendToField('h2tGI', 'Last BM: ___. ')">Last BM</span>
                             <span class="quick-fill" onclick="appendToField('h2tGI', 'Tolerating diet. ')">Tolerating diet</span>
                             <span class="quick-fill" onclick="appendToField('h2tGI', 'No N/V. ')">No N/V</span>
+                            <span class="quick-fill" onclick="appendToField('h2tGI', 'Abdomen flat, non-distended. ')">Flat ND</span>
+                            <span class="quick-fill" onclick="appendToField('h2tGI', 'Tympanic to percussion. ')">Tympanic</span>
+                            <span class="quick-fill" onclick="appendToField('h2tGI', 'Palpation: soft, no masses. ')">Soft no masses</span>
                         </div>
-                        <textarea id="h2tGI" placeholder="Bowel sounds, abdomen, N/V, diet, BM..."></textarea>
+                        <textarea id="h2tGI" placeholder="Inspection, auscultation (LUQ/LLQ/RUQ/RLQ), palpation, percussion, BM, diet, N/V..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Genitourinary</h4>
@@ -1371,19 +1505,25 @@
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'Turgor elastic. ')">Turgor elastic</span>
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'No breakdown, no pressure areas. ')">No breakdown</span>
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'IV site: ___. ')">IV site</span>
+                            <span class="quick-fill" onclick="appendToField('h2tSkin', 'No rashes or lesions. ')">No rashes</span>
+                            <span class="quick-fill" onclick="appendToField('h2tSkin', 'Hair distribution WNL. ')">Hair WNL</span>
                         </div>
-                        <textarea id="h2tSkin" placeholder="Color, temp, turgor, wounds, IV sites..."></textarea>
+                        <textarea id="h2tSkin" placeholder="Description, color, temp, turgor (clavicle), wounds, IV sites, rashes, hair distribution, Braden score..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Musculoskeletal</h4>
                         <div class="quick-fills">
-                            <span class="quick-fill" onclick="appendToField('h2tMSK', 'ROM intact. ')">ROM intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMSK', 'ROM intact bilat. ')">ROM intact</span>
                             <span class="quick-fill" onclick="appendToField('h2tMSK', 'Gait steady. ')">Gait steady</span>
                             <span class="quick-fill" onclick="appendToField('h2tMSK', 'Ambulating independently. ')">Ambulating</span>
                             <span class="quick-fill" onclick="appendToField('h2tMSK', 'Bed rest. ')">Bed rest</span>
                             <span class="quick-fill" onclick="appendToField('h2tMSK', 'Fall risk precautions. ')">Fall risk</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMSK', 'Grip strength equal bilat. ')">Grip equal</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMSK', 'Muscle strength 5/5 bilat. ')">Strength 5/5</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMSK', 'Romberg negative. ')">Romberg neg</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMSK', 'Balance steady. ')">Balance steady</span>
                         </div>
-                        <textarea id="h2tMSK" placeholder="Mobility, ROM, strength, gait, fall risk..."></textarea>
+                        <textarea id="h2tMSK" placeholder="ROM (active/passive, upper/lower), gait, grip strength, muscle strength, Romberg, balance, fall risk..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Pain/Comfort</h4>
@@ -1392,8 +1532,11 @@
                             <span class="quick-fill" onclick="appendToField('h2tPain', 'Pain ___/10 at ___. ')">Pain __/10</span>
                             <span class="quick-fill" onclick="appendToField('h2tPain', 'Denies pain. ')">Denies pain</span>
                             <span class="quick-fill" onclick="appendToField('h2tPain', 'Medicated for pain. ')">Medicated</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Acute onset. ')">Acute</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Chronic. ')">Chronic</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Non-pharmacological measures. ')">Non-pharm</span>
                         </div>
-                        <textarea id="h2tPain" placeholder="Pain level, location, quality, interventions..."></textarea>
+                        <textarea id="h2tPain" placeholder="Acute/chronic, intensity (0-10), location, duration, characteristics, precipitating factors, non-verbal cues, better/worse, affects sleep..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Safety / Risk</h4>
@@ -1411,98 +1554,10 @@
                             <span class="quick-fill" onclick="appendToField('h2tLines', 'Foley patent, draining clear yellow. ')">Foley</span>
                             <span class="quick-fill" onclick="appendToField('h2tLines', 'O2 via NC __ L/min. ')">O2 NC</span>
                         </div>
-                        <textarea id="h2tLines" placeholder="IV/lines, drains, O2/airway devices..." style="display:none;"></textarea>
+                        <textarea id="h2tLines" placeholder="IV/lines, drains, O2/airway devices... (Use Lines/Drains panel in Quick Entry above for structured entry)"></textarea>
                     </div>
                 </div>
 
-                <!-- Lines/Drains/Airways Structured Panel -->
-                <div class="lines-panel" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800; border-radius: 10px; padding: 15px 20px; margin-top: 15px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('linesContent', this)">
-                        <h3 style="color: #e65100; margin: 0;">🔗 Lines / Drains / Airways <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveLine()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertLine()" style="background: #ff9800; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="linesContent" style="display: none;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600; color: #e65100;">Type</label>
-                                <select id="lineType" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
-                                    <optgroup label="IV Access">
-                                        <option value="PIV">PIV (Peripheral IV)</option>
-                                        <option value="PICC">PICC Line</option>
-                                        <option value="Central Line">Central Line</option>
-                                        <option value="Midline">Midline</option>
-                                        <option value="Port">Port-a-Cath</option>
-                                    </optgroup>
-                                    <optgroup label="Drains">
-                                        <option value="Foley">Foley Catheter</option>
-                                        <option value="JP Drain">JP Drain</option>
-                                        <option value="Hemovac">Hemovac</option>
-                                        <option value="Chest Tube">Chest Tube</option>
-                                        <option value="NG Tube">NG Tube</option>
-                                        <option value="Wound Vac">Wound Vac</option>
-                                    </optgroup>
-                                    <optgroup label="GI Tubes">
-                                        <option value="G-Tube">G-Tube</option>
-                                        <option value="PEG Tube">PEG Tube</option>
-                                        <option value="Dobhoff">Dobhoff</option>
-                                    </optgroup>
-                                    <optgroup label="Airway">
-                                        <option value="NC">Nasal Cannula</option>
-                                        <option value="Simple Mask">Simple Mask</option>
-                                        <option value="Non-Rebreather">Non-Rebreather</option>
-                                        <option value="Trach">Tracheostomy</option>
-                                        <option value="ETT">ETT (Intubated)</option>
-                                        <option value="CPAP/BiPAP">CPAP/BiPAP</option>
-                                        <option value="High-Flow NC">High-Flow NC</option>
-                                    </optgroup>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600; color: #e65100;">Location / Site</label>
-                                <input type="text" id="lineLocation" placeholder="e.g. R forearm, L subclavian" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600; color: #e65100;">Size / Gauge</label>
-                                <input type="text" id="lineSize" placeholder="e.g. 20g, 18g, 7Fr" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600; color: #e65100;">Status</label>
-                                <select id="lineStatus" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
-                                    <option value="Patent">Patent</option>
-                                    <option value="Infusing">Infusing</option>
-                                    <option value="Capped/Saline locked">Capped/Saline locked</option>
-                                    <option value="Clamped">Clamped</option>
-                                    <option value="To suction">To suction</option>
-                                    <option value="To gravity">To gravity</option>
-                                    <option value="Discontinued">Discontinued</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600; color: #e65100;">Output / Appearance</label>
-                                <input type="text" id="lineOutput" placeholder="e.g. clear yellow, serosanguinous 50mL" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
-                            </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600; color: #e65100;">Dressing</label>
-                                <input type="text" id="lineDressing" placeholder="e.g. CDI, transparent, dated" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
-                            </div>
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <label style="font-size: 12px; font-weight: 600; color: #e65100;">Notes</label>
-                            <input type="text" id="lineNotes" placeholder="Additional details..." style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
-                        </div>
-                    </div>
-                    <div id="savedLinesList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ff9800;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #e65100;">Saved Lines/Drains/Airways (will be included in export):</span>
-                            <button onclick="clearSavedLines()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedLinesEntries"></div>
-                    </div>
-                </div>
 
                 <!-- PHQ-9 Collapsible Panel -->
                 <div class="phq9-panel" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border: 2px solid #e91e63; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
@@ -3431,7 +3486,17 @@
             if (output) parts.push('output: ' + output);
             if (dressing) parts.push('dressing: ' + dressing);
             if (notes) parts.push('(' + notes + ')');
-            appendToField('h2tLines', parts.join(', ') + '. ');
+            if (!lastActiveTextarea) {
+                showToast('Please click in a text field first, then click "Insert Now".', 'warning');
+                return;
+            }
+            const lineStr = parts.join(', ') + '. ';
+            const lStart = lastActiveTextarea.selectionStart;
+            const lEnd = lastActiveTextarea.selectionEnd;
+            const lText = lastActiveTextarea.value;
+            lastActiveTextarea.value = lText.substring(0, lStart) + lineStr + lText.substring(lEnd);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = lStart + lineStr.length;
+            lastActiveTextarea.focus();
             showToast('Line/Drain/Airway inserted into note.', 'success');
         }
 
@@ -4480,6 +4545,8 @@
             } else if (t === 'narrative') {
                 c.push({l:'',t:'Narrative',x:document.getElementById('narrativeText').value});
             } else if (t === 'h2t') {
+                c.push({l:'',t:'HEENT',x:(document.getElementById('h2tHeent')||{}).value||''});
+                c.push({l:'',t:'Neck',x:(document.getElementById('h2tNeck')||{}).value||''});
                 c.push({l:'',t:'Neurological',x:document.getElementById('h2tNeuro').value});
                 c.push({l:'',t:'Cardiovascular',x:document.getElementById('h2tCardio').value});
                 c.push({l:'',t:'Respiratory',x:document.getElementById('h2tResp').value});

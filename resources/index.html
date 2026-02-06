@@ -832,6 +832,403 @@
         @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         @media (max-width: 480px) { .toast-container { left: 10px; right: 10px; max-width: none; } }
+
+        /* ========== RESOURCES PAGE REDESIGN ========== */
+
+        /* Page container - dark professional UI */
+        .content {
+            background: transparent !important;
+            padding: 28px 24px !important;
+            border-radius: 0 0 16px 16px;
+        }
+
+        /* Educational banner - slim, dismissible */
+        .edu-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            color: #fca5a5;
+            padding: 10px 16px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            font-size: 12px;
+        }
+        .edu-banner-text { flex: 1; line-height: 1.4; }
+        .edu-banner-dismiss {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fca5a5;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .edu-banner-dismiss:hover { background: rgba(255,255,255,0.2); }
+        .edu-banner.hidden { display: none; }
+
+        /* Resource navigator as toolbar card */
+        .resource-navigator {
+            background: rgba(255,255,255,0.04) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 14px !important;
+            padding: 20px 22px !important;
+            margin-bottom: 28px !important;
+            backdrop-filter: blur(10px);
+        }
+        .nav-toolbar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .nav-title {
+            color: rgba(255,255,255,0.9);
+            font-size: 15px;
+            letter-spacing: 0.3px;
+        }
+        .nav-count {
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+        }
+        .resource-navigator .search-box {
+            margin-bottom: 14px;
+        }
+        .resource-navigator .search-box input {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e6e6e6;
+            border-radius: 10px;
+            padding: 11px 16px;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .resource-navigator .search-box input::placeholder { color: rgba(255,255,255,0.35); }
+        .resource-navigator .search-box input:focus {
+            border-color: rgba(74, 144, 217, 0.5);
+            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+            outline: none;
+            background: rgba(255,255,255,0.08);
+        }
+        .resource-navigator .search-box button {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7);
+            border-radius: 10px;
+            padding: 11px 18px;
+            transition: all 0.2s;
+        }
+        .resource-navigator .search-box button:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+
+        /* Chips - larger gap, clear selected state */
+        .resource-filters {
+            gap: 8px !important;
+        }
+        .resource-chip {
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: rgba(255,255,255,0.65) !important;
+            padding: 7px 14px !important;
+            border-radius: 999px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+        }
+        .resource-chip:hover {
+            background: rgba(255,255,255,0.08) !important;
+            color: rgba(255,255,255,0.9) !important;
+            border-color: rgba(255,255,255,0.2) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+        }
+        .resource-chip:focus-visible {
+            outline: 2px solid rgba(74, 144, 217, 0.6);
+            outline-offset: 2px;
+        }
+        .resource-chip.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            color: white !important;
+            border-color: #2563eb !important;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35) !important;
+            font-weight: 600 !important;
+        }
+
+        /* ===== ACCORDION CARDS - Spaced, floating cards on dark bg ===== */
+        .resource-card.collapsible {
+            margin-bottom: 14px !important;
+            border: 1px solid rgba(255,255,255,0.07) !important;
+            background: rgba(255,255,255,0.025) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.2) !important;
+            transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s !important;
+            overflow: hidden;
+        }
+        .resource-card.collapsible:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+            transform: translateY(-1px) !important;
+            border-color: rgba(255,255,255,0.12) !important;
+        }
+        .resource-card.collapsible.expanded {
+            border-color: rgba(74, 144, 217, 0.35) !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+        }
+
+        /* Accordion header - subtle surface, less tall */
+        .resource-card.collapsible .card-header {
+            padding: 13px 18px !important;
+            background: rgba(255,255,255,0.03) !important;
+            transition: background 0.2s !important;
+        }
+        .resource-card.collapsible .card-header:hover {
+            background: rgba(255,255,255,0.06) !important;
+        }
+        .resource-card.collapsible .card-header:focus-visible {
+            outline: 2px solid rgba(74, 144, 217, 0.6);
+            outline-offset: -2px;
+        }
+        .resource-card.collapsible .card-header h2 {
+            color: rgba(255,255,255,0.88) !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Expand icon - small circular button */
+        .resource-card.collapsible .card-header .expand-icon {
+            background: rgba(255,255,255,0.06) !important;
+            color: rgba(255,255,255,0.5) !important;
+            width: 30px !important;
+            height: 30px !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 10px !important;
+            transition: all 0.3s ease !important;
+            flex-shrink: 0;
+        }
+        .resource-card.collapsible .card-header:hover .expand-icon {
+            background: rgba(255,255,255,0.1) !important;
+            color: rgba(255,255,255,0.8) !important;
+        }
+        .resource-card.collapsible.expanded .card-header .expand-icon {
+            transform: rotate(180deg) !important;
+            background: rgba(74, 144, 217, 0.2) !important;
+            color: #60a5fa !important;
+        }
+
+        /* Accordion body - top border divider, better spacing */
+        .resource-card.collapsible .card-content {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-top: 1px solid rgba(255,255,255,0.06) !important;
+            line-height: 1.65 !important;
+            color: rgba(255,255,255,0.8);
+        }
+        .resource-card.collapsible.expanded .card-content {
+            padding: 18px 22px !important;
+        }
+
+        /* Card content sub-elements - dark theme */
+        .resource-card .card-content h3 {
+            color: rgba(255,255,255,0.85) !important;
+            font-size: 13px !important;
+        }
+        .resource-card .card-content p {
+            color: rgba(255,255,255,0.65);
+        }
+        .resource-card .card-content table {
+            color: rgba(255,255,255,0.8);
+        }
+        .resource-card .card-content th {
+            background: rgba(31, 78, 121, 0.4) !important;
+            color: rgba(255,255,255,0.9) !important;
+        }
+        .resource-card .card-content td {
+            border-color: rgba(255,255,255,0.06) !important;
+        }
+        .resource-card .card-content tr:hover {
+            background: rgba(255,255,255,0.04) !important;
+        }
+        .resource-card .card-content .abbrev-item {
+            background: rgba(31, 78, 121, 0.15);
+            color: rgba(255,255,255,0.8);
+        }
+        .resource-card .card-content .abbrev-item strong {
+            color: #60a5fa;
+        }
+        .resource-card .card-content a {
+            color: #60a5fa;
+        }
+        .resource-card .card-content .link-list a {
+            color: #60a5fa;
+        }
+        .resource-card .card-content .nanda-category {
+            color: #60a5fa;
+        }
+        .resource-card .card-content .nanda-item {
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.75);
+        }
+        .resource-card .card-content .checklist-item {
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.8);
+        }
+        .resource-card .card-content .checklist-item:hover {
+            background: rgba(255,255,255,0.07);
+        }
+        .resource-card .card-content .checklist-item:has(input:checked) {
+            background: rgba(16, 185, 129, 0.1);
+            color: rgba(255,255,255,0.45);
+        }
+        .resource-card .card-content input,
+        .resource-card .card-content select,
+        .resource-card .card-content textarea {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.1);
+            color: #e6e6e6;
+        }
+        .resource-card .card-content input:focus,
+        .resource-card .card-content select:focus {
+            border-color: rgba(74, 144, 217, 0.5);
+            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+        }
+        .resource-card .card-content .btn {
+            background: linear-gradient(135deg, #1f4e79, #2d5a87);
+        }
+        .resource-card .card-content .calc-result {
+            background: rgba(31, 78, 121, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(74, 144, 217, 0.2);
+        }
+        .resource-card .card-content .timer-preset {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.8);
+        }
+        .resource-card .card-content .timer-preset:hover {
+            background: rgba(74, 144, 217, 0.3);
+            color: white;
+        }
+
+        /* Inner collapsibles (lab sub-sections etc) */
+        .resource-card .card-content .collapsible {
+            color: rgba(255,255,255,0.85);
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin: 6px 0;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .resource-card .card-content .collapsible:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* Drug info panel */
+        #drugInfo {
+            background: rgba(31, 78, 121, 0.15) !important;
+            border: 1px solid rgba(74, 144, 217, 0.2);
+        }
+        #drugInfoName { color: #60a5fa !important; }
+        #drugInfoDetails { color: rgba(255,255,255,0.8) !important; }
+
+        /* Drug autocomplete */
+        .drug-autocomplete {
+            background: #1a1a2e !important;
+            border-color: rgba(74, 144, 217, 0.4) !important;
+        }
+        .drug-autocomplete-item {
+            color: rgba(255,255,255,0.8);
+            border-bottom-color: rgba(255,255,255,0.06) !important;
+        }
+        .drug-autocomplete-item:hover { background: rgba(74, 144, 217, 0.15) !important; }
+        .drug-autocomplete-hint {
+            background: rgba(146, 64, 14, 0.15) !important;
+            color: #fbbf24 !important;
+            border-bottom-color: rgba(252, 211, 77, 0.2) !important;
+        }
+
+        /* Warning badges inside cards */
+        .resource-card .card-content [style*="background: #ffebee"],
+        .resource-card .card-content [style*="background:#ffebee"] {
+            background: rgba(220, 38, 38, 0.12) !important;
+            color: #fca5a5 !important;
+        }
+
+        /* SBAR sections inside cards */
+        .resource-card .card-content [style*="background: #e3f2fd"] { background: rgba(25, 118, 210, 0.12) !important; }
+        .resource-card .card-content [style*="background: #fff3e0"] { background: rgba(255, 152, 0, 0.1) !important; }
+        .resource-card .card-content [style*="background: #e8f5e9"] { background: rgba(76, 175, 80, 0.1) !important; }
+        .resource-card .card-content [style*="background: #fce4ec"] { background: rgba(233, 30, 99, 0.1) !important; }
+        .resource-card .card-content [style*="background: #f8fafc"] { background: rgba(255,255,255,0.04) !important; }
+
+        /* SBAR output */
+        #sbar-output { background: rgba(15, 23, 42, 0.8) !important; border-color: rgba(74, 144, 217, 0.3) !important; }
+        #sbar-text { color: rgba(255,255,255,0.8) !important; }
+
+        /* Planner inputs */
+        .planner-input {
+            background: rgba(255,255,255,0.06) !important;
+            border-color: rgba(255,255,255,0.1) !important;
+            color: #e6e6e6 !important;
+        }
+
+        /* Active timers */
+        .active-timer {
+            background: rgba(76, 175, 80, 0.1) !important;
+            border-left-color: #4caf50 !important;
+        }
+        .timer-label { color: rgba(255,255,255,0.9) !important; }
+
+        /* EKG strips - keep white bg for readability */
+        .resource-card .card-content [style*="background: #fff"] {
+            background: rgba(255,255,255,0.95) !important;
+            border-color: rgba(255,255,255,0.15) !important;
+        }
+
+        /* Header - reduce visual weight */
+        .header {
+            border-radius: 14px !important;
+            padding: 20px 30px !important;
+            margin-bottom: 4px;
+        }
+        .header h1 { font-size: 22px !important; }
+        .header p { font-size: 12px !important; }
+
+        /* Container - remove rounded bottom on content */
+        .container {
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        /* Footer */
+        footer { color: rgba(255,255,255,0.4); }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 600px) {
+            .content { padding: 16px 12px !important; }
+            .resource-navigator { padding: 16px !important; }
+            .resource-card.collapsible .card-header { padding: 12px 14px !important; }
+            .resource-card.collapsible.expanded .card-content { padding: 14px 16px !important; }
+            .nav-toolbar-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+        }
+
+        /* Override dark mode selectors since we're already dark */
+        [data-theme="dark"] .content { background: transparent !important; }
+        [data-theme="dark"] .resource-navigator { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; }
+        [data-theme="dark"] .resource-chip { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; color: rgba(255,255,255,0.65) !important; }
+        [data-theme="dark"] .resource-chip.active { background: linear-gradient(135deg, #2563eb, #1d4ed8) !important; color: white !important; border-color: #2563eb !important; }
+
     </style>
 </head>
 <body>
@@ -865,16 +1262,16 @@
         </div>
 
         <div class="content">
-            <!-- Educational Disclaimer Banner -->
-            <div style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); color: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-                <p style="font-weight: 700; font-size: 14px; margin-bottom: 5px;">⚠️ EDUCATIONAL USE ONLY - NOT FOR CLINICAL DECISIONS</p>
-                <p style="font-size: 12px; opacity: 0.95;">This tool is for nursing student learning purposes only. Always consult your facility's official drug guide, pharmacist, and clinical resources before administering any medication. This tool may contain incomplete or inaccurate information.</p>
+            <!-- Educational Disclaimer Banner (dismissible) -->
+            <div id="eduBanner" class="edu-banner">
+                <span class="edu-banner-text"><strong>⚠️ EDUCATIONAL USE ONLY</strong> — Not for clinical decisions. Always verify with official sources.</span>
+                <button onclick="dismissEduBanner()" class="edu-banner-dismiss" aria-label="Dismiss">×</button>
             </div>
 
             <div class="resource-navigator">
-                <div class="resource-meta">
-                    <strong>Resource Navigator</strong>
-                    <span id="resourceCount">Showing all resources</span>
+                <div class="nav-toolbar-header">
+                    <strong class="nav-title">Resource Navigator</strong>
+                    <span id="resourceCount" class="nav-count">Showing all resources</span>
                 </div>
                 <div class="search-box">
                     <input type="text" id="resourceSearch" placeholder="Search resources, tools, or skills..." oninput="filterResources()">
@@ -2123,6 +2520,19 @@
         }
 
         // Theme functions
+        
+        // Educational banner dismiss
+        function dismissEduBanner() {
+            document.getElementById('eduBanner').classList.add('hidden');
+            localStorage.setItem('bsn9b_edu_banner_dismissed', 'true');
+        }
+        (function() {
+            if (localStorage.getItem('bsn9b_edu_banner_dismissed') === 'true') {
+                var b = document.getElementById('eduBanner');
+                if (b) b.classList.add('hidden');
+            }
+        })();
+
         function initTheme() {
             const saved = localStorage.getItem('bsn9b_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
