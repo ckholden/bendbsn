@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <script>
+        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+            window.location.href = '/';
+        }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#1f4e79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSN9B">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <title>BSN9B - AI Nursing Assistant</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #fafafa;
+            --bg-input: #fafafa;
+            --text-primary: #1a1a2e;
+            --text-secondary: #666666;
+            --accent: #1f4e79;
+            --accent-light: #2d5a87;
+            --shadow: rgba(0,0,0,0.4);
+            --border: #e0e0e0;
+            --chat-msg-other-bg: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #1e2a3a;
+            --bg-input: #16213e;
+            --text-primary: #e6e6e6;
+            --text-secondary: #aaaaaa;
+            --accent: #4a90d9;
+            --accent-light: #5a9fe8;
+            --shadow: rgba(0,0,0,0.6);
+            --border: #2d3748;
+            --chat-msg-other-bg: #2d3748;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-page);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Site Header */
+        .site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: #0f172a;
+            border-bottom: 1px solid #1f2937;
+            flex-shrink: 0;
+        }
+        .site-logo { height: 38px; width: auto; }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.8);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .header-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        /* AI Full Page Container */
+        .ai-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            background: var(--bg-primary);
+        }
+
+        @media (min-width: 901px) {
+            .ai-container {
+                margin-top: 20px;
+                margin-bottom: 20px;
+                border-radius: 16px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+                max-height: calc(100vh - 102px);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .ai-container {
+                max-width: 100%;
+                border-radius: 0;
+            }
+        }
+
+        /* AI Header */
+        .ai-header {
+            background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .ai-header-title {
+            font-weight: 700;
+            font-size: 20px;
+        }
+        .ai-header-back {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .ai-header-back:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Disclaimer bar */
+        .ai-disclaimer {
+            background: #fef3c7;
+            padding: 10px 16px;
+            font-size: 12px;
+            color: #92400e;
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+        [data-theme="dark"] .ai-disclaimer {
+            background: #3b2e0a;
+            color: #fbbf24;
+        }
+
+        /* Quick actions */
+        .ai-quick-actions {
+            padding: 12px 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            background: var(--bg-primary);
+        }
+        .ai-quick-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .ai-quick-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+        }
+        .ai-quick-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Messages area */
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--bg-secondary);
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        /* Input area */
+        .ai-input-area {
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            background: var(--bg-primary);
+            flex-shrink: 0;
+        }
+        .ai-input-area input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            font-size: 15px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .ai-input-area input:focus {
+            border-color: #0d9488;
+        }
+        .ai-input-area input::placeholder {
+            color: var(--text-secondary);
+        }
+        .ai-send-btn {
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .ai-send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+        }
+        .ai-send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Lock Screen */
+        #lockScreenOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        /* Focus visible */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* Touch targets */
+        @media (pointer: coarse) {
+            button, .header-btn, .ai-quick-btn {
+                min-height: 44px;
+            }
+        }
+
+        /* Small phones */
+        @media (max-width: 480px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+            .ai-header {
+                padding: 14px 16px;
+            }
+            .ai-header-title {
+                font-size: 17px;
+            }
+            .ai-quick-actions {
+                gap: 6px;
+                padding: 10px 12px;
+            }
+            .ai-quick-btn {
+                padding: 7px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* Safe area insets for notched devices */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .ai-input-area {
+                padding-bottom: calc(14px + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+        }
+        .toast {
+            padding: 14px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: toastSlideIn 0.3s ease;
+            color: white;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .toast.hiding { animation: toastSlideOut 0.3s ease forwards; }
+        .toast-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .toast-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .toast-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .toast-info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .toast-icon { font-size: 18px; flex-shrink: 0; }
+        .toast-content { flex: 1; }
+        .toast-message { opacity: 0.95; }
+        .toast-close { background: none; border: none; color: white; opacity: 0.7; cursor: pointer; font-size: 18px; padding: 0; line-height: 1; }
+        .toast-close:hover { opacity: 1; }
+        @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        @media (max-width: 480px) { .toast-container { left: 10px; right: 10px; max-width: none; } }
+
+        /* Typing animation */
+        .typing-dots span {
+            animation: blink 1.4s infinite;
+            animation-fill-mode: both;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Site Header -->
+    <header class="site-header">
+        <a href="/home/" class="logo-link"><img src="/logo.png" alt="BendBSN" class="site-logo"></a>
+        <div class="header-actions">
+            <button class="header-btn" onclick="toggleDarkMode()" title="Toggle dark mode">
+                <span id="themeMenuIcon">&#127769;</span>
+                <span id="themeMenuText">Dark Mode</span>
+            </button>
+            <button class="header-btn" onclick="lockScreen()" title="Lock screen">&#128274; Lock</button>
+            <button class="header-btn" onclick="logout()" title="Logout">&#128682; Logout</button>
+        </div>
+    </header>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Lock Screen Overlay -->
+    <div id="lockScreenOverlay">
+        <div style="text-align: center; color: white;">
+            <div style="font-size: 80px; margin-bottom: 20px;">&#128274;</div>
+            <h1 style="font-size: 42px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">BSN9B</h1>
+            <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">Portal Locked</p>
+            <button onclick="unlockScreen()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 18px 50px; border-radius: 30px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);">
+                &#128275; Unlock Portal
+            </button>
+            <p style="margin-top: 30px; font-size: 12px; opacity: 0.5;">Click unlock to return to your session</p>
+        </div>
+    </div>
+
+    <!-- AI Full Page Assistant -->
+    <div class="ai-container" id="aiBox">
+        <!-- AI Header -->
+        <div class="ai-header">
+            <span class="ai-header-title">&#129658; Nursing AI Assistant</span>
+            <a href="/home/" class="ai-header-back">&#8592; Back to Home</a>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="ai-disclaimer">
+            &#9888;&#65039; <strong>Educational Only:</strong> This AI assistant is for educational purposes only. It does not provide medical advice. Always verify information with your instructors and official clinical resources.
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="ai-quick-actions">
+            <button class="ai-quick-btn" onclick="aiQuickAction('drug')">&#128138; Drug Info</button>
+            <button class="ai-quick-btn" onclick="aiQuickAction('careplan')">&#128203; Care Plan</button>
+            <button class="ai-quick-btn" onclick="aiQuickAction('nclex')">&#128221; NCLEX Q</button>
+            <button class="ai-quick-btn" onclick="aiQuickAction('labs')">&#128300; Labs</button>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="ai-messages" id="aiMessages">
+            <div style="background: var(--chat-msg-other-bg); padding: 12px 16px; border-radius: 16px; margin-bottom: 12px; font-size: 14px; color: var(--text-primary); line-height: 1.5;">
+                Hi! I'm your AI nursing assistant. Ask me about medications, care plans, NCLEX questions, or lab values. How can I help you today?
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <form onsubmit="sendAIMessage(event)" class="ai-input-area">
+            <input type="text" id="aiInput" placeholder="Ask a nursing question..." autocomplete="off">
+            <button type="submit" class="ai-send-btn">Ask</button>
+        </form>
+    </div>
+
+    <script>
+        // ========== TOAST NOTIFICATION SYSTEM ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const icons = { success: '\u2713', error: '\u2715', warning: '\u26A0', info: '\u2139' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <div class="toast-content"><div class="toast-message">${message.replace(/\n/g, '<br>')}</div></div>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); }, duration);
+        }
+
+        // ========== FIREBASE CONFIGURATION ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.firebasestorage.app",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // ========== AUTH STATE CHECK ==========
+        auth.onAuthStateChanged(function(user) {
+            if (!user) {
+                localStorage.removeItem('bsn9b_auth');
+                window.location.href = '/';
+            }
+        });
+
+        // ========== THEME FUNCTIONS ==========
+        function initTheme() {
+            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon();
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('bsn9b_theme', newTheme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const themeMenuIcon = document.getElementById('themeMenuIcon');
+            const themeMenuText = document.getElementById('themeMenuText');
+            if (themeMenuIcon) {
+                themeMenuIcon.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+            }
+            if (themeMenuText) {
+                themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            }
+        }
+
+        // ========== LOCK / UNLOCK ==========
+        function lockScreen() {
+            document.getElementById('lockScreenOverlay').style.display = 'flex';
+        }
+
+        function unlockScreen() {
+            document.getElementById('lockScreenOverlay').style.display = 'none';
+        }
+
+        // ========== LOGOUT ==========
+        function logout() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('bsn9b_auth');
+                localStorage.removeItem('bsn9b_user');
+                localStorage.removeItem('bsn9b_displayName');
+                localStorage.removeItem('bsn9b_uid');
+                window.location.href = '/';
+            });
+        }
+
+        // ========== AI NURSING COMPANION ==========
+        const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+        var aiOpen = true;
+        let aiConversation = [];
+
+        const AI_SYSTEM_PROMPT = `You are a helpful nursing education assistant for BSN nursing students. Your role is to:
+- Explain nursing concepts, procedures, and pathophysiology clearly
+- Provide drug information including mechanism, side effects, and nursing considerations
+- Help develop care plans using NANDA-I diagnoses, NIC interventions, and NOC outcomes
+- Generate NCLEX-style practice questions with detailed rationales
+- Explain lab values and their clinical significance
+- Guide through clinical scenarios and critical thinking
+
+Important guidelines:
+- Always emphasize this is for EDUCATIONAL purposes only, not actual patient care
+- Encourage students to verify information with their instructors and official resources
+- Be concise but thorough - nursing students are busy
+- Use proper medical terminology while explaining in accessible terms
+- When discussing medications, always mention common nursing considerations
+- For NCLEX questions, provide the answer AND detailed rationales for all options`;
+
+        function aiQuickAction(type) {
+            const input = document.getElementById('aiInput');
+            switch(type) {
+                case 'drug':
+                    input.value = 'Tell me about the medication: ';
+                    input.focus();
+                    break;
+                case 'careplan':
+                    input.value = 'Help me create a care plan for a patient with: ';
+                    input.focus();
+                    break;
+                case 'nclex':
+                    input.value = 'Give me an NCLEX practice question about: ';
+                    input.focus();
+                    break;
+                case 'labs':
+                    input.value = 'Explain the lab value and nursing implications: ';
+                    input.focus();
+                    break;
+            }
+        }
+
+        function addAIMessage(text, isUser) {
+            const container = document.getElementById('aiMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.style.cssText = `
+                margin-bottom: 12px;
+                display: flex;
+                flex-direction: column;
+                align-items: ${isUser ? 'flex-end' : 'flex-start'};
+            `;
+
+            // Format AI responses with markdown-like styling
+            let formattedText = text;
+            if (!isUser) {
+                // Convert **bold** to <strong>
+                formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                // Convert bullet points
+                formattedText = formattedText.replace(/^[\-\•]\s/gm, '\u2022 ');
+                // Convert newlines to <br>
+                formattedText = formattedText.replace(/\n/g, '<br>');
+            }
+
+            msgDiv.innerHTML = `
+                <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isUser ? 'You' : '\uD83E\uDE7A AI Assistant'}</div>
+                <div style="background: ${isUser ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)'}; color: white; padding: 12px 16px; border-radius: ${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 90%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
+                    ${isUser ? text.replace(/</g, '&lt;').replace(/>/g, '&gt;') : formattedText}
+                </div>
+            `;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showAITyping() {
+            const container = document.getElementById('aiMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'aiTyping';
+            typingDiv.style.cssText = 'margin-bottom: 12px; display: flex; flex-direction: column; align-items: flex-start;';
+            typingDiv.innerHTML = `
+                <div style="font-size: 10px; color: #888; margin-bottom: 3px;">\uD83E\uDE7A AI Assistant</div>
+                <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; font-size: 14px;">
+                    <span class="typing-dots">Thinking<span>.</span><span>.</span><span>.</span></span>
+                </div>
+            `;
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideAITyping() {
+            const typing = document.getElementById('aiTyping');
+            if (typing) typing.remove();
+        }
+
+        async function sendAIMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            const sendBtn = document.querySelector('#aiBox button[type="submit"]');
+
+            if (!message) return;
+
+            // Add user message to UI
+            addAIMessage(message, true);
+            input.value = '';
+            if (sendBtn) sendBtn.disabled = true;
+
+            // Add to conversation history
+            aiConversation.push({ role: 'user', content: message });
+
+            // Show typing indicator
+            showAITyping();
+
+            try {
+                const response = await fetch(AI_API_URL, {
+                    method: 'POST',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        messages: aiConversation,
+                        systemPrompt: AI_SYSTEM_PROMPT
+                    })
+                });
+
+                const data = await response.json();
+                hideAITyping();
+
+                if (data.success && data.response) {
+                    addAIMessage(data.response, false);
+                    aiConversation.push({ role: 'assistant', content: data.response });
+
+                    // Keep conversation history manageable (last 10 exchanges)
+                    if (aiConversation.length > 20) {
+                        aiConversation = aiConversation.slice(-20);
+                    }
+                } else {
+                    addAIMessage('Sorry, I encountered an error. Please try again. ' + (data.error || ''), false);
+                }
+            } catch (error) {
+                hideAITyping();
+                console.error('AI API Error:', error);
+                addAIMessage('Sorry, I could not connect to the AI service. Please check your connection and try again.', false);
+            }
+
+            if (sendBtn) sendBtn.disabled = false;
+            input.focus();
+        }
+
+        // ========== KEYBOARD NAVIGATION ==========
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // Close lock screen if open
+                const lockOverlay = document.getElementById('lockScreenOverlay');
+                if (lockOverlay && lockOverlay.style.display !== 'none') {
+                    unlockScreen();
+                }
+            }
+        });
+
+        // ========== INITIALIZE ==========
+        initTheme();
+
+        // Focus the input on page load
+        window.addEventListener('load', function() {
+            document.getElementById('aiInput').focus();
+        });
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
