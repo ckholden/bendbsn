@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v16';
+const CACHE_VERSION = 'v17';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Resources to cache for offline use
@@ -10,6 +10,8 @@ const OFFLINE_URLS = [
     '/resources/',
     '/community/',
     '/clinical/',
+    '/shared/header.css',
+    '/shared/header.js',
     '/manifest.json'
 ];
 
