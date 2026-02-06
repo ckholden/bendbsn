@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v15';
+const CACHE_VERSION = 'v16';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Resources to cache for offline use
@@ -9,6 +9,7 @@ const OFFLINE_URLS = [
     '/app/',
     '/resources/',
     '/community/',
+    '/clinical/',
     '/manifest.json'
 ];
 
@@ -21,7 +22,8 @@ const STALE_WHILE_REVALIDATE = [
     '/community/index.html',
     '/admin/index.html',
     '/chat/index.html',
-    '/ai/index.html'
+    '/ai/index.html',
+    '/clinical/index.html'
 ];
 
 // Install event - cache core resources

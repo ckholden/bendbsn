@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
+    <script>if(localStorage.getItem('bsn9b_auth')!=='true'){window.location.href='/';}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#1f4e79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSN9B">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <title>Clinical Assessment Packet - BSN9B</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #fafafa;
+            --bg-input: #fafafa;
+            --text-primary: #1a1a2e;
+            --text-secondary: #666666;
+            --accent: #1f4e79;
+            --accent-light: #2d5a87;
+            --shadow: rgba(0,0,0,0.4);
+            --border: #e0e0e0;
+        }
+        [data-theme="dark"] {
+            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #1e2a3a;
+            --bg-input: #16213e;
+            --text-primary: #e6e6e6;
+            --text-secondary: #aaaaaa;
+            --accent: #4a90d9;
+            --accent-light: #5a9fe8;
+            --shadow: rgba(0,0,0,0.6);
+            --border: #2d3748;
+        }
+        .site-header{display:flex;align-items:center;padding:12px 20px;background:#0f172a;border-bottom:1px solid #1f2937;}
+        .site-logo{height:38px;width:auto;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg-page);min-height:100vh;padding-bottom:80px;}
+        .container{max-width:1000px;margin:0 auto;padding:10px 16px;}
+        /* Header bar */
+        .page-header{background:linear-gradient(135deg,#1f4e79 0%,#2d5a87 100%);color:#fff;padding:18px 24px;border-radius:16px 16px 0 0;text-align:center;position:relative;}
+        .page-header h1{font-size:22px;margin-bottom:4px;}
+        .page-header p{opacity:.9;font-size:12px;}
+        .save-status{position:absolute;top:12px;right:16px;font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,.15);color:#fff;}
+        .save-status.unsaved{background:rgba(255,152,0,.3);}
+        .progress-bar-wrap{height:6px;background:rgba(255,255,255,.15);border-radius:3px;margin-top:10px;overflow:hidden;}
+        .progress-bar-fill{height:100%;background:#4caf50;border-radius:3px;transition:width .4s;}
+        /* Content area */
+        .content{background:var(--bg-primary);padding:0;border-radius:0 0 16px 16px;color:var(--text-primary);}
+        /* Tabs */
+        .tabs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:2px solid var(--border);background:var(--bg-secondary);}
+        .tabs{display:flex;min-width:max-content;padding:0 8px;}
+        .tab{padding:12px 16px;background:none;border:none;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;font-family:inherit;white-space:nowrap;position:relative;}
+        .tab:hover{color:var(--accent);}
+        .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+        .tab .tab-check{display:none;font-size:10px;color:#4caf50;margin-left:4px;}
+        .tab .tab-check.visible{display:inline;}
+        .tab-content{display:none;padding:24px;}
+        .tab-content.active{display:block;}
+        /* Forms */
+        .form-section{background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+        .form-section h3{color:var(--accent);font-size:15px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--accent);}
+        .form-section h4{color:var(--text-primary);font-size:14px;margin:14px 0 10px;font-weight:600;}
+        .form-row{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+        .form-group{flex:1;min-width:180px;}
+        .form-group.full{flex:100%;min-width:100%;}
+        .form-group.half{flex:1;min-width:calc(50% - 7px);}
+        .form-group label{display:block;font-weight:600;color:var(--text-primary);margin-bottom:5px;font-size:12px;}
+        .form-group label .pts{font-weight:400;color:var(--text-secondary);font-size:10px;margin-left:4px;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg-input);color:var(--text-primary);}
+        .form-group textarea{min-height:100px;resize:vertical;line-height:1.6;}
+        .form-group textarea.short{min-height:60px;}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,78,121,.1);}
+        /* Checkbox groups */
+        .check-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+        .check-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-primary);}
+        .check-item input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);}
+        /* Buttons */
+        .btn{padding:9px 18px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;}
+        .btn-primary{background:linear-gradient(135deg,#1f4e79,#2d5a87);color:#fff;}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(31,78,121,.3);}
+        .btn-success{background:linear-gradient(135deg,#28a745,#218838);color:#fff;}
+        .btn-success:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(40,167,69,.3);}
+        .btn-danger{background:#dc3545;color:#fff;}
+        .btn-danger:hover{background:#c82333;}
+        .btn-sm{padding:6px 12px;font-size:11px;}
+        .btn:disabled{opacity:.6;cursor:not-allowed;transform:none!important;}
+        .action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+        /* Tables */
+        .data-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;}
+        .data-table th,.data-table td{border:1px solid var(--border);padding:7px 8px;text-align:left;}
+        .data-table th{background:var(--accent);color:#fff;font-size:11px;font-weight:600;}
+        .data-table td input,.data-table td select,.data-table td textarea{width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-input);color:var(--text-primary);font-family:inherit;}
+        .data-table td textarea{min-height:40px;resize:vertical;}
+        .data-table .cat-header{background:var(--bg-tertiary);font-weight:700;color:var(--accent);font-size:12px;}
+        /* Braden scale */
+        .braden-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;}
+        .braden-label{width:140px;font-weight:600;font-size:12px;padding-top:8px;flex-shrink:0;}
+        .braden-options{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+        .braden-opt{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;background:var(--bg-input);color:var(--text-primary);transition:all .2s;text-align:center;flex:1;min-width:60px;}
+        .braden-opt:hover{border-color:var(--accent);}
+        .braden-opt.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+        .braden-total{font-size:18px;font-weight:700;color:var(--accent);margin-top:8px;}
+        .braden-risk{font-size:13px;margin-top:4px;padding:6px 12px;border-radius:6px;display:inline-block;font-weight:600;}
+        /* SBAR */
+        .sbar-letter{display:inline-block;width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:14px;margin-right:8px;}
+        /* Progress notes */
+        .note-card{background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;}
+        .note-card h5{font-size:13px;margin-bottom:8px;color:var(--accent);}
+        /* Toast */
+        #toastContainer{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;}
+        .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:var(--bg-primary);border:1px solid var(--border);box-shadow:0 4px 16px var(--shadow);min-width:250px;animation:slideIn .3s ease;}
+        .toast-success{border-left:4px solid #28a745;}.toast-error{border-left:4px solid #dc3545;}.toast-warning{border-left:4px solid #ff9800;}.toast-info{border-left:4px solid #2196f3;}
+        .toast-icon{font-size:18px;}.toast-message{flex:1;font-size:13px;color:var(--text-primary);}.toast-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-secondary);}
+        .toast.hiding{animation:slideOut .3s ease forwards;}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes slideOut{from{opacity:1}to{transform:translateX(100%);opacity:0}}
+        /* Bottom toolbar */
+        .bottom-toolbar{position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--bg-primary);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;z-index:1000;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 10px rgba(0,0,0,.1);}
+        .toolbar-item{display:flex;flex-direction:column;align-items:center;padding:6px 8px;color:var(--text-secondary);text-decoration:none;font-size:10px;transition:color .2s;background:none;border:none;cursor:pointer;font-family:inherit;}
+        .toolbar-item:hover{color:var(--accent);}.toolbar-item.active{color:var(--accent);}
+        .toolbar-item .icon{font-size:20px;margin-bottom:2px;}
+        .more-menu{position:fixed;bottom:70px;right:10px;background:var(--bg-primary);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:8px 0;display:none;z-index:1001;min-width:180px;border:1px solid var(--border);}
+        .more-menu.show{display:block;}
+        .more-menu-item{display:flex;align-items:center;gap:12px;padding:12px 16px;color:var(--text-primary);text-decoration:none;font-size:14px;transition:background .2s;cursor:pointer;border:none;background:none;width:100%;font-family:inherit;}
+        .more-menu-item:hover{background:var(--bg-secondary);}
+        /* Modal */
+        .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:2000;justify-content:center;align-items:center;}
+        .modal-overlay.show{display:flex;}
+        .modal{background:var(--bg-primary);border-radius:16px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;color:var(--text-primary);}
+        .modal h3{margin-bottom:16px;color:var(--accent);}
+        .modal-list{list-style:none;padding:0;}
+        .modal-list li{padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background .2s;display:flex;justify-content:space-between;align-items:center;}
+        .modal-list li:hover{background:var(--bg-secondary);}
+        .modal-list .pkt-info{font-size:13px;font-weight:600;}
+        .modal-list .pkt-date{font-size:11px;color:var(--text-secondary);}
+        .modal-list .pkt-delete{background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;padding:4px;}
+        @media(max-width:600px){
+            .tab{padding:10px 10px;font-size:11px;}
+            .tab-content{padding:16px 12px;}
+            .form-row{flex-direction:column;}
+            .form-group{min-width:100%;}
+            .form-group.half{min-width:100%;}
+            .braden-row{flex-direction:column;}
+            .braden-label{width:100%;}
+            .container{padding:10px 8px;}
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="/home/" class="logo-link"><img src="/logo.png" alt="BendBSN" class="site-logo"></a>
+    </header>
+    <div id="toastContainer"></div>
+    <div class="container">
+        <div class="page-header">
+            <h1>Clinical Assessment Packet</h1>
+            <p>Complete each section, save progress, and export to Word</p>
+            <span class="save-status" id="saveStatus">No packet loaded</span>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+        </div>
+        <div class="content">
+            <div class="tabs-wrap">
+                <div class="tabs" role="tablist">
+                    <button class="tab active" onclick="switchTab('patient')" role="tab">Patient Info<span class="tab-check" id="chk-patient">&#10003;</span></button>
+                    <button class="tab" onclick="switchTab('assessments')" role="tab">Assessments<span class="tab-check" id="chk-assessments">&#10003;</span></button>
+                    <button class="tab" onclick="switchTab('labs')" role="tab">Labs &amp; Meds<span class="tab-check" id="chk-labs">&#10003;</span></button>
+                    <button class="tab" onclick="switchTab('diagnoses')" role="tab">Diagnoses<span class="tab-check" id="chk-diagnoses">&#10003;</span></button>
+                    <button class="tab" onclick="switchTab('hpi')" role="tab">HPI<span class="tab-check" id="chk-hpi">&#10003;</span></button>
+                    <button class="tab" onclick="switchTab('careplan')" role="tab">Care Plan<span class="tab-check" id="chk-careplan">&#10003;</span></button>
+                    <button class="tab" onclick="switchTab('sbar')" role="tab">SBAR &amp; Notes<span class="tab-check" id="chk-sbar">&#10003;</span></button>
+                    <button class="tab" onclick="switchTab('discharge')" role="tab">Discharge<span class="tab-check" id="chk-discharge">&#10003;</span></button>
+                </div>
+            </div>
+
+            <!-- TAB 1: Patient Info -->
+            <div class="tab-content active" id="tab-patient">
+                <div class="form-section">
+                    <h3>Patient &amp; Student Information</h3>
+                    <div class="form-row">
+                        <div class="form-group"><label>Student Name</label><input type="text" id="studentName" data-field="studentName"></div>
+                        <div class="form-group"><label>Course</label><input type="text" id="course" data-field="course" placeholder="e.g. NUR 215"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Instructor</label><input type="text" id="instructor" data-field="instructor"></div>
+                        <div class="form-group"><label>Clinical Site</label><input type="text" id="clinicalSite" data-field="clinicalSite"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Patient Initials</label><input type="text" id="patientInitials" data-field="patientInitials" maxlength="4"></div>
+                        <div class="form-group"><label>Date</label><input type="date" id="clinicalDate" data-field="clinicalDate"></div>
+                        <div class="form-group"><label>Term</label>
+                            <select id="term" data-field="term">
+                                <option value="">Select Term</option>
+                                <option>Fall 2025</option><option>Winter 2026</option><option>Spring 2026</option><option>Summer 2026</option>
+                                <option>Fall 2026</option><option>Winter 2027</option><option>Spring 2027</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="action-bar" style="justify-content:center;margin-top:8px;">
+                    <button class="btn btn-primary" onclick="savePacket()">Save Progress</button>
+                    <button class="btn btn-success" onclick="showLoadModal()">Load Packet</button>
+                    <button class="btn btn-success" onclick="exportToWord()">Export to Word</button>
+                    <button class="btn btn-danger btn-sm" onclick="newPacket()">New Packet</button>
+                </div>
+            </div>
+
+            <!-- TAB 2: Assessments -->
+            <div class="tab-content" id="tab-assessments">
+
+                <div class="form-section">
+                    <h3>Head-to-Toe Assessment #1</h3>
+                    <h4>General</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>LOC</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_loc_alert"> Alert</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_loc_drowsy"> Drowsy</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_loc_lethargic"> Lethargic</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_loc_stuporous"> Stuporous</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_loc_coma"> Coma</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Orientation</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_orient_person"> Person</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_orient_place"> Place</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_orient_time"> Time</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_orient_situation"> Situation</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Temp</label><input type="text" data-field="h2t1_temp"></div>
+                        <div class="form-group"><label>R (Resp)</label><input type="text" data-field="h2t1_resp"></div>
+                        <div class="form-group"><label>P (Pulse)</label><input type="text" data-field="h2t1_pulse"></div>
+                        <div class="form-group"><label>SaO2</label><input type="text" data-field="h2t1_sao2"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>BP</label><input type="text" data-field="h2t1_bp" placeholder="120/80"></div>
+                        <div class="form-group"><label>Last BM</label><input type="text" data-field="h2t1_lastbm"></div>
+                        <div class="form-group"><label>Height</label><input type="text" data-field="h2t1_height"></div>
+                        <div class="form-group"><label>Weight</label><input type="text" data-field="h2t1_weight"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Smoker</label><input type="text" data-field="h2t1_smoker"></div>
+                        <div class="form-group"><label>Memory</label><input type="text" data-field="h2t1_memory"></div>
+                    </div>
+                    <h4>Head</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Hair/Scalp</label><input type="text" data-field="h2t1_hairscalp"></div>
+                        <div class="form-group"><label>Eyes/Vision</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_perrla"> PERRLA</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_eom"> EOM</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_nystagmus"> Nystagmus</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Ears</label><input type="text" data-field="h2t1_ears"></div>
+                        <div class="form-group"><label>Nose / Smell</label><input type="text" data-field="h2t1_nose"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Mouth</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_smile"> Smile</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_tongue_out"> Stick Out Tongue</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Tongue / Mucous Membranes</label><input type="text" data-field="h2t1_tongue"></div>
+                        <div class="form-group"><label>Dentation</label><input type="text" data-field="h2t1_dentation"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Sinuses</label><input type="text" data-field="h2t1_sinuses"></div>
+                        <div class="form-group"><label>Sensation</label><input type="text" data-field="h2t1_head_sensation"></div>
+                    </div>
+                    <h4>Neck</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Lymph Nodes</label><input type="text" data-field="h2t1_lymph"></div>
+                        <div class="form-group"><label>Thyroid</label><input type="text" data-field="h2t1_thyroid"></div>
+                        <div class="form-group"><label>Carotid Pulse / JVD / Trachea</label><input type="text" data-field="h2t1_neck_pulse"></div>
+                    </div>
+                    <h4>Chest</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Heart Sounds</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_hs_aorta"> Aorta</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_hs_pulm"> Pulmonary</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_hs_erbs"> Erb's Point</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_hs_tri"> Tricuspid</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_hs_mitral"> Mitral</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Apical Pulse / Arrhythmia</label><input type="text" data-field="h2t1_apical"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Breath Sounds (Front Upper/Mid/Lower)</label><input type="text" data-field="h2t1_breath_front"></div>
+                        <div class="form-group"><label>Breath Sounds (Back Upper/Mid/Lower)</label><input type="text" data-field="h2t1_breath_back"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Cough/Sputum</label><input type="text" data-field="h2t1_cough"></div>
+                        <div class="form-group"><label>Chest Symmetry/Expansion</label><input type="text" data-field="h2t1_chest_sym"></div>
+                    </div>
+                    <h4>Upper Extremities</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pulses</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_ue_brachial"> Brachial</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_ue_radial"> Radial</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_ue_equal"> Equal</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Hair Distribution</label><input type="text" data-field="h2t1_ue_hair"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Sensation</label><input type="text" data-field="h2t1_ue_sensation"></div>
+                        <div class="form-group"><label>Temp vs Trunk</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_ue_warm"> Warm</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_ue_cool"> Cool</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Cap Refill</label><input type="text" data-field="h2t1_ue_caprefill"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Grip</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_grip_equal"> Equal</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_grip_strong"> Strong</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Muscle Strength</label><input type="text" data-field="h2t1_ue_muscle"></div>
+                        <div class="form-group"><label>ROM (Left/Right, Active/Passive)</label><input type="text" data-field="h2t1_ue_rom"></div>
+                    </div>
+                    <h4>Lower Extremities</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pulses</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_le_femoral"> Femoral</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_le_popliteal"> Popliteal</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_le_postib"> Post. Tibial</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_le_dorsalis"> Dorsalis Pedis</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_le_equal"> Equal</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Hair Distribution</label><input type="text" data-field="h2t1_le_hair"></div>
+                        <div class="form-group"><label>Edema</label><input type="text" data-field="h2t1_le_edema"></div>
+                        <div class="form-group"><label>Sensation</label><input type="text" data-field="h2t1_le_sensation"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Temp vs Trunk</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_le_warm"> Warm</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_le_cool"> Cool</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Cap Refill</label><input type="text" data-field="h2t1_le_caprefill"></div>
+                        <div class="form-group"><label>Muscle Strength</label><input type="text" data-field="h2t1_le_muscle"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>ROM (Left/Right, Active/Passive)</label><input type="text" data-field="h2t1_le_rom"></div>
+                    </div>
+                    <h4>Pain</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Type</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_pain_acute"> Acute</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t1_pain_chronic"> Chronic</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Intensity (0-10)</label><input type="text" data-field="h2t1_pain_intensity"></div>
+                        <div class="form-group"><label>Location</label><input type="text" data-field="h2t1_pain_location"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Duration</label><input type="text" data-field="h2t1_pain_duration"></div>
+                        <div class="form-group"><label>Characteristics</label><input type="text" data-field="h2t1_pain_char"></div>
+                        <div class="form-group"><label>Precipitating Factors</label><input type="text" data-field="h2t1_pain_precip"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Non-verbal Cues</label><input type="text" data-field="h2t1_pain_nonverbal"></div>
+                        <div class="form-group"><label>What Makes it Better?</label><input type="text" data-field="h2t1_pain_better"></div>
+                        <div class="form-group"><label>What Makes it Worse?</label><input type="text" data-field="h2t1_pain_worse"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Does it Affect Sleep?</label><input type="text" data-field="h2t1_pain_sleep"></div>
+                    </div>
+                    <h4>Skin</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Description</label><input type="text" data-field="h2t1_skin_desc"></div>
+                        <div class="form-group"><label>Any Skin Issues</label><input type="text" data-field="h2t1_skin_issues"></div>
+                        <div class="form-group"><label>Skin Turgor (Clavicle)</label><input type="text" data-field="h2t1_skin_turgor"></div>
+                    </div>
+                    <h4>Abdomen</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Inspection</label><input type="text" data-field="h2t1_abd_inspect"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Auscultation - LUQ</label>
+                            <select data-field="h2t1_abd_luq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                        <div class="form-group"><label>LLQ</label>
+                            <select data-field="h2t1_abd_llq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                        <div class="form-group"><label>RUQ</label>
+                            <select data-field="h2t1_abd_ruq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                        <div class="form-group"><label>RLQ</label>
+                            <select data-field="h2t1_abd_rlq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Palpation</label><input type="text" data-field="h2t1_abd_palp"></div>
+                        <div class="form-group"><label>Percussion</label><input type="text" data-field="h2t1_abd_perc"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Gait</label><input type="text" data-field="h2t1_gait"></div>
+                        <div class="form-group"><label>Romberg</label><input type="text" data-field="h2t1_romberg"></div>
+                        <div class="form-group"><label>Balance</label><input type="text" data-field="h2t1_balance"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Head-to-Toe Assessment #2</h3>
+                    <h4>General</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>LOC</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_loc_alert"> Alert</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_loc_drowsy"> Drowsy</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_loc_lethargic"> Lethargic</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_loc_stuporous"> Stuporous</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_loc_coma"> Coma</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Orientation</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_orient_person"> Person</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_orient_place"> Place</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_orient_time"> Time</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_orient_situation"> Situation</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Temp</label><input type="text" data-field="h2t2_temp"></div>
+                        <div class="form-group"><label>R (Resp)</label><input type="text" data-field="h2t2_resp"></div>
+                        <div class="form-group"><label>P (Pulse)</label><input type="text" data-field="h2t2_pulse"></div>
+                        <div class="form-group"><label>SaO2</label><input type="text" data-field="h2t2_sao2"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>BP</label><input type="text" data-field="h2t2_bp" placeholder="120/80"></div>
+                        <div class="form-group"><label>Last BM</label><input type="text" data-field="h2t2_lastbm"></div>
+                        <div class="form-group"><label>Height</label><input type="text" data-field="h2t2_height"></div>
+                        <div class="form-group"><label>Weight</label><input type="text" data-field="h2t2_weight"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Smoker</label><input type="text" data-field="h2t2_smoker"></div>
+                        <div class="form-group"><label>Memory</label><input type="text" data-field="h2t2_memory"></div>
+                    </div>
+                    <h4>Head</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Hair/Scalp</label><input type="text" data-field="h2t2_hairscalp"></div>
+                        <div class="form-group"><label>Eyes/Vision</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_perrla"> PERRLA</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_eom"> EOM</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_nystagmus"> Nystagmus</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Ears</label><input type="text" data-field="h2t2_ears"></div>
+                        <div class="form-group"><label>Nose / Smell</label><input type="text" data-field="h2t2_nose"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Mouth</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_smile"> Smile</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_tongue_out"> Stick Out Tongue</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Tongue / Mucous Membranes</label><input type="text" data-field="h2t2_tongue"></div>
+                        <div class="form-group"><label>Dentation</label><input type="text" data-field="h2t2_dentation"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Sinuses</label><input type="text" data-field="h2t2_sinuses"></div>
+                        <div class="form-group"><label>Sensation</label><input type="text" data-field="h2t2_head_sensation"></div>
+                    </div>
+                    <h4>Neck</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Lymph Nodes</label><input type="text" data-field="h2t2_lymph"></div>
+                        <div class="form-group"><label>Thyroid</label><input type="text" data-field="h2t2_thyroid"></div>
+                        <div class="form-group"><label>Carotid Pulse / JVD / Trachea</label><input type="text" data-field="h2t2_neck_pulse"></div>
+                    </div>
+                    <h4>Chest</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Heart Sounds</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_hs_aorta"> Aorta</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_hs_pulm"> Pulmonary</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_hs_erbs"> Erb's Point</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_hs_tri"> Tricuspid</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_hs_mitral"> Mitral</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Apical Pulse / Arrhythmia</label><input type="text" data-field="h2t2_apical"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Breath Sounds (Front Upper/Mid/Lower)</label><input type="text" data-field="h2t2_breath_front"></div>
+                        <div class="form-group"><label>Breath Sounds (Back Upper/Mid/Lower)</label><input type="text" data-field="h2t2_breath_back"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Cough/Sputum</label><input type="text" data-field="h2t2_cough"></div>
+                        <div class="form-group"><label>Chest Symmetry/Expansion</label><input type="text" data-field="h2t2_chest_sym"></div>
+                    </div>
+                    <h4>Upper Extremities</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pulses</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_ue_brachial"> Brachial</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_ue_radial"> Radial</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_ue_equal"> Equal</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Hair Distribution</label><input type="text" data-field="h2t2_ue_hair"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Sensation</label><input type="text" data-field="h2t2_ue_sensation"></div>
+                        <div class="form-group"><label>Temp vs Trunk</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_ue_warm"> Warm</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_ue_cool"> Cool</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Cap Refill</label><input type="text" data-field="h2t2_ue_caprefill"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Grip</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_grip_equal"> Equal</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_grip_strong"> Strong</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Muscle Strength</label><input type="text" data-field="h2t2_ue_muscle"></div>
+                        <div class="form-group"><label>ROM (Left/Right, Active/Passive)</label><input type="text" data-field="h2t2_ue_rom"></div>
+                    </div>
+                    <h4>Lower Extremities</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pulses</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_le_femoral"> Femoral</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_le_popliteal"> Popliteal</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_le_postib"> Post. Tibial</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_le_dorsalis"> Dorsalis Pedis</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_le_equal"> Equal</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Hair Distribution</label><input type="text" data-field="h2t2_le_hair"></div>
+                        <div class="form-group"><label>Edema</label><input type="text" data-field="h2t2_le_edema"></div>
+                        <div class="form-group"><label>Sensation</label><input type="text" data-field="h2t2_le_sensation"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Temp vs Trunk</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_le_warm"> Warm</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_le_cool"> Cool</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Cap Refill</label><input type="text" data-field="h2t2_le_caprefill"></div>
+                        <div class="form-group"><label>Muscle Strength</label><input type="text" data-field="h2t2_le_muscle"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>ROM (Left/Right, Active/Passive)</label><input type="text" data-field="h2t2_le_rom"></div>
+                    </div>
+                    <h4>Pain</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Type</label>
+                            <div class="check-row">
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_pain_acute"> Acute</label>
+                                <label class="check-item"><input type="checkbox" data-field="h2t2_pain_chronic"> Chronic</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Intensity (0-10)</label><input type="text" data-field="h2t2_pain_intensity"></div>
+                        <div class="form-group"><label>Location</label><input type="text" data-field="h2t2_pain_location"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Duration</label><input type="text" data-field="h2t2_pain_duration"></div>
+                        <div class="form-group"><label>Characteristics</label><input type="text" data-field="h2t2_pain_char"></div>
+                        <div class="form-group"><label>Precipitating Factors</label><input type="text" data-field="h2t2_pain_precip"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Non-verbal Cues</label><input type="text" data-field="h2t2_pain_nonverbal"></div>
+                        <div class="form-group"><label>What Makes it Better?</label><input type="text" data-field="h2t2_pain_better"></div>
+                        <div class="form-group"><label>What Makes it Worse?</label><input type="text" data-field="h2t2_pain_worse"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Does it Affect Sleep?</label><input type="text" data-field="h2t2_pain_sleep"></div>
+                    </div>
+                    <h4>Skin</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Description</label><input type="text" data-field="h2t2_skin_desc"></div>
+                        <div class="form-group"><label>Any Skin Issues</label><input type="text" data-field="h2t2_skin_issues"></div>
+                        <div class="form-group"><label>Skin Turgor (Clavicle)</label><input type="text" data-field="h2t2_skin_turgor"></div>
+                    </div>
+                    <h4>Abdomen</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Inspection</label><input type="text" data-field="h2t2_abd_inspect"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Auscultation - LUQ</label>
+                            <select data-field="h2t2_abd_luq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                        <div class="form-group"><label>LLQ</label>
+                            <select data-field="h2t2_abd_llq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                        <div class="form-group"><label>RUQ</label>
+                            <select data-field="h2t2_abd_ruq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                        <div class="form-group"><label>RLQ</label>
+                            <select data-field="h2t2_abd_rlq"><option value="">Select</option><option>Active</option><option>Hyper</option><option>Hypo</option><option>Absent</option></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Palpation</label><input type="text" data-field="h2t2_abd_palp"></div>
+                        <div class="form-group"><label>Percussion</label><input type="text" data-field="h2t2_abd_perc"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Gait</label><input type="text" data-field="h2t2_gait"></div>
+                        <div class="form-group"><label>Romberg</label><input type="text" data-field="h2t2_romberg"></div>
+                        <div class="form-group"><label>Balance</label><input type="text" data-field="h2t2_balance"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>OMEGA Checklist #1</h3>
+                    <table class="data-table">
+                        <thead><tr><th style="width:40px">Key</th><th style="width:120px">Category</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>O</strong></td><td>Orientation</td><td><input type="text" data-field="omega1_orientation"></td></tr>
+                            <tr><td><strong>M</strong></td><td>Medication</td><td><input type="text" data-field="omega1_medication"></td></tr>
+                            <tr><td><strong>E</strong></td><td>Emergency</td><td><input type="text" data-field="omega1_emergency"></td></tr>
+                            <tr><td><strong>G</strong></td><td>Gait</td><td><input type="text" data-field="omega1_gait"></td></tr>
+                            <tr><td><strong>A</strong></td><td>Allergies</td><td><input type="text" data-field="omega1_allergies"></td></tr>
+                            <tr class="cat-header"><td colspan="3">7 Basic Needs</td></tr>
+                            <tr><td><strong>1</strong></td><td>Air</td><td><input type="text" data-field="omega1_air"></td></tr>
+                            <tr><td><strong>2</strong></td><td>Food</td><td><input type="text" data-field="omega1_food"></td></tr>
+                            <tr><td><strong>3</strong></td><td>Water</td><td><input type="text" data-field="omega1_water"></td></tr>
+                            <tr><td><strong>4</strong></td><td>Safety</td><td><input type="text" data-field="omega1_safety"></td></tr>
+                            <tr><td><strong>5</strong></td><td>Hygiene</td><td><input type="text" data-field="omega1_hygiene"></td></tr>
+                            <tr><td><strong>6</strong></td><td>Pain</td><td><input type="text" data-field="omega1_pain"></td></tr>
+                            <tr><td><strong>7</strong></td><td>Sleep</td><td><input type="text" data-field="omega1_sleep"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-section">
+                    <h3>OMEGA Checklist #2</h3>
+                    <table class="data-table">
+                        <thead><tr><th style="width:40px">Key</th><th style="width:120px">Category</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>O</strong></td><td>Orientation</td><td><input type="text" data-field="omega2_orientation"></td></tr>
+                            <tr><td><strong>M</strong></td><td>Medication</td><td><input type="text" data-field="omega2_medication"></td></tr>
+                            <tr><td><strong>E</strong></td><td>Emergency</td><td><input type="text" data-field="omega2_emergency"></td></tr>
+                            <tr><td><strong>G</strong></td><td>Gait</td><td><input type="text" data-field="omega2_gait"></td></tr>
+                            <tr><td><strong>A</strong></td><td>Allergies</td><td><input type="text" data-field="omega2_allergies"></td></tr>
+                            <tr class="cat-header"><td colspan="3">7 Basic Needs</td></tr>
+                            <tr><td><strong>1</strong></td><td>Air</td><td><input type="text" data-field="omega2_air"></td></tr>
+                            <tr><td><strong>2</strong></td><td>Food</td><td><input type="text" data-field="omega2_food"></td></tr>
+                            <tr><td><strong>3</strong></td><td>Water</td><td><input type="text" data-field="omega2_water"></td></tr>
+                            <tr><td><strong>4</strong></td><td>Safety</td><td><input type="text" data-field="omega2_safety"></td></tr>
+                            <tr><td><strong>5</strong></td><td>Hygiene</td><td><input type="text" data-field="omega2_hygiene"></td></tr>
+                            <tr><td><strong>6</strong></td><td>Pain</td><td><input type="text" data-field="omega2_pain"></td></tr>
+                            <tr><td><strong>7</strong></td><td>Sleep</td><td><input type="text" data-field="omega2_sleep"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-section">
+                    <h3>Braden Scale - Pressure Injury Risk</h3>
+                    <div class="braden-row">
+                        <div class="braden-label">Sensory Perception</div>
+                        <div class="braden-options" data-braden="sensory">
+                            <div class="braden-opt" data-val="1" onclick="selectBraden(this)">1 - Completely Limited</div>
+                            <div class="braden-opt" data-val="2" onclick="selectBraden(this)">2 - Very Limited</div>
+                            <div class="braden-opt" data-val="3" onclick="selectBraden(this)">3 - Slightly Limited</div>
+                            <div class="braden-opt" data-val="4" onclick="selectBraden(this)">4 - No Impairment</div>
+                        </div>
+                    </div>
+                    <div class="braden-row">
+                        <div class="braden-label">Moisture</div>
+                        <div class="braden-options" data-braden="moisture">
+                            <div class="braden-opt" data-val="1" onclick="selectBraden(this)">1 - Constantly Moist</div>
+                            <div class="braden-opt" data-val="2" onclick="selectBraden(this)">2 - Often Moist</div>
+                            <div class="braden-opt" data-val="3" onclick="selectBraden(this)">3 - Occasionally Moist</div>
+                            <div class="braden-opt" data-val="4" onclick="selectBraden(this)">4 - Rarely Moist</div>
+                        </div>
+                    </div>
+                    <div class="braden-row">
+                        <div class="braden-label">Activity</div>
+                        <div class="braden-options" data-braden="activity">
+                            <div class="braden-opt" data-val="1" onclick="selectBraden(this)">1 - Bedfast</div>
+                            <div class="braden-opt" data-val="2" onclick="selectBraden(this)">2 - Chairfast</div>
+                            <div class="braden-opt" data-val="3" onclick="selectBraden(this)">3 - Walks Occasionally</div>
+                            <div class="braden-opt" data-val="4" onclick="selectBraden(this)">4 - Walks Frequently</div>
+                        </div>
+                    </div>
+                    <div class="braden-row">
+                        <div class="braden-label">Mobility</div>
+                        <div class="braden-options" data-braden="mobility">
+                            <div class="braden-opt" data-val="1" onclick="selectBraden(this)">1 - Completely Immobile</div>
+                            <div class="braden-opt" data-val="2" onclick="selectBraden(this)">2 - Very Limited</div>
+                            <div class="braden-opt" data-val="3" onclick="selectBraden(this)">3 - Slightly Limited</div>
+                            <div class="braden-opt" data-val="4" onclick="selectBraden(this)">4 - No Limitations</div>
+                        </div>
+                    </div>
+                    <div class="braden-row">
+                        <div class="braden-label">Nutrition</div>
+                        <div class="braden-options" data-braden="nutrition">
+                            <div class="braden-opt" data-val="1" onclick="selectBraden(this)">1 - Very Poor</div>
+                            <div class="braden-opt" data-val="2" onclick="selectBraden(this)">2 - Probably Inadequate</div>
+                            <div class="braden-opt" data-val="3" onclick="selectBraden(this)">3 - Adequate</div>
+                            <div class="braden-opt" data-val="4" onclick="selectBraden(this)">4 - Excellent</div>
+                        </div>
+                    </div>
+                    <div class="braden-row">
+                        <div class="braden-label">Friction &amp; Shear</div>
+                        <div class="braden-options" data-braden="friction">
+                            <div class="braden-opt" data-val="1" onclick="selectBraden(this)">1 - Problem</div>
+                            <div class="braden-opt" data-val="2" onclick="selectBraden(this)">2 - Potential Problem</div>
+                            <div class="braden-opt" data-val="3" onclick="selectBraden(this)">3 - No Apparent Problem</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:12px;padding:12px;background:var(--bg-tertiary);border-radius:8px;">
+                        <div class="braden-total">Total: <span id="bradenTotal">0</span>/23</div>
+                        <div class="braden-risk" id="bradenRisk" style="background:#e0e0e0;color:#333;">Select all categories</div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3>Cognitive Assessment</h3>
+                    <div class="form-group full"><label>Cognitive Assessment Notes</label>
+                        <textarea data-field="cognitiveAssessment" placeholder="Document cognitive assessment findings..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TAB 3: Labs & Meds -->
+            <div class="tab-content" id="tab-labs">
+                <div class="form-section">
+                    <h3>Lab Values <span class="pts">(5 pts)</span></h3>
+                    <div style="overflow-x:auto;">
+                    <table class="data-table" id="labTable">
+                        <thead><tr><th>Lab</th><th>Normal Values</th><th>Date</th><th>Result</th><th>Interpretation</th></tr></thead>
+                        <tbody>
+                            <tr class="cat-header"><td colspan="5"><strong>Chemistry</strong></td></tr>
+<tr>
+            <td>NA+ (Sodium)</td>
+            <td style="font-size:11px;color:var(--text-secondary)">136-145 mEq/L</td>
+            <td><input type="text" data-field="lab_naplus_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_naplus_result"></td>
+            <td><input type="text" data-field="lab_naplus_interp"></td>
+        </tr>
+<tr>
+            <td>K+ (Potassium)</td>
+            <td style="font-size:11px;color:var(--text-secondary)">3.5-5.0 mEq/L</td>
+            <td><input type="text" data-field="lab_kplus_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_kplus_result"></td>
+            <td><input type="text" data-field="lab_kplus_interp"></td>
+        </tr>
+<tr>
+            <td>Cl- (Chloride)</td>
+            <td style="font-size:11px;color:var(--text-secondary)">98-106 mEq/L</td>
+            <td><input type="text" data-field="lab_clminus_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_clminus_result"></td>
+            <td><input type="text" data-field="lab_clminus_interp"></td>
+        </tr>
+<tr>
+            <td>CO2</td>
+            <td style="font-size:11px;color:var(--text-secondary)">23-29 mEq/L</td>
+            <td><input type="text" data-field="lab_co2_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_co2_result"></td>
+            <td><input type="text" data-field="lab_co2_interp"></td>
+        </tr>
+<tr>
+            <td>BUN</td>
+            <td style="font-size:11px;color:var(--text-secondary)">10-20 mg/dL</td>
+            <td><input type="text" data-field="lab_bun_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_bun_result"></td>
+            <td><input type="text" data-field="lab_bun_interp"></td>
+        </tr>
+<tr>
+            <td>Creatinine</td>
+            <td style="font-size:11px;color:var(--text-secondary)">0.7-1.3 mg/dL</td>
+            <td><input type="text" data-field="lab_creatinine_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_creatinine_result"></td>
+            <td><input type="text" data-field="lab_creatinine_interp"></td>
+        </tr>
+<tr>
+            <td>Cholesterol</td>
+            <td style="font-size:11px;color:var(--text-secondary)">&lt;200 mg/dL</td>
+            <td><input type="text" data-field="lab_cholesterol_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_cholesterol_result"></td>
+            <td><input type="text" data-field="lab_cholesterol_interp"></td>
+        </tr>
+<tr>
+            <td>Albumin</td>
+            <td style="font-size:11px;color:var(--text-secondary)">3.5-5.0 g/dL</td>
+            <td><input type="text" data-field="lab_albumin_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_albumin_result"></td>
+            <td><input type="text" data-field="lab_albumin_interp"></td>
+        </tr>
+<tr class="cat-header"><td colspan="5"><strong>Hematology</strong></td></tr>
+<tr>
+            <td>RBC</td>
+            <td style="font-size:11px;color:var(--text-secondary)">4.2-6.1 M/uL</td>
+            <td><input type="text" data-field="lab_rbc_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_rbc_result"></td>
+            <td><input type="text" data-field="lab_rbc_interp"></td>
+        </tr>
+<tr>
+            <td>WBC</td>
+            <td style="font-size:11px;color:var(--text-secondary)">5,000-10,000/uL</td>
+            <td><input type="text" data-field="lab_wbc_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_wbc_result"></td>
+            <td><input type="text" data-field="lab_wbc_interp"></td>
+        </tr>
+<tr>
+            <td>HCT</td>
+            <td style="font-size:11px;color:var(--text-secondary)">36-48%</td>
+            <td><input type="text" data-field="lab_hct_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_hct_result"></td>
+            <td><input type="text" data-field="lab_hct_interp"></td>
+        </tr>
+<tr>
+            <td>HgB</td>
+            <td style="font-size:11px;color:var(--text-secondary)">12-17 g/dL</td>
+            <td><input type="text" data-field="lab_hgb_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_hgb_result"></td>
+            <td><input type="text" data-field="lab_hgb_interp"></td>
+        </tr>
+<tr class="cat-header"><td colspan="5"><strong>Coagulation</strong></td></tr>
+<tr>
+            <td>PT</td>
+            <td style="font-size:11px;color:var(--text-secondary)">11-13.5 sec</td>
+            <td><input type="text" data-field="lab_pt_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_pt_result"></td>
+            <td><input type="text" data-field="lab_pt_interp"></td>
+        </tr>
+<tr>
+            <td>PTT</td>
+            <td style="font-size:11px;color:var(--text-secondary)">25-35 sec</td>
+            <td><input type="text" data-field="lab_ptt_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_ptt_result"></td>
+            <td><input type="text" data-field="lab_ptt_interp"></td>
+        </tr>
+<tr>
+            <td>INR</td>
+            <td style="font-size:11px;color:var(--text-secondary)">0.8-1.1</td>
+            <td><input type="text" data-field="lab_inr_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_inr_result"></td>
+            <td><input type="text" data-field="lab_inr_interp"></td>
+        </tr>
+<tr class="cat-header"><td colspan="5"><strong>Other</strong></td></tr>
+<tr>
+            <td>TSH</td>
+            <td style="font-size:11px;color:var(--text-secondary)">0.5-5.0 mIU/L</td>
+            <td><input type="text" data-field="lab_tsh_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_tsh_result"></td>
+            <td><input type="text" data-field="lab_tsh_interp"></td>
+        </tr>
+<tr>
+            <td>ALT/SGPT</td>
+            <td style="font-size:11px;color:var(--text-secondary)">7-56 U/L</td>
+            <td><input type="text" data-field="lab_alt_sgpt_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_alt_sgpt_result"></td>
+            <td><input type="text" data-field="lab_alt_sgpt_interp"></td>
+        </tr>
+<tr>
+            <td>AST/SGOT</td>
+            <td style="font-size:11px;color:var(--text-secondary)">10-40 U/L</td>
+            <td><input type="text" data-field="lab_ast_sgot_date" style="width:90px"></td>
+            <td><input type="text" data-field="lab_ast_sgot_result"></td>
+            <td><input type="text" data-field="lab_ast_sgot_interp"></td>
+        </tr>
+
+                        </tbody>
+                    </table>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="addLabRow()">+ Add Lab Row</button>
+                </div>
+                <div class="form-section">
+                    <h3>Medications <span class="pts">(5 pts)</span></h3>
+                    <div style="overflow-x:auto;">
+                    <table class="data-table" id="medTable">
+                        <thead><tr>
+                            <th>Trade &amp; Generic Name</th>
+                            <th>Time Admin</th>
+                            <th>Classification</th>
+                            <th>Indication</th>
+                            <th>Major Side Effects</th>
+                            <th>Nursing Implications</th>
+                        </tr></thead>
+                        <tbody id="medTableBody">
+                        </tbody>
+                    </table>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="addMedRow()">+ Add Medication</button>
+                </div>
+            </div>
+
+            <!-- TAB 4: Diagnoses -->
+            <div class="tab-content" id="tab-diagnoses">
+                <div class="form-section">
+                    <h3>Primary Diagnosis <span class="pts">(12 pts)</span></h3>
+                    <div class="form-group full"><label>Diagnosis Name</label><input type="text" data-field="dx1_name"></div>
+                    <div class="form-group full"><label>Definition <span class="pts">(2 pts)</span></label>
+                        <textarea data-field="dx1_definition" placeholder="Define the diagnosis..."></textarea></div>
+                    <div class="form-group full"><label>Pathophysiology <span class="pts">(6 pts)</span></label>
+                        <textarea data-field="dx1_pathophysiology" placeholder="Explain the pathophysiology..." style="min-height:140px"></textarea></div>
+                    <div class="form-group full"><label>Risk Factors <span class="pts">(2 pts)</span></label>
+                        <textarea class="short" data-field="dx1_riskfactors" placeholder="List risk factors..."></textarea></div>
+                    <div class="form-group full"><label>Signs &amp; Symptoms <span class="pts">(2 pts)</span></label>
+                        <textarea class="short" data-field="dx1_signs" placeholder="List signs and symptoms..."></textarea></div>
+                </div>
+                <div class="form-section">
+                    <h3>Secondary Diagnosis <span class="pts">(12 pts)</span></h3>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Note: Relate pathophysiology to primary diagnosis where applicable.</p>
+                    <div class="form-group full"><label>Diagnosis Name</label><input type="text" data-field="dx2_name"></div>
+                    <div class="form-group full"><label>Definition <span class="pts">(2 pts)</span></label>
+                        <textarea data-field="dx2_definition" placeholder="Define the diagnosis..."></textarea></div>
+                    <div class="form-group full"><label>Pathophysiology <span class="pts">(6 pts)</span></label>
+                        <textarea data-field="dx2_pathophysiology" placeholder="Explain the pathophysiology and relate to primary dx..." style="min-height:140px"></textarea></div>
+                    <div class="form-group full"><label>Risk Factors <span class="pts">(2 pts)</span></label>
+                        <textarea class="short" data-field="dx2_riskfactors" placeholder="List risk factors..."></textarea></div>
+                    <div class="form-group full"><label>Signs &amp; Symptoms <span class="pts">(2 pts)</span></label>
+                        <textarea class="short" data-field="dx2_signs" placeholder="List signs and symptoms..."></textarea></div>
+                </div>
+            </div>
+
+            <!-- TAB 5: History of Present Illness -->
+            <div class="tab-content" id="tab-hpi">
+                <div class="form-section">
+                    <h3>History of Present Illness <span class="pts">(8 pts)</span></h3>
+                    <div class="form-group full"><label>Patient Explanation / Chart Review <span class="pts">(2 pts)</span></label>
+                        <textarea data-field="hpi_explanation" placeholder="Summarize the patient's history and chart review..."></textarea></div>
+                    <div class="form-group full"><label>Manifestations <span class="pts">(2 pts)</span></label>
+                        <textarea data-field="hpi_manifestations" placeholder="What manifestations are present?"></textarea></div>
+                    <div class="form-group full"><label>Treatment <span class="pts">(2 pts)</span></label>
+                        <textarea data-field="hpi_treatment" placeholder="What treatments are being provided?"></textarea></div>
+                    <div class="form-group full"><label>Patient Impact - Maslow's Hierarchy <span class="pts">(2 pts)</span></label>
+                        <textarea data-field="hpi_maslow" placeholder="How does this illness impact the patient according to Maslow's hierarchy of needs?"></textarea></div>
+                </div>
+            </div>
+
+            <!-- TAB 6: Care Plan -->
+            <div class="tab-content" id="tab-careplan">
+                <div class="form-section">
+                    <h3>Nursing Care Plan <span class="pts">(24 pts)</span></h3>
+                    <div class="form-group full"><label>Assessment / OMEGA7 Finding <span class="pts">(3 pts)</span></label>
+                        <textarea class="short" data-field="cp_assessment" placeholder="What assessment or OMEGA7 finding triggered this care plan?"></textarea></div>
+                    <div class="form-group full"><label>Nursing Diagnostic Statement - NANDA Format <span class="pts">(3 pts)</span></label>
+                        <textarea class="short" data-field="cp_nanda" placeholder="State the nursing diagnosis in NANDA format..."></textarea></div>
+                </div>
+                <div class="form-section">
+                    <h3>Short-Term Goal <span class="pts">(3 pts)</span></h3>
+                    <div class="form-group full"><label>Goal Statement</label>
+                        <textarea class="short" data-field="cp_stgoal" placeholder="State the short-term goal..."></textarea></div>
+                    <h4>Intervention 1: Assess</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Intervention</label><textarea class="short" data-field="cp_st_assess"></textarea></div>
+                        <div class="form-group"><label>Rationale</label><textarea class="short" data-field="cp_st_assess_rat"></textarea></div>
+                    </div>
+                    <h4>Intervention 2: Do</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Intervention</label><textarea class="short" data-field="cp_st_do"></textarea></div>
+                        <div class="form-group"><label>Rationale</label><textarea class="short" data-field="cp_st_do_rat"></textarea></div>
+                    </div>
+                    <h4>Intervention 3: Teach</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Intervention</label><textarea class="short" data-field="cp_st_teach"></textarea></div>
+                        <div class="form-group"><label>Rationale</label><textarea class="short" data-field="cp_st_teach_rat"></textarea></div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3>Long-Term Goal <span class="pts">(3 pts)</span></h3>
+                    <div class="form-group full"><label>Goal Statement</label>
+                        <textarea class="short" data-field="cp_ltgoal" placeholder="State the long-term goal..."></textarea></div>
+                    <h4>Intervention 1: Assess</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Intervention</label><textarea class="short" data-field="cp_lt_assess"></textarea></div>
+                        <div class="form-group"><label>Rationale</label><textarea class="short" data-field="cp_lt_assess_rat"></textarea></div>
+                    </div>
+                    <h4>Intervention 2: Do</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Intervention</label><textarea class="short" data-field="cp_lt_do"></textarea></div>
+                        <div class="form-group"><label>Rationale</label><textarea class="short" data-field="cp_lt_do_rat"></textarea></div>
+                    </div>
+                    <h4>Intervention 3: Teach</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Intervention</label><textarea class="short" data-field="cp_lt_teach"></textarea></div>
+                        <div class="form-group"><label>Rationale</label><textarea class="short" data-field="cp_lt_teach_rat"></textarea></div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3>NCSBN Clinical Judgement Model <span class="pts">(6 pts)</span></h3>
+                    <table class="data-table">
+                        <thead><tr><th style="width:220px">Step</th><th>Response</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>Step 1:</strong> Recognize Cues<br><span style="font-size:10px;color:var(--text-secondary)">What data are relevant and clinically significant?</span></td>
+                                <td><textarea data-field="ncsbn_step1" style="min-height:60px"></textarea></td></tr>
+                            <tr><td><strong>Step 2:</strong> Analyze Cues<br><span style="font-size:10px;color:var(--text-secondary)">What is the most likely problem? Is additional data needed?</span></td>
+                                <td><textarea data-field="ncsbn_step2" style="min-height:60px"></textarea></td></tr>
+                            <tr><td><strong>Step 3:</strong> Prioritize Hypotheses<br><span style="font-size:10px;color:var(--text-secondary)">Rank problems by urgency. Which is most concerning? Why?</span></td>
+                                <td><textarea data-field="ncsbn_step3" style="min-height:60px"></textarea></td></tr>
+                            <tr><td><strong>Step 4/5:</strong> Generate Solutions &amp; Take Action<br><span style="font-size:10px;color:var(--text-secondary)">What are the priority actions?</span></td>
+                                <td><textarea data-field="ncsbn_step45" style="min-height:60px"></textarea></td></tr>
+                            <tr><td><strong>Step 6:</strong> Evaluate Outcomes<br><span style="font-size:10px;color:var(--text-secondary)">Has patient status improved, declined, or unchanged? Additional interventions?</span></td>
+                                <td><textarea data-field="ncsbn_step6" style="min-height:60px"></textarea></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 7: SBAR & Notes -->
+            <div class="tab-content" id="tab-sbar">
+
+                <div class="form-section">
+                    <h3>SBAR #1 <span class="pts">(/100)</span></h3>
+                    <h4><span class="sbar-letter">S</span> Situation</h4>
+                    <div class="form-group full"><label>Situation of concern (brief overview)</label>
+                        <textarea class="short" data-field="sbar1_situation"></textarea></div>
+                    <h4><span class="sbar-letter">B</span> Background</h4>
+                    <div class="form-group full"><label>Brief Hx (reason for admission, diagnoses, etc.)</label>
+                        <textarea class="short" data-field="sbar1_hx"></textarea></div>
+                    <div class="form-group full"><label>Allergies</label>
+                        <input type="text" data-field="sbar1_allergies"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>BP</label><input type="text" data-field="sbar1_bp"></div>
+                        <div class="form-group"><label>HR</label><input type="text" data-field="sbar1_hr"></div>
+                        <div class="form-group"><label>RR</label><input type="text" data-field="sbar1_rr"></div>
+                        <div class="form-group"><label>Temp</label><input type="text" data-field="sbar1_temp"></div>
+                        <div class="form-group"><label>SaO2</label><input type="text" data-field="sbar1_sao2"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>O2 Requirements</label><input type="text" data-field="sbar1_o2"></div>
+                        <div class="form-group"><label>Nausea</label><input type="text" data-field="sbar1_nausea"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pain - How much?</label><input type="text" data-field="sbar1_pain_amt"></div>
+                        <div class="form-group"><label>Where?</label><input type="text" data-field="sbar1_pain_where"></div>
+                        <div class="form-group"><label>Description</label><input type="text" data-field="sbar1_pain_desc"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>IV Access</label><input type="text" data-field="sbar1_iv"></div>
+                        <div class="form-group"><label>Fluids Running/Rate</label><input type="text" data-field="sbar1_fluids"></div>
+                    </div>
+                    <div class="form-group full"><label>Procedures/Scans Done</label>
+                        <input type="text" data-field="sbar1_procedures"></div>
+                    <h4><span class="sbar-letter">A</span> Assessment</h4>
+                    <div class="form-group full"><label>Labs drawn and significant results</label>
+                        <textarea class="short" data-field="sbar1_labs"></textarea></div>
+                    <div class="form-group full"><label>Wounds/Dressings/Ostomies/Drains</label>
+                        <textarea class="short" data-field="sbar1_wounds"></textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Fall Risk (Y/N)</label><input type="text" data-field="sbar1_fallrisk"></div>
+                        <div class="form-group"><label>LOC (Alert/Oriented x?)</label><input type="text" data-field="sbar1_loc"></div>
+                    </div>
+                    <div class="form-group full"><label>Other Assessments</label>
+                        <textarea class="short" data-field="sbar1_other_assess"></textarea></div>
+                    <div class="form-group full"><label>Care Plan Interventions Implemented</label>
+                        <textarea class="short" data-field="sbar1_interventions"></textarea></div>
+                    <h4><span class="sbar-letter">R</span> Recommendation</h4>
+                    <div class="form-group full"><label>Recommended Action (What would you like the physician to do?)</label>
+                        <textarea class="short" data-field="sbar1_recommendation"></textarea></div>
+                    <div class="form-group full"><label>Other Thoughts/Comments</label>
+                        <textarea class="short" data-field="sbar1_comments"></textarea></div>
+                    <div class="form-group full"><label>Orders Received (and repeated back)</label>
+                        <textarea class="short" data-field="sbar1_orders"></textarea></div>
+                </div>
+
+                <div class="form-section">
+                    <h3>SBAR #2 <span class="pts">(/10)</span></h3>
+                    <h4><span class="sbar-letter">S</span> Situation</h4>
+                    <div class="form-group full"><label>Situation of concern (brief overview)</label>
+                        <textarea class="short" data-field="sbar2_situation"></textarea></div>
+                    <h4><span class="sbar-letter">B</span> Background</h4>
+                    <div class="form-group full"><label>Brief Hx (reason for admission, diagnoses, etc.)</label>
+                        <textarea class="short" data-field="sbar2_hx"></textarea></div>
+                    <div class="form-group full"><label>Allergies</label>
+                        <input type="text" data-field="sbar2_allergies"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>BP</label><input type="text" data-field="sbar2_bp"></div>
+                        <div class="form-group"><label>HR</label><input type="text" data-field="sbar2_hr"></div>
+                        <div class="form-group"><label>RR</label><input type="text" data-field="sbar2_rr"></div>
+                        <div class="form-group"><label>Temp</label><input type="text" data-field="sbar2_temp"></div>
+                        <div class="form-group"><label>SaO2</label><input type="text" data-field="sbar2_sao2"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>O2 Requirements</label><input type="text" data-field="sbar2_o2"></div>
+                        <div class="form-group"><label>Nausea</label><input type="text" data-field="sbar2_nausea"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pain - How much?</label><input type="text" data-field="sbar2_pain_amt"></div>
+                        <div class="form-group"><label>Where?</label><input type="text" data-field="sbar2_pain_where"></div>
+                        <div class="form-group"><label>Description</label><input type="text" data-field="sbar2_pain_desc"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>IV Access</label><input type="text" data-field="sbar2_iv"></div>
+                        <div class="form-group"><label>Fluids Running/Rate</label><input type="text" data-field="sbar2_fluids"></div>
+                    </div>
+                    <div class="form-group full"><label>Procedures/Scans Done</label>
+                        <input type="text" data-field="sbar2_procedures"></div>
+                    <h4><span class="sbar-letter">A</span> Assessment</h4>
+                    <div class="form-group full"><label>Labs drawn and significant results</label>
+                        <textarea class="short" data-field="sbar2_labs"></textarea></div>
+                    <div class="form-group full"><label>Wounds/Dressings/Ostomies/Drains</label>
+                        <textarea class="short" data-field="sbar2_wounds"></textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Fall Risk (Y/N)</label><input type="text" data-field="sbar2_fallrisk"></div>
+                        <div class="form-group"><label>LOC (Alert/Oriented x?)</label><input type="text" data-field="sbar2_loc"></div>
+                    </div>
+                    <div class="form-group full"><label>Other Assessments</label>
+                        <textarea class="short" data-field="sbar2_other_assess"></textarea></div>
+                    <div class="form-group full"><label>Care Plan Interventions Implemented</label>
+                        <textarea class="short" data-field="sbar2_interventions"></textarea></div>
+                    <h4><span class="sbar-letter">R</span> Recommendation</h4>
+                    <div class="form-group full"><label>Recommended Action (What would you like the physician to do?)</label>
+                        <textarea class="short" data-field="sbar2_recommendation"></textarea></div>
+                    <div class="form-group full"><label>Other Thoughts/Comments</label>
+                        <textarea class="short" data-field="sbar2_comments"></textarea></div>
+                    <div class="form-group full"><label>Orders Received (and repeated back)</label>
+                        <textarea class="short" data-field="sbar2_orders"></textarea></div>
+                </div>
+                <div class="form-section">
+                    <h3>Nurses Progress Notes (FOCUS Format)</h3>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">8-hour shift: 2 FOCUS notes | 12-hour shift: 3 FOCUS notes</p>
+                    <div id="progressNotesContainer">
+                        <div class="note-card">
+                            <h5>Progress Note #1</h5>
+                            <div class="form-group full"><label>FOCUS (Subject/Purpose)</label>
+                                <textarea class="short" data-field="pn1_focus" placeholder="Nursing diagnosis, event, or patient concern..."></textarea></div>
+                            <div class="form-group full"><label>Data (Subjective &amp; Objective)</label>
+                                <textarea class="short" data-field="pn1_data"></textarea></div>
+                            <div class="form-group full"><label>Action (Interventions)</label>
+                                <textarea class="short" data-field="pn1_action"></textarea></div>
+                            <div class="form-group full"><label>Response (Patient Response)</label>
+                                <textarea class="short" data-field="pn1_response"></textarea></div>
+                        </div>
+                        <div class="note-card">
+                            <h5>Progress Note #2</h5>
+                            <div class="form-group full"><label>FOCUS</label>
+                                <textarea class="short" data-field="pn2_focus"></textarea></div>
+                            <div class="form-group full"><label>Data</label>
+                                <textarea class="short" data-field="pn2_data"></textarea></div>
+                            <div class="form-group full"><label>Action</label>
+                                <textarea class="short" data-field="pn2_action"></textarea></div>
+                            <div class="form-group full"><label>Response</label>
+                                <textarea class="short" data-field="pn2_response"></textarea></div>
+                        </div>
+                        <div class="note-card">
+                            <h5>Progress Note #3</h5>
+                            <div class="form-group full"><label>FOCUS</label>
+                                <textarea class="short" data-field="pn3_focus"></textarea></div>
+                            <div class="form-group full"><label>Data</label>
+                                <textarea class="short" data-field="pn3_data"></textarea></div>
+                            <div class="form-group full"><label>Action</label>
+                                <textarea class="short" data-field="pn3_action"></textarea></div>
+                            <div class="form-group full"><label>Response</label>
+                                <textarea class="short" data-field="pn3_response"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 8: Discharge & References -->
+            <div class="tab-content" id="tab-discharge">
+                <div class="form-section">
+                    <h3>Discharge Plan <span class="pts">(5 pts)</span></h3>
+                    <div class="form-group full"><label>Summary of Care</label>
+                        <textarea data-field="discharge_summary" placeholder="Summarize the care provided during this clinical experience..." style="min-height:120px"></textarea></div>
+                    <div class="form-group full"><label>Discharge Plan</label>
+                        <textarea data-field="discharge_plan" placeholder="Outline the discharge plan including patient education, follow-up, and referrals..." style="min-height:120px"></textarea></div>
+                </div>
+                <div class="form-section">
+                    <h3>References <span class="pts">(4 pts)</span></h3>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">APA 7th Edition format</p>
+                    <div id="referencesContainer">
+                        <div class="form-group full" style="margin-bottom:8px;">
+                            <textarea class="short" data-field="reference_1" placeholder="Reference 1 in APA format..."></textarea>
+                        </div>
+                        <div class="form-group full" style="margin-bottom:8px;">
+                            <textarea class="short" data-field="reference_2" placeholder="Reference 2..."></textarea>
+                        </div>
+                        <div class="form-group full" style="margin-bottom:8px;">
+                            <textarea class="short" data-field="reference_3" placeholder="Reference 3..."></textarea>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="addReference()">+ Add Reference</button>
+                </div>
+            </div>
+
+        </div><!-- end content -->
+    </div><!-- end container -->
+
+    <!-- Load Packet Modal -->
+    <div class="modal-overlay" id="loadModal">
+        <div class="modal">
+            <h3>Load Saved Packet</h3>
+            <ul class="modal-list" id="packetList"><li style="color:var(--text-secondary)">Loading...</li></ul>
+            <div style="text-align:center;margin-top:12px;">
+                <button class="btn btn-danger btn-sm" onclick="closeLoadModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Toolbar -->
+    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
+        <a href="/home/" class="toolbar-item" aria-label="Home">
+            <span class="icon" aria-hidden="true">&#127968;</span><span class="label">Home</span>
+        </a>
+        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
+            <span class="icon" aria-hidden="true">&#128221;</span><span class="label">RN Notes</span>
+        </a>
+        <a href="/chat/" class="toolbar-item" aria-label="Chat" target="_blank">
+            <span class="icon" aria-hidden="true">&#128172;</span><span class="label">Chat</span>
+        </a>
+        <a href="/ai/" class="toolbar-item" aria-label="AI Assistant" target="_blank">
+            <span class="icon" aria-hidden="true">&#129658;</span><span class="label">AI</span>
+        </a>
+        <a href="/resources/" class="toolbar-item" aria-label="Resources">
+            <span class="icon" aria-hidden="true">&#128218;</span><span class="label">Resources</span>
+        </a>
+        <a href="/clinical/" class="toolbar-item active" aria-label="Clinical Packet">
+            <span class="icon" aria-hidden="true">&#128203;</span><span class="label">Clinical</span>
+        </a>
+        <button class="toolbar-item" onclick="toggleMoreMenu()" aria-label="More options" aria-expanded="false" aria-controls="moreMenu">
+            <span class="icon" aria-hidden="true">&#8943;</span><span class="label">More</span>
+        </button>
+    </nav>
+
+    <!-- More Menu -->
+    <div id="moreMenu" class="more-menu" role="menu" aria-label="More options menu">
+        <button class="more-menu-item" onclick="toggleDarkMode(); toggleMoreMenu();" role="menuitem" aria-label="Toggle dark mode">
+            <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">&#127769;</span>
+            <span id="themeMenuText">Dark Mode</span>
+        </button>
+        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" id="apaMenuLink" style="text-decoration:none;color:inherit;">
+            <span class="menu-icon" aria-hidden="true">&#128196;</span><span>APA Generator</span>
+        </a>
+        <a href="/labsched/" class="more-menu-item" role="menuitem" aria-label="Lab Schedule Generator" style="text-decoration:none;color:inherit;">
+            <span class="menu-icon" aria-hidden="true">&#128197;</span><span>Sched Generator</span>
+        </a>
+        <button class="more-menu-item" onclick="logout();" role="menuitem" aria-label="Logout">
+            <span class="menu-icon" aria-hidden="true">&#128682;</span><span>Logout</span>
+        </button>
+    </div>
+
+    <!-- Load docx library -->
+    <script src="https://unpkg.com/docx@8.2.2/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        // ========== FIREBASE CONFIG ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.firebasestorage.app",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const userProfilesRef = database.ref('userProfiles');
+
+        // ========== STATE ==========
+        let currentPacketId = null;
+        let currentUid = null;
+        let saveTimer = null;
+        let hasUnsavedChanges = false;
+        let medRowCount = 0;
+        let refCount = 3;
+        let bradenScores = {};
+
+        // ========== AUTH CHECK ==========
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUid = user.uid;
+                try {
+                    const snap = await userProfilesRef.child(user.uid).once('value');
+                    const profile = snap.val();
+                    if (profile?.role === 'Instructor') {
+                        alert('This tool is only available for students.');
+                        window.location.href = '/home/';
+                        return;
+                    }
+                    // Auto-fill student name
+                    const nameField = document.querySelector('[data-field="studentName"]');
+                    if (nameField && !nameField.value && profile?.displayName) {
+                        nameField.value = profile.displayName;
+                    }
+                } catch (e) { console.warn('Profile fetch failed:', e); }
+            }
+        });
+
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            // Set date to today
+            const dateField = document.querySelector('[data-field="clinicalDate"]');
+            if (dateField) dateField.valueAsDate = new Date();
+            // Init 5 med rows
+            for (let i = 0; i < 5; i++) addMedRow();
+            // Attach auto-save listeners
+            document.querySelectorAll('[data-field]').forEach(el => {
+                const evt = (el.type === 'checkbox') ? 'change' : 'input';
+                el.addEventListener(evt, () => {
+                    hasUnsavedChanges = true;
+                    updateSaveStatus('unsaved');
+                    clearTimeout(saveTimer);
+                    saveTimer = setTimeout(() => autoSave(), 3000);
+                    updateProgress();
+                    updateTabChecks();
+                });
+            });
+            updateProgress();
+            updateTabChecks();
+        });
+
+        // ========== THEME ==========
+        function initTheme() {
+            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon();
+        }
+        function toggleDarkMode() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const t = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            localStorage.setItem('bsn9b_theme', t);
+            updateThemeIcon();
+        }
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const i = document.getElementById('themeMenuIcon');
+            const t = document.getElementById('themeMenuText');
+            if (i) i.innerHTML = isDark ? '&#9728;' : '&#127769;';
+            if (t) t.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+        }
+
+        // ========== MORE MENU ==========
+        function toggleMoreMenu() {
+            const menu = document.getElementById('moreMenu');
+            const btn = document.querySelector('[aria-controls="moreMenu"]');
+            const expanded = menu.classList.toggle('show');
+            if (btn) btn.setAttribute('aria-expanded', expanded);
+        }
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('moreMenu');
+            const btn = document.querySelector('[aria-controls="moreMenu"]');
+            if (menu && !menu.contains(e.target) && !e.target.closest('[aria-controls="moreMenu"]')) {
+                menu.classList.remove('show');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // ========== TOAST ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const c = document.getElementById('toastContainer');
+            if (!c) return;
+            const icons = { success: '&#10003;', error: '&#10007;', warning: '&#9888;', info: '&#8505;' };
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.innerHTML = `<span class="toast-icon">${icons[type]||icons.info}</span><div class="toast-content"><div class="toast-message">${message}</div></div><button class="toast-close" onclick="this.parentElement.remove()">&times;</button>`;
+            c.appendChild(t);
+            setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, duration);
+        }
+
+        // ========== TABS ==========
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const tabBtn = document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`);
+            if (tabBtn) tabBtn.classList.add('active');
+            const tabContent = document.getElementById(`tab-${tabName}`);
+            if (tabContent) tabContent.classList.add('active');
+        }
+
+        // ========== SAVE STATUS ==========
+        function updateSaveStatus(state) {
+            const el = document.getElementById('saveStatus');
+            if (!el) return;
+            if (state === 'saved') { el.textContent = 'Saved'; el.className = 'save-status'; }
+            else if (state === 'saving') { el.textContent = 'Saving...'; el.className = 'save-status'; }
+            else if (state === 'unsaved') { el.textContent = 'Unsaved changes'; el.className = 'save-status unsaved'; }
+            else { el.textContent = 'No packet loaded'; el.className = 'save-status'; }
+        }
+
+        // ========== PROGRESS ==========
+        function updateProgress() {
+            let filled = 0, total = 0;
+            document.querySelectorAll('[data-field]').forEach(el => {
+                total++;
+                if (el.type === 'checkbox') { if (el.checked) filled++; }
+                else { if (el.value && el.value.trim()) filled++; }
+            });
+            const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = pct + '%';
+        }
+
+        function updateTabChecks() {
+            const tabFields = {
+                patient: ['studentName','course','instructor','clinicalSite','patientInitials','clinicalDate','term'],
+                assessments: ['h2t1_loc_alert','omega1_orientation','cognitiveAssessment'],
+                labs: ['lab_naplus_result','lab_kplus_result'],
+                diagnoses: ['dx1_name','dx1_definition','dx2_name'],
+                hpi: ['hpi_explanation','hpi_manifestations'],
+                careplan: ['cp_assessment','cp_nanda','cp_stgoal'],
+                sbar: ['sbar1_situation','sbar1_hx'],
+                discharge: ['discharge_summary','discharge_plan']
+            };
+            Object.keys(tabFields).forEach(tab => {
+                const hasContent = tabFields[tab].some(f => {
+                    const el = document.querySelector(`[data-field="${f}"]`);
+                    if (!el) return false;
+                    return el.type === 'checkbox' ? el.checked : (el.value && el.value.trim());
+                });
+                const chk = document.getElementById(`chk-${tab}`);
+                if (chk) chk.className = 'tab-check' + (hasContent ? ' visible' : '');
+            });
+        }
+
+        // ========== COLLECT / RESTORE DATA ==========
+        function collectAllData() {
+            const data = {};
+            document.querySelectorAll('[data-field]').forEach(el => {
+                const key = el.getAttribute('data-field');
+                data[key] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+            data._bradenScores = bradenScores;
+            data._medRowCount = medRowCount;
+            data._refCount = refCount;
+            data._timestamp = Date.now();
+            data._patientInitials = data.patientInitials || 'Unknown';
+            data._term = data.term || '';
+            return data;
+        }
+
+        function restoreData(data) {
+            if (!data) return;
+            // Ensure enough med rows
+            const needed = (data._medRowCount || 5);
+            while (medRowCount < needed) addMedRow();
+            // Ensure enough reference fields
+            const neededRefs = (data._refCount || 3);
+            while (refCount < neededRefs) addReference();
+            // Fill fields
+            document.querySelectorAll('[data-field]').forEach(el => {
+                const key = el.getAttribute('data-field');
+                if (data[key] !== undefined) {
+                    if (el.type === 'checkbox') el.checked = data[key];
+                    else el.value = data[key];
+                }
+            });
+            // Restore braden
+            if (data._bradenScores) {
+                bradenScores = data._bradenScores;
+                Object.keys(bradenScores).forEach(cat => {
+                    const container = document.querySelector(`[data-braden="${cat}"]`);
+                    if (container) {
+                        container.querySelectorAll('.braden-opt').forEach(opt => {
+                            opt.classList.toggle('selected', opt.getAttribute('data-val') == bradenScores[cat]);
+                        });
+                    }
+                });
+                updateBradenTotal();
+            }
+            updateProgress();
+            updateTabChecks();
+        }
+
+        // ========== FIREBASE SAVE/LOAD ==========
+        function getPacketsRef() {
+            if (!currentUid) return null;
+            return database.ref(`clinicalPackets/${currentUid}`);
+        }
+
+        async function autoSave() {
+            if (!currentUid) return;
+            if (!currentPacketId) {
+                currentPacketId = Date.now().toString();
+            }
+            try {
+                updateSaveStatus('saving');
+                const data = collectAllData();
+                await getPacketsRef().child(currentPacketId).set(data);
+                hasUnsavedChanges = false;
+                updateSaveStatus('saved');
+            } catch (e) {
+                console.error('Auto-save failed:', e);
+                updateSaveStatus('unsaved');
+            }
+        }
+
+        async function savePacket() {
+            if (!currentUid) { showToast('Please wait for authentication...', 'warning'); return; }
+            if (!currentPacketId) currentPacketId = Date.now().toString();
+            try {
+                updateSaveStatus('saving');
+                const data = collectAllData();
+                await getPacketsRef().child(currentPacketId).set(data);
+                hasUnsavedChanges = false;
+                updateSaveStatus('saved');
+                showToast('Packet saved successfully!', 'success');
+            } catch (e) {
+                showToast('Save failed: ' + e.message, 'error');
+                updateSaveStatus('unsaved');
+            }
+        }
+
+        function showLoadModal() {
+            if (!currentUid) { showToast('Please wait for authentication...', 'warning'); return; }
+            document.getElementById('loadModal').classList.add('show');
+            loadPacketList();
+        }
+        function closeLoadModal() { document.getElementById('loadModal').classList.remove('show'); }
+
+        async function loadPacketList() {
+            const list = document.getElementById('packetList');
+            list.innerHTML = '<li style="color:var(--text-secondary)">Loading...</li>';
+            try {
+                const snap = await getPacketsRef().once('value');
+                const packets = snap.val();
+                if (!packets) { list.innerHTML = '<li style="color:var(--text-secondary)">No saved packets</li>'; return; }
+                const sorted = Object.entries(packets).sort((a, b) => (b[1]._timestamp || 0) - (a[1]._timestamp || 0));
+                list.innerHTML = '';
+                sorted.forEach(([id, data]) => {
+                    const li = document.createElement('li');
+                    const date = data._timestamp ? new Date(data._timestamp).toLocaleDateString() : 'Unknown date';
+                    const initials = data._patientInitials || 'N/A';
+                    const term = data._term || '';
+                    li.innerHTML = `<div onclick="loadPacket('${id}')" style="flex:1;cursor:pointer"><div class="pkt-info">${initials} - ${term}</div><div class="pkt-date">${date}</div></div><button class="pkt-delete" onclick="event.stopPropagation();deletePacket('${id}')" title="Delete">&#128465;</button>`;
+                    list.appendChild(li);
+                });
+            } catch (e) {
+                list.innerHTML = '<li style="color:var(--text-secondary)">Error loading packets</li>';
+            }
+        }
+
+        async function loadPacket(id) {
+            try {
+                const snap = await getPacketsRef().child(id).once('value');
+                const data = snap.val();
+                if (!data) { showToast('Packet not found', 'error'); return; }
+                currentPacketId = id;
+                restoreData(data);
+                hasUnsavedChanges = false;
+                updateSaveStatus('saved');
+                closeLoadModal();
+                showToast('Packet loaded!', 'success');
+            } catch (e) { showToast('Load failed: ' + e.message, 'error'); }
+        }
+
+        async function deletePacket(id) {
+            if (!confirm('Delete this packet?')) return;
+            try {
+                await getPacketsRef().child(id).remove();
+                if (currentPacketId === id) { currentPacketId = null; updateSaveStatus('none'); }
+                loadPacketList();
+                showToast('Packet deleted', 'info');
+            } catch (e) { showToast('Delete failed', 'error'); }
+        }
+
+        function newPacket() {
+            if (hasUnsavedChanges && !confirm('You have unsaved changes. Start a new packet?')) return;
+            currentPacketId = null;
+            document.querySelectorAll('[data-field]').forEach(el => {
+                if (el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            bradenScores = {};
+            document.querySelectorAll('.braden-opt').forEach(o => o.classList.remove('selected'));
+            document.getElementById('bradenTotal').textContent = '0';
+            document.getElementById('bradenRisk').textContent = 'Select all categories';
+            document.getElementById('bradenRisk').style.background = '#e0e0e0';
+            document.getElementById('bradenRisk').style.color = '#333';
+            hasUnsavedChanges = false;
+            updateSaveStatus('none');
+            updateProgress();
+            updateTabChecks();
+            // Set date to today
+            const dateField = document.querySelector('[data-field="clinicalDate"]');
+            if (dateField) dateField.valueAsDate = new Date();
+            switchTab('patient');
+            showToast('New packet started', 'info');
+        }
+
+        // ========== BRADEN SCALE ==========
+        function selectBraden(el) {
+            const cat = el.parentElement.getAttribute('data-braden');
+            const val = parseInt(el.getAttribute('data-val'));
+            bradenScores[cat] = val;
+            el.parentElement.querySelectorAll('.braden-opt').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            updateBradenTotal();
+            hasUnsavedChanges = true;
+            updateSaveStatus('unsaved');
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => autoSave(), 3000);
+        }
+        function updateBradenTotal() {
+            const cats = ['sensory','moisture','activity','mobility','nutrition','friction'];
+            let total = 0, count = 0;
+            cats.forEach(c => { if (bradenScores[c]) { total += bradenScores[c]; count++; } });
+            document.getElementById('bradenTotal').textContent = total;
+            const riskEl = document.getElementById('bradenRisk');
+            if (count < 6) { riskEl.textContent = 'Select all categories'; riskEl.style.background = '#e0e0e0'; riskEl.style.color = '#333'; }
+            else if (total <= 9) { riskEl.textContent = 'SEVERE RISK'; riskEl.style.background = '#dc3545'; riskEl.style.color = '#fff'; }
+            else if (total <= 12) { riskEl.textContent = 'HIGH RISK'; riskEl.style.background = '#ff9800'; riskEl.style.color = '#fff'; }
+            else if (total <= 14) { riskEl.textContent = 'MODERATE RISK'; riskEl.style.background = '#ffc107'; riskEl.style.color = '#333'; }
+            else if (total <= 18) { riskEl.textContent = 'MILD RISK'; riskEl.style.background = '#28a745'; riskEl.style.color = '#fff'; }
+            else { riskEl.textContent = 'NO RISK'; riskEl.style.background = '#28a745'; riskEl.style.color = '#fff'; }
+        }
+
+        // ========== DYNAMIC ROWS ==========
+        function addMedRow() {
+            medRowCount++;
+            const tbody = document.getElementById('medTableBody');
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" data-field="med${medRowCount}_name"></td>
+                <td><input type="text" data-field="med${medRowCount}_time" style="width:70px"></td>
+                <td><input type="text" data-field="med${medRowCount}_class"></td>
+                <td><input type="text" data-field="med${medRowCount}_indication"></td>
+                <td><input type="text" data-field="med${medRowCount}_side"></td>
+                <td><input type="text" data-field="med${medRowCount}_nursing"></td>`;
+            tbody.appendChild(tr);
+            // Attach auto-save to new fields
+            tr.querySelectorAll('[data-field]').forEach(el => {
+                el.addEventListener('input', () => {
+                    hasUnsavedChanges = true;
+                    updateSaveStatus('unsaved');
+                    clearTimeout(saveTimer);
+                    saveTimer = setTimeout(() => autoSave(), 3000);
+                    updateProgress();
+                });
+            });
+        }
+
+        function addLabRow() {
+            const tbody = document.querySelector('#labTable tbody');
+            if (!tbody) return;
+            const n = tbody.querySelectorAll('tr:not(.cat-header)').length + 1;
+            const fld = 'custom_' + n;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" data-field="lab_${fld}_name" placeholder="Lab name"></td>
+                <td><input type="text" data-field="lab_${fld}_normal" placeholder="Normal range"></td>
+                <td><input type="text" data-field="lab_${fld}_date" style="width:90px"></td>
+                <td><input type="text" data-field="lab_${fld}_result"></td>
+                <td><input type="text" data-field="lab_${fld}_interp"></td>`;
+            tbody.appendChild(tr);
+            tr.querySelectorAll('[data-field]').forEach(el => {
+                el.addEventListener('input', () => {
+                    hasUnsavedChanges = true;
+                    updateSaveStatus('unsaved');
+                    clearTimeout(saveTimer);
+                    saveTimer = setTimeout(() => autoSave(), 3000);
+                });
+            });
+        }
+
+        function addReference() {
+            refCount++;
+            const container = document.getElementById('referencesContainer');
+            const div = document.createElement('div');
+            div.className = 'form-group full';
+            div.style.marginBottom = '8px';
+            div.innerHTML = `<textarea class="short" data-field="reference_${refCount}" placeholder="Reference ${refCount}..."></textarea>`;
+            container.appendChild(div);
+            div.querySelector('textarea').addEventListener('input', () => {
+                hasUnsavedChanges = true;
+                updateSaveStatus('unsaved');
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(() => autoSave(), 3000);
+            });
+        }
+
+        // ========== LOGOUT ==========
+        function logout() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('bsn9b_auth');
+                localStorage.removeItem('bsn9b_user');
+                localStorage.removeItem('bsn9b_displayName');
+                localStorage.removeItem('bsn9b_uid');
+                window.location.href = '/';
+            });
+        }
+
+        // ========== EXPORT TO WORD ==========
+        async function exportToWord() {
+            const data = collectAllData();
+            const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+                    AlignmentType, WidthType, BorderStyle, HeadingLevel,
+                    convertInchesToTwip, PageBreak } = docx;
+
+            const F = 'Times New Roman';
+            const S = 24; // 12pt
+
+            function p(text, opts = {}) {
+                const runs = [];
+                if (opts.pageBreak) runs.push(new TextRun({ break: 1, font: F, size: S }));
+                runs.push(new TextRun({
+                    text: text || '',
+                    font: F, size: opts.size || S,
+                    bold: !!opts.bold, italics: !!opts.italic,
+                    color: opts.color
+                }));
+                return new Paragraph({
+                    alignment: opts.center ? AlignmentType.CENTER : AlignmentType.LEFT,
+                    spacing: { after: opts.after !== undefined ? opts.after : 200, line: 360 },
+                    indent: opts.hanging ? { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.5) } : undefined,
+                    children: runs
+                });
+            }
+
+            function heading(text, level) {
+                return new Paragraph({
+                    alignment: AlignmentType.LEFT,
+                    spacing: { before: 240, after: 120, line: 360 },
+                    children: [new TextRun({ text, font: F, size: 28, bold: true, color: '1f4e79' })]
+                });
+            }
+
+            function subheading(text) {
+                return new Paragraph({
+                    spacing: { before: 200, after: 80, line: 360 },
+                    children: [new TextRun({ text, font: F, size: S, bold: true })]
+                });
+            }
+
+            function makeTable(headers, rows) {
+                const borderStyle = { style: BorderStyle.SINGLE, size: 1, color: '999999' };
+                const borders = { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle };
+                const headerRow = new TableRow({
+                    tableHeader: true,
+                    children: headers.map(h => new TableCell({
+                        borders, shading: { fill: '1f4e79' },
+                        children: [new Paragraph({ children: [new TextRun({ text: h, font: F, size: 20, bold: true, color: 'ffffff' })], spacing: { after: 0 } })]
+                    }))
+                });
+                const dataRows = rows.map(r => new TableRow({
+                    children: r.map(cell => new TableCell({
+                        borders,
+                        children: [new Paragraph({ children: [new TextRun({ text: String(cell || ''), font: F, size: 20 })], spacing: { after: 0 } })]
+                    }))
+                }));
+                return new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [headerRow, ...dataRows]
+                });
+            }
+
+            function gv(field) { return data[field] || ''; }
+            function gc(field) { return data[field] ? 'Yes' : 'No'; }
+
+            // Build sections
+            const children = [];
+
+            // Title page
+            children.push(p('', { after: 2400 }));
+            children.push(p('Clinical Assessment Packet', { center: true, bold: true, size: 36, after: 400 }));
+            children.push(p('', { after: 400 }));
+            children.push(p(`Student: ${gv('studentName')}`, { center: true, after: 200 }));
+            children.push(p(`Course: ${gv('course')}  |  Instructor: ${gv('instructor')}`, { center: true, after: 200 }));
+            children.push(p(`Clinical Site: ${gv('clinicalSite')}`, { center: true, after: 200 }));
+            children.push(p(`Patient Initials: ${gv('patientInitials')}  |  Date: ${gv('clinicalDate')}`, { center: true, after: 200 }));
+            children.push(p(`Term: ${gv('term')}`, { center: true, after: 200 }));
+
+            // H2T Assessments
+            for (let n = 1; n <= 2; n++) {
+                children.push(p(''));
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading(`Head-to-Toe Assessment #${n}`));
+                const prefix = `h2t${n}_`;
+                const locItems = ['alert','drowsy','lethargic','stuporous','coma'].filter(i => data[prefix+'loc_'+i]).join(', ') || 'N/A';
+                const orientItems = ['person','place','time','situation'].filter(i => data[prefix+'orient_'+i]).join(', ') || 'N/A';
+                children.push(subheading('General'));
+                children.push(p(`LOC: ${locItems}`));
+                children.push(p(`Orientation: ${orientItems}`));
+                children.push(p(`Vitals: Temp ${gv(prefix+'temp')} | R ${gv(prefix+'resp')} | P ${gv(prefix+'pulse')} | SaO2 ${gv(prefix+'sao2')} | BP ${gv(prefix+'bp')}`));
+                children.push(p(`Last BM: ${gv(prefix+'lastbm')} | Height: ${gv(prefix+'height')} | Weight: ${gv(prefix+'weight')} | Smoker: ${gv(prefix+'smoker')}`));
+                children.push(p(`Memory: ${gv(prefix+'memory')}`));
+                children.push(subheading('Head'));
+                children.push(p(`Hair/Scalp: ${gv(prefix+'hairscalp')} | Eyes: PERRLA(${gc(prefix+'perrla')}) EOM(${gc(prefix+'eom')}) Nystagmus(${gc(prefix+'nystagmus')})`));
+                children.push(p(`Ears: ${gv(prefix+'ears')} | Nose: ${gv(prefix+'nose')} | Sinuses: ${gv(prefix+'sinuses')}`));
+                children.push(p(`Mouth: Smile(${gc(prefix+'smile')}) Tongue(${gc(prefix+'tongue_out')}) | Tongue/Membranes: ${gv(prefix+'tongue')} | Dentation: ${gv(prefix+'dentation')}`));
+                children.push(subheading('Neck'));
+                children.push(p(`Lymph Nodes: ${gv(prefix+'lymph')} | Thyroid: ${gv(prefix+'thyroid')} | Carotid/JVD/Trachea: ${gv(prefix+'neck_pulse')}`));
+                children.push(subheading('Chest'));
+                const hs = ['aorta','pulm','erbs','tri','mitral'].filter(i => data[prefix+'hs_'+i]).map(i => i.charAt(0).toUpperCase()+i.slice(1)).join(', ') || 'N/A';
+                children.push(p(`Heart Sounds: ${hs} | Apical Pulse/Arrhythmia: ${gv(prefix+'apical')}`));
+                children.push(p(`Breath Sounds Front: ${gv(prefix+'breath_front')} | Back: ${gv(prefix+'breath_back')}`));
+                children.push(p(`Cough/Sputum: ${gv(prefix+'cough')} | Chest Symmetry: ${gv(prefix+'chest_sym')}`));
+                children.push(subheading('Extremities'));
+                children.push(p(`Upper - Brachial(${gc(prefix+'ue_brachial')}) Radial(${gc(prefix+'ue_radial')}) Equal(${gc(prefix+'ue_equal')}) | Cap Refill: ${gv(prefix+'ue_caprefill')} | Grip: Equal(${gc(prefix+'grip_equal')}) Strong(${gc(prefix+'grip_strong')})`));
+                children.push(p(`Lower - Femoral(${gc(prefix+'le_femoral')}) Popliteal(${gc(prefix+'le_popliteal')}) Post.Tibial(${gc(prefix+'le_postib')}) Dorsalis(${gc(prefix+'le_dorsalis')}) | Edema: ${gv(prefix+'le_edema')}`));
+                children.push(subheading('Pain'));
+                const painType = [data[prefix+'pain_acute']?'Acute':'', data[prefix+'pain_chronic']?'Chronic':''].filter(Boolean).join('/') || 'N/A';
+                children.push(p(`Type: ${painType} | Intensity: ${gv(prefix+'pain_intensity')} | Location: ${gv(prefix+'pain_location')}`));
+                children.push(subheading('Skin & Abdomen'));
+                children.push(p(`Skin: ${gv(prefix+'skin_desc')} | Issues: ${gv(prefix+'skin_issues')} | Turgor: ${gv(prefix+'skin_turgor')}`));
+                children.push(p(`Abd: Inspect: ${gv(prefix+'abd_inspect')} | LUQ: ${gv(prefix+'abd_luq')} LLQ: ${gv(prefix+'abd_llq')} RUQ: ${gv(prefix+'abd_ruq')} RLQ: ${gv(prefix+'abd_rlq')}`));
+                children.push(p(`Gait: ${gv(prefix+'gait')} | Romberg: ${gv(prefix+'romberg')} | Balance: ${gv(prefix+'balance')}`));
+            }
+
+            // OMEGA Checklists
+            for (let n = 1; n <= 2; n++) {
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading(`OMEGA Checklist #${n}`));
+                const oFields = ['orientation','medication','emergency','gait','allergies','air','food','water','safety','hygiene','pain','sleep'];
+                const oLabels = ['O - Orientation','M - Medication','E - Emergency','G - Gait','A - Allergies','1 - Air','2 - Food','3 - Water','4 - Safety','5 - Hygiene','6 - Pain','7 - Sleep'];
+                children.push(makeTable(['Category', 'Notes'], oFields.map((f, i) => [oLabels[i], gv(`omega${n}_${f}`)])));
+            }
+
+            // Braden Scale
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(heading('Braden Scale'));
+            const bradenCats = ['sensory','moisture','activity','mobility','nutrition','friction'];
+            const bradenLabels = ['Sensory Perception','Moisture','Activity','Mobility','Nutrition','Friction & Shear'];
+            const bradenTotal = bradenCats.reduce((s, c) => s + (bradenScores[c] || 0), 0);
+            children.push(makeTable(['Category','Score'], bradenCats.map((c, i) => [bradenLabels[i], String(bradenScores[c] || '-')])));
+            children.push(p(`Total Score: ${bradenTotal}/23`, { bold: true }));
+
+            // Cognitive Assessment
+            if (gv('cognitiveAssessment')) {
+                children.push(subheading('Cognitive Assessment'));
+                children.push(p(gv('cognitiveAssessment')));
+            }
+
+            // Labs
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(heading('Lab Values'));
+            const labRows = [];
+            document.querySelectorAll('#labTable tbody tr:not(.cat-header)').forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                const inputs = tr.querySelectorAll('input');
+                if (inputs.length >= 3 && (inputs[1]?.value || inputs[0]?.value)) {
+                    const name = cells[0]?.textContent?.trim() || inputs[0]?.value || '';
+                    const normal = cells[1]?.textContent?.trim() || inputs[1]?.value || '';
+                    const dateVal = inputs.length > 2 ? (inputs[inputs.length-3]?.value || '') : '';
+                    const result = inputs.length > 1 ? (inputs[inputs.length-2]?.value || '') : '';
+                    const interp = inputs[inputs.length-1]?.value || '';
+                    if (result) labRows.push([name, normal, dateVal, result, interp]);
+                }
+            });
+            if (labRows.length) children.push(makeTable(['Lab','Normal','Date','Result','Interpretation'], labRows));
+            else children.push(p('No lab values recorded.'));
+
+            // Medications
+            children.push(heading('Medications'));
+            const medRows = [];
+            for (let i = 1; i <= medRowCount; i++) {
+                const name = gv(`med${i}_name`);
+                if (name) medRows.push([name, gv(`med${i}_time`), gv(`med${i}_class`), gv(`med${i}_indication`), gv(`med${i}_side`), gv(`med${i}_nursing`)]);
+            }
+            if (medRows.length) children.push(makeTable(['Name','Time','Classification','Indication','Side Effects','Nursing Implications'], medRows));
+            else children.push(p('No medications recorded.'));
+
+            // Diagnoses
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(heading('Primary Diagnosis'));
+            children.push(subheading(gv('dx1_name') || 'Not specified'));
+            children.push(subheading('Definition'));
+            children.push(p(gv('dx1_definition')));
+            children.push(subheading('Pathophysiology'));
+            children.push(p(gv('dx1_pathophysiology')));
+            children.push(subheading('Risk Factors'));
+            children.push(p(gv('dx1_riskfactors')));
+            children.push(subheading('Signs & Symptoms'));
+            children.push(p(gv('dx1_signs')));
+
+            children.push(heading('Secondary Diagnosis'));
+            children.push(subheading(gv('dx2_name') || 'Not specified'));
+            children.push(subheading('Definition'));
+            children.push(p(gv('dx2_definition')));
+            children.push(subheading('Pathophysiology'));
+            children.push(p(gv('dx2_pathophysiology')));
+            children.push(subheading('Risk Factors'));
+            children.push(p(gv('dx2_riskfactors')));
+            children.push(subheading('Signs & Symptoms'));
+            children.push(p(gv('dx2_signs')));
+
+            // HPI
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(heading('History of Present Illness'));
+            children.push(subheading('Patient Explanation / Chart Review'));
+            children.push(p(gv('hpi_explanation')));
+            children.push(subheading('Manifestations'));
+            children.push(p(gv('hpi_manifestations')));
+            children.push(subheading('Treatment'));
+            children.push(p(gv('hpi_treatment')));
+            children.push(subheading('Patient Impact - Maslow\'s Hierarchy'));
+            children.push(p(gv('hpi_maslow')));
+
+            // Care Plan
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(heading('Nursing Care Plan'));
+            children.push(subheading('Assessment / OMEGA7 Finding'));
+            children.push(p(gv('cp_assessment')));
+            children.push(subheading('Nursing Diagnostic Statement (NANDA)'));
+            children.push(p(gv('cp_nanda')));
+            children.push(subheading('Short-Term Goal'));
+            children.push(p(gv('cp_stgoal')));
+            const stInterventions = [
+                ['Assess', gv('cp_st_assess'), gv('cp_st_assess_rat')],
+                ['Do', gv('cp_st_do'), gv('cp_st_do_rat')],
+                ['Teach', gv('cp_st_teach'), gv('cp_st_teach_rat')]
+            ];
+            children.push(makeTable(['Type','Intervention','Rationale'], stInterventions));
+            children.push(subheading('Long-Term Goal'));
+            children.push(p(gv('cp_ltgoal')));
+            const ltInterventions = [
+                ['Assess', gv('cp_lt_assess'), gv('cp_lt_assess_rat')],
+                ['Do', gv('cp_lt_do'), gv('cp_lt_do_rat')],
+                ['Teach', gv('cp_lt_teach'), gv('cp_lt_teach_rat')]
+            ];
+            children.push(makeTable(['Type','Intervention','Rationale'], ltInterventions));
+
+            // NCSBN
+            children.push(subheading('NCSBN Clinical Judgement Model'));
+            children.push(makeTable(['Step','Response'], [
+                ['Step 1: Recognize Cues', gv('ncsbn_step1')],
+                ['Step 2: Analyze Cues', gv('ncsbn_step2')],
+                ['Step 3: Prioritize Hypotheses', gv('ncsbn_step3')],
+                ['Step 4/5: Generate Solutions & Take Action', gv('ncsbn_step45')],
+                ['Step 6: Evaluate Outcomes', gv('ncsbn_step6')]
+            ]));
+
+            // SBAR
+            for (let n = 1; n <= 2; n++) {
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading(`SBAR #${n}`));
+                children.push(subheading('S - Situation'));
+                children.push(p(gv(`sbar${n}_situation`)));
+                children.push(subheading('B - Background'));
+                children.push(p(`Hx: ${gv(`sbar${n}_hx`)} | Allergies: ${gv(`sbar${n}_allergies`)}`));
+                children.push(p(`Vitals: BP ${gv(`sbar${n}_bp`)} HR ${gv(`sbar${n}_hr`)} RR ${gv(`sbar${n}_rr`)} Temp ${gv(`sbar${n}_temp`)} SaO2 ${gv(`sbar${n}_sao2`)}`));
+                children.push(p(`O2: ${gv(`sbar${n}_o2`)} | Nausea: ${gv(`sbar${n}_nausea`)} | Pain: ${gv(`sbar${n}_pain_amt`)} at ${gv(`sbar${n}_pain_where`)}`));
+                children.push(p(`IV: ${gv(`sbar${n}_iv`)} | Fluids: ${gv(`sbar${n}_fluids`)} | Procedures: ${gv(`sbar${n}_procedures`)}`));
+                children.push(subheading('A - Assessment'));
+                children.push(p(`Labs: ${gv(`sbar${n}_labs`)}`));
+                children.push(p(`Wounds: ${gv(`sbar${n}_wounds`)}`));
+                children.push(p(`Fall Risk: ${gv(`sbar${n}_fallrisk`)} | LOC: ${gv(`sbar${n}_loc`)}`));
+                children.push(p(`Other: ${gv(`sbar${n}_other_assess`)}`));
+                children.push(p(`Interventions: ${gv(`sbar${n}_interventions`)}`));
+                children.push(subheading('R - Recommendation'));
+                children.push(p(gv(`sbar${n}_recommendation`)));
+                children.push(p(`Comments: ${gv(`sbar${n}_comments`)}`));
+                children.push(p(`Orders: ${gv(`sbar${n}_orders`)}`));
+            }
+
+            // Progress Notes
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(heading('Nurses Progress Notes'));
+            for (let n = 1; n <= 3; n++) {
+                if (gv(`pn${n}_focus`)) {
+                    children.push(subheading(`Progress Note #${n}`));
+                    children.push(p(`FOCUS: ${gv(`pn${n}_focus`)}`));
+                    children.push(p(`Data: ${gv(`pn${n}_data`)}`));
+                    children.push(p(`Action: ${gv(`pn${n}_action`)}`));
+                    children.push(p(`Response: ${gv(`pn${n}_response`)}`));
+                }
+            }
+
+            // Discharge
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(heading('Discharge Plan'));
+            children.push(subheading('Summary of Care'));
+            children.push(p(gv('discharge_summary')));
+            children.push(subheading('Discharge Plan'));
+            children.push(p(gv('discharge_plan')));
+
+            // References
+            children.push(heading('References'));
+            for (let i = 1; i <= refCount; i++) {
+                const ref = gv(`reference_${i}`);
+                if (ref) children.push(p(ref, { hanging: true }));
+            }
+
+            // Build document
+            const doc = new Document({
+                sections: [{
+                    properties: {
+                        page: {
+                            margin: {
+                                top: convertInchesToTwip(1),
+                                right: convertInchesToTwip(1),
+                                bottom: convertInchesToTwip(1),
+                                left: convertInchesToTwip(1)
+                            }
+                        }
+                    },
+                    children
+                }]
+            });
+
+            try {
+                const blob = await Packer.toBlob(doc);
+                const initials = gv('patientInitials') || 'Patient';
+                const term = gv('term') || 'Clinical';
+                saveAs(blob, `Clinical_Packet_${initials}_${term.replace(/\s/g,'_')}.docx`);
+                showToast('Word document exported!', 'success');
+            } catch (e) {
+                console.error('Export failed:', e);
+                showToast('Export failed: ' + e.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

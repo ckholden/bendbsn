@@ -22,6 +22,7 @@
 - `/community/` - Community hub with posts, announcements
 - `/labsched/` - Lab schedule generator
 - `/apa/` - APA 7th Edition paper generator (students only - instructors redirected)
+- `/clinical/` - Clinical Assessment Packet builder (students only)
 
 ## Performance & Accessibility Improvements (Jan 2026)
 
