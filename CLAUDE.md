@@ -480,7 +480,7 @@ if (action === 'updateRole') {
 ```
 
 #### 2. Service Worker Cache
-- Current version: `v13`
+- Current version: `v21`
 - If seeing stale code, hard refresh (`Ctrl+Shift+R`) or clear site data
 
 ### Key Files Modified This Session
@@ -492,7 +492,7 @@ if (action === 'updateRole') {
 | `/community/index.html` | Session validation fix |
 | `/resources/index.html` | Session validation fix |
 | `/admin/index.html` | Login history delete, user delete, role update |
-| `/sw.js` | Cache version v13, added login/admin to stale-while-revalidate |
+| `/sw.js` | Cache version v21, added login/admin to stale-while-revalidate |
 
 ---
 
@@ -950,3 +950,118 @@ Replaced inline forms with structured collapsible panels:
 - Export integration maintains backward compatibility
 - All ARIA labels and keyboard navigation preserved
 - Dark mode fully supported across all new features
+
+---
+
+## Session Notes (Feb 7, 2026)
+
+### UX Polish: Modal System, Input Validation, Offline Banner, Print Styles
+
+Comprehensive UX improvement pass across the entire app.
+
+### Completed This Session
+
+#### 1. Shared Confirm/Prompt Modal System
+Added reusable modal functions to `shared/header.js` (available on all 11 pages):
+
+**`showConfirmModal(title, message, onConfirm, options)`**
+- Options: `{ confirmText, cancelText, danger }` — `danger: true` shows red confirm button
+- Overlay click, ESC key, and Cancel button all close the modal
+- ARIA `role="dialog"`, `aria-modal="true"`, focus management
+
+**`showPromptModal(title, message, onSubmit, options)`**
+- Options: `{ submitText, cancelText, defaultValue, placeholder }`
+- Text input with Enter-to-submit support
+- Used for admin ban reason input
+
+**CSS** added to `shared/header.css`:
+- `.bsn-modal-overlay`, `.bsn-confirm-modal`, `.bsn-modal-btns`
+- `.bsn-btn-cancel`, `.bsn-btn-confirm`, `.bsn-btn-danger`
+- `.bsn-modal-input` for prompt modals
+- Dark mode overrides via `[data-theme="dark"]`
+- Fade-in and slide-in animations
+
+#### 2. Replaced All alert()/confirm()/prompt() Calls
+**38 total replacements** across 5 files — zero remaining native dialogs:
+
+| File | Replacements | Details |
+|------|-------------|---------|
+| `admin/index.html` | 22 | 20 confirms, 1 prompt→showPromptModal, 1 confirm-to-variable |
+| `app/index.html` | 11 | All confirm guards converted to callbacks |
+| `apa/index.html` | 3 | 1 alert→showToast, 2 confirms |
+| `clinical/index.html` | 3 | 1 alert→showToast, 2 confirms |
+| `labsched/index.html` | 2 | 1 alert→showToast, 1 confirm (+ added showToast function) |
+
+**Key patterns used:**
+- `alert()` → `showToast(msg, 'warning')`
+- `if (!confirm(msg)) return` → `showConfirmModal(title, msg, function() { ...rest of function... })`
+- Chained double-confirms → nested `showConfirmModal` in first callback
+- `prompt()` → `showPromptModal()` with `defaultValue`
+- `danger: true` for all destructive actions (delete, clear, kick)
+- `async function()` callbacks where `await` is needed
+
+#### 3. Auto-Save Drafts Enhanced
+The existing auto-save system was enhanced with:
+- **`beforeunload` event**: Saves draft when tab is closed/refreshed
+- **30-second interval**: Periodic backup save via `setInterval(saveDraft, 30000)`
+- **Restore toast**: On page load, instead of silently restoring, shows an info toast with "Restore Draft" action button (auto-dismisses after 15 seconds)
+- Extracted `restoreDraftFields()` as a standalone function for the toast button
+
+#### 4. Vital Signs Number Validation
+Changed 7 input fields in Quick Vitals Entry from `type="text"` to `type="number"`:
+
+| Field | ID | min | max | step | inputmode |
+|-------|-----|-----|-----|------|-----------|
+| BP Systolic | `vsBpSys` | 40 | 300 | 1 | numeric |
+| BP Diastolic | `vsBpDia` | 20 | 200 | 1 | numeric |
+| Heart Rate | `vsHr` | 20 | 250 | 1 | numeric |
+| Respiratory Rate | `vsRr` | 4 | 60 | 1 | numeric |
+| Temperature | `vsTemp` | 90 | 110 | 0.1 | decimal |
+| O2 Saturation | `vsO2` | 50 | 100 | 1 | numeric |
+| Pain Scale | `vsPain` | 0 | 10 | 1 | numeric |
+
+#### 5. Offline Detection Banner
+Added to `shared/header.js` — auto-injected on all 11 pages:
+- Fixed yellow banner at top: "You're offline — changes may not save"
+- CSS class `.bsn-offline-banner` with `.visible` toggle
+- Listens to `window.online`/`window.offline` events
+- Auto-dismisses when back online with "Back online" success toast
+- z-index: 10003 (above modals)
+
+#### 6. Mobile Viewport Height Fix (100dvh)
+Added `min-height: 100dvh` fallback to 9 pages:
+- `index.html`, `home/`, `app/`, `community/`, `resources/`, `admin/`, `apa/`, `clinical/`, `labsched/`
+- Pattern: `min-height: 100vh; min-height: 100dvh;` (old browsers get vh, modern get dvh)
+- Chat and AI pages don't use `min-height` so were skipped
+
+#### 7. Print Stylesheet (`/app/index.html`)
+Added `@media print` rules:
+- Hides: bottom toolbar, header, toasts, modals, chat/AI widgets, buttons, warning/info boxes, note type selector
+- Sets: white background, black text, no shadows/gradients/border-radius
+- Optimizes: form containers full-width, textareas auto-height, panels with simple borders
+
+#### 8. Service Worker Cache Bump
+- `CACHE_VERSION` changed from `'v20'` to `'v21'` in `sw.js`
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `/shared/header.js` | +180 lines: showConfirmModal, showPromptModal, offline banner |
+| `/shared/header.css` | +165 lines: modal CSS, dark mode, offline banner CSS |
+| `/admin/index.html` | 22 dialog replacements, 100dvh |
+| `/app/index.html` | 11 dialog replacements, vital signs validation, 100dvh, print CSS, auto-save enhancements |
+| `/apa/index.html` | 3 dialog replacements, 100dvh |
+| `/clinical/index.html` | 3 dialog replacements, 100dvh |
+| `/labsched/index.html` | 2 dialog replacements, added showToast, 100dvh |
+| `/community/index.html` | 100dvh |
+| `/home/index.html` | 100dvh |
+| `/resources/index.html` | 100dvh |
+| `/index.html` | 100dvh |
+| `/sw.js` | v20 → v21 |
+| `CLAUDE.md` | Updated docs |
+
+### Deployment
+- Commit: `9336622`
+- Service worker: v21
+- 13 files changed, +757 / -285 lines
