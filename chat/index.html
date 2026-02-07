@@ -1143,11 +1143,15 @@
                 localStorage.setItem('bsn9b_displayName', displayName);
                 syncUserProfile(user);
 
-                // Show create channel button for admins
-                if (isAdminUser()) {
-                    const btn = document.getElementById('createChannelBtn');
-                    if (btn) btn.classList.add('visible');
-                }
+                // Load admin role from Firebase profile
+                userProfilesRef.child(user.uid).once('value').then(snap => {
+                    const profile = snap.val();
+                    if (profile && (profile.role === 'admin' || profile.role === 'instructor')) {
+                        currentUserIsAdmin = true;
+                        const btn = document.getElementById('createChannelBtn');
+                        if (btn) btn.classList.add('visible');
+                    }
+                }).catch(() => {});
             } else {
                 console.log('Firebase Auth: Not logged in');
                 if (localStorage.getItem('bsn9b_auth') === 'true') {
@@ -1189,8 +1193,7 @@
         });
 
         function isAdminUser() {
-            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
-            return adminEmails.includes((currentUsername || '').toLowerCase());
+            return currentUserIsAdmin;
         }
 
         // Session heartbeat
@@ -1314,6 +1317,7 @@
         // ========== LOGOUT ==========
         function logout() {
             endSessionTracking('logout');
+            cleanupFirebaseListeners();
             const uid = getCurrentUserUid();
             if (uid) {
                 presenceRef.child(uid).remove().catch(() => {});
@@ -1358,13 +1362,14 @@
         let channelUnread = {};
         let channelLastRead = JSON.parse(localStorage.getItem('chatChannelLastRead') || '{}');
         let currentChatListener = null;
+        let currentChatRef = null;
         let currentTypingListener = null;
 
         // Message retention (7 days)
         const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
-        // Admin emails
-        const ADMIN_EMAILS = ['christiankholden@gmail.com', 'holdenc'];
+        // Admin state (loaded from Firebase profile)
+        let currentUserIsAdmin = false;
 
         // Typing state
         let typingTimeout = null;
@@ -1491,9 +1496,10 @@
             if (currentChannel === channelId && chatMode === 'group') return;
 
             // Cleanup previous listeners
-            if (currentChatListener) {
-                database.ref('chat/messages/' + currentChannel).off('value', currentChatListener);
+            if (currentChatRef && currentChatListener) {
+                currentChatRef.off('value', currentChatListener);
                 currentChatListener = null;
+                currentChatRef = null;
             }
             if (currentTypingListener) {
                 database.ref('chat/typing/' + currentChannel).off('value', currentTypingListener);
@@ -1582,7 +1588,7 @@
             clearTyping(currentChannel);
 
             // Admin commands
-            if (ADMIN_EMAILS.includes((currentUsername || '').toLowerCase())) {
+            if (currentUserIsAdmin) {
                 if (message.toLowerCase().startsWith('alert/')) {
                     const alertMsg = message.substring(6).trim();
                     if (alertMsg.toLowerCase() === 'clear') {
@@ -1632,14 +1638,13 @@
 
         // ========== CHAT LISTENER ==========
         function setupChatListener() {
-            const msgRef = database.ref('chat/messages/' + currentChannel);
-
             // Remove old listener
-            if (currentChatListener) {
-                database.ref('chat/messages/' + currentChannel).off('value', currentChatListener);
+            if (currentChatRef && currentChatListener) {
+                currentChatRef.off('value', currentChatListener);
             }
 
-            currentChatListener = msgRef.on('value', (snapshot) => {
+            currentChatRef = database.ref('chat/messages/' + currentChannel).orderByChild('timestamp').limitToLast(50);
+            currentChatListener = currentChatRef.on('value', (snapshot) => {
                 const container = document.getElementById('chatMessages');
                 if (!container) return;
 
@@ -1954,6 +1959,14 @@
         function loadDMUserList() {
             const container = document.getElementById('dmUserList');
             if (!container) return;
+
+            // Show loading state if users haven't been fetched yet
+            if (allRegisteredUsers.length === 0 && onlineUsers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 20px;">Loading users...</p>';
+                // Retry once users are loaded
+                fetchAllUsers().then(() => loadDMUserList());
+                return;
+            }
 
             const onlineSet = new Set(onlineUsers.map(u => u.toLowerCase()));
             let users = [];
@@ -2530,8 +2543,8 @@
                 if (typeof connectedRef !== 'undefined') connectedRef.off();
                 if (typeof channelsRef !== 'undefined') channelsRef.off();
                 if (typeof directMessagesRef !== 'undefined') directMessagesRef.off();
-                if (currentChatListener) {
-                    database.ref('chat/messages/' + currentChannel).off('value', currentChatListener);
+                if (currentChatRef && currentChatListener) {
+                    currentChatRef.off('value', currentChatListener);
                 }
                 // Clear typing on leave
                 clearTyping(currentChannel);

@@ -2179,7 +2179,11 @@
                 renderHistoryList(savedDocuments);
             } catch (error) {
                 console.error('Error loading history:', error);
-                historyList.innerHTML = '<p style="text-align: center; color: var(--warning-text); padding: 40px;">Error loading documents: ' + error.message + '</p>';
+                const errorP = document.createElement('p');
+                errorP.style.cssText = 'text-align: center; color: var(--warning-text); padding: 40px;';
+                errorP.textContent = 'Error loading documents: ' + error.message;
+                historyList.innerHTML = '';
+                historyList.appendChild(errorP);
             }
         }
 
@@ -2769,6 +2773,7 @@
         // Logout function
         function logout() {
             endSessionTracking('logout');
+            cleanupFirebaseListeners();
             // Clean presence before signing out
             const uid = getCurrentUserUid();
             if (uid) {

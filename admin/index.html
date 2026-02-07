@@ -1582,7 +1582,11 @@
 
                 filterExportHistory();
             }).catch((error) => {
-                container.innerHTML = `<p style="color: #dc3545; text-align: center;">Error loading export history: ${error.message}</p>`;
+                const errorP = document.createElement('p');
+                errorP.style.cssText = 'color: #dc3545; text-align: center;';
+                errorP.textContent = 'Error loading export history: ' + error.message;
+                container.innerHTML = '';
+                container.appendChild(errorP);
             });
         }
 
