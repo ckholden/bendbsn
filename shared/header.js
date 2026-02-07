@@ -1,7 +1,7 @@
 /* =========================================================
    BendBSN Shared Header Logic
    Auto-injects canonical header if not already present.
-   Ensures logo href and wordmark are correct on every page.
+   Ensures logo href is correct on every page.
    Include this script before </body> on every page.
    ========================================================= */
 
@@ -19,14 +19,6 @@
         // Ensure the logo link href is correct.
         var link = existing.querySelector('.logo-link');
         if (link) link.setAttribute('href', logoHref);
-
-        // Ensure wordmark exists
-        if (link && !link.querySelector('.site-wordmark')) {
-            var wordmark = document.createElement('span');
-            wordmark.className = 'site-wordmark';
-            wordmark.textContent = 'BendBSN';
-            link.appendChild(wordmark);
-        }
     } else {
         // No inline header found — auto-inject the canonical one.
         var header = document.createElement('header');
@@ -34,7 +26,6 @@
         header.innerHTML =
             '<a href="' + logoHref + '" class="logo-link">' +
                 '<img src="/logo.png" alt="BendBSN" class="site-logo">' +
-                '<span class="site-wordmark">BendBSN</span>' +
             '</a>';
 
         var root = document.getElementById('header-root');
