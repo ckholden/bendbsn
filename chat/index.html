@@ -1828,18 +1828,41 @@
 
             if (snapshot.exists()) {
                 const now = Date.now();
+                const userMap = new Map(); // Deduplicate by username
                 snapshot.forEach((child) => {
+                    const key = child.key;
                     const data = child.val();
-                    if (data && data.user) {
-                        onlineUsersData.push(data);
-                        if (data.status === 'away') {
-                            awayCount++;
-                        } else {
-                            onlineCount++;
-                        }
-                        onlineUsers.push(data.user);
+                    if (!data || !data.user) return;
+
+                    // Clean up stale push-keyed entries (from before UID-based presence)
+                    if (key.startsWith('-')) {
+                        presenceRef.child(key).remove().catch(() => {});
+                        return;
+                    }
+
+                    // Deduplicate: keep most recent entry per username
+                    const uname = (data.username || data.user).toLowerCase();
+                    const existing = userMap.get(uname);
+                    if (!existing || (data.lastActive || 0) > (existing.lastActive || 0)) {
+                        userMap.set(uname, data);
                     }
                 });
+
+                userMap.forEach(data => {
+                    onlineUsersData.push(data);
+                    if (data.status === 'away') {
+                        awayCount++;
+                    } else {
+                        onlineCount++;
+                    }
+                    onlineUsers.push(data.user);
+                });
+            }
+
+            // Self-heal: if this tab is active but our entry was removed (another tab closed), re-set presence
+            const myUid = getCurrentUserUid();
+            if (myUid && currentUsername && !onlineUsersData.some(d => d.uid === myUid)) {
+                setPresence(currentPresenceStatus || 'online');
             }
 
             const onlineCountEl = document.getElementById('onlineCount');
@@ -2494,7 +2517,10 @@
         connectedRef.on('value', (snap) => {
             const connected = snap.val() === true;
             const onlineCountEl = document.getElementById('onlineCount');
-            if (!connected && onlineCountEl) {
+            if (connected) {
+                // Re-establish presence on reconnect (handles multi-tab onDisconnect conflicts)
+                if (currentUsername) setPresence(currentPresenceStatus || 'online');
+            } else if (onlineCountEl) {
                 onlineCountEl.innerHTML = '<span style="color: #fca5a5;">Disconnected...</span>';
             }
         });

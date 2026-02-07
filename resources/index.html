@@ -3632,9 +3632,8 @@ Generated: ${new Date().toLocaleString()}`;
         connectedRef.on('value', (snap) => {
             const connected = snap.val() === true;
             if (connected) {
-                console.log('Firebase: Connected');
-            } else {
-                console.log('Firebase: Disconnected');
+                // Re-establish presence on reconnect (handles multi-tab onDisconnect conflicts)
+                if (chatCurrentUsername) setPresence(currentPresenceStatus || 'online');
             }
         });
 

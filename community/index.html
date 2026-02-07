@@ -1356,6 +1356,10 @@
         setPresence('online');
         initActivityTracking();
 
+        // Re-establish presence on reconnect (handles multi-tab onDisconnect conflicts)
+        database.ref('.info/connected').on('value', (snap) => {
+            if (snap.val() === true && currentUsername) setPresence(currentPresenceStatus || 'online');
+        });
 
         // Current filter
         let currentCategory = 'all';
