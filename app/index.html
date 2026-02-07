@@ -140,6 +140,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-page);
             min-height: 100vh;
+            min-height: 100dvh;
             padding: 20px;
             padding-bottom: 80px;
             transition: background 0.3s ease;
@@ -753,6 +754,64 @@
         @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         @media (max-width: 480px) { .toast-container { left: 10px; right: 10px; max-width: none; } }
+
+        /* Print Stylesheet */
+        @media print {
+            .bottom-toolbar, .site-header, .toast-container, .more-menu,
+            .bsn-offline-banner, .bsn-modal-overlay,
+            #chatWidget, #aiWidget, #alertBanner, #fyiBanner,
+            button, .warning-box, .info-box, #autoSaveStatus,
+            .note-type-selector, .header a[href="/resources/"] {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                min-height: auto !important;
+                font-size: 12pt;
+            }
+            .container, .form-container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 10px !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: white !important;
+            }
+            .header {
+                background: none !important;
+                color: black !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 10px 0 !important;
+            }
+            .header h1 { color: black !important; font-size: 16pt; }
+            .header p { color: #333 !important; }
+            .form-group label { color: black !important; }
+            input, textarea, select {
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                background: white !important;
+                color: black !important;
+                border-radius: 0 !important;
+                padding: 4px !important;
+            }
+            textarea {
+                min-height: auto !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+            .vitals-panel, .med-admin-panel {
+                border: 1px solid #999 !important;
+                background: white !important;
+                box-shadow: none !important;
+            }
+            * {
+                border-radius: 0 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -979,26 +1038,26 @@
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">BP (sys/dia)</label>
                         <div style="display: flex; gap: 4px;">
-                            <input type="text" id="vsBpSys" placeholder="120" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="3">
+                            <input type="number" id="vsBpSys" placeholder="120" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="40" max="300" step="1" inputmode="numeric" maxlength="3">
                             <span style="line-height: 36px;">/</span>
-                            <input type="text" id="vsBpDia" placeholder="80" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="3">
+                            <input type="number" id="vsBpDia" placeholder="80" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="20" max="200" step="1" inputmode="numeric" maxlength="3">
                         </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">HR</label>
-                        <input type="text" id="vsHr" placeholder="72" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="3">
+                        <input type="number" id="vsHr" placeholder="72" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="20" max="250" step="1" inputmode="numeric" maxlength="3">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">RR</label>
-                        <input type="text" id="vsRr" placeholder="16" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="2">
+                        <input type="number" id="vsRr" placeholder="16" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="4" max="60" step="1" inputmode="numeric" maxlength="2">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Temp °F</label>
-                        <input type="text" id="vsTemp" placeholder="98.6" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="5">
+                        <input type="number" id="vsTemp" placeholder="98.6" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="90" max="110" step="0.1" inputmode="decimal" maxlength="5">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">O2%</label>
-                        <input type="text" id="vsO2" placeholder="98" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="3">
+                        <input type="number" id="vsO2" placeholder="98" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="50" max="100" step="1" inputmode="numeric" maxlength="3">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">O2 Delivery</label>
@@ -1030,7 +1089,7 @@
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Pain (0-10)</label>
-                        <input type="text" id="vsPain" placeholder="0" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" maxlength="2">
+                        <input type="number" id="vsPain" placeholder="0" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="0" max="10" step="1" inputmode="numeric" maxlength="2">
                     </div>
                 </div>
                 <p style="margin-top: 8px; font-size: 11px; color: #558b2f;">Click "Save for Export" to save vitals to include in PDF/Word export, or "Insert Now" to add directly to your current text field.</p>
@@ -2247,7 +2306,6 @@
 
         // Load a specific document into the form
         function loadDocument(docId) {
-            try {
                 const doc = savedDocuments.find(d => d.id === docId);
                 if (!doc || !doc.content) {
                     showToast('Document not found.', 'error');
@@ -2255,10 +2313,8 @@
                 }
 
                 // Confirm before overwriting current form
-                if (!confirm('This will replace your current form data. Continue?')) {
-                    return;
-                }
-
+                showConfirmModal('Load Document', 'This will replace your current form data. Continue?', function() {
+                    try {
                 const content = doc.content;
 
                 // Set the note type first - need to simulate click for proper activation
@@ -2357,33 +2413,32 @@
             // Close the modal
             document.getElementById('historyModal').classList.add('hidden');
             showToast('Document loaded successfully!', 'success');
-            } catch (e) {
-                console.error('Error loading document:', e);
-                showToast('Error loading document. Please try again.', 'error');
-            }
+                    } catch (e) {
+                        console.error('Error loading document:', e);
+                        showToast('Error loading document. Please try again.', 'error');
+                    }
+                });
         }
 
         // Delete a document
         async function deleteDocument(docId) {
-            if (!confirm('Are you sure you want to delete this document? This cannot be undone.')) {
-                return;
-            }
+            showConfirmModal('Delete Document', 'Are you sure you want to delete this document? This cannot be undone.', async function() {
+                const uid = getCurrentUserUid();
+                if (!uid) {
+                    showToast('Please log in to delete documents.', 'warning');
+                    return;
+                }
 
-            const uid = getCurrentUserUid();
-            if (!uid) {
-                showToast('Please log in to delete documents.', 'warning');
-                return;
-            }
-
-            try {
-                const docRef = database.ref('userDocuments/' + uid + '/' + docId);
-                await docRef.remove();
-                showToast('Document deleted.', 'success');
-                loadDocumentHistory(); // Refresh the list
-            } catch (error) {
-                console.error('Error deleting document:', error);
-                showToast('Failed to delete document: ' + error.message, 'error');
-            }
+                try {
+                    const docRef = database.ref('userDocuments/' + uid + '/' + docId);
+                    await docRef.remove();
+                    showToast('Document deleted.', 'success');
+                    loadDocumentHistory(); // Refresh the list
+                } catch (error) {
+                    console.error('Error deleting document:', error);
+                    showToast('Failed to delete document: ' + error.message, 'error');
+                }
+            }, { danger: true });
         }
 
         // Initialize Firebase
@@ -2896,56 +2951,56 @@
 
         // Approve a pending user
         async function approveUser(username) {
-            if (!confirm('Approve user "' + username + '"?')) return;
-
-            try {
-                const params = new URLSearchParams({
-                    action: 'updateStatus',
-                    username: username,
-                    status: 'approved'
-                });
-                await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                showToast('User "' + username + '" approved!', 'success');
-                setTimeout(refreshPendingUsers, 1000); // Refresh after a short delay
-            } catch (e) {
-                showToast('Error approving user. Please try again.', 'error');
-            }
+            showConfirmModal('Approve User', 'Approve user "' + username + '"?', async function() {
+                try {
+                    const params = new URLSearchParams({
+                        action: 'updateStatus',
+                        username: username,
+                        status: 'approved'
+                    });
+                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                    showToast('User "' + username + '" approved!', 'success');
+                    setTimeout(refreshPendingUsers, 1000); // Refresh after a short delay
+                } catch (e) {
+                    showToast('Error approving user. Please try again.', 'error');
+                }
+            }, { confirmText: 'Approve' });
         }
 
         // Deny/delete a pending user
         async function denyUser(username) {
-            if (!confirm('Deny and remove user "' + username + '"?')) return;
-
-            try {
-                const params = new URLSearchParams({
-                    action: 'updateStatus',
-                    username: username,
-                    status: 'denied'
-                });
-                await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                showToast('User "' + username + '" denied.', 'info');
-                setTimeout(refreshPendingUsers, 1000);
-            } catch (e) {
-                showToast('Error denying user. Please try again.', 'error');
-            }
+            showConfirmModal('Deny User', 'Deny and remove user "' + username + '"?', async function() {
+                try {
+                    const params = new URLSearchParams({
+                        action: 'updateStatus',
+                        username: username,
+                        status: 'denied'
+                    });
+                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                    showToast('User "' + username + '" denied.', 'info');
+                    setTimeout(refreshPendingUsers, 1000);
+                } catch (e) {
+                    showToast('Error denying user. Please try again.', 'error');
+                }
+            }, { danger: true });
         }
 
         // Revoke an approved user
         async function revokeUser(username) {
-            if (!confirm('Revoke access for "' + username + '"?')) return;
-
-            try {
-                const params = new URLSearchParams({
-                    action: 'updateStatus',
-                    username: username,
-                    status: 'revoked'
-                });
-                await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                showToast('User "' + username + '" access revoked.', 'warning');
-                setTimeout(refreshPendingUsers, 1000);
-            } catch (e) {
-                showToast('Error revoking user. Please try again.', 'error');
-            }
+            showConfirmModal('Revoke Access', 'Revoke access for "' + username + '"?', async function() {
+                try {
+                    const params = new URLSearchParams({
+                        action: 'updateStatus',
+                        username: username,
+                        status: 'revoked'
+                    });
+                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                    showToast('User "' + username + '" access revoked.', 'warning');
+                    setTimeout(refreshPendingUsers, 1000);
+                } catch (e) {
+                    showToast('Error revoking user. Please try again.', 'error');
+                }
+            }, { danger: true });
         }
 
         // Add user directly to sheet
@@ -3278,9 +3333,10 @@
         }
 
         function clearSavedVitals() {
-            if (!confirm('Clear all saved vitals?')) return;
-            savedVitals = [];
-            renderSavedVitals();
+            showConfirmModal('Clear Vitals', 'Clear all saved vitals?', function() {
+                savedVitals = [];
+                renderSavedVitals();
+            }, { danger: true });
         }
 
         function saveMedication() {
@@ -3370,9 +3426,10 @@
         }
 
         function clearSavedMedications() {
-            if (!confirm('Clear all saved medications?')) return;
-            savedMedications = [];
-            renderSavedMedications();
+            showConfirmModal('Clear Medications', 'Clear all saved medications?', function() {
+                savedMedications = [];
+                renderSavedMedications();
+            }, { danger: true });
         }
 
         function getSavedVitalsText() {
@@ -3435,9 +3492,10 @@
 
         function removeSavedScreening(index, type) { savedScreenings.splice(index, 1); renderSavedScreenings(type); }
         function clearSavedScreenings(type) {
-            if (!confirm('Clear all saved ' + (type === 'phq9' ? 'PHQ-9' : 'GAD-7') + ' screenings?')) return;
-            savedScreenings = savedScreenings.filter(s => s.type !== type);
-            renderSavedScreenings(type);
+            showConfirmModal('Clear Screenings', 'Clear all saved ' + (type === 'phq9' ? 'PHQ-9' : 'GAD-7') + ' screenings?', function() {
+                savedScreenings = savedScreenings.filter(s => s.type !== type);
+                renderSavedScreenings(type);
+            }, { danger: true });
         }
 
         // ========== SAVED LINES/DRAINS/AIRWAYS FOR EXPORT ==========
@@ -3520,9 +3578,10 @@
 
         function removeSavedLine(index) { savedLinesDA.splice(index, 1); renderSavedLines(); }
         function clearSavedLines() {
-            if (!confirm('Clear all saved lines/drains/airways?')) return;
-            savedLinesDA = [];
-            renderSavedLines();
+            showConfirmModal('Clear Lines/Drains/Airways', 'Clear all saved lines/drains/airways?', function() {
+                savedLinesDA = [];
+                renderSavedLines();
+            }, { danger: true });
         }
 
         const MED_RECENTS_KEY = 'bsn9b_med_recents';
@@ -3791,15 +3850,15 @@
 
         // Delete a custom user
         function deleteCustomUser(username) {
-            if (!confirm('Delete user "' + username + '"?')) return;
-
-            const stored = localStorage.getItem('bsn9b_custom_users');
-            if (stored) {
-                const customUsers = JSON.parse(stored);
-                delete customUsers[username];
-                localStorage.setItem('bsn9b_custom_users', JSON.stringify(customUsers));
-            }
-            renderCustomUsers();
+            showConfirmModal('Delete User', 'Delete user "' + username + '"?', function() {
+                const stored = localStorage.getItem('bsn9b_custom_users');
+                if (stored) {
+                    const customUsers = JSON.parse(stored);
+                    delete customUsers[username];
+                    localStorage.setItem('bsn9b_custom_users', JSON.stringify(customUsers));
+                }
+                renderCustomUsers();
+            }, { danger: true });
         }
 
         // Render custom users list
@@ -4234,6 +4293,23 @@
             }
         }
 
+        function restoreDraftFields(payload) {
+            if (!payload || !payload.fields) return;
+            Object.keys(payload.fields).forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    el.checked = !!payload.fields[id];
+                } else {
+                    el.value = payload.fields[id];
+                }
+            });
+            if (typeof updatePhq9Score === 'function') updatePhq9Score();
+            if (typeof updateGad7Score === 'function') updateGad7Score();
+            const time = new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            updateAutoSaveStatus('Draft restored ' + time);
+        }
+
         function loadDraft(type) {
             try {
                 const key = DRAFT_PREFIX + type;
@@ -4244,19 +4320,27 @@
                 }
                 const payload = JSON.parse(raw);
                 if (!payload || !payload.fields) return;
-                Object.keys(payload.fields).forEach(id => {
-                    const el = document.getElementById(id);
-                    if (!el) return;
-                    if (el.type === 'checkbox' || el.type === 'radio') {
-                        el.checked = !!payload.fields[id];
-                    } else {
-                        el.value = payload.fields[id];
-                    }
-                });
-                updatePhq9Score();
-                updateGad7Score();
+                // Check if draft has meaningful content (not just empty fields)
+                const hasContent = Object.values(payload.fields).some(v => v && v !== '' && v !== false);
+                if (!hasContent) return;
                 const time = new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                updateAutoSaveStatus('Draft restored ' + time);
+                // Offer restore via toast with action button
+                const container = document.getElementById('toastContainer');
+                if (!container) { restoreDraftFields(payload); return; }
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-info';
+                toast.innerHTML =
+                    '<span class="toast-icon">\u2139</span>' +
+                    '<div class="toast-content">' +
+                        '<div class="toast-message">Draft found from ' + time + '</div>' +
+                        '<button onclick="restoreDraftFields(JSON.parse(localStorage.getItem(\'' + key + '\')));this.closest(\'.toast\').remove();" ' +
+                            'style="margin-top:6px;background:rgba(255,255,255,0.25);color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">Restore Draft</button>' +
+                    '</div>' +
+                    '<button class="toast-close" onclick="this.parentElement.remove()">&times;</button>';
+                container.appendChild(toast);
+                updateAutoSaveStatus('Draft available from ' + time);
+                // Auto-dismiss after 15 seconds
+                setTimeout(() => { if (toast.parentElement) { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); } }, 15000);
             } catch (e) {
                 console.warn('Draft load failed:', e);
             }
@@ -4281,6 +4365,14 @@
         function clearDraft(type) {
             try { localStorage.removeItem(DRAFT_PREFIX + type); } catch (e) {}
         }
+
+        // Save draft on tab close/refresh
+        window.addEventListener('beforeunload', function() {
+            saveDraft();
+        });
+
+        // Periodic backup save every 30 seconds
+        setInterval(saveDraft, 30000);
 
         // Initialize the app
         setupDateTimeShortcuts();
@@ -4453,24 +4545,25 @@
         }
 
         function clearForm() {
-            if (!confirm('Clear all fields?')) return;
-            document.querySelectorAll('input:not([type="date"]):not([type="time"]), textarea').forEach(el => el.value = '');
-            // Reset select elements to first option
-            document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
-            document.getElementById('noteDate').value = formatDateDisplay(new Date());
-            document.getElementById('noteTime').value = formatTimeDisplay(new Date());
-            selectedDiagnoses = [];
-            renderDiagnoses();
-            // Clear saved medications display
-            savedMedications = [];
-            renderSavedMedications();
-            // Clear saved screenings
-            savedScreenings = [];
-            renderSavedScreenings('phq9');
-            renderSavedScreenings('gad7');
-            // Clear saved lines/drains/airways
-            savedLinesDA = [];
-            renderSavedLines();
+            showConfirmModal('Clear Form', 'Clear all fields?', function() {
+                document.querySelectorAll('input:not([type="date"]):not([type="time"]), textarea').forEach(el => el.value = '');
+                // Reset select elements to first option
+                document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+                document.getElementById('noteDate').value = formatDateDisplay(new Date());
+                document.getElementById('noteTime').value = formatTimeDisplay(new Date());
+                selectedDiagnoses = [];
+                renderDiagnoses();
+                // Clear saved medications display
+                savedMedications = [];
+                renderSavedMedications();
+                // Clear saved screenings
+                savedScreenings = [];
+                renderSavedScreenings('phq9');
+                renderSavedScreenings('gad7');
+                // Clear saved lines/drains/airways
+                savedLinesDA = [];
+                renderSavedLines();
+            }, { danger: true });
         }
 
         function formatTimeForFilename(t) { return t ? t.replace(':', '') : ''; }

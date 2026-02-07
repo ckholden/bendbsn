@@ -49,7 +49,7 @@
             --border: #2d3748;
         }
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg-page);min-height:100vh;padding-bottom:80px;}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg-page);min-height:100vh;min-height:100dvh;padding-bottom:80px;}
         .container{max-width:1000px;margin:0 auto;padding:10px 16px;}
         /* Header bar */
         .page-header{background:linear-gradient(135deg,#1f4e79 0%,#2d5a87 100%);color:#fff;padding:18px 24px;border-radius:16px 16px 0 0;text-align:center;position:relative;}
@@ -1315,7 +1315,7 @@
                     const snap = await userProfilesRef.child(user.uid).once('value');
                     const profile = snap.val();
                     if (profile?.role === 'Instructor') {
-                        alert('This tool is only available for students.');
+                        showToast('This tool is only available for students.', 'warning');
                         window.location.href = '/home/';
                         return;
                     }
@@ -1588,37 +1588,45 @@
         }
 
         async function deletePacket(id) {
-            if (!confirm('Delete this packet?')) return;
-            try {
-                await getPacketsRef().child(id).remove();
-                if (currentPacketId === id) { currentPacketId = null; updateSaveStatus('none'); }
-                loadPacketList();
-                showToast('Packet deleted', 'info');
-            } catch (e) { showToast('Delete failed', 'error'); }
+            showConfirmModal('Delete Packet', 'Delete this packet?', async () => {
+                try {
+                    await getPacketsRef().child(id).remove();
+                    if (currentPacketId === id) { currentPacketId = null; updateSaveStatus('none'); }
+                    loadPacketList();
+                    showToast('Packet deleted', 'info');
+                } catch (e) { showToast('Delete failed', 'error'); }
+            }, { danger: true });
         }
 
         function newPacket() {
-            if (hasUnsavedChanges && !confirm('You have unsaved changes. Start a new packet?')) return;
-            currentPacketId = null;
-            document.querySelectorAll('[data-field]').forEach(el => {
-                if (el.type === 'checkbox') el.checked = false;
-                else el.value = '';
-            });
-            bradenScores = {};
-            document.querySelectorAll('.braden-opt').forEach(o => o.classList.remove('selected'));
-            document.getElementById('bradenTotal').textContent = '0';
-            document.getElementById('bradenRisk').textContent = 'Select all categories';
-            document.getElementById('bradenRisk').style.background = '#e0e0e0';
-            document.getElementById('bradenRisk').style.color = '#333';
-            hasUnsavedChanges = false;
-            updateSaveStatus('none');
-            updateProgress();
-            updateTabChecks();
-            // Set date to today
-            const dateField = document.querySelector('[data-field="clinicalDate"]');
-            if (dateField) dateField.valueAsDate = new Date();
-            switchTab('patient');
-            showToast('New packet started', 'info');
+            function doNewPacket() {
+                currentPacketId = null;
+                document.querySelectorAll('[data-field]').forEach(el => {
+                    if (el.type === 'checkbox') el.checked = false;
+                    else el.value = '';
+                });
+                bradenScores = {};
+                document.querySelectorAll('.braden-opt').forEach(o => o.classList.remove('selected'));
+                document.getElementById('bradenTotal').textContent = '0';
+                document.getElementById('bradenRisk').textContent = 'Select all categories';
+                document.getElementById('bradenRisk').style.background = '#e0e0e0';
+                document.getElementById('bradenRisk').style.color = '#333';
+                hasUnsavedChanges = false;
+                updateSaveStatus('none');
+                updateProgress();
+                updateTabChecks();
+                // Set date to today
+                const dateField = document.querySelector('[data-field="clinicalDate"]');
+                if (dateField) dateField.valueAsDate = new Date();
+                switchTab('patient');
+                showToast('New packet started', 'info');
+            }
+
+            if (hasUnsavedChanges) {
+                showConfirmModal('Unsaved Changes', 'You have unsaved changes. Start a new packet?', doNewPacket, { confirmText: 'Start New', danger: true });
+            } else {
+                doNewPacket();
+            }
         }
 
         // ========== BRADEN SCALE ==========

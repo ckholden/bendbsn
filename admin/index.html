@@ -17,6 +17,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
+            min-height: 100dvh;
             padding: 20px;
         }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -650,8 +651,7 @@
 
         // Send welcome emails to all registered users
         async function sendWelcomeEmailsToAll() {
-            if (!confirm('Send welcome email to ALL registered users? This cannot be undone.')) return;
-
+            showConfirmModal('Send Welcome Emails', 'Send welcome email to ALL registered users? This cannot be undone.', async function() {
             try {
                 const response = await fetch(API_URL + '&action=getUsers');
                 const data = await response.json();
@@ -698,6 +698,7 @@
             } catch (e) {
                 showToast('Error: ' + e.message, 'error');
             }
+            }, { confirmText: 'Send Emails', danger: true });
         }
 
         // Listen for announcements (alert/fyi banners)
@@ -1053,26 +1054,25 @@
 
         // Kick user from chat
         function kickUser(presenceKey, username) {
-            if (confirm(`Kick ${username} from chat?`)) {
+            showConfirmModal('Kick User', `Kick ${username} from chat?`, function() {
                 presenceRef.child(presenceKey).remove()
                     .then(() => showToast(`${username} has been kicked from chat`, 'success'))
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }
+            }, { confirmText: 'Kick', danger: true });
         }
 
         // Kick all users
         function kickAllUsers() {
-            if (confirm('Kick ALL users from chat? They will need to refresh to reconnect.')) {
+            showConfirmModal('Kick All Users', 'Kick ALL users from chat? They will need to refresh to reconnect.', function() {
                 presenceRef.remove()
                     .then(() => showToast('All users have been kicked from chat', 'success'))
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }
+            }, { confirmText: 'Kick All', danger: true });
         }
 
         // Ban user
         function banUser(username) {
-            const reason = prompt(`Ban ${username}? Enter reason (optional):`, 'Rule violation');
-            if (reason !== null) {
+            showPromptModal('Ban User', `Ban ${username}? Enter reason (optional):`, function(reason) {
                 bannedRef.push({
                     username: username,
                     reason: reason,
@@ -1089,21 +1089,21 @@
                         });
                     });
                 }).catch((e) => showToast('Error: ' + e.message, 'error'));
-            }
+            }, { submitText: 'Ban', defaultValue: 'Rule violation', placeholder: 'Enter reason...' });
         }
 
         // Unban user
         function unbanUser(banKey) {
-            if (confirm('Unban this user?')) {
+            showConfirmModal('Unban User', 'Unban this user?', function() {
                 bannedRef.child(banKey).remove()
                     .then(() => showToast('User has been unbanned', 'success'))
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }
+            }, { confirmText: 'Unban' });
         }
 
         // Approve user (update Google Sheets)
         async function approveUser(username) {
-            if (confirm(`Approve ${username}?`)) {
+            showConfirmModal('Approve User', `Approve ${username}?`, async function() {
                 try {
                     const params = new URLSearchParams({
                         action: 'updateStatus',
@@ -1116,15 +1116,15 @@
                 } catch (e) {
                     showToast('Error: ' + e.message, 'error');
                 }
-            }
+            }, { confirmText: 'Approve' });
         }
 
         // Delete user completely
         async function deleteUser(username, email, uid, displayName) {
             const confirmMsg = `PERMANENTLY DELETE "${displayName || username}"?\n\nThis will remove:\n• User profile from database\n• User from Google Sheet\n\nYou'll also need to delete from Firebase Auth Console.\n\nThis cannot be undone!`;
 
-            if (!confirm(confirmMsg)) return;
-            if (!confirm('Are you REALLY sure? Type OK to confirm.')) return;
+            showConfirmModal('Delete User', confirmMsg, function() {
+                showConfirmModal('Are You Sure?', 'Are you REALLY sure? This action is permanent.', async function() {
 
             let deletedItems = [];
             let errors = [];
@@ -1174,10 +1174,9 @@
                 }
 
                 // 5. Open Firebase Console for Auth deletion
-                const openConsole = confirm('User data deleted!\n\nOpen Firebase Console to delete the Auth account?\n\n(Required to fully remove the user)');
-                if (openConsole) {
+                showConfirmModal('Open Firebase Console', 'User data deleted!\n\nOpen Firebase Console to delete the Auth account?\n\n(Required to fully remove the user)', function() {
                     window.open('https://console.firebase.google.com/project/bendbsn-17377/authentication/users', '_blank');
-                }
+                }, { confirmText: 'Open Console' });
 
                 // Refresh user list
                 loadRegisteredUsers();
@@ -1185,27 +1184,29 @@
             } catch (e) {
                 showToast('Error deleting user: ' + e.message, 'error');
             }
+                }, { confirmText: 'Yes, Delete', danger: true });
+            }, { confirmText: 'Delete User', danger: true });
         }
 
         // Delete message
         function deleteMessage(messageKey) {
-            if (confirm('Delete this message?')) {
+            showConfirmModal('Delete Message', 'Delete this message?', function() {
                 chatRef.child(messageKey).remove()
                     .then(() => loadMessages())
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }
+            }, { confirmText: 'Delete', danger: true });
         }
 
         // Clear all messages
         function clearAllMessages() {
-            if (confirm('Delete ALL chat messages? This cannot be undone.')) {
+            showConfirmModal('Clear All Messages', 'Delete ALL chat messages? This cannot be undone.', function() {
                 chatRef.remove()
                     .then(() => {
                         showToast('All messages have been deleted', 'success');
                         loadMessages();
                     })
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }
+            }, { confirmText: 'Delete All', danger: true });
         }
 
         // Refresh all data
@@ -1350,26 +1351,27 @@
         }
 
         function clearAllLoginHistory() {
-            if (!confirm('Delete ALL login history records? This cannot be undone.')) return;
-            if (!confirm('Are you REALLY sure? This will permanently delete all login history.')) return;
-
-            loginHistoryRef.remove()
-                .then(() => {
-                    showToast('All login history deleted', 'success');
-                    loadLoginHistory();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
+            showConfirmModal('Clear All Login History', 'Delete ALL login history records? This cannot be undone.', function() {
+                showConfirmModal('Are You Sure?', 'Are you REALLY sure? This will permanently delete all login history.', function() {
+                    loginHistoryRef.remove()
+                        .then(() => {
+                            showToast('All login history deleted', 'success');
+                            loadLoginHistory();
+                        })
+                        .catch((e) => showToast('Error: ' + e.message, 'error'));
+                }, { confirmText: 'Yes, Delete All', danger: true });
+            }, { confirmText: 'Clear All', danger: true });
         }
 
         function deleteLoginHistoryEntry(key) {
-            if (!confirm('Delete this login history entry?')) return;
-
-            loginHistoryRef.child(key).remove()
-                .then(() => {
-                    showToast('Entry deleted', 'success');
-                    loadLoginHistory();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
+            showConfirmModal('Delete Entry', 'Delete this login history entry?', function() {
+                loginHistoryRef.child(key).remove()
+                    .then(() => {
+                        showToast('Entry deleted', 'success');
+                        loadLoginHistory();
+                    })
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
+            }, { confirmText: 'Delete', danger: true });
         }
 
         function toggleSelectAllLoginHistory() {
@@ -1411,15 +1413,15 @@
                 return;
             }
 
-            if (!confirm(`Delete ${keys.length} selected login history entries?`)) return;
-
-            const promises = keys.map(key => loginHistoryRef.child(key).remove());
-            Promise.all(promises)
-                .then(() => {
-                    showToast(`${keys.length} entries deleted`, 'success');
-                    loadLoginHistory();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
+            showConfirmModal('Delete Selected', `Delete ${keys.length} selected login history entries?`, function() {
+                const promises = keys.map(key => loginHistoryRef.child(key).remove());
+                Promise.all(promises)
+                    .then(() => {
+                        showToast(`${keys.length} entries deleted`, 'success');
+                        loadLoginHistory();
+                    })
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
+            }, { confirmText: 'Delete Selected', danger: true });
         }
 
         function exportLoginHistory() {
@@ -1517,11 +1519,11 @@
         }
 
         function deleteGlobalPhrase(key) {
-            if (confirm('Delete this smart phrase?')) {
+            showConfirmModal('Delete Smart Phrase', 'Delete this smart phrase?', function() {
                 globalPhrasesRef.child(key).remove()
                     .then(() => loadGlobalPhrases())
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }
+            }, { confirmText: 'Delete', danger: true });
         }
 
         // ========== EXPORT HISTORY MANAGEMENT ==========
@@ -1844,21 +1846,21 @@
         }
 
         function deleteReply(postId, replyId) {
-            if (!confirm('Delete this reply?')) return;
-
-            communityPostsRef.child(postId).child('replies').child(replyId).remove()
-                .then(() => {
-                    showToast('Reply deleted', 'success');
-                    // Reload the post detail
-                    communityPostsRef.child(postId).once('value', (snapshot) => {
-                        if (snapshot.exists()) {
-                            const post = snapshot.val();
-                            loadPostReplies(postId, post.replies);
-                        }
-                    });
-                    loadCommunityPosts();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
+            showConfirmModal('Delete Reply', 'Delete this reply?', function() {
+                communityPostsRef.child(postId).child('replies').child(replyId).remove()
+                    .then(() => {
+                        showToast('Reply deleted', 'success');
+                        // Reload the post detail
+                        communityPostsRef.child(postId).once('value', (snapshot) => {
+                            if (snapshot.exists()) {
+                                const post = snapshot.val();
+                                loadPostReplies(postId, post.replies);
+                            }
+                        });
+                        loadCommunityPosts();
+                    })
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
+            }, { confirmText: 'Delete', danger: true });
         }
 
         function togglePostPin() {
@@ -1893,38 +1895,39 @@
             const post = allCommunityPosts.find(p => p.id === currentPostId);
             const title = post ? post.title : 'this post';
 
-            if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-
-            communityPostsRef.child(currentPostId).remove()
-                .then(() => {
-                    showToast('Post deleted', 'success');
-                    closePostDetail();
-                    loadCommunityPosts();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
+            showConfirmModal('Delete Post', `Delete "${title}"? This cannot be undone.`, function() {
+                communityPostsRef.child(currentPostId).remove()
+                    .then(() => {
+                        showToast('Post deleted', 'success');
+                        closePostDetail();
+                        loadCommunityPosts();
+                    })
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
+            }, { confirmText: 'Delete', danger: true });
         }
 
         function quickDeletePost(postId, title) {
-            if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-
-            communityPostsRef.child(postId).remove()
-                .then(() => {
-                    showToast('Post deleted', 'success');
-                    loadCommunityPosts();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
+            showConfirmModal('Delete Post', `Delete "${title}"? This cannot be undone.`, function() {
+                communityPostsRef.child(postId).remove()
+                    .then(() => {
+                        showToast('Post deleted', 'success');
+                        loadCommunityPosts();
+                    })
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
+            }, { confirmText: 'Delete', danger: true });
         }
 
         function clearAllPosts() {
-            if (!confirm('Delete ALL community posts? This cannot be undone!')) return;
-            if (!confirm('Are you REALLY sure? This will permanently delete all posts and replies.')) return;
-
-            communityPostsRef.remove()
-                .then(() => {
-                    showToast('All community posts deleted', 'success');
-                    loadCommunityPosts();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
+            showConfirmModal('Clear All Posts', 'Delete ALL community posts? This cannot be undone!', function() {
+                showConfirmModal('Are You Sure?', 'Are you REALLY sure? This will permanently delete all posts and replies.', function() {
+                    communityPostsRef.remove()
+                        .then(() => {
+                            showToast('All community posts deleted', 'success');
+                            loadCommunityPosts();
+                        })
+                        .catch((e) => showToast('Error: ' + e.message, 'error'));
+                }, { confirmText: 'Yes, Delete All', danger: true });
+            }, { confirmText: 'Clear All', danger: true });
         }
 
         function showCommunityStats() {
@@ -2021,7 +2024,7 @@
         // ========== END COMMUNITY POSTS MANAGEMENT ==========
 
         async function normalizeUserRoles() {
-            if (!confirm('Set all users to RN Student and set Ann to Instructor?')) return;
+            showConfirmModal('Normalize Roles', 'Set all users to RN Student and set Ann to Instructor?', async function() {
             if (!auth.currentUser) {
                 showToast('Sign in to Firebase first.', 'error');
                 openFirebaseAuthModal();
@@ -2052,6 +2055,7 @@
                 console.error('Role normalization failed:', e);
                 showToast('Failed to normalize roles: ' + e.message, 'error');
             }
+            }, { confirmText: 'Normalize Roles' });
         }
 
     </script>

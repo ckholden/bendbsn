@@ -24,6 +24,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
+            min-height: 100dvh;
             padding: 20px;
             padding-bottom: 80px;
         }
@@ -376,6 +377,19 @@
     </nav>
 
     <script>
+        // Toast notification
+        function showToast(message, type = 'info', duration = 3000) {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            const colors = { success: '#22c55e', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+            toast.style.cssText = `position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;color:#fff;font-size:14px;z-index:10000;background:${colors[type]||colors.info};box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity 0.3s;`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, duration);
+        }
+
         // Schedule state
         let rooms = [];
         let roomCount = 1;
@@ -471,7 +485,7 @@
             const time = timeInput.value.trim();
 
             if (!name) {
-                alert('Please enter a student name.');
+                showToast('Please enter a student name.', 'warning');
                 nameInput.focus();
                 return;
             }
@@ -659,14 +673,15 @@
         }
 
         function clearAll() {
-            if (!confirm('Clear all rooms and entries?')) return;
-            rooms = [{ instructor: '', roomNumber: '', entries: [] }];
-            roomCount = 1;
-            document.getElementById('roomCount').textContent = '1';
-            document.getElementById('scheduleTitle').value = '';
-            document.getElementById('scheduleDate').valueAsDate = new Date();
-            document.getElementById('schedulePreview').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>';
-            renderRooms();
+            showConfirmModal('Clear All', 'Clear all rooms and entries?', () => {
+                rooms = [{ instructor: '', roomNumber: '', entries: [] }];
+                roomCount = 1;
+                document.getElementById('roomCount').textContent = '1';
+                document.getElementById('scheduleTitle').value = '';
+                document.getElementById('scheduleDate').valueAsDate = new Date();
+                document.getElementById('schedulePreview').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>';
+                renderRooms();
+            }, { danger: true });
         }
 
         // Enter key handlers for quick entry

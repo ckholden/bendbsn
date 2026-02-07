@@ -50,12 +50,13 @@
 
 ### UI/UX Improvements
 - Toast notifications replace all `alert()` calls (`showToast()` function)
+- `showConfirmModal()` and `showPromptModal()` replace all `confirm()`/`prompt()` calls (in `shared/header.js`)
 - Dark mode CSS for chat widget elements
 - Loading states on export buttons (`btn-loading` class)
 - Debounced NANDA search (300ms)
 
 ### Service Worker (sw.js)
-- Versioned cache (`CACHE_VERSION = 'v20'`)
+- Versioned cache (`CACHE_VERSION = 'v21'`)
 - Stale-while-revalidate for HTML pages
 - Automatic old cache cleanup on activation
 - Support for `SKIP_WAITING` and `CLEAR_CACHE` messages
@@ -64,8 +65,8 @@
 ## Shared Header System (Feb 2026)
 
 ### Files
-- `/shared/header.css` — All header styles (56px height, 38px logo, mobile responsive)
-- `/shared/header.js` — Auto-sets logo href (`/` for login, `/home/` for others); auto-injects header if missing
+- `/shared/header.css` — All header styles (56px height, 38px logo, mobile responsive) + confirm modal CSS + offline banner CSS
+- `/shared/header.js` — Auto-sets logo href; auto-injects header; provides `showConfirmModal()`, `showPromptModal()`, offline detection banner
 
 ### Usage
 All 11 pages include:

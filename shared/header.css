@@ -80,3 +80,168 @@
         display: none;
     }
 }
+
+/* =========================================================
+   Shared Confirm / Prompt Modal
+   ========================================================= */
+.bsn-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: bsnModalFadeIn 0.2s ease;
+}
+.bsn-modal-overlay.hidden { display: none; }
+
+@keyframes bsnModalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.bsn-confirm-modal {
+    background: var(--bg-primary, #ffffff);
+    border-radius: 12px;
+    padding: 25px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: bsnModalSlideIn 0.2s ease;
+}
+
+@keyframes bsnModalSlideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.bsn-confirm-modal h3 {
+    margin: 0 0 12px;
+    font-size: 17px;
+    color: var(--text-primary, #1e293b);
+}
+
+.bsn-confirm-modal p {
+    margin: 0 0 20px;
+    color: var(--text-secondary, #64748b);
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.bsn-confirm-modal .bsn-modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    background: var(--bg-input, #ffffff);
+    color: var(--text-primary, #1e293b);
+    box-sizing: border-box;
+}
+.bsn-confirm-modal .bsn-modal-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.bsn-modal-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.bsn-modal-btns .bsn-btn-cancel {
+    padding: 10px 20px;
+    background: var(--bg-secondary, #f1f5f9);
+    color: var(--text-primary, #1e293b);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.bsn-modal-btns .bsn-btn-cancel:hover {
+    background: var(--bg-hover, #e2e8f0);
+}
+
+.bsn-modal-btns .bsn-btn-confirm {
+    padding: 10px 20px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.bsn-modal-btns .bsn-btn-confirm:hover {
+    background: #2563eb;
+}
+
+.bsn-modal-btns .bsn-btn-danger {
+    padding: 10px 20px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.bsn-modal-btns .bsn-btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .bsn-confirm-modal {
+    background: #1e293b;
+}
+[data-theme="dark"] .bsn-confirm-modal h3 {
+    color: #f1f5f9;
+}
+[data-theme="dark"] .bsn-confirm-modal p {
+    color: #94a3b8;
+}
+[data-theme="dark"] .bsn-confirm-modal .bsn-modal-input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+[data-theme="dark"] .bsn-modal-btns .bsn-btn-cancel {
+    background: #334155;
+    color: #f1f5f9;
+    border-color: #475569;
+}
+
+/* =========================================================
+   Offline Detection Banner
+   ========================================================= */
+.bsn-offline-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10003;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #1e293b;
+    text-align: center;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    display: none;
+    animation: bsnBannerSlideDown 0.3s ease;
+}
+.bsn-offline-banner.visible {
+    display: block;
+}
+
+@keyframes bsnBannerSlideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}

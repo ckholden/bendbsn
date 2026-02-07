@@ -63,6 +63,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-page);
             min-height: 100vh;
+            min-height: 100dvh;
             padding: 20px;
             padding-bottom: 80px;
         }
@@ -990,7 +991,7 @@ Your content will be exported with:
 
                     // Redirect instructors away from this page
                     if (userRole === 'Instructor') {
-                        alert('This tool is only available for students.');
+                        showToast('This tool is only available for students.', 'warning');
                         window.location.href = '/home/';
                         return;
                     }
@@ -1223,10 +1224,11 @@ Your content will be exported with:
         // Clear All References
         function clearReferences() {
             if (references.length === 0) return;
-            if (!confirm('Are you sure you want to clear all references?')) return;
-            references = [];
-            renderReferences();
-            showToast('All references cleared', 'info');
+            showConfirmModal('Clear References', 'Are you sure you want to clear all references?', () => {
+                references = [];
+                renderReferences();
+                showToast('All references cleared', 'info');
+            }, { danger: true });
         }
 
         // Update Preview
@@ -1825,24 +1827,24 @@ Your content will be exported with:
 
         // Clear All
         function clearAll() {
-            if (!confirm('Clear all form data and references?')) return;
+            showConfirmModal('Clear All', 'Clear all form data and references?', () => {
+                // Clear all inputs
+                document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(input => {
+                    input.value = '';
+                });
 
-            // Clear all inputs
-            document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(input => {
-                input.value = '';
-            });
+                // Reset date to today
+                document.getElementById('dueDate').valueAsDate = new Date();
 
-            // Reset date to today
-            document.getElementById('dueDate').valueAsDate = new Date();
+                // Clear references
+                references = [];
+                renderReferences();
 
-            // Clear references
-            references = [];
-            renderReferences();
+                // Update preview
+                updatePreview();
 
-            // Update preview
-            updatePreview();
-
-            showToast('All data cleared', 'info');
+                showToast('All data cleared', 'info');
+            }, { danger: true });
         }
     </script>
     <script src="/shared/header.js"></script>
