@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://script.google.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
@@ -2762,7 +2763,7 @@
         let selectedDiagnoses = [];
 
         // Google Apps Script API URL
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?token=bsn_k7x9m2p4';
 
         // Display current user (use displayName for friendly name)
         const userDisplayName = localStorage.getItem('bsn9b_displayName') || localStorage.getItem('bsn9b_user') || '';
@@ -2817,7 +2818,7 @@
         // Fetch all users from Google Sheet
         async function fetchAllUsers() {
             try {
-                const response = await fetch(API_URL + '?action=getUsers');
+                const response = await fetch(API_URL + '&action=getUsers');
                 const data = await response.json();
                 if (data.success) {
                     return data.users;
@@ -2898,7 +2899,7 @@
                     username: username,
                     status: 'approved'
                 });
-                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
                 showToast('User "' + username + '" approved!', 'success');
                 setTimeout(refreshPendingUsers, 1000); // Refresh after a short delay
             } catch (e) {
@@ -2916,7 +2917,7 @@
                     username: username,
                     status: 'denied'
                 });
-                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
                 showToast('User "' + username + '" denied.', 'info');
                 setTimeout(refreshPendingUsers, 1000);
             } catch (e) {
@@ -2934,7 +2935,7 @@
                     username: username,
                     status: 'revoked'
                 });
-                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
                 showToast('User "' + username + '" access revoked.', 'warning');
                 setTimeout(refreshPendingUsers, 1000);
             } catch (e) {
@@ -2962,7 +2963,7 @@
                     name: name,
                     email: ''
                 });
-                await fetch(API_URL + '?' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
 
                 // Clear inputs
                 document.getElementById('newUserName').value = '';

@@ -8,12 +8,28 @@
         ".write": "auth != null && (auth.token.email == \"christiankholden@gmail.com\" || auth.token.email == \"holdenc\")"
       },
       "messages": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        "$channelId": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+          "$messageId": {
+            ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email || auth.token.email == \"christiankholden@gmail.com\")",
+            ".validate": "!newData.exists() || (newData.hasChildren(['user', 'username', 'text', 'timestamp']) && newData.child('username').val() === auth.token.email)"
+          }
+        }
       },
       "presence": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      },
+      "typing": {
+        "$channelId": {
+          ".read": "auth != null",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
       }
     },
     "directMessages": {
@@ -25,7 +41,21 @@
     "community": {
       "posts": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+        "$postId": {
+          ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.email == \"christiankholden@gmail.com\")",
+          ".validate": "!newData.exists() || newData.hasChild('author')",
+          "replies": {
+            "$replyId": {
+              ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.email == \"christiankholden@gmail.com\")"
+            }
+          },
+          "likes": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid"
+            }
+          }
+        }
       }
     },
     "userDocuments": {
