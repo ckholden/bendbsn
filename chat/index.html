@@ -2305,19 +2305,33 @@
 
         async function fetchAllUsers() {
             try {
-                // Check cache first
+                // Always fetch active profiles from Firebase to validate
+                const profilesSnapshot = await userProfilesRef.once('value');
+                const activeEmails = new Set();
+                if (profilesSnapshot.exists()) {
+                    profilesSnapshot.forEach(child => {
+                        const profile = child.val();
+                        if (profile && profile.email) {
+                            activeEmails.add(profile.email.toLowerCase());
+                        }
+                    });
+                }
+
+                // Check cache first (but still filter against active profiles)
                 const cached = localStorage.getItem('bsn9b_userCache');
                 const cacheTime = parseInt(localStorage.getItem('bsn9b_userCacheTime') || '0');
                 if (cached && (Date.now() - cacheTime) < 10 * 60 * 1000) {
-                    allRegisteredUsers = JSON.parse(cached);
+                    allRegisteredUsers = JSON.parse(cached).filter(u => u.email && activeEmails.has(u.email.toLowerCase()));
                     return;
                 }
 
-                const response = await fetch('https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?action=getUsers');
-                const data = await response.json();
+                const sheetResponse = await fetch('https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?action=getUsers');
+
+                const data = await sheetResponse.json();
                 if (data.success && data.users) {
+                    // Only include users who have an active Firebase profile
                     allRegisteredUsers = data.users
-                        .filter(u => u.name && u.name.trim())
+                        .filter(u => u.name && u.name.trim() && u.email && activeEmails.has(u.email.toLowerCase()))
                         .map(u => ({
                             name: u.name.trim(),
                             firstName: u.name.trim().split(' ')[0],

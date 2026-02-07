@@ -16,13 +16,17 @@
 
 ## Site Structure
 - `/` - Login page (index.html)
-- `/home/` - Home dashboard with navigation
-- `/app/` - Main documentation generator
+- `/home/` - Home dashboard with hero CTA and nav cards
+- `/app/` - Main documentation generator (RN Notes)
+- `/chat/` - Full-page Slack-style chat (channels, DMs, presence)
+- `/ai/` - AI nursing assistant (drug info, care plans, NCLEX)
 - `/resources/` - Clinical references, calculators, drug lookup
 - `/community/` - Community hub with posts, announcements
 - `/labsched/` - Lab schedule generator
 - `/apa/` - APA 7th Edition paper generator (students only - instructors redirected)
 - `/clinical/` - Clinical Assessment Packet builder (students only)
+- `/admin/` - Admin panel (user mgmt, login history, community moderation)
+- `/shared/` - Shared header CSS + JS (included by all pages)
 
 ## Performance & Accessibility Improvements (Jan 2026)
 
@@ -51,10 +55,36 @@
 - Debounced NANDA search (300ms)
 
 ### Service Worker (sw.js)
-- Versioned cache (`CACHE_VERSION = 'v2'`)
+- Versioned cache (`CACHE_VERSION = 'v20'`)
 - Stale-while-revalidate for HTML pages
 - Automatic old cache cleanup on activation
 - Support for `SKIP_WAITING` and `CLEAR_CACHE` messages
+- Caches `/shared/header.css` and `/shared/header.js` for offline use
+
+## Shared Header System (Feb 2026)
+
+### Files
+- `/shared/header.css` — All header styles (56px height, 38px logo, mobile responsive)
+- `/shared/header.js` — Auto-sets logo href (`/` for login, `/home/` for others); auto-injects header if missing
+
+### Usage
+All 11 pages include:
+```html
+<link rel="stylesheet" href="/shared/header.css">  <!-- in <head> -->
+<script src="/shared/header.js"></script>            <!-- before </body> -->
+```
+Header HTML is kept inline for instant render (no FOUC).
+
+### Branding
+- **Logo**: `/logo.png` — Cropped stethoscope + "BendBSN" text (794x238 RGBA PNG)
+- **Favicon**: `/favicon.png` — Stethoscope icon only (256x256), cache-busted `?v=3`
+- **No wordmark span** — Logo image contains the text; no `<span class="site-wordmark">`
+- Source file: `new logo.png` in parent directory (uncropped original 1536x1024)
+
+### Docx Export CDN
+- **IMPORTANT**: Must use `build/index.umd.js` (NOT `build/index.js` which is ES module and won't expose `docx` global)
+- APA/Clinical: `https://unpkg.com/docx@8.2.2/build/index.umd.js`
+- App page: lazy-loaded from `https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js`
 
 ---
 
@@ -62,9 +92,8 @@
 
 ### 1. Bottom Toolbar Navigation
 - Fixed bottom navigation bar on all pages
-- Items: Home, Docs, Community, More
-- "More" menu expands upward with: Dark Mode, Lock, Feedback, Logout
-- Smart Phrases in More menu (app page only)
+- Items: Home, RN Notes, Chat, AI, Community, Resources, More
+- "More" menu expands upward with: Dark Mode, Lock, Full Screen, Sched Generator, APA Generator, Clinical Packet, Feedback, Logout
 - Mobile-first design with proper touch targets
 
 ### 2. Dark Mode
