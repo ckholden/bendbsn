@@ -56,7 +56,7 @@
 - Debounced NANDA search (300ms)
 
 ### Service Worker (sw.js)
-- Versioned cache (`CACHE_VERSION = 'v23'`)
+- Versioned cache (`CACHE_VERSION = 'v24'`)
 - Stale-while-revalidate for HTML pages
 - Automatic old cache cleanup on activation
 - Support for `SKIP_WAITING` and `CLEAR_CACHE` messages
