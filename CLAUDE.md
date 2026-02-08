@@ -56,7 +56,7 @@
 - Debounced NANDA search (300ms)
 
 ### Service Worker (sw.js)
-- Versioned cache (`CACHE_VERSION = 'v21'`)
+- Versioned cache (`CACHE_VERSION = 'v23'`)
 - Stale-while-revalidate for HTML pages
 - Automatic old cache cleanup on activation
 - Support for `SKIP_WAITING` and `CLEAR_CACHE` messages
@@ -541,13 +541,9 @@ The accordion looks better but could be refined further:
 ## Known Issues To Fix (Feb 2, 2026)
 
 ### 1. Medication Search in Med Admin Panel
-**Status:** Needs debugging
-**Symptom:** Search not working (need more details from user)
-**Possible causes:**
-- JS error preventing code from running (check console)
-- DOM elements not found (added null checks)
-- API endpoint issue (tested - API works fine)
-**Next step:** User to test and report what they see (Searching... text? Dropdown? Console errors?)
+**Status:** ✅ FIXED (Feb 7, 2026)
+**Root cause:** CSP `connect-src` directive was missing `https://rxnav.nlm.nih.gov`, silently blocking all fetch requests to the NIH RxNav drug lookup API.
+**Fix:** Added `https://rxnav.nlm.nih.gov` to the CSP meta tag in `/app/index.html`.
 
 ### 2. Direct Messages Not Working
 **Status:** Investigation complete - found likely cause

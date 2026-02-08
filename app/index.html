@@ -4809,6 +4809,7 @@
                 const medsContent = savedMedications.map(m => `${m.time}: ${m.display}`).join('\n');
                 const medsLines = doc.splitTextToSize(medsContent, cw - 12);
                 const medsH = 10 + medsLines.length * 4;
+                if (y + medsH > 280) { doc.addPage(); y = 15; }
                 doc.roundedRect(m, y, cw, medsH, 2, 2, 'FD');
                 doc.setFontSize(9);
                 doc.setFont('helvetica','bold');
