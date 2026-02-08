@@ -3645,58 +3645,79 @@
 
         async function searchDrugs(query) {
             try {
-                // 1. Spelling suggestions + drugs.json for query in parallel
-                const [spellData, drugsData] = await Promise.all([
+                // 1. Spelling suggestions + approximate term in parallel
+                const [spellData, approxData] = await Promise.all([
                     fetch(`https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(query)}`).then(r => r.json()),
-                    fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(query)}`).then(r => r.json()).catch(() => null)
+                    fetch(`https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(query)}&maxEntries=10`).then(r => r.json())
                 ]);
 
-                // Collect unique terms to look up brand/generic pairing
-                const terms = new Set();
-                if (drugsData?.drugGroup?.name) terms.add(drugsData.drugGroup.name);
-                if (spellData.suggestionGroup?.suggestionList?.suggestion) {
-                    spellData.suggestionGroup.suggestionList.suggestion.slice(0, 6).forEach(s => terms.add(s));
+                // Collect unique rxcuis from approximate term (with best candidate name)
+                const rxcuiMap = new Map();
+                if (approxData.approximateGroup?.candidate) {
+                    approxData.approximateGroup.candidate.forEach(c => {
+                        if (c.rxcui && c.name && !rxcuiMap.has(c.rxcui)) {
+                            rxcuiMap.set(c.rxcui, c.name);
+                        }
+                    });
                 }
 
-                // Extract brand names from initial drugs.json result
-                const brandCache = new Map();
-                if (drugsData?.drugGroup?.conceptGroup) {
-                    const gn = drugsData.drugGroup.name;
+                // Collect spelling suggestions
+                const spellNames = spellData.suggestionGroup?.suggestionList?.suggestion || [];
+
+                // 2. Look up brand/generic mapping for rxcuis in parallel
+                const rxcuis = Array.from(rxcuiMap.keys()).slice(0, 6);
+                const relatedResults = rxcuis.length > 0 ? await Promise.all(
+                    rxcuis.map(id =>
+                        fetch(`https://rxnav.nlm.nih.gov/REST/rxcui/${id}/related.json?tty=BN+IN`)
+                            .then(r => r.json()).catch(() => null)
+                    )
+                ) : [];
+
+                // Build generic→brands map from related lookups
+                const genericToBrand = new Map();
+                relatedResults.forEach(data => {
+                    if (!data?.relatedGroup?.conceptGroup) return;
+                    let generic = '';
                     const brands = new Set();
-                    drugsData.drugGroup.conceptGroup.forEach(g => {
-                        if (g.tty === 'BN' && g.conceptProperties) g.conceptProperties.forEach(p => brands.add(p.name));
+                    data.relatedGroup.conceptGroup.forEach(g => {
+                        if (g.tty === 'IN' && g.conceptProperties)
+                            g.conceptProperties.forEach(p => { if (p.name) generic = p.name; });
+                        if (g.tty === 'BN' && g.conceptProperties)
+                            g.conceptProperties.forEach(p => { if (p.name) brands.add(p.name); });
                     });
-                    if (gn) brandCache.set(gn.toLowerCase(), brands);
-                }
+                    if (generic && !genericToBrand.has(generic.toLowerCase())) {
+                        genericToBrand.set(generic.toLowerCase(), { generic, brands });
+                    }
+                });
 
-                // 2. Look up remaining terms via drugs.json in parallel for brand/generic mapping
-                const uncached = Array.from(terms).filter(t => !brandCache.has(t.toLowerCase())).slice(0, 5);
-                if (uncached.length > 0) {
-                    const lookups = await Promise.all(
-                        uncached.map(t => fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(t)}`).then(r => r.json()).catch(() => null))
-                    );
-                    lookups.forEach(data => {
-                        if (!data?.drugGroup?.conceptGroup) return;
-                        const gn = data.drugGroup.name;
-                        if (!gn) return;
-                        const brands = new Set();
-                        data.drugGroup.conceptGroup.forEach(g => {
-                            if (g.tty === 'BN' && g.conceptProperties) g.conceptProperties.forEach(p => brands.add(p.name));
-                        });
-                        brandCache.set(gn.toLowerCase(), brands);
-                    });
-                }
-
-                // 3. Build deduplicated results: Generic (Brand)
+                // 3. Build deduplicated results
                 const results = new Map();
-                terms.forEach(term => {
-                    const key = term.toLowerCase();
+
+                // Add resolved generic+brand entries first
+                genericToBrand.forEach((val, key) => {
+                    const brand = val.brands.size > 0 ? Array.from(val.brands)[0] : '';
+                    const display = brand ? `${val.generic} (${brand})` : val.generic;
+                    results.set(key, { display, generic: val.generic });
+                });
+
+                // Add unresolved approx candidates (e.g. obsolete brands like Zofran)
+                rxcuiMap.forEach((name) => {
+                    const key = name.toLowerCase();
                     if (results.has(key)) return;
-                    const brands = brandCache.get(key);
-                    if (brands && brands.size > 0) {
-                        results.set(key, { display: `${term} (${Array.from(brands)[0]})`, generic: term });
-                    } else {
-                        results.set(key, { display: term, generic: term });
+                    // Skip if this name is already listed as a brand in resolved results
+                    let isBrand = false;
+                    genericToBrand.forEach(val => { if (val.brands.has(name)) isBrand = true; });
+                    if (isBrand) return;
+                    // Skip verbose dose-form names like "ondansetron 4 MG Oral Tablet"
+                    if (/\d+\s*(MG|ML|MCG|%)/i.test(name)) return;
+                    results.set(key, { display: name, generic: name });
+                });
+
+                // Add remaining spelling suggestions
+                spellNames.slice(0, 8).forEach(s => {
+                    const key = s.toLowerCase();
+                    if (!results.has(key)) {
+                        results.set(key, { display: s, generic: s });
                     }
                 });
 
