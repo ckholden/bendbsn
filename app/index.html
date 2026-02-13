@@ -891,7 +891,7 @@
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.fall</code> Fall Risk<span class="tooltip">Fall precautions in place. Bed in low position. Call light within reach.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.safe</code> Safety<span class="tooltip">Side rails up x2. Bed alarm on. Call light in reach. Non-skid socks on.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.wdta</code> Monitor<span class="tooltip">Will continue to monitor. Patient tolerated well. No adverse effects noted.</span></div>
-                        <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.wnl</code> WNL<span class="tooltip">Within normal limits.</span></div>
+                        <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.wdl</code> WDL<span class="tooltip">Within defined limits.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.nad</code> NAD<span class="tooltip">No acute distress.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.edu</code> Education<span class="tooltip">Patient educated on __. Patient verbalized understanding.</span></div>
                         <div class="phrase-item"><code style="background:#1f4e79;color:#fff;padding:2px 5px;border-radius:3px;font-size:10px;">.dc</code> Discharge<span class="tooltip">Discharge instructions reviewed with patient. Patient verbalized understanding.</span></div>
@@ -1055,8 +1055,18 @@
                         <input type="number" id="vsRr" placeholder="16" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="4" max="60" step="1" inputmode="numeric" maxlength="2">
                     </div>
                     <div>
-                        <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Temp °F</label>
-                        <input type="number" id="vsTemp" placeholder="98.6" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="90" max="110" step="0.1" inputmode="decimal" maxlength="5">
+                        <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Temp <span id="vsTempUnitLabel">°F</span></label>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" id="vsTemp" placeholder="98.6" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="90" max="110" step="0.1" inputmode="decimal" maxlength="5">
+                            <button id="vsTempToggle" onclick="toggleTempUnit()" style="background: #2e7d32; color: white; border: none; padding: 6px 6px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 700; white-space: nowrap; line-height: 1;" title="Switch between °F and °C">→°C</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Wt <span id="vsWeightUnitLabel">lbs</span></label>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" id="vsWeight" placeholder="150" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="1" max="1500" step="0.1" inputmode="decimal">
+                            <button id="vsWeightToggle" onclick="toggleWeightUnit()" style="background: #2e7d32; color: white; border: none; padding: 6px 6px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 700; white-space: nowrap; line-height: 1;" title="Switch between lbs and kg">→kg</button>
+                        </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">O2%</label>
@@ -1093,6 +1103,10 @@
                     <div>
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Pain (0-10)</label>
                         <input type="number" id="vsPain" placeholder="0" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="0" max="10" step="1" inputmode="numeric" maxlength="2">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Ht (in)</label>
+                        <input type="number" id="vsHeight" placeholder="66" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="20" max="100" step="0.5" inputmode="decimal">
                     </div>
                 </div>
                 <p style="margin-top: 8px; font-size: 11px; color: #558b2f;">Click "Save for Export" to save vitals to include in PDF/Word export, or "Insert Now" to add directly to your current text field.</p>
@@ -1454,12 +1468,17 @@
                         <h4>Mental Status</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Alert. ')">Alert</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Drowsy. ')">Drowsy</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Lethargic. ')">Lethargic</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Stuporous. ')">Stuporous</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'A&O x4. ')">A&O x4</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'A&O x3. ')">A&O x3</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Speech clear. ')">Speech clear</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Mood euthymic. ')">Mood euthymic</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Cooperative. ')">Cooperative</span>
                             <span class="quick-fill" onclick="appendToField('h2tMental', 'Memory intact. ')">Memory intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Smoker. ')">Smoker</span>
+                            <span class="quick-fill" onclick="appendToField('h2tMental', 'Non-smoker. ')">Non-smoker</span>
                         </div>
                         <textarea id="h2tMental" placeholder="LOC (alert/drowsy/lethargic/stuporous), orientation (person/place/time/situation), mood/affect, memory..."></textarea>
                     </div>
@@ -1467,25 +1486,29 @@
                         <h4>HEENT</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Head normocephalic and atraumatic. ')">NC/AT</span>
-                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Hair/scalp WNL. ')">Hair/Scalp WNL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Hair/scalp WDL. ')">Hair/Scalp WDL</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'PERRLA. ')">PERRLA</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'EOM intact. ')">EOM intact</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'No nystagmus. ')">No nystagmus</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Ears clear bilat. ')">Ears clear</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Hearing intact bilat. ')">Hearing intact</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Nose patent. ')">Nose patent</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Smell intact bilat. ')">Smell intact</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Oral mucosa moist, pink. ')">Mucosa moist</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Dentation intact. ')">Dentation intact</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Sinuses non-tender. ')">Sinuses NT</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Smile symmetric. ')">Smile symmetric</span>
                             <span class="quick-fill" onclick="appendToField('h2tHeent', 'Tongue midline. ')">Tongue midline</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Protrudes tongue midline. ')">Stick out tongue</span>
+                            <span class="quick-fill" onclick="appendToField('h2tHeent', 'Sensation intact to face. ')">Facial sensation</span>
                         </div>
-                        <textarea id="h2tHeent" placeholder="Hair/scalp, eyes (pupils, EOM, nystagmus), ears, nose/smell, mouth, tongue, mucous membranes, dentation, sinuses..."></textarea>
+                        <textarea id="h2tHeent" placeholder="Hair/scalp, eyes (pupils, EOM, nystagmus, vision), ears, nose/smell, mouth (smile, tongue, mucous membranes, dentation), sinuses, sensation..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Neck</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tNeck', 'Lymph nodes non-palpable. ')">Lymph nodes NP</span>
-                            <span class="quick-fill" onclick="appendToField('h2tNeck', 'Thyroid midline, non-enlarged. ')">Thyroid WNL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeck', 'Thyroid midline, non-enlarged. ')">Thyroid WDL</span>
                             <span class="quick-fill" onclick="appendToField('h2tNeck', 'No JVD. ')">No JVD</span>
                             <span class="quick-fill" onclick="appendToField('h2tNeck', 'Trachea midline. ')">Trachea midline</span>
                             <span class="quick-fill" onclick="appendToField('h2tNeck', 'Carotid pulses equal bilat. ')">Carotid equal</span>
@@ -1500,8 +1523,13 @@
                             <span class="quick-fill" onclick="appendToField('h2tNeuro', 'No focal deficits. ')">No deficits</span>
                             <span class="quick-fill" onclick="appendToField('h2tNeuro', 'Sensation intact bilat. ')">Sensation intact</span>
                             <span class="quick-fill" onclick="appendToField('h2tNeuro', 'CN II-XII grossly intact. ')">CN intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'Gag reflex intact. ')">Gag reflex</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'Swallow intact. ')">Swallow intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'Voice clear, no hoarseness. ')">Voice clear</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'Shoulder shrug equal bilat. ')">Shoulder shrug</span>
+                            <span class="quick-fill" onclick="appendToField('h2tNeuro', 'Head turn strength intact bilat. ')">Head turn</span>
                         </div>
-                        <textarea id="h2tNeuro" placeholder="LOC, orientation, pupils, EOM, cranial nerves, motor/sensory, GCS, sensation..."></textarea>
+                        <textarea id="h2tNeuro" placeholder="LOC, orientation, pupils, EOM, cranial nerves (I-XII: smell, vision, PERRLA, EOM, facial sensation, smile, hearing, gag/swallow, voice, shoulder shrug, tongue), motor/sensory, GCS..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Cardiovascular</h4>
@@ -1515,21 +1543,27 @@
                             <span class="quick-fill" onclick="appendToField('h2tCardio', 'No murmur, gallop, or rub. ')">No MGR</span>
                             <span class="quick-fill" onclick="appendToField('h2tCardio', 'Brachial pulses 2+ bilat. ')">Brachial 2+</span>
                             <span class="quick-fill" onclick="appendToField('h2tCardio', 'Extremities warm bilat. ')">Warm bilat</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'No arrhythmia. ')">No arrhythmia</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Posterior tibial pulses palpable bilat. ')">Post tibial</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Dorsalis pedis pulses palpable bilat. ')">Dorsalis pedis</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Femoral pulses palpable bilat. ')">Femoral pulses</span>
+                            <span class="quick-fill" onclick="appendToField('h2tCardio', 'Popliteal pulses palpable bilat. ')">Popliteal pulses</span>
                         </div>
-                        <textarea id="h2tCardio" placeholder="Heart sounds (aortic/pulmonic/Erb's/tricuspid/mitral), apical pulse, radial/brachial/pedal pulses, edema, cap refill, extremity temp..."></textarea>
+                        <textarea id="h2tCardio" placeholder="Heart sounds (aortic/pulmonic/Erb's/tricuspid/mitral), apical pulse, arrhythmia, radial/brachial/femoral/popliteal/posterior tibial/dorsalis pedis pulses, edema, cap refill, extremity temp..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Respiratory</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'CTA bilat. ')">CTA bilat</span>
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'Unlabored, regular. ')">Unlabored</span>
-                            <span class="quick-fill" onclick="appendToField('h2tResp', 'RA, SpO2 WNL. ')">RA</span>
+                            <span class="quick-fill" onclick="appendToField('h2tResp', 'RA, SpO2 WDL. ')">RA</span>
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'O2 via NC _L/min. ')">O2 NC</span>
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'No cough, no SOB. ')">No cough/SOB</span>
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'Chest expansion symmetric. ')">Chest symmetric</span>
                             <span class="quick-fill" onclick="appendToField('h2tResp', 'No sputum production. ')">No sputum</span>
+                            <span class="quick-fill" onclick="appendToField('h2tResp', 'Skin turgor elastic at clavicle. ')">Turgor (clavicle)</span>
                         </div>
-                        <textarea id="h2tResp" placeholder="Breath sounds (front/back, upper/mid/lower), effort, O2, cough/sputum, chest symmetry, skin turgor..."></textarea>
+                        <textarea id="h2tResp" placeholder="Breath sounds (front/back, upper/mid/lower), effort, O2, cough/sputum, chest symmetry/expansion, skin turgor (clavicle)..."></textarea>
                     </div>
                     <div class="h2t-section">
                         <h4>Gastrointestinal</h4>
@@ -1546,7 +1580,7 @@
                     <div class="h2t-section">
                         <h4>Genitourinary</h4>
                         <div class="quick-fills">
-                            <span class="quick-fill" onclick="appendToField('h2tGU', 'Voiding without difficulty. ')">Voiding WNL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tGU', 'Voiding without difficulty. ')">Voiding WDL</span>
                             <span class="quick-fill" onclick="appendToField('h2tGU', 'Foley patent, clear yellow urine. ')">Foley patent</span>
                             <span class="quick-fill" onclick="appendToField('h2tGU', 'Last void: ___. ')">Last void</span>
                             <span class="quick-fill" onclick="appendToField('h2tGU', 'I&O balanced. ')">I&O balanced</span>
@@ -1557,12 +1591,12 @@
                         <h4>Skin/Integumentary</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'Warm, dry, intact. ')">WDI</span>
-                            <span class="quick-fill" onclick="appendToField('h2tSkin', 'Color appropriate. ')">Color WNL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tSkin', 'Color appropriate. ')">Color WDL</span>
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'Turgor elastic. ')">Turgor elastic</span>
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'No breakdown, no pressure areas. ')">No breakdown</span>
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'IV site: ___. ')">IV site</span>
                             <span class="quick-fill" onclick="appendToField('h2tSkin', 'No rashes or lesions. ')">No rashes</span>
-                            <span class="quick-fill" onclick="appendToField('h2tSkin', 'Hair distribution WNL. ')">Hair WNL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tSkin', 'Hair distribution WDL. ')">Hair WDL</span>
                         </div>
                         <textarea id="h2tSkin" placeholder="Description, color, temp, turgor (clavicle), wounds, IV sites, rashes, hair distribution, Braden score..."></textarea>
                     </div>
@@ -1581,6 +1615,40 @@
                         <textarea id="h2tMSK" placeholder="ROM (active/passive, upper/lower), gait, grip strength, muscle strength, Romberg, balance, fall risk..."></textarea>
                     </div>
                     <div class="h2t-section">
+                        <h4>Upper Extremities</h4>
+                        <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Brachial pulses palpable bilat. ')">Brachial pulses</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Radial pulses palpable, equal bilat. ')">Radial equal</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Hair distribution WDL. ')">Hair WDL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Sensation intact bilat. ')">Sensation intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Temp equal to trunk, warm. ')">Warm</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Cap refill <3 sec. ')">Cap refill <3s</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Grip strength equal, strong bilat. ')">Grip equal/strong</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'Muscle strength 5/5 bilat. ')">Strength 5/5</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'ROM active bilat. ')">ROM active</span>
+                            <span class="quick-fill" onclick="appendToField('h2tUpperExt', 'ROM passive bilat. ')">ROM passive</span>
+                        </div>
+                        <textarea id="h2tUpperExt" placeholder="Pulses (brachial/radial, equal), hair distribution, sensation, temp vs trunk (warm/cool), cap refill, grip (equal/strong), muscle strength, ROM (active/passive L/R)..."></textarea>
+                    </div>
+                    <div class="h2t-section">
+                        <h4>Lower Extremities</h4>
+                        <div class="quick-fills">
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Femoral pulses palpable bilat. ')">Femoral pulses</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Popliteal pulses palpable bilat. ')">Popliteal</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Posterior tibial pulses palpable bilat. ')">Post tibial</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Dorsalis pedis pulses palpable, equal bilat. ')">Dorsalis pedis</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Hair distribution WDL. ')">Hair WDL</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'No edema. ')">No edema</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Sensation intact bilat. ')">Sensation intact</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Temp equal to trunk, warm. ')">Warm</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Cap refill <3 sec. ')">Cap refill <3s</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'Muscle strength 5/5 bilat. ')">Strength 5/5</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'ROM active bilat. ')">ROM active</span>
+                            <span class="quick-fill" onclick="appendToField('h2tLowerExt', 'ROM passive bilat. ')">ROM passive</span>
+                        </div>
+                        <textarea id="h2tLowerExt" placeholder="Pulses (femoral/popliteal/posterior tibial/dorsalis pedis, equal), hair distribution, edema, sensation, temp vs trunk (warm/cool), cap refill, muscle strength, ROM (active/passive L/R)..."></textarea>
+                    </div>
+                    <div class="h2t-section">
                         <h4>Pain/Comfort</h4>
                         <div class="quick-fills">
                             <span class="quick-fill" onclick="appendToField('h2tPain', 'Pain 0/10. ')">Pain 0/10</span>
@@ -1590,6 +1658,14 @@
                             <span class="quick-fill" onclick="appendToField('h2tPain', 'Acute onset. ')">Acute</span>
                             <span class="quick-fill" onclick="appendToField('h2tPain', 'Chronic. ')">Chronic</span>
                             <span class="quick-fill" onclick="appendToField('h2tPain', 'Non-pharmacological measures. ')">Non-pharm</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Location: ___. ')">Location</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Duration: ___. ')">Duration</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Characteristics: ___. ')">Characteristics</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Precipitating factors: ___. ')">Precip factors</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Non-verbal cues: ___. ')">Non-verbal cues</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Better with: ___. ')">Better with</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Worse with: ___. ')">Worse with</span>
+                            <span class="quick-fill" onclick="appendToField('h2tPain', 'Does not affect sleep. ')">No sleep impact</span>
                         </div>
                         <textarea id="h2tPain" placeholder="Acute/chronic, intensity (0-10), location, duration, characteristics, precipitating factors, non-verbal cues, better/worse, affects sleep..."></textarea>
                     </div>
@@ -2148,6 +2224,8 @@
                 fullContent.h2tGU = document.getElementById('h2tGU').value;
                 fullContent.h2tSkin = document.getElementById('h2tSkin').value;
                 fullContent.h2tMSK = document.getElementById('h2tMSK').value;
+                fullContent.h2tUpperExt = document.getElementById('h2tUpperExt').value;
+                fullContent.h2tLowerExt = document.getElementById('h2tLowerExt').value;
                 fullContent.h2tPain = document.getElementById('h2tPain').value;
                 fullContent.h2tMental = document.getElementById('h2tMental').value;
                 fullContent.h2tSafety = document.getElementById('h2tSafety').value;
@@ -2392,6 +2470,8 @@
                 if (content.h2tGU) document.getElementById('h2tGU').value = content.h2tGU;
                 if (content.h2tSkin) document.getElementById('h2tSkin').value = content.h2tSkin;
                 if (content.h2tMSK) document.getElementById('h2tMSK').value = content.h2tMSK;
+                if (content.h2tUpperExt) document.getElementById('h2tUpperExt').value = content.h2tUpperExt;
+                if (content.h2tLowerExt) document.getElementById('h2tLowerExt').value = content.h2tLowerExt;
                 if (content.h2tPain) document.getElementById('h2tPain').value = content.h2tPain;
                 if (content.h2tMental) document.getElementById('h2tMental').value = content.h2tMental;
                 if (content.h2tSafety) document.getElementById('h2tSafety').value = content.h2tSafety;
@@ -3085,7 +3165,7 @@
             '.nka': 'NKA (No Known Allergies). ',
             // General Assessment
             '.denies': 'Patient denies pain, nausea, SOB, dizziness, chest pain. ',
-            '.wnl': 'Within normal limits. ',
+            '.wdl': 'Within defined limits. ',
             '.nad': 'No acute distress. ',
             '.wdta': 'Will continue to monitor. Patient tolerated well. No adverse effects noted. ',
             // Interventions
@@ -3139,6 +3219,62 @@
             }
         });
 
+        // Temperature and Weight unit state
+        let tempUnit = 'F'; // 'F' or 'C'
+        let weightUnit = 'lbs'; // 'lbs' or 'kg'
+
+        function toggleTempUnit() {
+            const input = document.getElementById('vsTemp');
+            const label = document.getElementById('vsTempUnitLabel');
+            const btn = document.getElementById('vsTempToggle');
+            const val = parseFloat(input.value);
+
+            if (tempUnit === 'F') {
+                tempUnit = 'C';
+                label.textContent = '°C';
+                btn.textContent = '→°F';
+                input.placeholder = '37.0';
+                input.min = '30';
+                input.max = '45';
+                if (!isNaN(val)) input.value = ((val - 32) * 5 / 9).toFixed(1);
+            } else {
+                tempUnit = 'F';
+                label.textContent = '°F';
+                btn.textContent = '→°C';
+                input.placeholder = '98.6';
+                input.min = '90';
+                input.max = '110';
+                if (!isNaN(val)) input.value = (val * 9 / 5 + 32).toFixed(1);
+            }
+        }
+
+        function toggleWeightUnit() {
+            const input = document.getElementById('vsWeight');
+            const label = document.getElementById('vsWeightUnitLabel');
+            const btn = document.getElementById('vsWeightToggle');
+            const val = parseFloat(input.value);
+
+            if (weightUnit === 'lbs') {
+                weightUnit = 'kg';
+                label.textContent = 'kg';
+                btn.textContent = '→lbs';
+                input.placeholder = '68';
+                if (!isNaN(val)) input.value = (val / 2.205).toFixed(1);
+            } else {
+                weightUnit = 'lbs';
+                label.textContent = 'lbs';
+                btn.textContent = '→kg';
+                input.placeholder = '150';
+                if (!isNaN(val)) input.value = (val * 2.205).toFixed(1);
+            }
+        }
+
+        // Get temp value in Celsius for export (always exports as °C)
+        function getTempCelsius(val) {
+            if (tempUnit === 'F') return ((val - 32) * 5 / 9).toFixed(1);
+            return parseFloat(val).toFixed(1);
+        }
+
         // Insert formatted vitals into the last active textarea
         function insertVitals() {
             if (!lastActiveTextarea) {
@@ -3154,15 +3290,25 @@
             const o2 = document.getElementById('vsO2').value.trim();
             const o2Source = document.getElementById('vsO2Source').value;
             const pain = document.getElementById('vsPain').value.trim();
+            const weight = document.getElementById('vsWeight').value.trim();
+            const height = document.getElementById('vsHeight').value.trim();
 
             // Build vitals string, only include fields that have values
             let parts = [];
             if (bpSys && bpDia) parts.push(`BP ${bpSys}/${bpDia}`);
             if (hr) parts.push(`HR ${hr}`);
             if (rr) parts.push(`RR ${rr}`);
-            if (temp) parts.push(`T ${temp}°F`);
+            if (temp) {
+                const tempC = getTempCelsius(parseFloat(temp));
+                parts.push(`T ${tempC}°C`);
+            }
             if (o2) parts.push(`O2 ${o2}% ${o2Source}`);
             if (pain) parts.push(`Pain ${pain}/10`);
+            if (weight) {
+                const wtKg = weightUnit === 'lbs' ? (parseFloat(weight) / 2.205).toFixed(1) : parseFloat(weight).toFixed(1);
+                parts.push(`Wt ${wtKg} kg`);
+            }
+            if (height) parts.push(`Ht ${height} in`);
 
             if (parts.length === 0) {
                 showToast('Please enter at least one vital sign.', 'warning');
@@ -3189,6 +3335,8 @@
             document.getElementById('vsTemp').value = '';
             document.getElementById('vsO2').value = '';
             document.getElementById('vsPain').value = '';
+            document.getElementById('vsWeight').value = '';
+            document.getElementById('vsHeight').value = '';
         }
 
         // Insert formatted medication into the last active textarea
@@ -3272,15 +3420,25 @@
             const o2 = document.getElementById('vsO2').value.trim();
             const o2Source = document.getElementById('vsO2Source').value;
             const pain = document.getElementById('vsPain').value.trim();
+            const weight = document.getElementById('vsWeight').value.trim();
+            const height = document.getElementById('vsHeight').value.trim();
 
             // Build vitals object
             let parts = [];
             if (bpSys && bpDia) parts.push(`BP ${bpSys}/${bpDia}`);
             if (hr) parts.push(`HR ${hr}`);
             if (rr) parts.push(`RR ${rr}`);
-            if (temp) parts.push(`T ${temp}°F`);
+            if (temp) {
+                const tempC = getTempCelsius(parseFloat(temp));
+                parts.push(`T ${tempC}°C`);
+            }
             if (o2) parts.push(`O2 ${o2}% ${o2Source}`);
             if (pain) parts.push(`Pain ${pain}/10`);
+            if (weight) {
+                const wtKg = weightUnit === 'lbs' ? (parseFloat(weight) / 2.205).toFixed(1) : parseFloat(weight).toFixed(1);
+                parts.push(`Wt ${wtKg} kg`);
+            }
+            if (height) parts.push(`Ht ${height} in`);
 
             if (parts.length === 0) {
                 showToast('Please enter at least one vital sign.', 'warning');
@@ -3304,6 +3462,8 @@
             document.getElementById('vsTemp').value = '';
             document.getElementById('vsO2').value = '';
             document.getElementById('vsPain').value = '';
+            document.getElementById('vsWeight').value = '';
+            document.getElementById('vsHeight').value = '';
 
             renderSavedVitals();
             showToast('Vitals saved! Will be included in PDF/Word export.', 'success');
@@ -4249,6 +4409,8 @@
                 { id: 'h2tGU', label: 'GU' },
                 { id: 'h2tSkin', label: 'Skin' },
                 { id: 'h2tMSK', label: 'MSK' },
+                { id: 'h2tUpperExt', label: 'Upper Ext' },
+                { id: 'h2tLowerExt', label: 'Lower Ext' },
                 { id: 'h2tPain', label: 'Pain' },
                 { id: 'h2tMental', label: 'Mental' },
                 { id: 'h2tSafety', label: 'Safety' },
@@ -4707,6 +4869,8 @@
                 c.push({l:'',t:'Genitourinary',x:document.getElementById('h2tGU').value});
                 c.push({l:'',t:'Skin/Integumentary',x:document.getElementById('h2tSkin').value});
                 c.push({l:'',t:'Musculoskeletal',x:document.getElementById('h2tMSK').value});
+                c.push({l:'',t:'Upper Extremities',x:document.getElementById('h2tUpperExt').value});
+                c.push({l:'',t:'Lower Extremities',x:document.getElementById('h2tLowerExt').value});
                 c.push({l:'',t:'Pain/Comfort',x:document.getElementById('h2tPain').value});
                 c.push({l:'',t:'Mental Status',x:document.getElementById('h2tMental').value});
                 c.push({l:'',t:'Safety/Risk',x:document.getElementById('h2tSafety').value});
