@@ -1061,3 +1061,219 @@ Added `@media print` rules:
 - Commit: `9336622`
 - Service worker: v21
 - 13 files changed, +757 / -285 lines
+
+---
+
+## Session Notes (Feb 12, 2026)
+
+### Credentials Dropdown Update
+
+#### Change
+Replaced single "Student RN" credential option with Student Nurse year levels:
+- **Dropdown labels**: SN1, SN2, SN3, SN4 (short form for quick selection)
+- **Export values**: "Student Nurse Year 1" through "Student Nurse Year 4" (full form in PDF/Word/text output)
+- Kept existing RN, BSN RN, and LPN options
+
+#### How It Works
+- Dropdown `<option value="Student Nurse Year X">SNX</option>` — display text is short, value is full
+- All export code (`getFormData()` → `d.credentials`) automatically uses the full value
+- No changes needed to PDF, Word, or text export functions
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `/app/index.html` | Credentials dropdown: replaced "Student RN" with SN1-SN4 year options |
+| `/sw.js` | Cache version v25 → v26 |
+
+### Deployment
+- Commit: `3b4a525`
+- Service worker: v26
+
+### AI Assistant CSP Fix
+
+#### Problem
+AI nursing assistant returned "Sorry, I could not connect to the AI service" — the `fetch()` threw a network error (caught in catch block).
+
+#### Root Cause
+The Google Apps Script endpoint (`script.google.com`) returns a 302 redirect to `script.googleusercontent.com` to serve the response. The CSP `connect-src` directive only allowed `script.google.com`, so the browser blocked the redirected request to `script.googleusercontent.com`.
+
+Same class of bug as the Feb 7 RxNav medication search fix (missing CSP domain).
+
+#### Fix
+Added `https://script.googleusercontent.com` to CSP `connect-src` in `/ai/index.html`.
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `/ai/index.html` | Added `script.googleusercontent.com` to CSP `connect-src` |
+| `/sw.js` | Cache version v26 → v27 |
+
+### Deployment
+- Commit: `e0cc300`
+- Service worker: v27
+
+### WNL→WDL, Vitals Enhancements, H2T Assessment Overhaul
+
+#### WNL → WDL (Within Defined Limits)
+Replaced all instances of "WNL" / "Within normal limits" with "WDL" / "Within defined limits":
+- Smart phrase shortcode `.wnl` → `.wdl`
+- 6 quick-fill buttons in H2T (Hair/Scalp, Thyroid, RA/SpO2, Voiding, Color, Hair distribution)
+- Resources page abbreviation reference card
+
+#### Temperature °F/°C Toggle
+- Added toggle button next to temp field that switches between °F and °C
+- Auto-converts current value when toggling
+- **Exports always as °C** (converts from F if entered in F)
+- State tracked via `tempUnit` variable, conversion via `getTempCelsius()`
+
+#### Weight Field (lbs/kg Toggle)
+- Added weight input to Quick Vitals panel with lbs/kg toggle button
+- Auto-converts current value when toggling
+- **Exports always as kg** (converts from lbs if entered in lbs)
+- State tracked via `weightUnit` variable
+
+#### Height Field
+- Added height input (inches) to Quick Vitals panel
+- Included in Insert Now and Save for Export flows
+
+#### New H2T Sections
+- **Upper Extremities**: Brachial/Radial pulses, hair distribution, sensation, temp vs trunk, cap refill, grip (equal/strong), muscle strength, ROM (active/passive)
+- **Lower Extremities**: Femoral/Popliteal/Posterior Tibial/Dorsalis Pedis pulses, hair distribution, edema, sensation, temp vs trunk, cap refill, muscle strength, ROM (active/passive)
+- Both sections registered in save/load, section-jump, and PDF/Word export arrays
+
+#### Enhanced Existing H2T Sections
+- **Mental Status**: Added LOC options (Drowsy, Lethargic, Stuporous) + Smoker/Non-smoker quick-fills
+- **HEENT**: Added Stick Out Tongue, Facial Sensation, Hearing Intact, Smell Intact
+- **Neurological**: Added Gag Reflex (CN IX), Swallow Intact (CN X), Voice Clear (CN X), Shoulder Shrug (CN XI), Head Turn (CN XI)
+- **Cardiovascular**: Added No Arrhythmia, Posterior Tibial, Dorsalis Pedis, Femoral, Popliteal pulse quick-fills
+- **Respiratory**: Added Skin Turgor (Clavicle) quick-fill
+- **Pain/Comfort**: Added Location, Duration, Characteristics, Precipitating Factors, Non-verbal Cues, Better With, Worse With, No Sleep Impact quick-fills
+
+#### Cranial Nerves Coverage (All CN I-XII)
+| CN | Name | Location | Quick-fill |
+|----|------|----------|------------|
+| I | Olfactory | HEENT | Smell intact |
+| II | Optic | HEENT | PERRLA |
+| III | Oculomotor | HEENT | EOM intact, PERRLA |
+| IV | Trochlear | HEENT | EOM intact |
+| V | Trigeminal | HEENT | Facial sensation |
+| VI | Abducens | HEENT | EOM intact, No nystagmus |
+| VII | Facial | HEENT | Smile symmetric |
+| VIII | Vestibulocochlear | HEENT | Hearing intact |
+| IX | Glossopharyngeal | Neuro | Gag reflex |
+| X | Vagus | Neuro | Swallow intact, Voice clear |
+| XI | Spinal Accessory | Neuro | Shoulder shrug, Head turn |
+| XII | Hypoglossal | HEENT | Tongue midline, Stick out tongue |
+
+#### Key Functions Added/Modified
+| Function | Purpose |
+|----------|---------|
+| `toggleTempUnit()` | Switch °F↔°C with auto-conversion |
+| `toggleWeightUnit()` | Switch lbs↔kg with auto-conversion |
+| `getTempCelsius(val)` | Convert entered temp to °C for export |
+| `insertVitals()` | Updated: includes weight (kg), height (in), temp (°C) |
+| `saveVitals()` | Updated: includes weight (kg), height (in), temp (°C) |
+
+#### New HTML Element IDs
+| ID | Type | Purpose |
+|----|------|---------|
+| `vsTempUnitLabel` | span | Shows current temp unit (°F/°C) |
+| `vsTempToggle` | button | Toggle temp unit |
+| `vsWeight` | input | Weight entry |
+| `vsWeightUnitLabel` | span | Shows current weight unit (lbs/kg) |
+| `vsWeightToggle` | button | Toggle weight unit |
+| `vsHeight` | input | Height entry (inches) |
+| `h2tUpperExt` | textarea | Upper Extremities H2T section |
+| `h2tLowerExt` | textarea | Lower Extremities H2T section |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `/app/index.html` | WNL→WDL, temp/weight/height fields + toggles, new H2T sections, enhanced quick-fills, cranial nerves |
+| `/resources/index.html` | WNL→WDL in abbreviation reference |
+| `/sw.js` | Cache version v27 → v28 |
+
+### Deployment
+- Commit: `c4ebafc`
+- Service worker: v28
+
+### PHQ-9 & GAD-7 Full Question Text
+
+Updated both screening panels with the complete validated question wording patients are actually asked:
+- Added preamble: *"Over the last 2 weeks, how often have you been bothered by the following?"*
+- Added scoring legend: 0 = Not at all, 1 = Several days, 2 = More than half the days, 3 = Nearly every day
+- Replaced abbreviated labels with full question text (e.g., "Psychomotor changes" → full description)
+- Added severity reference bars inline
+
+### 5 New Screening Tools
+
+Added C-SSRS, CAGE, Morse Fall Scale, Braden Scale, and CAM as collapsible panels in the Mental Health/Screenings section.
+
+#### C-SSRS (Columbia Suicide Severity Rating Scale)
+- 6 yes/no triage questions asked directly to patient
+- Triage levels: Negative → Low Risk → Moderate Risk → High Risk → Behavioral Risk
+- Red theme (`#d32f2f`)
+
+#### CAGE (Alcohol Screening)
+- 4 yes/no questions using C-A-G-E mnemonic (Cut down, Annoyed, Guilty, Eye-opener)
+- Score 0-4; >=2 = clinically significant
+- Orange theme (`#ff8f00`)
+
+#### Morse Fall Scale
+- 6 items with weighted scores (history of falling, secondary dx, ambulatory aid, IV/heplock, gait, mental status)
+- Score 0-125: Low (<25), Moderate (25-44), High (45+)
+- Green theme (`#43a047`)
+
+#### Braden Scale (Pressure Injury Risk)
+- 6 subscales: Sensory Perception, Moisture, Activity, Mobility, Nutrition, Friction & Shear
+- Score 6-23 (lower = higher risk): No risk (19-23), Mild (15-18), Moderate (13-14), High (10-12), Very high (≤9)
+- Blue theme (`#1976d2`)
+
+#### CAM (Confusion Assessment Method)
+- 4 features: Acute Onset, Inattention, Disorganized Thinking, Altered LOC
+- Positive = Feature 1 + Feature 2 + (Feature 3 OR Feature 4) → Delirium likely
+- Purple theme (`#8e24aa`)
+
+#### Screening System Refactoring
+- `getScreeningMeta()` returns lazy function references (avoids forward-reference issues)
+- `getScreeningData(type)` generic handler for all 7 screening types
+- All types use consistent `--` default options for proper empty-state detection
+- `hasScreeningResponses(prefix, count)` works for all tools
+- `renderSavedScreenings(type)` uses capitalized type for element ID lookup (e.g., `savedMorseList`)
+
+#### All Tools Support
+- **Save for Export** / **Insert Now** buttons (same pattern as PHQ-9/GAD-7)
+- **Save/Load** document persistence (all select values)
+- **PDF & Word export** via shared `savedScreenings` array
+- **MH Summary** insert via `getScreeningSummary()`
+- **Dark mode** CSS for all panels
+- **Clear Form** resets all tools
+
+#### Key Functions Added
+| Function | Purpose |
+|----------|---------|
+| `getScreeningMeta()` | Returns metadata object with lazy function refs for all 7 tools |
+| `getScreeningData(type)` | Generic handler returning label, total, severity, display text |
+| `getCssrsResult()` | Evaluate C-SSRS triage level from yes/no answers |
+| `updateCssrsResult()` | Update C-SSRS result display |
+| `getCageTotal()` | Count "yes" answers for CAGE |
+| `getCageSeverity(score)` | CAGE interpretation |
+| `updateCageScore()` | Update CAGE score display |
+| `getMorseTotal()` | Sum weighted Morse items |
+| `getMorseSeverity(score)` | Morse risk level |
+| `updateMorseScore()` | Update Morse score display |
+| `getBradenTotal()` | Sum Braden subscales |
+| `getBradenSeverity(score)` | Braden risk level |
+| `updateBradenScore()` | Update Braden score display |
+| `getCamResult()` | Evaluate CAM algorithm (F1+F2+(F3 or F4)) |
+| `updateCamResult()` | Update CAM result display |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `/app/index.html` | PHQ-9/GAD-7 full text, 5 new screening panels, refactored screening system |
+| `/sw.js` | Cache version v28 → v29 |
+
+### Deployment
+- Commit: `6f55977`
+- Service worker: v29
