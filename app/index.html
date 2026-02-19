@@ -721,6 +721,27 @@
             font-style: italic;
             font-size: 12px;
         }
+        /* Common Medication Buttons */
+        .common-med-btn {
+            background: white;
+            border: 1px solid #1976d2;
+            color: #1565c0;
+            padding: 5px 10px;
+            border-radius: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .common-med-btn:hover {
+            background: #1976d2;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+        }
+        .common-med-btn:active {
+            transform: translateY(0);
+        }
         /* Pulse animation for RN Resources button */
         @keyframes pulse-btn {
             0% { box-shadow: 0 4px 15px rgba(255,107,53,0.4); }
@@ -1124,17 +1145,49 @@
             <!-- Medication Administration Panel -->
             <div class="med-panel" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #1976d2; border-radius: 10px; padding: 15px 20px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('medContent', this)">
-                    <h3 style="color: #1565c0; margin: 0;">💊 Medication Administration <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 style="color: #1565c0; margin: 0;">💊 Medication Administration <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <span id="savedMedsBadge" style="display: none; background: #2e7d32; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;"></span>
+                    </div>
                     <div style="display: flex; gap: 8px;">
                         <button onclick="event.stopPropagation(); saveMedication()" style="background: #2e7d32; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
                         <button onclick="event.stopPropagation(); insertMedication()" style="background: #1976d2; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
                     </div>
                 </div>
                 <div id="medContent" style="display: none;">
+                <!-- Common Medications Quick-Pick -->
+                <div style="background: rgba(255,255,255,0.5); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+                    <label style="font-size: 11px; color: #1565c0; font-weight: 600; display: block; margin-bottom: 6px;">⚡ Common Medications (Click to select):</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="commonMedsList">
+                        <button onclick="selectDrug('Acetaminophen')" class="common-med-btn">Acetaminophen</button>
+                        <button onclick="selectDrug('Ibuprofen')" class="common-med-btn">Ibuprofen</button>
+                        <button onclick="selectDrug('Aspirin')" class="common-med-btn">Aspirin</button>
+                        <button onclick="selectDrug('Morphine')" class="common-med-btn">Morphine</button>
+                        <button onclick="selectDrug('Hydrocodone')" class="common-med-btn">Hydrocodone</button>
+                        <button onclick="selectDrug('Oxycodone')" class="common-med-btn">Oxycodone</button>
+                        <button onclick="selectDrug('Lisinopril')" class="common-med-btn">Lisinopril</button>
+                        <button onclick="selectDrug('Metoprolol')" class="common-med-btn">Metoprolol</button>
+                        <button onclick="selectDrug('Amlodipine')" class="common-med-btn">Amlodipine</button>
+                        <button onclick="selectDrug('Atorvastatin')" class="common-med-btn">Atorvastatin</button>
+                        <button onclick="selectDrug('Metformin')" class="common-med-btn">Metformin</button>
+                        <button onclick="selectDrug('Levothyroxine')" class="common-med-btn">Levothyroxine</button>
+                        <button onclick="selectDrug('Albuterol')" class="common-med-btn">Albuterol</button>
+                        <button onclick="selectDrug('Furosemide')" class="common-med-btn">Furosemide</button>
+                        <button onclick="selectDrug('Warfarin')" class="common-med-btn">Warfarin</button>
+                        <button onclick="selectDrug('Heparin')" class="common-med-btn">Heparin</button>
+                        <button onclick="selectDrug('Insulin')" class="common-med-btn">Insulin</button>
+                        <button onclick="selectDrug('Ondansetron')" class="common-med-btn">Ondansetron</button>
+                        <button onclick="selectDrug('Diphenhydramine')" class="common-med-btn">Diphenhydramine</button>
+                        <button onclick="selectDrug('Lorazepam')" class="common-med-btn">Lorazepam</button>
+                    </div>
+                </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
                     <div class="drug-autocomplete-wrapper">
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Medication Name</label>
-                        <input type="text" id="medName" placeholder="Start typing drug name..." style="width: 100%; padding: 8px; font-size: 13px;" autocomplete="off">
+                        <div style="position: relative;">
+                            <input type="text" id="medName" placeholder="Start typing or select above..." style="width: 100%; padding: 8px 32px 8px 8px; font-size: 13px;" autocomplete="off">
+                            <button id="clearMedName" onclick="clearMedNameInput()" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; font-size: 16px; display: none;" title="Clear input">✕</button>
+                        </div>
                         <div id="drugDropdown" class="drug-dropdown"></div>
                         <div id="medRecents" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;"></div>
                     </div>
@@ -2149,6 +2202,15 @@
         }
         [data-theme="dark"] .drug-item:hover {
             background: var(--accent-hover) !important;
+        }
+        [data-theme="dark"] .common-med-btn {
+            background: var(--bg-secondary) !important;
+            border-color: var(--accent) !important;
+            color: var(--accent) !important;
+        }
+        [data-theme="dark"] .common-med-btn:hover {
+            background: var(--accent) !important;
+            color: var(--bg-primary) !important;
         }
         [data-theme="dark"] #historyModal > div {
             background: var(--bg-primary) !important;
@@ -3849,6 +3911,7 @@
 
             if (savedMedications.length === 0) {
                 list.style.display = 'none';
+                updateSavedMedsBadge();
                 return;
             }
 
@@ -3862,6 +3925,7 @@
                     <button onclick="removeSavedMedication(${i})" style="background: #e3f2fd; border: none; color: #d32f2f; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Remove</button>
                 </div>
             `).join('');
+            updateSavedMedsBadge();
         }
 
         function removeSavedMedication(index) {
@@ -4110,6 +4174,21 @@
             }, 300);
         });
 
+        // Common drugs list for prioritization
+        const COMMON_DRUGS = [
+            'acetaminophen', 'ibuprofen', 'aspirin', 'morphine', 'hydrocodone', 'oxycodone',
+            'lisinopril', 'metoprolol', 'amlodipine', 'atorvastatin', 'metformin', 'levothyroxine',
+            'albuterol', 'furosemide', 'warfarin', 'heparin', 'insulin', 'ondansetron',
+            'diphenhydramine', 'lorazepam', 'pantoprazole', 'omeprazole', 'gabapentin',
+            'prednisone', 'azithromycin', 'amoxicillin', 'ciprofloxacin', 'cephalexin',
+            'hydrochlorothiazide', 'losartan', 'simvastatin', 'clopidogrel', 'carvedilol'
+        ];
+
+        function isCommonDrug(name) {
+            const lowerName = name.toLowerCase();
+            return COMMON_DRUGS.some(common => lowerName.includes(common) || common.includes(lowerName));
+        }
+
         async function searchDrugs(query) {
             try {
                 // 1. Spelling suggestions + approximate term in parallel
@@ -4188,14 +4267,31 @@
                     }
                 });
 
-                // Build dropdown
-                const items = Array.from(results.values()).slice(0, 12);
+                // Build dropdown with common drugs prioritized
+                let items = Array.from(results.values());
+
+                // Sort: common drugs first, then alphabetically
+                items.sort((a, b) => {
+                    const aIsCommon = isCommonDrug(a.generic);
+                    const bIsCommon = isCommonDrug(b.generic);
+
+                    if (aIsCommon && !bIsCommon) return -1;
+                    if (!aIsCommon && bIsCommon) return 1;
+
+                    // Both common or both uncommon - sort alphabetically
+                    return a.generic.toLowerCase().localeCompare(b.generic.toLowerCase());
+                });
+
+                items = items.slice(0, 12);
+
                 if (items.length === 0) {
                     drugDropdown.innerHTML = '<div class="drug-loading">No matches found. You can still type manually.</div>';
                 } else {
-                    drugDropdown.innerHTML = items.map(drug =>
-                        `<div class="drug-item" onclick="selectDrug('${drug.generic.replace(/'/g, "\\'")}')">${drug.display}</div>`
-                    ).join('');
+                    drugDropdown.innerHTML = items.map(drug => {
+                        const isCommon = isCommonDrug(drug.generic);
+                        const star = isCommon ? '<span style="color: #f59e0b; margin-right: 4px;">⭐</span>' : '';
+                        return `<div class="drug-item" onclick="selectDrug('${drug.generic.replace(/'/g, "\\'")}')">${star}${drug.display}</div>`;
+                    }).join('');
                 }
                 drugDropdown.classList.add('show');
             } catch (error) {
@@ -4209,8 +4305,45 @@
             drugDropdown.classList.remove('show');
             saveMedRecent(drugName);
             renderMedRecents();
+            updateClearButton();
             // Focus the dose field after selecting
             document.getElementById('medDose').focus();
+        }
+
+        // Clear medication name input
+        function clearMedNameInput() {
+            if (medNameInput) {
+                medNameInput.value = '';
+                medNameInput.focus();
+                drugDropdown.classList.remove('show');
+                updateClearButton();
+            }
+        }
+
+        // Show/hide clear button based on input value
+        function updateClearButton() {
+            const clearBtn = document.getElementById('clearMedName');
+            if (clearBtn && medNameInput) {
+                clearBtn.style.display = medNameInput.value.trim() ? 'block' : 'none';
+            }
+        }
+
+        // Update saved medications badge
+        function updateSavedMedsBadge() {
+            const badge = document.getElementById('savedMedsBadge');
+            if (badge) {
+                if (savedMedications.length > 0) {
+                    badge.textContent = savedMedications.length + ' saved';
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        // Watch for input changes to show/hide clear button
+        if (medNameInput) {
+            medNameInput.addEventListener('input', updateClearButton);
         }
 
         // Close dropdown when clicking outside

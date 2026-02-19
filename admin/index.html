@@ -326,6 +326,7 @@
             <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
             <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
             <button class="btn btn-sm" style="background: #17a2b8; color: white;" onclick="showExportHistory()">Export History</button>
+            <button class="btn btn-sm" style="background: #28a745; color: white;" onclick="showNotificationLog()">📧 Email Notifications</button>
             <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
             <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showCommunityStats()">Community Stats</button>
             <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
@@ -371,6 +372,25 @@
                     </div>
                 </div>
                 <div id="exportHistoryContent" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Log Modal -->
+        <div id="notificationLogModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 1000px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
+                <div style="background: #28a745; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px;">📧 Email Notification Log</h2>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Track registration email notifications sent to admin</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="refreshNotificationLog()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Refresh</button>
+                        <button onclick="closeNotificationLog()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+                <div id="notificationLogContent" style="padding: 20px; max-height: 65vh; overflow-y: auto;">
                     <p>Loading...</p>
                 </div>
             </div>
@@ -1524,6 +1544,112 @@
                     .then(() => loadGlobalPhrases())
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
             }, { confirmText: 'Delete', danger: true });
+        }
+
+        // ========== EMAIL NOTIFICATION LOG ==========
+        const notificationLogRef = database.ref('notificationLog');
+        let notificationLogData = [];
+
+        function showNotificationLog() {
+            document.getElementById('notificationLogModal').style.display = 'block';
+            loadNotificationLog();
+        }
+
+        function closeNotificationLog() {
+            document.getElementById('notificationLogModal').style.display = 'none';
+        }
+
+        function refreshNotificationLog() {
+            loadNotificationLog();
+        }
+
+        function loadNotificationLog() {
+            const container = document.getElementById('notificationLogContent');
+            container.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading...</p>';
+
+            notificationLogRef.orderByChild('timestamp').limitToLast(100).once('value').then((snapshot) => {
+                notificationLogData = [];
+                snapshot.forEach((child) => {
+                    notificationLogData.push({
+                        key: child.key,
+                        ...child.val()
+                    });
+                });
+
+                // Reverse to show newest first
+                notificationLogData.reverse();
+
+                if (notificationLogData.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;">📧</div>
+                        <p style="color: #999; font-size: 16px;">No email notifications logged yet</p>
+                        <p style="color: #999; font-size: 13px; margin-top: 10px;">Notifications will appear here when new users register</p>
+                    </div>`;
+                    return;
+                }
+
+                let html = `<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 10px; text-align: left;">Date/Time</th>
+                            <th style="padding: 10px; text-align: left;">User</th>
+                            <th style="padding: 10px; text-align: left;">Email</th>
+                            <th style="padding: 10px; text-align: left;">Role</th>
+                            <th style="padding: 10px; text-align: center;">Status</th>
+                            <th style="padding: 10px; text-align: center;">Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                notificationLogData.forEach((notif) => {
+                    const statusColor = notif.status === 'sent_emailjs' || notif.status === 'sent_formsubmit' ? '#28a745' : '#dc3545';
+                    const statusIcon = notif.status === 'sent_emailjs' || notif.status === 'sent_formsubmit' ? '✓' : '✕';
+                    const statusText = notif.status === 'sent_emailjs' ? 'Sent' : notif.status === 'sent_formsubmit' ? 'Sent' : 'Failed';
+                    const method = notif.method || 'Unknown';
+                    const errorMsg = notif.error ? `<br><span style="font-size: 11px; color: #dc3545;">${notif.error}</span>` : '';
+
+                    html += `<tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 10px;">${notif.date || new Date(notif.timestamp).toLocaleString()}</td>
+                        <td style="padding: 10px; font-weight: 600;">${notif.name || 'Unknown'}</td>
+                        <td style="padding: 10px; font-family: monospace; font-size: 12px;">${notif.email || notif.username || 'N/A'}</td>
+                        <td style="padding: 10px;">${notif.role || 'N/A'}</td>
+                        <td style="padding: 10px; text-align: center;"><span style="color: ${statusColor}; font-weight: 600;">${statusIcon} ${statusText}</span>${errorMsg}</td>
+                        <td style="padding: 10px; text-align: center; font-size: 11px; color: #666;">${method}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+
+                // Show stats
+                const successCount = notificationLogData.filter(n => n.status === 'sent_emailjs' || n.status === 'sent_formsubmit').length;
+                const failCount = notificationLogData.filter(n => n.status === 'failed').length;
+                const successRate = notificationLogData.length > 0 ? Math.round((successCount / notificationLogData.length) * 100) : 0;
+
+                const stats = `<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; justify-content: center;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: 600; color: #28a745;">${successCount}</div>
+                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Sent Successfully</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: 600; color: #dc3545;">${failCount}</div>
+                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Failed</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: 600; color: #007bff;">${successRate}%</div>
+                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Success Rate</div>
+                    </div>
+                </div>`;
+
+                container.innerHTML = stats + html;
+
+            }).catch((error) => {
+                console.error('Notification log error:', error);
+                container.innerHTML = `<div style="text-align: center; padding: 20px;">
+                    <p style="color: #dc3545; font-weight: bold;">Error loading notifications</p>
+                    <p style="color: #666; margin: 10px 0;">${error.message || 'Unknown error'}</p>
+                </div>`;
+            });
         }
 
         // ========== EXPORT HISTORY MANAGEMENT ==========

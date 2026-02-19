@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v29';
+const CACHE_VERSION = 'v31';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Resources to cache for offline use
