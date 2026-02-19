@@ -979,10 +979,32 @@
         // Load registered users from Google Sheets
         async function loadRegisteredUsers() {
             const container = document.getElementById('registeredUsersList');
+            container.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading users...</p></div>';
+
             try {
-                await refreshUserProfilesMap();
-                const response = await fetch(API_URL + '&action=getUsers');
+                // Try to refresh Firebase profiles (but don't fail if not signed in)
+                await refreshUserProfilesMap().catch(err => {
+                    console.warn('Could not load Firebase profiles (not signed in?):', err);
+                });
+
+                // Fetch users from Google Sheets
+                console.log('Fetching users from Google Sheets API...');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                const response = await fetch(API_URL + '&action=getUsers', {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const data = await response.json();
+                console.log('Users data:', data);
 
                 if (data.success && data.users) {
                     const users = data.users;
@@ -1029,11 +1051,30 @@
                     });
                     container.innerHTML = html;
                 } else {
-                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128679;</div><p>Could not load users</p></div>';
+                    throw new Error('API returned success=false or no users array');
                 }
             } catch (e) {
                 console.error('Error loading users:', e);
-                container.innerHTML = '<div class="empty-state"><div class="icon">&#128679;</div><p>Error loading users</p></div>';
+
+                // Show detailed error message
+                let errorMsg = 'Unknown error';
+                if (e.name === 'AbortError') {
+                    errorMsg = 'Request timed out (Google Sheets API not responding)';
+                } else if (e.message.includes('HTTP')) {
+                    errorMsg = e.message;
+                } else if (e.message.includes('Failed to fetch')) {
+                    errorMsg = 'Network error - check internet connection or CORS settings';
+                } else {
+                    errorMsg = e.message;
+                }
+
+                container.innerHTML = `<div class="empty-state">
+                    <div class="icon">&#128679;</div>
+                    <p style="color: #dc3545; font-weight: 600;">Error loading users</p>
+                    <p style="font-size: 12px; color: #666; margin-top: 8px;">${errorMsg}</p>
+                    <button class="btn btn-sm btn-primary" onclick="loadRegisteredUsers()" style="margin-top: 12px;">Retry</button>
+                    ${!auth.currentUser ? '<p style="font-size: 11px; color: #ff9800; margin-top: 8px;">💡 Try signing in to Firebase using the button above</p>' : ''}
+                </div>`;
             }
         }
 
