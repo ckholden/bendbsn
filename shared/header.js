@@ -327,3 +327,91 @@
     initOnboarding();
 
 })();
+
+/* =========================================================
+   THEME SYSTEM (7 themes)
+   ========================================================= */
+window.getTheme = function() {
+    return document.documentElement.getAttribute('data-theme') || 'light';
+};
+
+window.setTheme = function(name) {
+    document.documentElement.setAttribute('data-theme', name);
+    localStorage.setItem('bsn9b_theme', name);
+    // Update button label
+    var labels = {
+        light: '☀️ Light', warm: '🌅 Warm', forest: '🌿 Forest',
+        ocean: '🌊 Ocean', sunset: '🌆 Sunset', rose: '🌸 Rose', dark: '🌙 Dark'
+    };
+    var btn = document.getElementById('bsnThemeBtn');
+    if (btn) {
+        var lbl = btn.querySelector('.bsn-theme-btn-label');
+        if (lbl) lbl.textContent = labels[name] || '🎨 Theme';
+    }
+    // Sync active state in picker
+    document.querySelectorAll('.bsn-theme-opt').forEach(function(opt) {
+        opt.classList.toggle('active', opt.dataset.theme === name);
+    });
+    // Keep per-page sidebar icons in sync
+    var isDark = name === 'dark';
+    var icon = document.getElementById('themeMenuIcon');
+    var text = document.getElementById('themeMenuText');
+    if (icon) icon.textContent = isDark ? '☀️' : '🎨';
+    if (text) text.textContent = isDark ? 'Light Mode' : 'Theme';
+};
+
+window.toggleThemePicker = function() {
+    var picker = document.getElementById('bsnThemePicker');
+    if (!picker) return;
+    var open = picker.style.display === 'block';
+    picker.style.display = open ? 'none' : 'block';
+    if (!open) {
+        document.querySelectorAll('.bsn-theme-opt').forEach(function(opt) {
+            opt.classList.toggle('active', opt.dataset.theme === window.getTheme());
+        });
+    }
+};
+
+// Override binary toggle — now opens picker
+window.toggleDarkMode = function() {
+    window.toggleThemePicker();
+};
+
+(function injectThemePicker() {
+    var themeBtn = document.querySelector('.header-actions button[onclick*="toggleDarkMode"]');
+    if (!themeBtn) return;
+    themeBtn.id = 'bsnThemeBtn';
+    // Wrap in position:relative container
+    var wrap = document.createElement('div');
+    wrap.className = 'bsn-theme-btn-wrap';
+    themeBtn.parentNode.insertBefore(wrap, themeBtn);
+    wrap.appendChild(themeBtn);
+    // Update button content to show current theme
+    themeBtn.innerHTML = '<span class="bsn-theme-btn-label">🎨 Theme</span>';
+    window.setTheme(window.getTheme());
+    // Build picker HTML
+    var pickerHTML = '<div id="bsnThemePicker">' +
+        '<div class="bsn-theme-picker-label">Neutral</div>' +
+        '<div class="bsn-theme-grid bsn-theme-grid-3">' +
+        '<button class="bsn-theme-opt" data-theme="light" onclick="window.setTheme(\'light\')"><span class="bsn-swatch" style="background:#e8edf2;"></span>Light</button>' +
+        '<button class="bsn-theme-opt" data-theme="warm"  onclick="window.setTheme(\'warm\')"><span class="bsn-swatch" style="background:#f2ece0;"></span>Warm</button>' +
+        '<button class="bsn-theme-opt" data-theme="dark"  onclick="window.setTheme(\'dark\')"><span class="bsn-swatch" style="background:#161b22;border-color:rgba(255,255,255,0.2);"></span>Dark</button>' +
+        '</div>' +
+        '<div class="bsn-theme-divider"></div>' +
+        '<div class="bsn-theme-picker-label">Colored</div>' +
+        '<div class="bsn-theme-grid">' +
+        '<button class="bsn-theme-opt" data-theme="forest" onclick="window.setTheme(\'forest\')"><span class="bsn-swatch" style="background:#e8f0e8;"></span>Forest</button>' +
+        '<button class="bsn-theme-opt" data-theme="ocean"  onclick="window.setTheme(\'ocean\')"><span class="bsn-swatch" style="background:#e8f0f5;"></span>Ocean</button>' +
+        '<button class="bsn-theme-opt" data-theme="sunset" onclick="window.setTheme(\'sunset\')"><span class="bsn-swatch" style="background:#ece8f5;"></span>Sunset</button>' +
+        '<button class="bsn-theme-opt" data-theme="rose"   onclick="window.setTheme(\'rose\')"><span class="bsn-swatch" style="background:#f5e8eb;"></span>Rose</button>' +
+        '</div>' +
+        '</div>';
+    wrap.insertAdjacentHTML('beforeend', pickerHTML);
+    // Outside click closes picker
+    document.addEventListener('click', function(e) {
+        var picker = document.getElementById('bsnThemePicker');
+        if (picker && picker.style.display === 'block') {
+            if (!wrap.contains(e.target)) picker.style.display = 'none';
+        }
+    });
+})();
