@@ -1,5 +1,22 @@
 # Updates Log
 
+## 2026-02-20
+
+### Admin + Rules
+- Admin now has explicit read access to `/chat/messages` at the root level (prevents permission_denied in admin chat view).
+- Published rules update includes admin role/claim checks for sensitive paths.
+
+### Login Reliability
+- Login page now waits for Firebase Auth state before redirecting to `/home/` to avoid stale-session redirect loops.
+- Added a user-facing toast on stale local sessions: “Session expired. Please sign in again.”
+
+### Home Page
+- Removed duplicate navigation card grid on `/home/` to reduce redundancy (Quick Start remains).
+
+### Repo Hygiene
+- Removed unused files `ai-proxy-script.js` and `nul` from the repo.
+- Added `.gitignore` patterns to prevent committing Firebase admin keys.
+
 ## 2026-02-01
 
 ### Latest Session Summary (Admin/Profiles)

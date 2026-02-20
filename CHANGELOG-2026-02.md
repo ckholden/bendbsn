@@ -5,6 +5,38 @@ This document tracks all changes and fixes made during the February 2026 debuggi
 
 ---
 
+## 2026-02-20 Updates
+
+### Admin Chat Permission Fix
+**Problem:** Admin page threw `permission_denied` when reading `/chat/messages`.
+
+**Fix:** Added admin-only root read for `chat/messages` in `database.rules.json` so the admin panel can load cross-channel chat data without granting general user access.
+
+---
+
+### Login Redirect Loop Prevention
+**Problem:** Users with stale local storage could be redirected away from the login page even when Firebase Auth was not active.
+
+**Fix:**
+- Removed early redirect based only on `bsn9b_auth`.
+- Redirect now happens only after Firebase Auth confirms a valid session.
+- If local storage is stale, it is cleared and a toast is shown: “Session expired. Please sign in again.”
+
+---
+
+### Home Page Duplication Cleanup
+**Problem:** `/home/` showed duplicate navigation cards (Quick Start + another nav grid).
+
+**Fix:** Removed the duplicate nav-card grid, keeping Quick Start only.
+
+---
+
+### Repo Hygiene
+- Removed unused files `ai-proxy-script.js` and `nul`.
+- Added `.gitignore` rules for Firebase admin key files.
+
+---
+
 ## Issues Fixed
 
 ### 1. Note Type Toggle Buttons Not Working
@@ -253,6 +285,9 @@ function loadLoginHistory() {
 ## Git Commits (February 2026)
 
 ```
+807f079 Fix admin chat rules and clean home duplicates
+26a810b Prevent login redirect loop with Firebase auth check
+80ba78f Show session expired toast on login page
 cbde19c Fix NOTE_SECTIONS initialization order
 41619b0 Fix duplicate displayName declaration breaking JS
 97a2a12 Add debug info to login history errors

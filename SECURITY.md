@@ -14,7 +14,7 @@ This document outlines security best practices for the BendBSN nursing documenta
 - ✅ Firebase Web API keys only identify your project, not authenticate it
 - ✅ Security is enforced server-side via Firebase Security Rules
 - ✅ No service account keys are committed to the repository
-- ✅ `.gitignore` excludes sensitive files (`complete-apps-script.js`, `ai-proxy-script.js`)
+- ✅ `.gitignore` excludes sensitive files (apps scripts and Firebase admin keys)
 
 **Reference:** [Firebase: Is it safe to expose Firebase apiKey to the public?](https://stackoverflow.com/questions/37482366/is-it-safe-to-expose-firebase-apikey-to-the-public)
 
@@ -30,6 +30,7 @@ This document outlines security best practices for the BendBSN nursing documenta
 - ✅ No plaintext passwords in database (Firebase Auth handles hashing)
 - ✅ Admin email encoded in client (`atob()` - obfuscation, not security)
 - ✅ EmailJS API keys are public keys (intended for client-side use)
+- ✅ Firebase admin service account keys are stored outside the repo and ignored by `.gitignore`
 
 ---
 
