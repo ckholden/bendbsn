@@ -266,4 +266,67 @@
         });
     }
 
+    // ── Versioned Onboarding Modal ────────────────────────
+    var CURRENT_ONBOARDING_VERSION = '2.0';
+
+    function initOnboarding() {
+        // Skip on login page
+        if (isLoginPage) return;
+        // Skip if user has already seen this version
+        if (localStorage.getItem('bendbsn_onboarding_version') === CURRENT_ONBOARDING_VERSION) return;
+
+        var overlay = document.createElement('div');
+        overlay.id = 'bsnOnboardingOverlay';
+        overlay.className = 'bsn-onboarding-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'bsnOnboardTitle');
+
+        overlay.innerHTML =
+            '<div class="bsn-onboarding-modal">' +
+                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">BendBSN Has Been Updated</h2>' +
+                '<ul class="bsn-onboarding-list">' +
+                    '<li>Profile settings now apply across the site</li>' +
+                    '<li>Role &amp; Year must be saved from the Notes Generator</li>' +
+                    '<li>Instructor name is no longer required</li>' +
+                    '<li>Improved documentation flow</li>' +
+                '</ul>' +
+                '<div class="bsn-onboarding-btns">' +
+                    '<button class="bsn-onboarding-dismiss" id="bsnOnboardDismiss">Dismiss</button>' +
+                    '<button class="bsn-onboarding-primary" id="bsnOnboardExplore">Explore Updates</button>' +
+                '</div>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        function dismiss() {
+            localStorage.setItem('bendbsn_onboarding_version', CURRENT_ONBOARDING_VERSION);
+            overlay.remove();
+            document.removeEventListener('keydown', onKey);
+        }
+
+        document.getElementById('bsnOnboardDismiss').addEventListener('click', dismiss);
+
+        document.getElementById('bsnOnboardExplore').addEventListener('click', function () {
+            dismiss();
+            window.location.href = '/app/';
+        });
+
+        // Close on backdrop click
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) dismiss();
+        });
+
+        // Close on Escape
+        function onKey(e) {
+            if (e.key === 'Escape') dismiss();
+        }
+        document.addEventListener('keydown', onKey);
+
+        // Focus primary button
+        document.getElementById('bsnOnboardExplore').focus();
+    }
+
+    initOnboarding();
+
 })();
