@@ -865,14 +865,15 @@
         #statusPickerPanel {
             display: none;
             position: absolute;
-            bottom: calc(100% + 4px);
-            left: 0; right: 0;
-            z-index: 200;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 220px;
+            z-index: 500;
             background: #1a2535;
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 10px;
             padding: 8px;
-            box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
         .status-picker-label {
             font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
@@ -890,6 +891,7 @@
         .status-option.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: white; }
         .status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         /* My Status header badge */
+        .my-status-wrapper { position: relative; }
         .my-status-header-btn { display: flex; align-items: center; gap: 5px; background: none; border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; cursor: pointer; font-size: 12px; color: var(--text-secondary); transition: background 0.15s; white-space: nowrap; }
         .my-status-header-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
         .my-status-header-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -993,42 +995,6 @@
             </div>
             <div id="dmListSidebar" style="padding: 0 6px;"></div>
 
-            <!-- User status bar -->
-            <div class="sidebar-user-bar" id="userStatusBar" onclick="toggleStatusPicker()">
-                <div class="sidebar-user-avatar" id="sidebarUserAvatar">?</div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name" id="sidebarUserName">...</div>
-                    <div class="sidebar-user-status" id="sidebarUserStatus"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#22c55e;margin-right:4px;"></span>Online</div>
-                </div>
-                <div id="statusPickerPanel">
-                    <div class="status-picker-label">Set Status</div>
-                    <div class="status-custom-row">
-                        <input class="status-custom-input" id="customStatusInput" maxlength="40" placeholder="What's your status?"
-                            onclick="event.stopPropagation()"
-                            onkeydown="if(event.key==='Enter'){event.stopPropagation();submitCustomStatus();}">
-                        <button class="status-custom-set-btn" onclick="event.stopPropagation();submitCustomStatus()">Set</button>
-                    </div>
-                    <div class="status-emoji-row">
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('📚')" title="Studying">📚</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('☕')" title="Coffee break">☕</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🤒')" title="Sick">🤒</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('😴')" title="Tired">😴</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏥')" title="At hospital">🏥</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💊')" title="Medication">💊</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🧪')" title="Lab">🧪</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🎉')" title="Celebrating">🎉</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏃')" title="On the go">🏃</button>
-                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💤')" title="Away">💤</button>
-                    </div>
-                    <div class="status-divider"></div>
-                    <button class="status-option active" data-status="" onclick="event.stopPropagation();selectStatusMsg('')"><span class="status-dot-sm" style="background:#22c55e;"></span> Online (clear)</button>
-                    <button class="status-option" data-status="In class" onclick="event.stopPropagation();selectStatusMsg('In class')"><span class="status-dot-sm" style="background:#f59e0b;"></span> In class</button>
-                    <button class="status-option" data-status="Studying" onclick="event.stopPropagation();selectStatusMsg('Studying')"><span class="status-dot-sm" style="background:#3b82f6;"></span> Studying</button>
-                    <button class="status-option" data-status="Do not disturb" onclick="event.stopPropagation();selectStatusMsg('Do not disturb')"><span class="status-dot-sm" style="background:#ef4444;"></span> Do not disturb</button>
-                    <button class="status-option" data-status="Be right back" onclick="event.stopPropagation();selectStatusMsg('Be right back')"><span class="status-dot-sm" style="background:#a855f7;"></span> Be right back</button>
-                </div>
-            </div>
-
             <!-- Online count at bottom -->
             <div class="sidebar-online-count" id="onlineCount" onclick="toggleUserList()">0 online</div>
         </div>
@@ -1045,10 +1011,39 @@
                         <span class="channel-header-name" id="channelHeaderName"># general</span>
                     </div>
                     <div class="channel-header-actions">
-                        <button class="my-status-header-btn" id="myStatusHeaderBtn" onclick="toggleStatusPicker()" title="Set your status">
-                            <span class="my-status-header-dot" id="myStatusHeaderDot" style="background:#22c55e;"></span>
-                            <span id="myStatusHeaderLabel">Online</span>
-                        </button>
+                        <div class="my-status-wrapper">
+                            <button class="my-status-header-btn" id="myStatusHeaderBtn" onclick="toggleStatusPicker()" title="Set your status">
+                                <span class="my-status-header-dot" id="myStatusHeaderDot" style="background:#22c55e;"></span>
+                                <span id="myStatusHeaderLabel">My Status</span>
+                            </button>
+                            <div id="statusPickerPanel">
+                                <div class="status-picker-label">Set Status</div>
+                                <div class="status-custom-row">
+                                    <input class="status-custom-input" id="customStatusInput" maxlength="40" placeholder="What's your status?"
+                                        onclick="event.stopPropagation()"
+                                        onkeydown="if(event.key==='Enter'){event.stopPropagation();submitCustomStatus();}">
+                                    <button class="status-custom-set-btn" onclick="event.stopPropagation();submitCustomStatus()">Set</button>
+                                </div>
+                                <div class="status-emoji-row">
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('📚')" title="Studying">📚</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('☕')" title="Coffee break">☕</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🤒')" title="Sick">🤒</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('😴')" title="Tired">😴</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏥')" title="At hospital">🏥</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💊')" title="Medication">💊</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🧪')" title="Lab">🧪</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🎉')" title="Celebrating">🎉</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏃')" title="On the go">🏃</button>
+                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💤')" title="Away">💤</button>
+                                </div>
+                                <div class="status-divider"></div>
+                                <button class="status-option active" data-status="" onclick="event.stopPropagation();selectStatusMsg('')"><span class="status-dot-sm" style="background:#22c55e;"></span> Online (clear)</button>
+                                <button class="status-option" data-status="In class" onclick="event.stopPropagation();selectStatusMsg('In class')"><span class="status-dot-sm" style="background:#f59e0b;"></span> In class</button>
+                                <button class="status-option" data-status="Studying" onclick="event.stopPropagation();selectStatusMsg('Studying')"><span class="status-dot-sm" style="background:#3b82f6;"></span> Studying</button>
+                                <button class="status-option" data-status="Do not disturb" onclick="event.stopPropagation();selectStatusMsg('Do not disturb')"><span class="status-dot-sm" style="background:#ef4444;"></span> Do not disturb</button>
+                                <button class="status-option" data-status="Be right back" onclick="event.stopPropagation();selectStatusMsg('Be right back')"><span class="status-dot-sm" style="background:#a855f7;"></span> Be right back</button>
+                            </div>
+                        </div>
                         <button onclick="toggleUserList()" title="View user statuses">&#128101; Users</button>
                     </div>
                 </div>
@@ -1520,20 +1515,10 @@
         }
 
         function toggleStatusPicker() {
-            // On mobile, open the sidebar so the picker is visible
-            if (window.innerWidth < 768) {
-                const sidebar = document.getElementById('chatSidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                if (sidebar && !sidebar.classList.contains('open')) {
-                    sidebar.classList.add('open');
-                    if (overlay) overlay.classList.add('open');
-                }
-            }
             const panel = document.getElementById('statusPickerPanel');
             if (!panel) return;
             const isVisible = panel.style.display === 'block';
             if (!isVisible) {
-                // Pre-fill input if currently a custom status
                 const input = document.getElementById('customStatusInput');
                 if (input) {
                     input.value = (!STATUS_CONFIG.hasOwnProperty(myStatusMsg) && myStatusMsg) ? myStatusMsg : '';
@@ -1542,7 +1527,7 @@
             panel.style.display = isVisible ? 'none' : 'block';
             if (!isVisible) {
                 const input = document.getElementById('customStatusInput');
-                if (input) setTimeout(() => input.focus(), 100);
+                if (input) setTimeout(() => input.focus(), 50);
             }
         }
 
@@ -1568,15 +1553,6 @@
         };
 
         function updateSidebarUserBar() {
-            const nameEl = document.getElementById('sidebarUserName');
-            const statusEl = document.getElementById('sidebarUserStatus');
-            const avatarEl = document.getElementById('sidebarUserAvatar');
-            if (nameEl) nameEl.textContent = displayName || 'You';
-            if (avatarEl) avatarEl.textContent = (displayName || '?')[0].toUpperCase();
-            if (statusEl) {
-                const cfg = STATUS_CONFIG[myStatusMsg] || { dot: '#94a3b8', label: myStatusMsg || 'Online' };
-                statusEl.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${cfg.dot};margin-right:4px;vertical-align:middle;"></span>${escapeHtml(cfg.label)}`;
-            }
             document.querySelectorAll('#statusPickerPanel .status-option').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.status === myStatusMsg);
             });
@@ -1799,8 +1775,8 @@
             // Close status picker on outside click
             const statusPanel = document.getElementById('statusPickerPanel');
             if (statusPanel && statusPanel.style.display === 'block') {
-                const bar = document.getElementById('userStatusBar');
-                if (!statusPanel.contains(e.target) && !bar?.contains(e.target)) {
+                const wrapper = document.getElementById('myStatusWrapper') || document.getElementById('myStatusHeaderBtn');
+                if (!statusPanel.contains(e.target) && !wrapper?.contains(e.target)) {
                     statusPanel.style.display = 'none';
                 }
             }
