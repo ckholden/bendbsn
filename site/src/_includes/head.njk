@@ -1,0 +1,26 @@
+    <meta charset="UTF-8">
+    <script nonce="{{ nonce }}">if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if noIndex %}<meta name="robots" content="noindex, nofollow">{% endif %}
+    <title>{{ title }} | BendBSN</title>
+    <link rel="icon" type="image/png" href="/favicon.png?v=3">
+    <link rel="shortcut icon" href="/favicon.png?v=3">
+    <link rel="apple-touch-icon" href="/favicon.png?v=3">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="stylesheet" href="/shared/header.css">
+    {% if pageStyles %}
+        {% if pageStyles is iterable and (pageStyles is not string) %}
+            {% for style in pageStyles %}
+    <link rel="stylesheet" href="{{ style }}">
+            {% endfor %}
+        {% else %}
+    <link rel="stylesheet" href="{{ pageStyles }}">
+        {% endif %}
+    {% endif %}
+    {% csp nonce %}
+    {% if inlineStyles %}
+    <style nonce="{{ nonce }}">
+        {{ inlineStyles | safe }}
+    </style>
+    {% endif %}
