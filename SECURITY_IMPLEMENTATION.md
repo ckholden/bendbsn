@@ -2,70 +2,51 @@
 
 ## Immediate Fixes Implemented
 
+### 0. Admin Access via Custom Claims (Implemented)
+
+**STATUS:** ✅ Implemented in `/admin/index.html`
+
+**What changed:**
+- Admin page now requires Firebase Auth + ID token claims (`admin=true` or `role=admin|instructor`)
+- Removed the hard-coded admin password gate
+
+**How to set custom claims (recommended):**
+
+Use Firebase Admin SDK (Cloud Functions or a trusted server) to set claims:
+
+```js
+// Node.js (Admin SDK)
+await admin.auth().setCustomUserClaims(uid, { admin: true, role: 'admin' });
+```
+
+**Minimal Cloud Function example (call once to promote a user):**
+```js
+exports.makeAdmin = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.email !== 'christiankholden@gmail.com') {
+    throw new functions.https.HttpsError('permission-denied', 'Not allowed');
+  }
+  const uid = data.uid;
+  await admin.auth().setCustomUserClaims(uid, { admin: true, role: 'admin' });
+  return { success: true };
+});
+```
+
+**After setting claims:**
+- User must re-login or refresh token to pick up new claims.
+
+**Rules update:**
+- `database.rules.json` now checks `auth.token.admin == true` or `auth.token.role == "admin"|"instructor"`.
+
 ### 1. Remove Hard-Coded Admin Password
 
-**STATUS:** ⏳ Ready to implement
+**STATUS:** ✅ Implemented
 
-**What needs to be done:**
-1. Create `/adminUsers` node in Firebase Database with admin UIDs
-2. Replace password check with UID check from Firebase
-3. Remove `ADMIN_PASSWORD` constant
-4. Update admin login flow
+**What was done:**
+1. Removed `ADMIN_PASSWORD` from `/admin/index.html`
+2. Admin access now enforced via Firebase Auth + custom claims
+3. Admin UI only renders after claim validation
 
-**Firebase Database Structure:**
-```json
-{
-  "adminUsers": {
-    "USER_UID_HERE": true,
-    "ANOTHER_UID": true
-  }
-}
-```
-
-**How to add yourself as admin:**
-1. Go to Firebase Console → Realtime Database
-2. Click "+" next to root
-3. Add key: `adminUsers`
-4. Click "+" next to `adminUsers`
-5. Add your UID as key, value: `true`
-6. Your UID can be found in localStorage after logging in (`bsn9b_uid`)
-
-**Code Changes Needed:**
-```javascript
-// Replace password check with:
-async function checkAdminAccess() {
-    const user = auth.currentUser;
-    if (!user) {
-        showToast('Please sign in first', 'error');
-        return false;
-    }
-
-    try {
-        const snapshot = await database.ref(`adminUsers/${user.uid}`).once('value');
-        if (snapshot.exists() && snapshot.val() === true) {
-            return true;
-        } else {
-            showToast('Access denied - admin privileges required', 'error');
-            return false;
-        }
-    } catch (error) {
-        console.error('Admin check error:', error);
-        return false;
-    }
-}
-```
-
-**Firebase Database Rules:**
-```json
-{
-  "rules": {
-    "adminUsers": {
-      ".read": "auth != null",
-      ".write": false  // Only edit via Firebase Console
-    }
-  }
-}
-```
+**Note:** Use custom claims (recommended) instead of DB-based admin lists.
 
 ---
 

@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
-    <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-bsn9b' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'nonce-bsn9b' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <script nonce="bsn9b">if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="/favicon.png?v=3">
     <link rel="shortcut icon" href="/favicon.png?v=3">
     <link rel="stylesheet" href="/shared/header.css">
     <title>BSN9B Admin Panel</title>
-    <style>
+    <style nonce="bsn9b">
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -244,7 +244,7 @@
         <span id="fyiText"></span>
         <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
     </div>
-    <style>
+    <style nonce="bsn9b">
         @keyframes alertFlash {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
@@ -280,10 +280,8 @@
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box">
             <h2>Admin Access</h2>
-            <p style="color: #666; margin-bottom: 20px;">Enter admin password to continue</p>
-            <input type="password" id="adminPassword" placeholder="Admin Password" onkeypress="if(event.key==='Enter')checkAdminPassword()">
-            <button class="btn btn-primary" style="width: 100%;" onclick="checkAdminPassword()">Access Admin Panel</button>
-            <p id="loginError" style="color: #dc3545; margin-top: 15px; display: none;">Invalid password</p>
+            <p id="adminGateMessage" style="color: #666; margin-bottom: 20px;">Sign in with an admin account to continue.</p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="openFirebaseAuthModal()">Sign in to Firebase</button>
             <a href="/" style="display: block; margin-top: 20px; color: #666; font-size: 14px;">Back to Login</a>
         </div>
     </div>
@@ -368,6 +366,10 @@
                     <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
                     <button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="clearAppCache()">🗑️ Clear Cache</button>
                     <button class="btn btn-sm" style="background: #b91c1c; color: white;" onclick="clearChatPresence()">Clear Chat Presence</button>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <input id="purgeUserSearch" type="text" placeholder="Purge user everywhere (name/email/uid)" style="flex: 1; min-width: 180px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;">
+                        <button class="btn btn-danger btn-sm" onclick="purgeUserEverywhere()">Purge User</button>
+                    </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                         <input id="dmPurgeSearch" type="text" placeholder="Purge DMs by name/email/uid" style="flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;">
                         <button class="btn btn-danger btn-sm" onclick="purgeDMsBySearch()">Purge DMs</button>
@@ -625,14 +627,12 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script nonce="bsn9b" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script nonce="bsn9b" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script nonce="bsn9b" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script nonce="bsn9b" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
-    <script>
-        // Admin password - change this!
-        const ADMIN_PASSWORD = 'admin1374';
+    <script nonce="bsn9b">
         const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?token=bsn_k7x9m2p4';
 
         // Firebase setup
@@ -652,11 +652,14 @@
         const presenceRef = database.ref('chat/presence');
         const userProfilesRef = database.ref('userProfiles');
         const directMessagesRef = database.ref('directMessages');
+        const userDocumentsRef = database.ref('userDocuments');
         const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Admin', 'Other'];
         let userProfilesByEmail = {};
         let userProfilesByUid = {};
         let registeredUsersCache = [];
         let registeredUsersFiltered = [];
+        let adminInitialized = false;
+        let isAdminVerified = false;
 
         const SESSION_KEY = 'bsn9b_session_key';
         const SESSION_START_KEY = 'bsn9b_session_start';
@@ -820,17 +823,11 @@
             }
         });
 
-        function checkAdminPassword() {
-            const password = document.getElementById('adminPassword').value;
-            if (password === ADMIN_PASSWORD) {
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                sessionStorage.setItem('bsn9b_admin', 'true');
-                updateAdminStatusPanel();
-                initAdmin();
-            } else {
-                document.getElementById('loginError').style.display = 'block';
-            }
+        function setAdminUiVisible(isVisible) {
+            const overlay = document.getElementById('loginOverlay');
+            const content = document.getElementById('adminContent');
+            if (overlay) overlay.style.display = isVisible ? 'none' : 'flex';
+            if (content) content.style.display = isVisible ? 'block' : 'none';
         }
 
         function updateFirebaseAuthStatus() {
@@ -849,14 +846,53 @@
             const adminUiEl = document.getElementById('adminUiStatus');
             const firebaseEl = document.getElementById('adminFirebaseStatus');
             if (adminUiEl) {
-                const isAdminUi = sessionStorage.getItem('bsn9b_admin') === 'true';
-                adminUiEl.textContent = isAdminUi ? 'Active' : 'Inactive';
-                adminUiEl.style.color = isAdminUi ? '#16a34a' : '#dc2626';
+                adminUiEl.textContent = isAdminVerified ? 'Active' : 'Inactive';
+                adminUiEl.style.color = isAdminVerified ? '#16a34a' : '#dc2626';
             }
             if (firebaseEl) {
                 const user = auth.currentUser;
                 firebaseEl.textContent = user && user.email ? user.email : 'Not signed in';
                 firebaseEl.style.color = user && user.email ? '#16a34a' : '#dc2626';
+            }
+        }
+
+        async function verifyAdminAccess() {
+            const user = auth.currentUser;
+            if (!user) return false;
+            try {
+                const token = await user.getIdTokenResult(true);
+                const claims = token.claims || {};
+                return claims.admin === true || claims.role === 'admin' || claims.role === 'instructor';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function requireAdminAccess() {
+            const msgEl = document.getElementById('adminGateMessage');
+            const user = auth.currentUser;
+            if (!user) {
+                isAdminVerified = false;
+                if (msgEl) msgEl.textContent = 'Sign in with an admin account to continue.';
+                updateAdminStatusPanel();
+                setAdminUiVisible(false);
+                return;
+            }
+
+            const isAdmin = await verifyAdminAccess();
+            isAdminVerified = isAdmin;
+            updateAdminStatusPanel();
+
+            if (!isAdmin) {
+                if (msgEl) msgEl.textContent = 'Your account does not have admin access.';
+                setAdminUiVisible(false);
+                return;
+            }
+
+            setAdminUiVisible(true);
+            if (!adminInitialized) {
+                initAdmin();
+                adminInitialized = true;
             }
         }
 
@@ -889,31 +925,15 @@
                 updateFirebaseAuthStatus();
                 closeFirebaseAuthModal();
                 showToast('Firebase sign-in successful.', 'success');
+                requireAdminAccess();
             } catch (e) {
                 showToast('Firebase sign-in failed: ' + e.message, 'error');
             }
         }
 
-        // Check if already logged in as admin
-        if (sessionStorage.getItem('bsn9b_admin') === 'true') {
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('adminContent').style.display = 'block';
-            initAdmin();
-        }
-
-        // Auto-login for admin email - bypass password
         auth.onAuthStateChanged((user) => {
-            if (user && user.email === 'christiankholden@gmail.com') {
-                // Auto-bypass admin password for this email
-                if (sessionStorage.getItem('bsn9b_admin') !== 'true') {
-                    sessionStorage.setItem('bsn9b_admin', 'true');
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('adminContent').style.display = 'block';
-                    initAdmin();
-                    showToast('Auto-authenticated as admin', 'success');
-                }
-            }
             updateFirebaseAuthStatus();
+            requireAdminAccess();
         });
 
         function initAdmin() {
@@ -934,7 +954,6 @@
         function logout() {
             auth.signOut().catch(() => {});
             endSessionTracking('logout');
-            sessionStorage.removeItem('bsn9b_admin');
             localStorage.removeItem('bsn9b_auth');
             localStorage.removeItem('bsn9b_user');
             localStorage.removeItem('bsn9b_displayName');
@@ -1549,6 +1568,195 @@
                     showToast('Error: ' + e.message, 'error');
                 }
             }, { confirmText: 'Purge Orphan DMs', danger: true });
+        }
+
+        function resolveUserMatch(term) {
+            const t = (term || '').trim().toLowerCase();
+            if (!t) return null;
+
+            // Match by email first
+            if (t.includes('@')) {
+                const profile = userProfilesByEmail[t];
+                if (profile) {
+                    return { uid: profile.uid || '', email: t, name: profile.displayName || profile.firstName || '', username: '' };
+                }
+                const cached = registeredUsersCache.find(u => (u.email || '').toLowerCase() === t);
+                if (cached) {
+                    return { uid: '', email: t, name: cached.name || '', username: cached.username || '' };
+                }
+            }
+
+            // Match by UID
+            if (userProfilesByUid[t]) {
+                const profile = userProfilesByUid[t];
+                return { uid: t, email: (profile.email || '').toLowerCase(), name: profile.displayName || profile.firstName || '', username: '' };
+            }
+
+            // Match by name/username
+            const cached = registeredUsersCache.find(u => {
+                const name = (u.name || '').toLowerCase();
+                const username = (u.username || '').toLowerCase();
+                return name === t || username === t;
+            });
+            if (cached) {
+                return { uid: '', email: (cached.email || '').toLowerCase(), name: cached.name || '', username: cached.username || '' };
+            }
+
+            // Match by displayName in profiles
+            const profileEntry = Object.entries(userProfilesByUid).find(([_, p]) => {
+                const dn = (p.displayName || '').toLowerCase();
+                const fn = (p.firstName || '').toLowerCase();
+                return dn === t || fn === t;
+            });
+            if (profileEntry) {
+                const [uid, p] = profileEntry;
+                return { uid: uid, email: (p.email || '').toLowerCase(), name: p.displayName || p.firstName || '', username: '' };
+            }
+
+            return { uid: '', email: t.includes('@') ? t : '', name: term, username: term };
+        }
+
+        async function purgeUserEverywhere() {
+            const input = document.getElementById('purgeUserSearch');
+            const term = (input?.value || '').trim();
+            if (!term) {
+                showToast('Enter a name, email, or uid', 'error');
+                return;
+            }
+
+            if (!auth.currentUser) {
+                showToast('Firebase sign-in required', 'error');
+                return;
+            }
+
+            await refreshUserProfilesMap();
+            const match = resolveUserMatch(term);
+            if (!match) {
+                showToast('User not found', 'error');
+                return;
+            }
+
+            const summary = [
+                match.name ? `Name: ${match.name}` : null,
+                match.email ? `Email: ${match.email}` : null,
+                match.uid ? `UID: ${match.uid}` : null
+            ].filter(Boolean).join(' | ');
+
+            showConfirmModal('Purge User Everywhere', `Permanently purge user data?\n${summary}`, async function() {
+                let removed = 0;
+
+                // userProfiles + userDocuments + presence
+                try {
+                    if (match.uid) {
+                        await userProfilesRef.child(match.uid).remove();
+                        await userDocumentsRef.child(match.uid).remove();
+                        await presenceRef.child(match.uid).remove();
+                        removed += 3;
+                    }
+                } catch (e) {
+                    showToast('Error removing profile/docs/presence: ' + e.message, 'warning');
+                }
+
+                // banned list
+                try {
+                    const bannedSnapshot = await bannedRef.once('value');
+                    bannedSnapshot.forEach((child) => {
+                        const v = child.val() || {};
+                        const u = (v.username || '').toLowerCase();
+                        if (u === (match.email || '').toLowerCase() || u === (match.name || '').toLowerCase()) {
+                            child.ref.remove();
+                            removed += 1;
+                        }
+                    });
+                } catch (e) {
+                    showToast('Error removing ban entries: ' + e.message, 'warning');
+                }
+
+                // community posts + replies
+                try {
+                    const postsSnap = await communityPostsRef.once('value');
+                    postsSnap.forEach((child) => {
+                        const post = child.val() || {};
+                        const authorEmail = (post.authorEmail || '').toLowerCase();
+                        const authorName = (post.authorName || '').toLowerCase();
+                        if (authorEmail && authorEmail === (match.email || '').toLowerCase()) {
+                            child.ref.remove();
+                            removed += 1;
+                            return;
+                        }
+                        if (authorName && match.name && authorName === match.name.toLowerCase()) {
+                            child.ref.remove();
+                            removed += 1;
+                            return;
+                        }
+                        if (post.replies) {
+                            Object.entries(post.replies).forEach(([replyId, reply]) => {
+                                const r = reply || {};
+                                const rEmail = (r.authorEmail || '').toLowerCase();
+                                const rName = (r.authorName || '').toLowerCase();
+                                if ((rEmail && rEmail === (match.email || '').toLowerCase()) ||
+                                    (match.name && rName === match.name.toLowerCase())) {
+                                    child.ref.child('replies').child(replyId).remove();
+                                    removed += 1;
+                                }
+                            });
+                        }
+                    });
+                } catch (e) {
+                    showToast('Error removing community posts: ' + e.message, 'warning');
+                }
+
+                // chat messages (all channels)
+                try {
+                    const chatSnap = await chatRef.once('value');
+                    chatSnap.forEach((channel) => {
+                        channel.forEach((msg) => {
+                            const v = msg.val() || {};
+                            const u = (v.username || '').toLowerCase();
+                            const name = (v.user || '').toLowerCase();
+                            if ((match.email && u === match.email.toLowerCase()) ||
+                                (match.name && name === match.name.toLowerCase()) ||
+                                (match.username && u === match.username.toLowerCase())) {
+                                msg.ref.remove();
+                                removed += 1;
+                            }
+                        });
+                    });
+                } catch (e) {
+                    showToast('Error removing chat messages: ' + e.message, 'warning');
+                }
+
+                // direct messages
+                try {
+                    const dmSnap = await directMessagesRef.once('value');
+                    dmSnap.forEach((child) => {
+                        const data = child.val() || {};
+                        const p = data.participants || {};
+                        const name1 = (p.user1 || '').toLowerCase();
+                        const name2 = (p.user2 || '').toLowerCase();
+                        const uid1 = (p.user1_uid || '').toLowerCase();
+                        const uid2 = (p.user2_uid || '').toLowerCase();
+
+                        const matchDm =
+                            (match.uid && (uid1 === match.uid.toLowerCase() || uid2 === match.uid.toLowerCase())) ||
+                            (match.email && (name1 === match.email.toLowerCase() || name2 === match.email.toLowerCase())) ||
+                            (match.name && (name1 === match.name.toLowerCase() || name2 === match.name.toLowerCase())) ||
+                            (match.username && (name1 === match.username.toLowerCase() || name2 === match.username.toLowerCase()));
+
+                        if (matchDm) {
+                            child.ref.remove();
+                            removed += 1;
+                        }
+                    });
+                } catch (e) {
+                    showToast('Error removing DMs: ' + e.message, 'warning');
+                }
+
+                localStorage.removeItem('bsn9b_userCache');
+                localStorage.removeItem('bsn9b_userCacheTime');
+                loadRegisteredUsers();
+                showToast('Purge complete', 'success');
+            }, { confirmText: 'Purge User', danger: true });
         }
 
         // Refresh all data
@@ -2603,7 +2811,10 @@
             <span class="label">Logout</span>
         </button>
     </nav>
-    <script src="/shared/header.js"></script>
+    <script nonce="bsn9b" src="/shared/header.js"></script>
 </body>
 </html>
+
+
+
 

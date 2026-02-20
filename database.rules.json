@@ -5,14 +5,14 @@
     "chat": {
       "channels": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.email == \"christiankholden@gmail.com\" || auth.token.email == \"holdenc\")"
+        ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\" || auth.token.email == \"holdenc\")"
       },
       "messages": {
         "$channelId": {
           ".read": "auth != null",
-          ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+          ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
           "$messageId": {
-            ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email || auth.token.email == \"christiankholden@gmail.com\")",
+            ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
             ".validate": "!newData.exists() || (newData.hasChildren(['user', 'username', 'text', 'timestamp']) && newData.child('username').val() === auth.token.email)"
           }
         }
@@ -41,13 +41,13 @@
     "community": {
       "posts": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+        ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
         "$postId": {
-          ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.email == \"christiankholden@gmail.com\")",
+          ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
           ".validate": "!newData.exists() || newData.hasChild('author')",
           "replies": {
             "$replyId": {
-              ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.email == \"christiankholden@gmail.com\")"
+              ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
             }
           },
           "likes": {
@@ -65,35 +65,35 @@
       }
     },
     "userProfiles": {
-      ".read": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
-      ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.email == \"christiankholden@gmail.com\")",
-        ".write": "auth != null && (auth.uid === $uid || auth.token.email == \"christiankholden@gmail.com\")"
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
       }
     },
     "announcements": {
       ".read": "auth != null",
-      ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\""
+      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
     },
     "banned": {
       ".read": "auth != null",
-      ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\""
+      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
     },
     "globalPhrases": {
       ".read": "auth != null",
-      ".write": "auth != null && auth.token.email == \"christiankholden@gmail.com\""
+      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
     },
     "loginHistory": {
-      ".read": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
       ".write": "auth != null"
     },
     "userExportHistory": {
-      ".read": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
       ".write": "auth != null"
     },
     "notificationLog": {
-      ".read": "auth != null && auth.token.email == \"christiankholden@gmail.com\"",
+      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
       ".write": "auth != null"
     }
   }

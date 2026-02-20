@@ -4,6 +4,8 @@
 
 Codex security audit identified 5 areas of concern. This document provides analysis, risk assessment, and remediation strategies compatible with the GitHub Pages + Firebase architecture.
 
+**Status Update:** Admin password gate has been removed and replaced with Firebase Auth + custom claims. See `SECURITY_IMPLEMENTATION.md` for current implementation details.
+
 ---
 
 ## Issues Found
