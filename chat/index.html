@@ -1362,6 +1362,28 @@
         }
 
         // ========== UTILITY FUNCTIONS ==========
+        // ── Avatar helpers ────────────────────────────────────
+        function getAvatarInitials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(/\s+/).filter(Boolean);
+            if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+            return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+        }
+
+        function getAvatarColor(name) {
+            const palette = ['#0f7490','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#4f46e5'];
+            if (!name) return palette[0];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return palette[Math.abs(hash) % palette.length];
+        }
+
+        function buildAvatar(name, size) {
+            const dim = size === 'lg' ? '36px' : size === 'md' ? '32px' : '26px';
+            const fs  = size === 'lg' ? '13px' : size === 'md' ? '12px' : '10px';
+            return `<div style="width:${dim};height:${dim};border-radius:50%;background:${getAvatarColor(name)};display:flex;align-items:center;justify-content:center;font-size:${fs};font-weight:700;color:#fff;flex-shrink:0;user-select:none;" title="${escapeHtml(name)}">${getAvatarInitials(name)}</div>`;
+        }
+
         function formatTime(timestamp) {
             try {
                 if (!timestamp || typeof timestamp !== 'number') return 'Unknown time';
@@ -1653,13 +1675,16 @@
                     const displayUser = isMe ? 'You' : escapeHtml(msg.user || 'Anonymous');
 
                     html += `
-                        <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                            <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 3px;">${displayUser}</div>
-                            <div style="background: ${mentionsMe && !isMe ? 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : 'var(--chat-msg-other-bg)')}; color: ${mentionsMe || isMe ? 'white' : 'var(--text-primary)'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 75%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
-                                ${formattedText}
-                            </div>
-                            <div style="font-size: 9px; color: var(--text-secondary); margin-top: 3px;">
-                                ${formatTime(msg.timestamp)}${isMe ? ' <span style="color: #4ade80;" title="Delivered">\u2713</span>' : ''}
+                        <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:12px;${isMe ? 'justify-content:flex-end;' : ''}">
+                            ${!isMe ? buildAvatar(msg.user || 'Anonymous', 'sm') : ''}
+                            <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
+                                <div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">${displayUser}</div>
+                                <div style="background:${mentionsMe && !isMe ? 'linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg,#1f4e79 0%,#2d5a87 100%)' : 'var(--chat-msg-other-bg)')};color:${mentionsMe || isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
+                                    ${formattedText}
+                                </div>
+                                <div style="font-size:9px;color:var(--text-secondary);margin-top:3px;">
+                                    ${formatTime(msg.timestamp)}${isMe ? ' <span style="color:#4ade80;" title="Delivered">\u2713</span>' : ''}
+                                </div>
                             </div>
                         </div>
                     `;
@@ -2236,18 +2261,17 @@
                 if (isUnread) totalUnread++;
 
                 return `
-                    <div onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')" style="padding: 14px; background: ${isUnread ? 'var(--bg-tertiary)' : 'var(--bg-primary)'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : 'var(--border)'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : 'var(--border)'}' ">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: ${isUnread ? '700' : '600'}; color: var(--text-primary); margin-bottom: 4px;">
+                    <div onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')" style="padding:12px 14px;background:${isUnread ? 'var(--bg-tertiary)' : 'var(--bg-primary)'};border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid ${isUnread ? '#8b5cf6' : 'var(--border)'};transition:all 0.2s;display:flex;align-items:center;gap:12px;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : 'var(--border)'}' ">
+                        ${buildAvatar(conv.partnerName, 'md')}
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
+                                <div style="font-weight:${isUnread ? '700' : '600'};color:var(--text-primary);">
                                     ${isUnread ? '\u25CF ' : ''}${safePartnerName}
                                 </div>
-                                <div style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${escapeHtml(preview)}
-                                </div>
+                                <div style="font-size:10px;color:var(--text-secondary);white-space:nowrap;margin-left:8px;">${time}</div>
                             </div>
-                            <div style="font-size: 10px; color: var(--text-secondary); white-space: nowrap; margin-left: 10px;">
-                                ${time}
+                            <div style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${escapeHtml(preview)}
                             </div>
                         </div>
                     </div>
@@ -2273,8 +2297,11 @@
 
                 return `
                     <div class="dm-item ${isActive ? 'active' : ''}" onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')">
-                        <span class="dm-name">
-                            <span class="dm-status-dot" style="background: ${isOnline ? '#22c55e' : '#6b7280'};"></span>
+                        <span class="dm-name" style="display:flex;align-items:center;gap:8px;">
+                            <span style="position:relative;flex-shrink:0;">
+                                ${buildAvatar(conv.partnerName, 'sm')}
+                                <span style="position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:${isOnline ? '#22c55e' : '#6b7280'};border:1.5px solid #1a1a2e;"></span>
+                            </span>
                             ${escapeHtml(conv.partnerName)}
                         </span>
                         <span class="dm-badge" style="${isUnread ? 'display:flex' : 'display:none'}">!</span>
@@ -2308,13 +2335,16 @@
                     const safeText = escapeHtml(msg.text || '');
 
                     html += `
-                        <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                            <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 3px;">${safeSender}</div>
-                            <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'var(--chat-msg-other-bg)'}; color: ${isMe ? 'white' : 'var(--text-primary)'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 75%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
-                                ${safeText}
-                            </div>
-                            <div style="font-size: 9px; color: var(--text-secondary); margin-top: 3px;">
-                                ${formatTime(msg.timestamp)}${isMe ? (msg.read ? ' <span style="color: #4ade80;" title="Seen">\u2713\u2713</span>' : ' <span style="color: var(--text-secondary);" title="Delivered">\u2713</span>') : ''}
+                        <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:12px;${isMe ? 'justify-content:flex-end;' : ''}">
+                            ${!isMe ? buildAvatar(msg.senderName || 'Unknown', 'sm') : ''}
+                            <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
+                                <div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">${safeSender}</div>
+                                <div style="background:${isMe ? 'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)' : 'var(--chat-msg-other-bg)'};color:${isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
+                                    ${safeText}
+                                </div>
+                                <div style="font-size:9px;color:var(--text-secondary);margin-top:3px;">
+                                    ${formatTime(msg.timestamp)}${isMe ? (msg.read ? ' <span style="color:#4ade80;" title="Seen">\u2713\u2713</span>' : ' <span style="color:var(--text-secondary);" title="Delivered">\u2713</span>') : ''}
+                                </div>
                             </div>
                         </div>
                     `;

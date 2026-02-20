@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v60';
+const CACHE_VERSION = 'v61';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
