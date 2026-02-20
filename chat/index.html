@@ -889,6 +889,21 @@
         .status-option:hover { background: rgba(255,255,255,0.07); color: white; }
         .status-option.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: white; }
         .status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        /* My Status header badge */
+        .my-status-header-btn { display: flex; align-items: center; gap: 5px; background: none; border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; cursor: pointer; font-size: 12px; color: var(--text-secondary); transition: background 0.15s; white-space: nowrap; }
+        .my-status-header-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+        .my-status-header-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        /* User Status panel */
+        .user-status-group { margin-bottom: 14px; }
+        .user-status-group-label { font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px; padding-left: 2px; opacity: 0.7; }
+        .user-status-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 4px; border-radius: 6px; cursor: default; transition: background 0.1s; }
+        .user-status-row:hover { background: var(--bg-secondary); }
+        .user-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+        .user-status-info { flex: 1; min-width: 0; }
+        .user-status-name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+        .user-status-offline .user-status-name { color: var(--text-secondary); opacity: 0.7; }
+        .user-status-msg-text { font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .user-status-since { font-size: 10px; color: var(--text-secondary); flex-shrink: 0; margin-top: 4px; opacity: 0.6; }
         /* Custom status input */
         .status-custom-row { display: flex; gap: 4px; margin-bottom: 6px; }
         .status-custom-input { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: white; font-size: 12px; padding: 5px 8px; outline: none; min-width: 0; }
@@ -1030,7 +1045,11 @@
                         <span class="channel-header-name" id="channelHeaderName"># general</span>
                     </div>
                     <div class="channel-header-actions">
-                        <button onclick="toggleUserList()" title="View online users">&#128101; Online</button>
+                        <button class="my-status-header-btn" id="myStatusHeaderBtn" onclick="toggleStatusPicker()" title="Set your status">
+                            <span class="my-status-header-dot" id="myStatusHeaderDot" style="background:#22c55e;"></span>
+                            <span id="myStatusHeaderLabel">Online</span>
+                        </button>
+                        <button onclick="toggleUserList()" title="View user statuses">&#128101; Users</button>
                     </div>
                 </div>
 
@@ -1104,7 +1123,7 @@
             <!-- User list panel (slides in from right) -->
             <div class="user-list-panel" id="userListPanel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h4>&#128101; Online Users</h4>
+                    <h4>&#128101; User Status</h4>
                     <button onclick="toggleUserList()" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-secondary);">&times;</button>
                 </div>
                 <div id="userListNames"></div>
@@ -1472,6 +1491,7 @@
             if (uid) {
                 presenceRef.child(uid).update({
                     statusMsg: msg || null,
+                    statusChangedAt: msg ? firebase.database.ServerValue.TIMESTAMP : null,
                     lastActive: firebase.database.ServerValue.TIMESTAMP
                 }).catch(() => {});
             }
@@ -1479,7 +1499,36 @@
             document.getElementById('statusPickerPanel').style.display = 'none';
         }
 
+        function formatStatusDuration(ts) {
+            if (!ts) return '';
+            const diff = Date.now() - ts;
+            const m = Math.floor(diff / 60000);
+            const h = Math.floor(diff / 3600000);
+            if (m < 1) return 'just now';
+            if (m < 60) return m + 'm';
+            if (h < 24) return h + 'h';
+            return Math.floor(h / 24) + 'd';
+        }
+
+        function updateMyStatusHeader() {
+            const dot = document.getElementById('myStatusHeaderDot');
+            const label = document.getElementById('myStatusHeaderLabel');
+            if (!dot || !label) return;
+            const cfg = STATUS_CONFIG[myStatusMsg] || { dot: '#94a3b8', label: myStatusMsg || 'Online' };
+            dot.style.background = cfg.dot;
+            label.textContent = myStatusMsg ? cfg.label : 'My Status';
+        }
+
         function toggleStatusPicker() {
+            // On mobile, open the sidebar so the picker is visible
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('chatSidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar && !sidebar.classList.contains('open')) {
+                    sidebar.classList.add('open');
+                    if (overlay) overlay.classList.add('open');
+                }
+            }
             const panel = document.getElementById('statusPickerPanel');
             if (!panel) return;
             const isVisible = panel.style.display === 'block';
@@ -1493,7 +1542,7 @@
             panel.style.display = isVisible ? 'none' : 'block';
             if (!isVisible) {
                 const input = document.getElementById('customStatusInput');
-                if (input) setTimeout(() => input.focus(), 50);
+                if (input) setTimeout(() => input.focus(), 100);
             }
         }
 
@@ -1531,6 +1580,7 @@
             document.querySelectorAll('#statusPickerPanel .status-option').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.status === myStatusMsg);
             });
+            updateMyStatusHeader();
         }
 
         setPresence('online');
@@ -2374,32 +2424,66 @@
             const namesEl = document.getElementById('userListNames');
             if (!namesEl) return;
 
-            if (onlineUsersData.length === 0) {
-                namesEl.innerHTML = '<div style="opacity: 0.7; font-size: 12px; color: var(--text-secondary);">No users online</div>';
-                return;
-            }
+            const myEmail = currentUsername.toLowerCase();
+            const processedEmails = new Set();
+            const onlineList = [], awayList = [], offlineList = [];
 
-            // Sort: online first, then away
-            const sorted = [...onlineUsersData].sort((a, b) => {
-                if (a.status === 'online' && b.status !== 'online') return -1;
-                if (a.status !== 'online' && b.status === 'online') return 1;
-                return (a.user || '').localeCompare(b.user || '');
+            // Bucket presence data into online / away
+            onlineUsersData.forEach(u => {
+                const email = (u.username || '').toLowerCase();
+                if (!email) return;
+                processedEmails.add(email);
+                const entry = { name: u.user || email, email, presence: u };
+                if (u.status === 'away') awayList.push(entry);
+                else onlineList.push(entry);
             });
 
-            namesEl.innerHTML = sorted.map(u => {
-                const dotClass = u.status === 'online' ? 'status-online' : 'status-away';
-                const statusMsg = u.statusMsg ? escapeHtml(u.statusMsg) : '';
-                const sCfg = STATUS_CONFIG[u.statusMsg || ''] || {};
-                return `
-                    <div class="user-entry" style="flex-direction:column;align-items:flex-start;gap:1px;">
-                        <div style="display:flex;align-items:center;gap:6px;">
-                            <span class="status-dot ${dotClass}"></span>
-                            <span>${escapeHtml(u.user || 'Unknown')}</span>
+            // Registered users not in presence = offline
+            allRegisteredUsers.forEach(u => {
+                const email = (u.email || '').toLowerCase();
+                if (!email || processedEmails.has(email)) return;
+                offlineList.push({ name: u.name, email, presence: null });
+            });
+
+            [onlineList, awayList, offlineList].forEach(list =>
+                list.sort((a, b) => a.name.localeCompare(b.name))
+            );
+
+            const renderGroup = (label, list, dotColor, isOffline) => {
+                if (list.length === 0) return '';
+                const rows = list.map(entry => {
+                    const u = entry.presence;
+                    const statusMsg = u?.statusMsg || '';
+                    const sCfg = STATUS_CONFIG[statusMsg] || {};
+                    const msgColor = sCfg.dot || '#94a3b8';
+                    const since = statusMsg && u?.statusChangedAt ? formatStatusDuration(u.statusChangedAt) : '';
+                    const isMe = entry.email === myEmail;
+                    const meLabel = isMe ? ' <span style="font-size:10px;opacity:0.45;">(you)</span>' : '';
+                    const dotStyle = isOffline
+                        ? `background:#6b7280;opacity:0.4;`
+                        : `background:${dotColor};`;
+                    return `
+                        <div class="user-status-row${isOffline ? ' user-status-offline' : ''}">
+                            <span class="user-status-dot" style="${dotStyle}"></span>
+                            <div class="user-status-info">
+                                <div class="user-status-name">${escapeHtml(entry.name)}${meLabel}</div>
+                                ${statusMsg ? `<div class="user-status-msg-text" style="color:${msgColor};">${escapeHtml(statusMsg)}</div>` : ''}
+                            </div>
+                            ${since ? `<span class="user-status-since">${since}</span>` : ''}
                         </div>
-                        ${statusMsg ? `<div style="font-size:10px;color:${sCfg.dot || '#94a3b8'};padding-left:18px;">${statusMsg}</div>` : ''}
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+                return `<div class="user-status-group"><div class="user-status-group-label">${label} — ${list.length}</div>${rows}</div>`;
+            };
+
+            let html = '';
+            html += renderGroup('Online', onlineList, '#22c55e', false);
+            html += renderGroup('Away', awayList, '#eab308', false);
+            if (allRegisteredUsers.length > 0) {
+                html += renderGroup('Offline', offlineList, '#6b7280', true);
+            }
+
+            namesEl.innerHTML = html || '<div style="opacity:0.7;font-size:12px;color:var(--text-secondary);">No users found</div>';
         }
 
         // ========== MOBILE SIDEBAR ==========
