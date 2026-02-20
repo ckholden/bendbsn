@@ -533,6 +533,10 @@
                         oninput="filterRegisteredUsers()"
                         style="width: 100%; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;"
                     >
+                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-sm" style="background: #64748b; color: white;" onclick="clearRegisteredUsersCache()">Clear Cache</button>
+                        <button class="btn btn-sm btn-danger" onclick="bulkDeleteFilteredUsers()">Delete Filtered</button>
+                    </div>
                 </div>
                 <div class="card-body tall" id="registeredUsersList">
                     <div class="empty-state">
@@ -631,6 +635,7 @@
         let userProfilesByEmail = {};
         let userProfilesByUid = {};
         let registeredUsersCache = [];
+        let registeredUsersFiltered = [];
 
         const SESSION_KEY = 'bsn9b_session_key';
         const SESSION_START_KEY = 'bsn9b_session_start';
@@ -1063,6 +1068,8 @@
             const container = document.getElementById('registeredUsersList');
             if (!container) return;
 
+            registeredUsersFiltered = users || [];
+
             if (!users || users.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">&#128100;</div><p>No registered users</p></div>';
                 return;
@@ -1119,6 +1126,86 @@
                 return name.includes(search) || email.includes(search) || username.includes(search);
             });
             renderRegisteredUsers(filtered);
+        }
+
+        function clearRegisteredUsersCache() {
+            localStorage.removeItem('bsn9b_userCache');
+            localStorage.removeItem('bsn9b_userCacheTime');
+            showToast('User cache cleared', 'success');
+            loadRegisteredUsers();
+        }
+
+        async function bulkDeleteFilteredUsers() {
+            const input = document.getElementById('registeredUserSearch');
+            const search = (input?.value || '').toLowerCase().trim();
+            if (!search) {
+                showToast('Enter a search term first', 'error');
+                return;
+            }
+            const targets = registeredUsersFiltered || [];
+            if (targets.length === 0) {
+                showToast('No users matched the filter', 'info');
+                return;
+            }
+
+            const confirmMsg = `Delete ${targets.length} user(s) matching "${search}"?\n\nThis will remove them from the Google Sheet and Firebase profiles (if present).`;
+            showConfirmModal('Bulk Delete Users', confirmMsg, async function() {
+                for (let i = 0; i < targets.length; i++) {
+                    const u = targets[i];
+                    await deleteUserDirect(u.username || '', u.email || '', (userProfilesByEmail[(u.email || '').toLowerCase()] || {}).uid || '', u.name || u.username || u.email);
+                    await new Promise(r => setTimeout(r, 300));
+                }
+                showToast(`Bulk delete attempted for ${targets.length} users`, 'success');
+                loadRegisteredUsers();
+            }, { confirmText: 'Delete Users', danger: true });
+        }
+
+        async function deleteUserDirect(username, email, uid, displayName) {
+            let deletedItems = [];
+            let errors = [];
+
+            try {
+                if (uid && uid !== 'undefined' && uid !== '') {
+                    try {
+                        await userProfilesRef.child(uid).remove();
+                        deletedItems.push('Firebase profile');
+                    } catch (e) {
+                        errors.push('Firebase profile: ' + e.message);
+                    }
+                }
+
+                try {
+                    const params = new URLSearchParams({
+                        action: 'deleteUser',
+                        username: username,
+                        email: email
+                    });
+                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
+                    deletedItems.push('Google Sheet');
+                } catch (e) {
+                    errors.push('Google Sheet: ' + e.message);
+                }
+
+                try {
+                    const bannedSnapshot = await bannedRef.once('value');
+                    bannedSnapshot.forEach((child) => {
+                        if (child.val().username === username || child.val().username === email) {
+                            child.ref.remove();
+                        }
+                    });
+                } catch (e) {
+                    // Ignore ban removal errors
+                }
+
+                if (deletedItems.length > 0) {
+                    showToast(`Deleted ${displayName || username} from: ${deletedItems.join(', ')}`, 'success');
+                }
+                if (errors.length > 0) {
+                    showToast(`Errors deleting ${displayName || username}: ${errors.join('; ')}`, 'warning');
+                }
+            } catch (e) {
+                showToast('Error deleting user: ' + e.message, 'error');
+            }
         }
 
         // Load registered users from Google Sheets
@@ -1294,64 +1381,17 @@
             showConfirmModal('Delete User', confirmMsg, function() {
                 showConfirmModal('Are You Sure?', 'Are you REALLY sure? This action is permanent.', async function() {
 
-            let deletedItems = [];
-            let errors = [];
+            await deleteUserDirect(username, email, uid, displayName);
 
-            try {
-                // 1. Delete from Firebase userProfiles (if uid exists)
-                if (uid && uid !== 'undefined' && uid !== '') {
-                    try {
-                        await userProfilesRef.child(uid).remove();
-                        deletedItems.push('Firebase profile');
-                    } catch (e) {
-                        errors.push('Firebase profile: ' + e.message);
-                    }
-                }
+            // Open Firebase Console for Auth deletion
+            showConfirmModal('Open Firebase Console', 'User data deleted!\n\nOpen Firebase Console to delete the Auth account?\n\n(Required to fully remove the user)', function() {
+                window.open('https://console.firebase.google.com/project/bendbsn-17377/authentication/users', '_blank');
+            }, { confirmText: 'Open Console' });
 
-                // 2. Delete from Google Sheet
-                try {
-                    const params = new URLSearchParams({
-                        action: 'deleteUser',
-                        username: username,
-                        email: email
-                    });
-                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                    deletedItems.push('Google Sheet');
-                } catch (e) {
-                    errors.push('Google Sheet: ' + e.message);
-                }
-
-                // 3. Remove from banned list if present
-                try {
-                    const bannedSnapshot = await bannedRef.once('value');
-                    bannedSnapshot.forEach((child) => {
-                        if (child.val().username === username || child.val().username === email) {
-                            child.ref.remove();
-                        }
-                    });
-                } catch (e) {
-                    // Ignore ban removal errors
-                }
-
-                // 4. Show results
-                if (deletedItems.length > 0) {
-                    showToast(`Deleted from: ${deletedItems.join(', ')}`, 'success');
-                }
-                if (errors.length > 0) {
-                    showToast(`Errors: ${errors.join('; ')}`, 'warning');
-                }
-
-                // 5. Open Firebase Console for Auth deletion
-                showConfirmModal('Open Firebase Console', 'User data deleted!\n\nOpen Firebase Console to delete the Auth account?\n\n(Required to fully remove the user)', function() {
-                    window.open('https://console.firebase.google.com/project/bendbsn-17377/authentication/users', '_blank');
-                }, { confirmText: 'Open Console' });
-
-                // Refresh user list
-                loadRegisteredUsers();
-
-            } catch (e) {
-                showToast('Error deleting user: ' + e.message, 'error');
-            }
+            // Refresh user list
+            localStorage.removeItem('bsn9b_userCache');
+            localStorage.removeItem('bsn9b_userCacheTime');
+            loadRegisteredUsers();
                 }, { confirmText: 'Yes, Delete', danger: true });
             }, { confirmText: 'Delete User', danger: true });
         }
