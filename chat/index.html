@@ -1185,7 +1185,8 @@
                 // Load admin role from Firebase profile
                 userProfilesRef.child(user.uid).once('value').then(snap => {
                     const profile = snap.val();
-                    if (profile && profile.role === 'admin') {
+                    const ownerEmails = ['christiankholden@gmail.com', 'holdenc'];
+                    if (profile && (profile.role === 'admin' || ownerEmails.includes(user.email))) {
                         currentUserIsAdmin = true;
                         const btn = document.getElementById('createChannelBtn');
                         if (btn) btn.classList.add('visible');
