@@ -26,18 +26,6 @@
             padding: 20px;
         }
         .container { max-width: 1200px; margin: 0 auto; }
-        .header {
-            background: linear-gradient(135deg, #0f3460 0%, #533483 50%, #e94560 100%);
-            color: white;
-            padding: 25px 30px;
-            border-radius: 16px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 { font-size: 24px; }
-        .header-actions { display: flex; gap: 10px; }
         .btn {
             padding: 10px 20px;
             border: none;
@@ -47,46 +35,44 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        .btn-primary { background: #e94560; color: white; }
-        .btn-primary:hover { background: #d63850; transform: translateY(-2px); }
-        .btn-secondary { background: rgba(255,255,255,0.2); color: white; }
-        .btn-secondary:hover { background: rgba(255,255,255,0.3); }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover { background: #218838; }
-        .btn-warning { background: #ffc107; color: #333; }
-        .btn-warning:hover { background: #e0a800; }
-        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        /* btn overrides — clinical-ui.css provides the base; only customize admin-specific variants here */
+        .btn-primary { background: var(--clx-accent, #0f7490) !important; color: #ffffff !important; border-color: var(--clx-accent, #0f7490) !important; }
+        .btn-primary:hover { background: var(--clx-accent-hover, #0c6478) !important; }
+        .btn-secondary { background: var(--clx-bg-surface-2, #f5f8fa) !important; color: var(--clx-text-primary, #1a2532) !important; border: 1px solid var(--clx-border, #d1dce8) !important; }
+        .btn-secondary:hover { background: var(--clx-bg-surface-3, #eef2f6) !important; }
+        .btn-sm { padding: 5px 12px !important; font-size: 12px !important; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
         .card {
-            background: white;
-            border-radius: 16px;
+            background: var(--clx-bg-surface, #ffffff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .card-header {
-            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
-            color: white;
-            padding: 15px 20px;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            color: var(--clx-text-primary, #1a2532);
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            padding: 12px 16px;
             font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-radius: 10px 10px 0 0;
         }
-        .card-body { padding: 20px; max-height: 250px; overflow-y: auto; }
+        .card-body { padding: 16px 20px; max-height: 250px; overflow-y: auto; }
         .card-body.tall { max-height: 300px; }
 
         .user-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            transition: background 0.2s;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--clx-border, #e2e8f0);
+            transition: background 0.15s;
         }
-        .user-item:hover { background: #f8f9fa; }
+        .user-item:hover { background: var(--clx-accent-subtle, #e0f2f8); }
         .user-item:last-child { border-bottom: none; }
         .user-info { flex: 1; }
         .user-name { font-weight: 600; color: #333; }
@@ -169,35 +155,36 @@
         .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
         .updated-label {
             font-size: 11px;
-            color: rgba(255,255,255,0.75);
+            color: var(--clx-text-muted, #718096);
             margin-left: 8px;
         }
         .updated-label.muted {
-            color: #94a3b8;
+            color: var(--clx-text-muted, #718096);
         }
 
         .refresh-btn {
             background: none;
             border: none;
-            color: white;
+            color: var(--clx-text-secondary, #64748b);
             cursor: pointer;
             font-size: 18px;
             opacity: 0.8;
             transition: opacity 0.2s;
         }
-        .refresh-btn:hover { opacity: 1; }
+        .refresh-btn:hover { opacity: 1; color: var(--clx-accent, #0f7490); }
 
         .action-bar {
-            background: white;
-            border-radius: 16px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
+            background: var(--clx-bg-surface, #ffffff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
             align-items: center;
         }
-        .action-bar label { font-weight: 600; color: #333; }
+        .action-bar label { font-weight: 600; color: var(--clx-text-secondary, #4a5568); font-size: 12px; }
 
         /* Bottom Toolbar */
         .bottom-toolbar {
@@ -328,16 +315,16 @@
     </aside>
     <!-- Main content -->
     <main class="clx-main" role="main">
-        <div class="header">
+        <div class="clx-page-title-bar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <div>
-                <h1>BSN9B Admin Panel</h1>
-                <p style="opacity: 0.8; font-size: 14px;">Manage users, chat, and site settings</p>
+                <h1 class="clx-page-title">Admin Panel</h1>
+                <p class="clx-page-subtitle">Manage users, chat, and site settings</p>
             </div>
-            <div class="header-actions">
-                <span id="firebaseAuthStatus" style="color: rgba(255,255,255,0.8); font-size: 12px; align-self: center;">Firebase: not signed in</span>
-                <button class="btn btn-secondary" onclick="openFirebaseAuthModal()">Firebase Sign In</button>
-                <button class="btn btn-secondary" onclick="window.location.href='/app/'">Back to App</button>
-                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span id="firebaseAuthStatus" style="font-size:12px;color:var(--clx-text-muted,#718096);"></span>
+                <button class="btn btn-secondary btn-sm" onclick="openFirebaseAuthModal()">Firebase Sign In</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.location.href='/app/'">Back to App</button>
+                <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
             </div>
         </div>
 
@@ -384,21 +371,22 @@
         <div class="action-bar">
             <label>Quick Actions:</label>
             <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
-            <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
-            <button class="btn btn-sm" style="background: #17a2b8; color: white;" onclick="showExportHistory()">Export History</button>
-            <button class="btn btn-sm" style="background: #28a745; color: white;" onclick="showNotificationLog()">📧 Email Notifications</button>
-            <button class="btn btn-sm" style="background: #e53e3e; color: white;" onclick="showPendingWelcomeEmails()" id="pendingEmailsBtn">📬 Pending Welcome Emails</button>
-            <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
-            <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showCommunityStats()">Community Stats</button>
-            <button class="btn btn-sm" style="background: #1f4e79; color: white;" onclick="normalizeUserRoles()">Normalize Roles</button>
+            <button class="btn btn-secondary btn-sm" onclick="showLoginHistory()">Login History</button>
+            <button class="btn btn-secondary btn-sm" onclick="showExportHistory()">Export History</button>
+            <button class="btn btn-secondary btn-sm" onclick="showNotificationLog()">📧 Email Notifications</button>
+            <button class="btn btn-secondary btn-sm" onclick="showPendingWelcomeEmails()" id="pendingEmailsBtn">📬 Pending Welcome Emails</button>
+            <button class="btn btn-secondary btn-sm" onclick="showSmartPhrases()">Smart Phrases</button>
+            <button class="btn btn-secondary btn-sm" onclick="showCommunityStats()">Community Stats</button>
+            <button class="btn btn-secondary btn-sm" onclick="normalizeUserRoles()">Normalize Roles</button>
         </div>
 
-        <!-- Danger Zone -->
+        <!-- Danger Zone (collapsed by default) -->
         <div class="card" style="margin-bottom: 20px;">
-            <div class="card-header" style="background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);">
-                <span>Danger Zone</span>
+            <div class="card-header" style="background:var(--clx-danger-bg,#fef2f2);color:var(--clx-danger-text,#991b1b);border-bottom-color:var(--clx-danger,#dc2626);cursor:pointer;" onclick="toggleDangerZone()" id="dangerZoneHeader">
+                <span>⚠️ Danger Zone</span>
+                <span id="dangerZoneChev" style="font-size:12px;">▶ Click to expand</span>
             </div>
-            <div class="card-body">
+            <div class="card-body" id="dangerZoneBody" style="display:none;">
                 <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">
                     High-impact actions. Use with care.
                 </p>
@@ -674,10 +662,10 @@
 
             <!-- Role Configuration -->
             <div class="card" style="grid-column: span 2;">
-                <div class="card-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+                <div class="card-header">
                     <span>Role Configuration</span>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <button class="btn btn-sm" style="background: white; color: #1e40af;" onclick="showAddRoleForm()">+ Add Role</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showAddRoleForm()">+ Add Role</button>
                         <button class="refresh-btn" onclick="loadRoles()">&#x21bb;</button>
                     </div>
                 </div>
@@ -1526,6 +1514,15 @@
                     .then(() => showToast(`${username} has been kicked from chat`, 'success'))
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
             }, { confirmText: 'Kick', danger: true });
+        }
+
+        // Danger Zone toggle
+        function toggleDangerZone() {
+            const body = document.getElementById('dangerZoneBody');
+            const chev = document.getElementById('dangerZoneChev');
+            const open = body.style.display !== 'none';
+            body.style.display = open ? 'none' : '';
+            chev.textContent = open ? '▶ Click to expand' : '▲ Click to collapse';
         }
 
         // Kick all users
