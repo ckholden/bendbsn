@@ -602,6 +602,16 @@
         .feed-controls h2 { margin: 0; }
         #sortSelect { padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); cursor: pointer; }
 
+        /* Like tooltip */
+        .like-wrapper { position: relative; display: inline-flex; }
+        .like-tooltip { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--clx-bg-surface); border: 1px solid var(--clx-border); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--clx-text-primary); z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.15); min-width: 80px; max-width: 200px; white-space: normal; pointer-events: none; }
+        .like-tooltip strong { display: block; margin-bottom: 4px; color: var(--clx-text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .like-tooltip-name { display: block; line-height: 1.6; }
+        .like-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--clx-bg-surface); }
+        .like-tooltip::before { content: ''; position: absolute; top: calc(100% + 1px); left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--clx-border); }
+        .like-wrapper:hover .like-tooltip { display: block; }
+        .post-action.liked { color: #e11d48; font-weight: 600; }
+
         /* Search preview */
         .post-preview { font-size: 13px; color: var(--clx-text-secondary); margin: 4px 0 0; line-height: 1.5; }
         mark { background: var(--clx-accent-subtle); color: var(--clx-text-primary); border-radius: 2px; padding: 0 2px; }
@@ -1563,9 +1573,25 @@
                     ${tagsHtml}
                     <div class="post-footer">
                         <div class="post-actions">
-                            <button class="post-action" onclick="likePost('${post.id}')" aria-label="Like post">
-                                &#10084;&#65039; <span id="likes-${post.id}">${post.likes || 0}</span>
-                            </button>
+                            ${(function(){
+                                const likedBy = post.likedBy || {};
+                                const likeCount = Object.keys(likedBy).length || post.likes || 0;
+                                const uid = getCurrentUserUid();
+                                const userLiked = uid && likedBy[uid];
+                                const names = Object.values(likedBy);
+                                let tooltipHtml = '';
+                                if (names.length > 0) {
+                                    const shown = names.slice(0, 8).map(n => `<span class="like-tooltip-name">${escapeHtml(n)}</span>`).join('');
+                                    const extra = names.length > 8 ? `<span class="like-tooltip-name" style="color:var(--clx-text-muted)">+${names.length - 8} more</span>` : '';
+                                    tooltipHtml = `<div class="like-tooltip"><strong>Liked by</strong>${shown}${extra}</div>`;
+                                }
+                                return `<div class="like-wrapper">
+                                    <button class="post-action${userLiked ? ' liked' : ''}" onclick="likePost('${post.id}')" aria-label="Like post" title="">
+                                        &#10084;&#65039; <span id="likes-${post.id}">${likeCount}</span>
+                                    </button>
+                                    ${tooltipHtml}
+                                </div>`;
+                            })()}
                             <button class="post-action" onclick="toggleReplies('${post.id}')" aria-label="View replies" aria-expanded="false">
                                 &#128172; <span id="reply-count-${post.id}">${replyCount}</span> Replies
                             </button>
@@ -1595,8 +1621,22 @@
         }
 
         function likePost(postId) {
-            const postRef = database.ref('community/posts/' + postId + '/likes');
-            postRef.transaction(current => (current || 0) + 1);
+            const uid = getCurrentUserUid();
+            if (!uid) { showToast('Sign in to like posts', 'warning'); return; }
+            const likedByRef = database.ref('community/posts/' + postId + '/likedBy/' + uid);
+            likedByRef.once('value', snap => {
+                if (snap.exists()) {
+                    // Unlike
+                    likedByRef.remove().then(() => {
+                        database.ref('community/posts/' + postId + '/likes').transaction(c => Math.max((c || 0) - 1, 0));
+                    });
+                } else {
+                    // Like
+                    likedByRef.set(displayName || currentUsername).then(() => {
+                        database.ref('community/posts/' + postId + '/likes').transaction(c => (c || 0) + 1);
+                    });
+                }
+            });
         }
 
         // Track which posts have replies expanded
