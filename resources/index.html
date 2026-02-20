@@ -3272,6 +3272,14 @@ Generated: ${new Date().toLocaleString()}`;
             }
         });
 
+        // Update header online count
+        presenceRef.on('value', (snap) => {
+            const users = Object.values(snap.val() || {});
+            const count = users.filter(u => u.status === 'online' || u.status === 'away').length;
+            const names = users.map(u => u.user || '').filter(Boolean);
+            if (typeof window.updateOnlineCount === 'function') window.updateOnlineCount(count, names);
+        });
+
         // ========== FIREBASE LISTENER CLEANUP ==========
         function cleanupFirebaseListeners() {
             try {
