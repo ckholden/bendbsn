@@ -305,51 +305,6 @@
             flex-shrink: 0;
         }
 
-        /* ---- Skill checkoffs ---- */
-        .dash-skill-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
-            border-bottom: 1px solid var(--clx-border);
-        }
-        .dash-skill-item:last-child { border-bottom: none; }
-        .dash-skill-item input[type="checkbox"] {
-            width: 15px;
-            height: 15px;
-            accent-color: var(--clx-accent);
-            cursor: pointer;
-            flex-shrink: 0;
-            border: none !important;
-            padding: 0 !important;
-        }
-        .dash-skill-label {
-            font-size: 13px;
-            color: var(--clx-text-primary);
-            cursor: pointer;
-            flex: 1;
-        }
-        .dash-skill-item.checked .dash-skill-label {
-            text-decoration: line-through;
-            color: var(--clx-text-muted);
-        }
-
-        .dash-small-btn {
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 4px;
-            border: 1px solid var(--clx-border);
-            background: transparent;
-            color: var(--clx-text-muted);
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .dash-small-btn:hover {
-            background: var(--clx-bg-surface-3);
-            color: var(--clx-text-primary);
-        }
-
         /* ---- Structured Reminders ---- */
         .rem-add-row {
             display: flex;
@@ -433,71 +388,6 @@
             text-align: center;
         }
 
-        /* ---- Log hours modal ---- */
-        .dash-modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 10005;
-            align-items: center;
-            justify-content: center;
-        }
-        .dash-modal-overlay.open { display: flex; }
-        .dash-modal {
-            background: var(--clx-bg-surface);
-            border: 1px solid var(--clx-border);
-            border-radius: 10px;
-            padding: 22px 24px;
-            width: 320px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-        }
-        .dash-modal h3 {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--clx-text-primary);
-            margin-bottom: 6px;
-        }
-        .dash-modal p {
-            font-size: 13px;
-            color: var(--clx-text-secondary);
-            margin-bottom: 14px;
-        }
-        .dash-modal input[type="number"] {
-            width: 100%;
-            padding: 8px 12px;
-            font-size: 14px;
-            border: 1px solid var(--clx-border);
-            border-radius: 6px;
-            background: var(--clx-bg-surface);
-            color: var(--clx-text-primary);
-            margin-bottom: 14px;
-            font-family: inherit;
-        }
-        .dash-modal input[type="number"]:focus {
-            border-color: var(--clx-accent);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(15,116,144,0.12);
-        }
-        .dash-modal-btns { display: flex; gap: 8px; }
-        .dash-modal-btns button {
-            flex: 1;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 6px;
-            cursor: pointer;
-            border: 1px solid var(--clx-border);
-            background: var(--clx-bg-surface-2);
-            color: var(--clx-text-primary);
-            font-family: inherit;
-        }
-        .dash-modal-btns button.primary {
-            background: var(--clx-accent);
-            color: #fff;
-            border-color: var(--clx-accent);
-        }
-        .dash-modal-btns button.primary:hover { background: var(--clx-accent-hover); }
 
         /* ================================================
            DOCUMENTATION HERO
@@ -574,12 +464,12 @@
             text-align: center;
             flex-shrink: 0;
         }
-        .doc-hero-stat-num {
+        .doc-hero-num {
             font-size: 36px;
             font-weight: 700;
             line-height: 1;
         }
-        .doc-hero-stat-label {
+        .doc-hero-lbl {
             font-size: 11px;
             opacity: 0.8;
             margin-top: 2px;
@@ -850,18 +740,6 @@
         </div>
     </div>
 
-    <!-- Log Hours Modal -->
-    <div class="dash-modal-overlay" id="logHoursModal" onclick="if(event.target===this)closeLogHours()">
-        <div class="dash-modal">
-            <h3>⏱ Log Clinical Hours</h3>
-            <p id="hoursCurrentTotal">Total logged: 0 hrs</p>
-            <input type="number" id="hoursInput" min="0" max="24" step="0.5" placeholder="Hours to add (e.g. 8)">
-            <div class="dash-modal-btns">
-                <button onclick="closeLogHours()">Cancel</button>
-                <button class="primary" onclick="confirmLogHours()">Add Hours</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Context bar -->
     <div class="dash-context-bar" id="dashContextBar">
@@ -876,10 +754,6 @@
         <div class="ctx-item">
             <span class="ctx-label">Next Exam</span>
             <span class="ctx-value editable" id="ctxExam" onclick="editCtx('exam')" title="Click to edit">—</span>
-        </div>
-        <div class="ctx-item">
-            <span class="ctx-label">Clin. Hours</span>
-            <span class="ctx-value accent" id="ctxHours">0 hrs</span>
         </div>
         <div class="ctx-item">
             <span class="ctx-label">Graduation</span>
@@ -898,12 +772,11 @@
                 <div class="doc-hero-sub">Build a professional nursing note in minutes.</div>
                 <div class="doc-hero-actions">
                     <a href="/app/" class="doc-cta-btn">📝 Start New Note</a>
-                    <button class="doc-hero-sec-btn" onclick="openLogHours()">⏱ Log Hours</button>
                 </div>
             </div>
             <div class="doc-hero-stat">
-                <div class="doc-hero-stat-num" id="docHeroNoteCount">—</div>
-                <div class="doc-hero-stat-label">Notes Saved</div>
+                <div class="doc-hero-num" id="docHeroNoteCount">—</div>
+                <div class="doc-hero-lbl">Notes Saved</div>
             </div>
         </div>
 
@@ -951,15 +824,6 @@
                 </div>
             </div>
 
-            <!-- Skill Checkoffs (collapsible) -->
-            <div class="dash-panel">
-                <div class="dash-panel-hd" onclick="toggleHomePanel('skills')" style="cursor:pointer;user-select:none;">
-                    Skill Checkoffs
-                    <button class="dash-small-btn" onclick="event.stopPropagation();resetSkills()" style="margin-right:6px;">Reset</button>
-                    <span id="skillsChev" style="font-size:11px;opacity:0.6;">▼</span>
-                </div>
-                <div class="dash-panel-bd panel-body-collapsed" id="skillsList"></div>
-            </div>
 
         </div><!-- /dash-grid -->
 
@@ -1441,7 +1305,6 @@
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
                 document.getElementById('moreMenu')?.classList.remove('show');
-                closeLogHours();
                 if (userListOpen) { userListOpen = false; document.getElementById('userListDropdown').style.display = 'none'; }
             }
         });
@@ -1469,10 +1332,8 @@
         (function initContextBar() {
             const term = localStorage.getItem('bsn9b_home_term');
             const exam = localStorage.getItem('bsn9b_home_exam');
-            const hours = parseFloat(localStorage.getItem('bsn9b_home_hours') || '0');
             if (term) document.getElementById('ctxTerm').textContent = term;
             if (exam) document.getElementById('ctxExam').textContent = exam;
-            document.getElementById('ctxHours').textContent = hours + ' hrs';
             document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bsn9b_displayName') || '—';
             // Graduation countdown
             const grad = localStorage.getItem('bsn9b_home_grad');
@@ -1518,30 +1379,6 @@
             }, { defaultValue: current, placeholder: label });
         }
 
-        // ========== LOG HOURS ==========
-        function openLogHours() {
-            const current = parseFloat(localStorage.getItem('bsn9b_home_hours') || '0');
-            document.getElementById('hoursCurrentTotal').textContent = 'Total logged: ' + current + ' hrs';
-            document.getElementById('hoursInput').value = '';
-            document.getElementById('logHoursModal').classList.add('open');
-            document.getElementById('hoursInput').focus();
-        }
-        function closeLogHours() {
-            document.getElementById('logHoursModal').classList.remove('open');
-        }
-        function confirmLogHours() {
-            const val = parseFloat(document.getElementById('hoursInput').value);
-            if (isNaN(val) || val <= 0) { showToast('Enter a valid number of hours.', 'warning'); return; }
-            const current = parseFloat(localStorage.getItem('bsn9b_home_hours') || '0');
-            const newTotal = Math.round((current + val) * 10) / 10;
-            localStorage.setItem('bsn9b_home_hours', newTotal);
-            document.getElementById('ctxHours').textContent = newTotal + ' hrs';
-            closeLogHours();
-            showToast('Added ' + val + ' hrs — total: ' + newTotal + ' hrs', 'success');
-        }
-        document.getElementById('hoursInput')?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') confirmLogHours();
-        });
 
         // ========== RECENT NOTES ==========
         function sanitizeEmail(email) {
@@ -1586,55 +1423,6 @@
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
-        // ========== SKILL CHECKOFFS ==========
-        const SKILLS = [
-            'Vital signs assessment',
-            'Head-to-toe physical assessment',
-            'IV insertion / IV care',
-            'Foley catheter insertion',
-            'Nasogastric tube insertion',
-            'Wound care / dressing change',
-            'Medication administration (PO)',
-            'Medication administration (IV)',
-            'Blood glucose monitoring',
-            'Patient education documentation',
-            'SBAR handoff communication',
-            'Fall risk assessment (Morse)',
-        ];
-        const SKILLS_KEY = 'bsn9b_home_skills';
-
-        function loadSkillState() {
-            try { return JSON.parse(localStorage.getItem(SKILLS_KEY) || '{}'); } catch { return {}; }
-        }
-        function saveSkillState(state) {
-            localStorage.setItem(SKILLS_KEY, JSON.stringify(state));
-        }
-        function renderSkills() {
-            const el = document.getElementById('skillsList');
-            if (!el) return;
-            const state = loadSkillState();
-            el.innerHTML = SKILLS.map((skill, i) => {
-                const checked = !!state[i];
-                return `<div class="dash-skill-item${checked ? ' checked' : ''}" id="skill-row-${i}">
-                    <input type="checkbox" id="skill-${i}" ${checked ? 'checked' : ''} onchange="toggleSkill(${i}, this.checked)" aria-label="${escHtml(skill)}">
-                    <label class="dash-skill-label" for="skill-${i}">${escHtml(skill)}</label>
-                </div>`;
-            }).join('');
-        }
-        function toggleSkill(i, checked) {
-            const state = loadSkillState();
-            state[i] = checked;
-            saveSkillState(state);
-            const row = document.getElementById('skill-row-' + i);
-            if (row) row.classList.toggle('checked', checked);
-        }
-        function resetSkills() {
-            showConfirmModal('Reset Skill Checkoffs', 'Clear all checkmarks and start fresh?', () => {
-                saveSkillState({});
-                renderSkills();
-            });
-        }
-        renderSkills();
 
         // ========== COLLAPSIBLE HOME PANELS ==========
         const HOME_PANEL_KEY = 'bsn9b_home_panels';
@@ -1646,27 +1434,22 @@
             localStorage.setItem(HOME_PANEL_KEY, JSON.stringify(s));
         }
         function toggleHomePanel(id) {
-            const body = document.getElementById(id === 'quickRef' ? 'quickRefBody' : 'skillsList');
-            const chev = document.getElementById(id === 'quickRef' ? 'quickRefChev' : 'skillsChev');
+            const body = document.getElementById('quickRefBody');
+            const chev = document.getElementById('quickRefChev');
             if (!body) return;
-            const nowOpen = body.classList.toggle('panel-body-collapsed') === false; // true when we removed class (= open)
-            // classList.toggle returns true if class was ADDED (closed), false if removed (open)
             const isOpen = !body.classList.contains('panel-body-collapsed');
-            if (chev) chev.textContent = isOpen ? '▲' : '▼';
-            savePanelState(id, isOpen);
+            body.classList.toggle('panel-body-collapsed', isOpen);
+            if (chev) chev.textContent = isOpen ? '▼' : '▲';
+            savePanelState(id, !isOpen);
         }
         // Restore panel states (default: collapsed)
         (function() {
             const states = loadPanelStates();
-            ['quickRef', 'skills'].forEach(id => {
-                const isOpen = !!states[id]; // default closed
-                const bodyId = id === 'quickRef' ? 'quickRefBody' : 'skillsList';
-                const chevId = id === 'quickRef' ? 'quickRefChev' : 'skillsChev';
-                const body = document.getElementById(bodyId);
-                const chev = document.getElementById(chevId);
-                if (body) { body.classList.toggle('panel-body-collapsed', !isOpen); }
-                if (chev) chev.textContent = isOpen ? '▲' : '▼';
-            });
+            const isOpen = !!states['quickRef'];
+            const body = document.getElementById('quickRefBody');
+            const chev = document.getElementById('quickRefChev');
+            if (body) { body.classList.toggle('panel-body-collapsed', !isOpen); }
+            if (chev) chev.textContent = isOpen ? '▲' : '▼';
         })();
 
         // ========== STRUCTURED REMINDERS ==========

@@ -981,6 +981,27 @@
                 .phrase-item:hover .tooltip { display: block; }
             </style>
 
+            <!-- Role Change Modal -->
+            <div id="roleChangeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10002;align-items:center;justify-content:center;" onclick="if(event.target===this)closeRoleChangeModal()">
+                <div style="background:var(--clx-bg-surface,#fff);border:1px solid var(--clx-border,#e2e8f0);border-radius:10px;padding:22px 24px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:var(--clx-text-primary,#1a2532);">Update Profile Settings</h3>
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:12px;font-weight:600;color:#4a5568;display:block;margin-bottom:4px;">Role</label>
+                        <select id="modalNoteRole" onchange="syncModalYearOptions()" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;">
+                            <option value="">Loading…</option>
+                        </select>
+                    </div>
+                    <div id="modalNoteYearGroup" style="display:none;margin-bottom:12px;">
+                        <label style="font-size:12px;font-weight:600;color:#4a5568;display:block;margin-bottom:4px;">Year Level</label>
+                        <select id="modalNoteYear" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;"></select>
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                        <button onclick="closeRoleChangeModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:1px solid #d1d5db;border-radius:6px;background:#f5f8fa;cursor:pointer;font-family:inherit;">Cancel</button>
+                        <button onclick="saveRoleFromModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;border-radius:6px;background:#0f7490;color:white;cursor:pointer;font-family:inherit;">Save</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Smart Phrases Modal with Tooltips -->
             <div id="phrasesModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="if(event.target === this) this.classList.add('hidden')">
                 <div style="background: white; border-radius: 12px; padding: 20px; max-width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
@@ -1090,10 +1111,6 @@
                     <select id="noteYear" onchange="updateRoleCache();buildDocumentedBy();">
                         <option value="">Select year</option>
                     </select>
-                </div>
-                <div class="form-group" id="noteInstructorGroup" style="min-width:140px;flex:1.2;display:none;">
-                    <label>Instructor Name</label>
-                    <input type="text" id="instructorName" placeholder="Instructor name">
                 </div>
             </div>
             <!-- C3: Patient identifier -->
@@ -2660,7 +2677,6 @@
             fullContent.credentials = formData.credentials;
             fullContent.noteRole = (document.getElementById('noteRole') || {}).value || '';
             fullContent.noteYear = (document.getElementById('noteYear') || {}).value || '';
-            fullContent.instructorName = (document.getElementById('instructorName') || {}).value || '';
             fullContent.noteDate = document.getElementById('noteDate').value;
             fullContent.noteTime = document.getElementById('noteTime').value;
             fullContent.unit = formData.unit;
@@ -2832,7 +2848,6 @@
             // Load header info
             if (content.noteRole && document.getElementById('noteRole')) { document.getElementById('noteRole').value = content.noteRole; onNoteRoleChange(true); }
             if (content.noteYear && document.getElementById('noteYear')) document.getElementById('noteYear').value = content.noteYear;
-            if (content.instructorName && document.getElementById('instructorName')) document.getElementById('instructorName').value = content.instructorName;
             if (content.noteDate) document.getElementById('noteDate').value = content.noteDate;
             if (content.noteTime) document.getElementById('noteTime').value = content.noteTime;
             if (content.unit) document.getElementById('unit').value = content.unit;
@@ -5159,7 +5174,6 @@
             const role = _rolesConfig[roleId] || {};
             const yearGroup = document.getElementById('noteYearGroup');
             const yearSel = document.getElementById('noteYear');
-            const instrGroup = document.getElementById('noteInstructorGroup');
             const loggedInRole = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
 
             if (role.requires_year && role.year_options && yearGroup && yearSel) {
@@ -5168,9 +5182,6 @@
                 if (fromCache && loggedInRole.year) yearSel.value = loggedInRole.year;
             } else if (yearGroup) {
                 yearGroup.style.display = 'none';
-            }
-            if (instrGroup) {
-                instrGroup.style.display = (role.requires_year && loggedInRole.label !== 'Instructor') ? '' : 'none';
             }
             updateRoleCache();
             buildDocumentedBy();
@@ -5201,8 +5212,57 @@
         }
 
         function openRoleChangeSection() {
-            const roleGroup = document.getElementById('noteRoleGroup');
-            if (roleGroup) { roleGroup.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            const modal = document.getElementById('roleChangeModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            // Populate modal dropdowns from current roles config
+            const cached = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
+            const modalRole = document.getElementById('modalNoteRole');
+            if (!modalRole) return;
+            const sorted = Object.entries(_rolesConfig).sort((a,b) => (a[1].order||99)-(b[1].order||99));
+            modalRole.innerHTML = sorted.map(([id,r]) => `<option value="${id}">${r.label}</option>`).join('');
+            if (cached.id) modalRole.value = cached.id;
+            syncModalYearOptions();
+            const modalYear = document.getElementById('modalNoteYear');
+            if (cached.year && modalYear) modalYear.value = cached.year;
+        }
+        function closeRoleChangeModal() {
+            const modal = document.getElementById('roleChangeModal');
+            if (modal) modal.style.display = 'none';
+        }
+        function syncModalYearOptions() {
+            const roleId = document.getElementById('modalNoteRole')?.value || '';
+            const role = _rolesConfig[roleId] || {};
+            const yg = document.getElementById('modalNoteYearGroup');
+            const ys = document.getElementById('modalNoteYear');
+            if (yg && ys) {
+                if (role.requires_year && role.year_options) {
+                    yg.style.display = '';
+                    ys.innerHTML = role.year_options.map(y => `<option>${y}</option>`).join('');
+                } else {
+                    yg.style.display = 'none';
+                }
+            }
+        }
+        function saveRoleFromModal() {
+            const roleId = document.getElementById('modalNoteRole')?.value || '';
+            const role = _rolesConfig[roleId] || {};
+            const year = (role.requires_year && document.getElementById('modalNoteYear')) ? document.getElementById('modalNoteYear').value || null : null;
+            const data = { id: roleId, label: role.label || '', requires_year: !!role.requires_year, year };
+            try { localStorage.setItem('bsn9b_role_v2', JSON.stringify(data)); } catch(e) {}
+            // Sync to form dropdowns
+            const noteRole = document.getElementById('noteRole');
+            if (noteRole) { noteRole.value = roleId; onNoteRoleChange(false); }
+            const noteYear = document.getElementById('noteYear');
+            if (noteYear && year) noteYear.value = year;
+            // Persist to Firebase
+            const uid = localStorage.getItem('bsn9b_uid');
+            if (uid && typeof database !== 'undefined') {
+                database.ref('userProfiles/' + uid).update({ role_id: roleId, role_label: role.label || '', role_year: year || null }).catch(()=>{});
+            }
+            buildDocumentedBy();
+            closeRoleChangeModal();
+            showToast('Role updated to ' + (role.label || 'Unknown') + (year ? ' (' + year + ')' : ''), 'success');
         }
 
         function setNoteTimeNow() {
