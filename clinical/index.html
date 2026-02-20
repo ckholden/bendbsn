@@ -1898,6 +1898,13 @@
             function gv(field) { return data[field] || ''; }
             function gc(field) { return data[field] ? 'Yes' : 'No'; }
 
+            // Documented by line (from role system)
+            const _roleCache = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
+            const _docByName = localStorage.getItem('bsn9b_displayName') || gv('studentName') || '';
+            let _docByRole = _roleCache.label || '';
+            if (_roleCache.requires_year && _roleCache.year) _docByRole += ' (' + _roleCache.year + ')';
+            const _docByLine = _docByName + (_docByRole ? ', ' + _docByRole : '');
+
             // Build sections
             const children = [];
 
@@ -1905,6 +1912,7 @@
             children.push(p('', { after: 2400 }));
             children.push(p('Clinical Assessment Packet', { center: true, bold: true, size: 36, after: 400 }));
             children.push(p('', { after: 400 }));
+            children.push(p(`Documented by: ${_docByLine}`, { center: true, bold: true, after: 200 }));
             children.push(p(`Student: ${gv('studentName')}`, { center: true, after: 200 }));
             children.push(p(`Course: ${gv('course')}  |  Instructor: ${gv('instructor')}`, { center: true, after: 200 }));
             children.push(p(`Clinical Site: ${gv('clinicalSite')}`, { center: true, after: 200 }));
