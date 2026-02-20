@@ -9,7 +9,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="theme-color" content="#1f4e79">
+    <meta name="theme-color" content="#0f7490">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BSN9B">
@@ -34,26 +34,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* CSS Variables for theming */
+        /* CSS Variables — mapped to shared design tokens */
         :root {
-            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-input: #fafafa;
-            --text-primary: #1a1a2e;
-            --text-secondary: #666666;
-            --accent: #1f4e79;
-            --border: #e2e8f0;
-        }
-        [data-theme="dark"] {
-            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-input: #16213e;
-            --text-primary: #e6e6e6;
-            --text-secondary: #aaaaaa;
-            --accent: #4a90d9;
-            --border: #2d3748;
+            --bg-primary: var(--clx-bg-surface);
+            --bg-secondary: var(--clx-bg-surface-2);
+            --bg-input: var(--clx-bg-surface);
+            --text-primary: var(--clx-text-primary);
+            --text-secondary: var(--clx-text-secondary);
+            --accent: var(--clx-accent);
+            --border: var(--clx-border);
         }
 
         /* Status indicator colors for presence */
@@ -72,18 +61,15 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-page);
             min-height: 100vh;
             min-height: 100dvh;
-            padding: 24px;
-            padding-bottom: 80px;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
         .header {
-            background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%);
+            background: var(--clx-accent, #0f7490);
             color: white;
             padding: 25px 30px;
             border-radius: 16px 16px 0 0;
@@ -798,22 +784,15 @@
 
         /* ========== RESOURCES PAGE REDESIGN ========== */
 
-        /* Page container - dark professional UI */
-        .content {
-            background: transparent !important;
-            padding: 28px 24px !important;
-            border-radius: 0 0 16px 16px;
-        }
-
-        /* Educational banner - slim, dismissible */
+        /* ===== EDUCATIONAL BANNER ===== */
         .edu-banner {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            background: rgba(220, 38, 38, 0.15);
-            border: 1px solid rgba(220, 38, 38, 0.3);
-            color: #fca5a5;
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
             padding: 10px 16px;
             border-radius: 10px;
             margin-bottom: 24px;
@@ -821,9 +800,9 @@
         }
         .edu-banner-text { flex: 1; line-height: 1.4; }
         .edu-banner-dismiss {
-            background: rgba(255,255,255,0.1);
+            background: rgba(185, 28, 28, 0.1);
             border: none;
-            color: #fca5a5;
+            color: #b91c1c;
             width: 26px;
             height: 26px;
             border-radius: 50%;
@@ -833,17 +812,16 @@
             flex-shrink: 0;
             transition: background 0.2s;
         }
-        .edu-banner-dismiss:hover { background: rgba(255,255,255,0.2); }
+        .edu-banner-dismiss:hover { background: rgba(185, 28, 28, 0.2); }
         .edu-banner.hidden { display: none; }
 
-        /* Resource navigator as toolbar card */
+        /* ===== RESOURCE NAVIGATOR ===== */
         .resource-navigator {
-            background: rgba(255,255,255,0.04) !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
+            background: var(--clx-bg-surface-2) !important;
+            border: 1px solid var(--clx-border) !important;
             border-radius: 14px !important;
             padding: 20px 22px !important;
             margin-bottom: 28px !important;
-            backdrop-filter: blur(10px);
         }
         .nav-toolbar-header {
             display: flex;
@@ -852,54 +830,50 @@
             margin-bottom: 14px;
         }
         .nav-title {
-            color: rgba(255,255,255,0.9);
+            color: var(--clx-text-primary);
             font-size: 15px;
+            font-weight: 600;
             letter-spacing: 0.3px;
         }
         .nav-count {
-            color: rgba(255,255,255,0.5);
+            color: var(--clx-text-muted);
             font-size: 12px;
         }
         .resource-navigator .search-box {
             margin-bottom: 14px;
         }
         .resource-navigator .search-box input {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #e6e6e6;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            color: var(--clx-text-primary);
             border-radius: 10px;
             padding: 11px 16px;
             font-size: 14px;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .resource-navigator .search-box input::placeholder { color: rgba(255,255,255,0.35); }
+        .resource-navigator .search-box input::placeholder { color: var(--clx-text-muted); }
         .resource-navigator .search-box input:focus {
-            border-color: rgba(74, 144, 217, 0.5);
-            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+            border-color: var(--clx-accent);
+            box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.12);
             outline: none;
-            background: rgba(255,255,255,0.08);
         }
         .resource-navigator .search-box button {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.7);
+            background: var(--clx-accent);
+            border: none;
+            color: white;
             border-radius: 10px;
             padding: 11px 18px;
-            transition: all 0.2s;
+            transition: opacity 0.2s;
+            cursor: pointer;
         }
-        .resource-navigator .search-box button:hover {
-            background: rgba(255,255,255,0.12);
-            color: #fff;
-        }
+        .resource-navigator .search-box button:hover { opacity: 0.88; }
 
-        /* Chips - larger gap, clear selected state */
-        .resource-filters {
-            gap: 8px !important;
-        }
+        /* ===== CHIPS ===== */
+        .resource-filters { gap: 8px !important; }
         .resource-chip {
-            background: rgba(255,255,255,0.05) !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            color: rgba(255,255,255,0.65) !important;
+            background: var(--clx-bg-surface) !important;
+            border: 1px solid var(--clx-border) !important;
+            color: var(--clx-text-secondary) !important;
             padding: 7px 14px !important;
             border-radius: 999px !important;
             font-size: 12px !important;
@@ -907,70 +881,57 @@
             transition: all 0.2s ease !important;
         }
         .resource-chip:hover {
-            background: rgba(255,255,255,0.08) !important;
-            color: rgba(255,255,255,0.9) !important;
-            border-color: rgba(255,255,255,0.2) !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+            background: var(--clx-accent-subtle) !important;
+            color: var(--clx-accent) !important;
+            border-color: var(--clx-accent) !important;
         }
         .resource-chip:focus-visible {
-            outline: 2px solid rgba(74, 144, 217, 0.6);
+            outline: 2px solid var(--clx-accent);
             outline-offset: 2px;
         }
         .resource-chip.active {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            background: var(--clx-accent) !important;
             color: white !important;
-            border-color: #2563eb !important;
-            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35) !important;
+            border-color: var(--clx-accent) !important;
+            box-shadow: 0 2px 8px rgba(15, 116, 144, 0.25) !important;
             font-weight: 600 !important;
         }
 
-        /* ===== ACCORDION CARDS - Spaced, floating cards on dark bg ===== */
+        /* ===== ACCORDION CARDS ===== */
         .resource-card.collapsible {
             margin-bottom: 14px !important;
-            border: 1px solid rgba(255,255,255,0.07) !important;
-            background: rgba(255,255,255,0.025) !important;
-            border-radius: 14px !important;
-            box-shadow: 0 1px 8px rgba(0,0,0,0.2) !important;
+            border: 1px solid var(--clx-border) !important;
+            background: var(--clx-bg-surface) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
             transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s !important;
-            overflow: hidden;
         }
         .resource-card.collapsible:hover {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important;
             transform: translateY(-1px) !important;
-            border-color: rgba(255,255,255,0.12) !important;
         }
         .resource-card.collapsible.expanded {
-            border-color: rgba(74, 144, 217, 0.35) !important;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+            border-color: var(--clx-accent) !important;
         }
-
-        /* Accordion header - subtle surface, less tall */
         .resource-card.collapsible .card-header {
             padding: 13px 18px !important;
-            background: rgba(255,255,255,0.03) !important;
+            background: var(--clx-bg-surface-2) !important;
             transition: background 0.2s !important;
         }
         .resource-card.collapsible .card-header:hover {
-            background: rgba(255,255,255,0.06) !important;
-        }
-        .resource-card.collapsible .card-header:focus-visible {
-            outline: 2px solid rgba(74, 144, 217, 0.6);
-            outline-offset: -2px;
+            background: var(--clx-accent-subtle) !important;
         }
         .resource-card.collapsible .card-header h2 {
-            color: rgba(255,255,255,0.88) !important;
+            color: var(--clx-text-primary) !important;
             font-size: 14px !important;
             font-weight: 600 !important;
             border: none !important;
             padding: 0 !important;
             margin: 0 !important;
         }
-
-        /* Expand icon - small circular button */
         .resource-card.collapsible .card-header .expand-icon {
-            background: rgba(255,255,255,0.06) !important;
-            color: rgba(255,255,255,0.5) !important;
+            background: var(--clx-accent-subtle) !important;
+            color: var(--clx-accent) !important;
             width: 30px !important;
             height: 30px !important;
             border-radius: 50% !important;
@@ -982,215 +943,70 @@
             flex-shrink: 0;
         }
         .resource-card.collapsible .card-header:hover .expand-icon {
-            background: rgba(255,255,255,0.1) !important;
-            color: rgba(255,255,255,0.8) !important;
+            background: var(--clx-accent) !important;
+            color: white !important;
         }
         .resource-card.collapsible.expanded .card-header .expand-icon {
             transform: rotate(180deg) !important;
-            background: rgba(74, 144, 217, 0.2) !important;
-            color: #60a5fa !important;
+            background: var(--clx-accent) !important;
+            color: white !important;
         }
-
-        /* Accordion body - top border divider, better spacing */
         .resource-card.collapsible .card-content {
-            background: rgba(15, 23, 42, 0.6) !important;
-            border-top: 1px solid rgba(255,255,255,0.06) !important;
+            background: var(--clx-bg-surface) !important;
+            border-top: 1px solid var(--clx-border) !important;
+            color: var(--clx-text-primary);
             line-height: 1.65 !important;
-            color: rgba(255,255,255,0.8);
         }
         .resource-card.collapsible.expanded .card-content {
             padding: 18px 22px !important;
         }
 
-        /* Card content sub-elements - dark theme */
-        .resource-card .card-content h3 {
-            color: rgba(255,255,255,0.85) !important;
-            font-size: 13px !important;
+        /* ===== DARK MODE OVERRIDES ===== */
+        [data-theme="dark"] .edu-banner {
+            background: rgba(220, 38, 38, 0.12);
+            border-color: rgba(220, 38, 38, 0.3);
+            color: #fca5a5;
         }
-        .resource-card .card-content p {
-            color: rgba(255,255,255,0.65);
+        [data-theme="dark"] .edu-banner-dismiss {
+            background: rgba(255,255,255,0.08);
+            color: #fca5a5;
         }
-        .resource-card .card-content table {
-            color: rgba(255,255,255,0.8);
+        [data-theme="dark"] .resource-card .card-content input,
+        [data-theme="dark"] .resource-card .card-content select,
+        [data-theme="dark"] .resource-card .card-content textarea {
+            background: var(--clx-bg-surface-2);
+            border-color: var(--clx-border);
+            color: var(--clx-text-primary);
         }
-        .resource-card .card-content th {
-            background: rgba(31, 78, 121, 0.4) !important;
-            color: rgba(255,255,255,0.9) !important;
+        [data-theme="dark"] .drug-autocomplete {
+            background: var(--clx-bg-surface);
+            border-color: var(--clx-border);
         }
-        .resource-card .card-content td {
-            border-color: rgba(255,255,255,0.06) !important;
+        [data-theme="dark"] .drug-autocomplete-item {
+            color: var(--clx-text-primary);
+            border-bottom-color: var(--clx-border);
         }
-        .resource-card .card-content tr:hover {
-            background: rgba(255,255,255,0.04) !important;
+        [data-theme="dark"] .drug-autocomplete-item:hover { background: var(--clx-accent-subtle); }
+        [data-theme="dark"] #drugInfo {
+            background: var(--clx-bg-surface-2);
+            border-color: var(--clx-border);
         }
-        .resource-card .card-content .abbrev-item {
-            background: rgba(31, 78, 121, 0.15);
-            color: rgba(255,255,255,0.8);
+        [data-theme="dark"] #drugInfoName { color: var(--clx-accent); }
+        [data-theme="dark"] #sbar-output { background: var(--clx-bg-surface-2); border-color: var(--clx-border); }
+        [data-theme="dark"] .planner-input {
+            background: var(--clx-bg-surface-2);
+            border-color: var(--clx-border);
+            color: var(--clx-text-primary);
         }
-        .resource-card .card-content .abbrev-item strong {
-            color: #60a5fa;
-        }
-        .resource-card .card-content a {
-            color: #60a5fa;
-        }
-        .resource-card .card-content .link-list a {
-            color: #60a5fa;
-        }
-        .resource-card .card-content .nanda-category {
-            color: #60a5fa;
-        }
-        .resource-card .card-content .nanda-item {
-            background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.75);
-        }
-        .resource-card .card-content .checklist-item {
-            background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.8);
-        }
-        .resource-card .card-content .checklist-item:hover {
-            background: rgba(255,255,255,0.07);
-        }
-        .resource-card .card-content .checklist-item:has(input:checked) {
-            background: rgba(16, 185, 129, 0.1);
-            color: rgba(255,255,255,0.45);
-        }
-        .resource-card .card-content input,
-        .resource-card .card-content select,
-        .resource-card .card-content textarea {
-            background: rgba(255,255,255,0.06);
-            border-color: rgba(255,255,255,0.1);
-            color: #e6e6e6;
-        }
-        .resource-card .card-content input:focus,
-        .resource-card .card-content select:focus {
-            border-color: rgba(74, 144, 217, 0.5);
-            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
-        }
-        .resource-card .card-content .btn {
-            background: linear-gradient(135deg, #1f4e79, #2d5a87);
-        }
-        .resource-card .card-content .calc-result {
-            background: rgba(31, 78, 121, 0.2);
-            color: #60a5fa;
-            border: 1px solid rgba(74, 144, 217, 0.2);
-        }
-        .resource-card .card-content .timer-preset {
-            background: rgba(255,255,255,0.06);
-            border-color: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.8);
-        }
-        .resource-card .card-content .timer-preset:hover {
-            background: rgba(74, 144, 217, 0.3);
-            color: white;
-        }
+        [data-theme="dark"] .active-timer { background: rgba(76, 175, 80, 0.1); border-left-color: #4caf50; }
 
-        /* Inner collapsibles (lab sub-sections etc) */
-        .resource-card .card-content .collapsible {
-            color: rgba(255,255,255,0.85);
-            padding: 10px 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            margin: 6px 0;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .resource-card .card-content .collapsible:hover {
-            background: rgba(255,255,255,0.06);
-        }
-
-        /* Drug info panel */
-        #drugInfo {
-            background: rgba(31, 78, 121, 0.15) !important;
-            border: 1px solid rgba(74, 144, 217, 0.2);
-        }
-        #drugInfoName { color: #60a5fa !important; }
-        #drugInfoDetails { color: rgba(255,255,255,0.8) !important; }
-
-        /* Drug autocomplete */
-        .drug-autocomplete {
-            background: #1a1a2e !important;
-            border-color: rgba(74, 144, 217, 0.4) !important;
-        }
-        .drug-autocomplete-item {
-            color: rgba(255,255,255,0.8);
-            border-bottom-color: rgba(255,255,255,0.06) !important;
-        }
-        .drug-autocomplete-item:hover { background: rgba(74, 144, 217, 0.15) !important; }
-        .drug-autocomplete-hint {
-            background: rgba(146, 64, 14, 0.15) !important;
-            color: #fbbf24 !important;
-            border-bottom-color: rgba(252, 211, 77, 0.2) !important;
-        }
-
-        /* Warning badges inside cards */
-        .resource-card .card-content [style*="background: #ffebee"],
-        .resource-card .card-content [style*="background:#ffebee"] {
-            background: rgba(220, 38, 38, 0.12) !important;
-            color: #fca5a5 !important;
-        }
-
-        /* SBAR sections inside cards */
-        .resource-card .card-content [style*="background: #e3f2fd"] { background: rgba(25, 118, 210, 0.12) !important; }
-        .resource-card .card-content [style*="background: #fff3e0"] { background: rgba(255, 152, 0, 0.1) !important; }
-        .resource-card .card-content [style*="background: #e8f5e9"] { background: rgba(76, 175, 80, 0.1) !important; }
-        .resource-card .card-content [style*="background: #fce4ec"] { background: rgba(233, 30, 99, 0.1) !important; }
-        .resource-card .card-content [style*="background: #f8fafc"] { background: rgba(255,255,255,0.04) !important; }
-
-        /* SBAR output */
-        #sbar-output { background: rgba(15, 23, 42, 0.8) !important; border-color: rgba(74, 144, 217, 0.3) !important; }
-        #sbar-text { color: rgba(255,255,255,0.8) !important; }
-
-        /* Planner inputs */
-        .planner-input {
-            background: rgba(255,255,255,0.06) !important;
-            border-color: rgba(255,255,255,0.1) !important;
-            color: #e6e6e6 !important;
-        }
-
-        /* Active timers */
-        .active-timer {
-            background: rgba(76, 175, 80, 0.1) !important;
-            border-left-color: #4caf50 !important;
-        }
-        .timer-label { color: rgba(255,255,255,0.9) !important; }
-
-        /* EKG strips - keep white bg for readability */
-        .resource-card .card-content [style*="background: #fff"] {
-            background: rgba(255,255,255,0.95) !important;
-            border-color: rgba(255,255,255,0.15) !important;
-        }
-
-        /* Header - reduce visual weight */
-        .header {
-            border-radius: 14px !important;
-            padding: 20px 30px !important;
-            margin-bottom: 4px;
-        }
-        .header h1 { font-size: 22px !important; }
-        .header p { font-size: 12px !important; }
-
-        /* Container - remove rounded bottom on content */
-        .container {
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-
-        /* Footer */
-        footer { color: rgba(255,255,255,0.4); }
-
-        /* ========== RESPONSIVE ========== */
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
-            .content { padding: 16px 12px !important; }
             .resource-navigator { padding: 16px !important; }
             .resource-card.collapsible .card-header { padding: 12px 14px !important; }
             .resource-card.collapsible.expanded .card-content { padding: 14px 16px !important; }
             .nav-toolbar-header { flex-direction: column; align-items: flex-start; gap: 4px; }
         }
-
-        /* Override dark mode selectors since we're already dark */
-        [data-theme="dark"] .content { background: transparent !important; }
-        [data-theme="dark"] .resource-navigator { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; }
-        [data-theme="dark"] .resource-chip { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; color: rgba(255,255,255,0.65) !important; }
-        [data-theme="dark"] .resource-chip.active { background: linear-gradient(135deg, #2563eb, #1d4ed8) !important; color: white !important; border-color: #2563eb !important; }
 
     </style>
 </head>
