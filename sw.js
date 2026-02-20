@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v40';
+const CACHE_VERSION = 'v41';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -28,7 +28,9 @@ const STALE_WHILE_REVALIDATE = [
     '/admin/index.html',
     '/chat/index.html',
     '/ai/index.html',
-    '/clinical/index.html'
+    '/clinical/index.html',
+    '/apa/index.html',
+    '/labsched/index.html'
 ];
 
 // Install event - cache core resources
