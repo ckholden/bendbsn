@@ -26,6 +26,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://formsubmit.co" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <title>BSN9B Nursing Documentation</title>
     <!-- Firebase must load synchronously on login page for auth to work -->
@@ -145,68 +146,11 @@
         .link-btn { background: none; border: none; color: #533483; cursor: pointer; text-decoration: underline; font-size: 14px; }
         .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 380px;
-        }
-        .toast {
-            padding: 14px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            animation: toastSlideIn 0.3s ease;
-            color: white;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        .toast.hiding {
-            animation: toastSlideOut 0.3s ease forwards;
-        }
-        .toast-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .toast-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .toast-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .toast-info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-        .toast-icon { font-size: 18px; flex-shrink: 0; }
-        .toast-content { flex: 1; }
-        .toast-title { font-weight: 600; margin-bottom: 2px; }
-        .toast-message { opacity: 0.95; }
-        .toast-close {
-            background: none;
-            border: none;
-            color: white;
-            opacity: 0.7;
-            cursor: pointer;
-            font-size: 18px;
-            padding: 0;
-            line-height: 1;
-        }
-        .toast-close:hover { opacity: 1; }
-        @keyframes toastSlideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes toastSlideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-        @media (max-width: 480px) {
-            .toast-container { left: 10px; right: 10px; max-width: none; }
-        }
     </style>
 </head>
 <body>
     <header class="site-header">
-        <a href="/" class="logo-link"><img src="/logo.png" alt="BendBSN" class="site-logo"></a>
+        <a href="/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo"></a>
     </header>
     <div class="login-container" id="loginContainer">
         <div class="login-header">
@@ -262,13 +206,13 @@
                     </div>
                     <div class="form-group">
                         <label for="regRole">Role</label>
-                        <select id="regRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;">
+                        <select id="regRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;" onchange="onRegRoleChange('reg')">
                             <option value="" disabled selected>Select your role</option>
-                            <option value="RN Student">RN Student</option>
-                            <option value="Instructor">Instructor</option>
-                            <option value="RN">RN</option>
-                            <option value="Other">Other</option>
                         </select>
+                    </div>
+                    <div id="regYearRow" class="form-group" style="display:none;">
+                        <label for="regYear">Year Level</label>
+                        <select id="regYear" style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;"></select>
                     </div>
                     <div class="form-group">
                         <label for="regEmail">Email</label>
@@ -316,13 +260,13 @@
                     </div>
                     <div class="form-group">
                         <label for="createRole">Role</label>
-                        <select id="createRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;">
+                        <select id="createRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;" onchange="onRegRoleChange('create')">
                             <option value="" disabled selected>Select your role</option>
-                            <option value="RN Student">RN Student</option>
-                            <option value="Instructor">Instructor</option>
-                            <option value="RN">RN</option>
-                            <option value="Other">Other</option>
                         </select>
+                    </div>
+                    <div id="createYearRow" class="form-group" style="display:none;">
+                        <label for="createYear">Year Level</label>
+                        <select id="createYear" style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;"></select>
                     </div>
                     <div class="form-group">
                         <label for="createEmail">Email</label>
@@ -398,40 +342,8 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // ========== TOAST NOTIFICATION SYSTEM ==========
-        function showToast(message, type = 'info', duration = 4000) {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-
-            const icons = {
-                success: '✓',
-                error: '✕',
-                warning: '⚠',
-                info: 'ℹ'
-            };
-
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `
-                <span class="toast-icon">${icons[type] || icons.info}</span>
-                <div class="toast-content">
-                    <div class="toast-message">${message.replace(/\n/g, '<br>')}</div>
-                </div>
-                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
-            `;
-
-            container.appendChild(toast);
-
-            // Auto-remove after duration
-            setTimeout(() => {
-                toast.classList.add('hiding');
-                setTimeout(() => toast.remove(), 300);
-            }, duration);
-        }
 
         const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?token=bsn_k7x9m2p4';
         // Encoded admin contact for notifications (not stored in plaintext)
@@ -557,6 +469,18 @@
                 localStorage.setItem('bsn9b_displayName', displayName);
                 localStorage.setItem('bsn9b_uid', user.uid);
 
+                // Cache role from Firebase profile (fire-and-forget)
+                database.ref('userProfiles/' + user.uid).once('value').then(function(snap) {
+                    const profile = snap.val() || {};
+                    if (profile.role_id) {
+                        cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: !!profile.role_year, year: profile.role_year || null });
+                    } else if (profile.role) {
+                        const legacyMap = { 'RN Student': 'student_nurse', 'Instructor': 'instructor', 'RN': 'rn', 'BSN, RN': 'bsn_rn', 'LPN': 'lpn' };
+                        const id = legacyMap[profile.role] || 'rn';
+                        cacheRoleLocally({ id: id, label: profile.role, requires_year: id === 'student_nurse', year: null });
+                    }
+                }).catch(function(){});
+
                 // Ensure user profile exists/updates for existing accounts (fire-and-forget)
                 const profileUpdate = {
                     email: user.email,
@@ -634,7 +558,8 @@
             event.preventDefault();
 
             const name = document.getElementById('regName').value.trim();
-            const role = document.getElementById('regRole').value;
+            const regRoleData = getRoleDataFromForm('reg');
+            const role = regRoleData.label;
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const regBtn = document.getElementById('regBtn');
@@ -664,10 +589,14 @@
                 await user.updateProfile({ displayName: name });
 
                 // Save user profile to Firebase for role/DM usage
+                cacheRoleLocally(regRoleData);
                 await database.ref('userProfiles/' + user.uid).set({
                     displayName: name,
                     email: email,
-                    role: role,
+                    role: regRoleData.label,
+                    role_id: regRoleData.id,
+                    role_label: regRoleData.label,
+                    role_year: regRoleData.year || null,
                     createdAt: Date.now(),
                     welcomeEmailSent: false
                 });
@@ -969,6 +898,84 @@
         const auth = firebase.auth();
         const database = firebase.database();
 
+        // ====== DYNAMIC ROLE SYSTEM ======
+        let _rolesConfig = {};
+
+        async function fetchRolesConfig() {
+            try {
+                const cached = sessionStorage.getItem('bsn9b_roles_config');
+                if (cached) {
+                    _rolesConfig = JSON.parse(cached);
+                } else {
+                    const snap = await database.ref('appConfig/roles').once('value');
+                    _rolesConfig = snap.val() || {};
+                    if (Object.keys(_rolesConfig).length) {
+                        sessionStorage.setItem('bsn9b_roles_config', JSON.stringify(_rolesConfig));
+                    } else {
+                        _rolesConfig = {
+                            student_nurse: { label: 'Student Nurse', requires_year: true, year_options: ['Year 1','Year 2','Year 3','Year 4'], order: 1 },
+                            rn: { label: 'RN', requires_year: false, order: 2 },
+                            bsn_rn: { label: 'BSN, RN', requires_year: false, order: 3 },
+                            instructor: { label: 'Instructor', requires_year: false, order: 4 },
+                            lpn: { label: 'LPN', requires_year: false, order: 5 }
+                        };
+                    }
+                }
+            } catch(e) {
+                console.warn('fetchRolesConfig:', e);
+                _rolesConfig = {
+                    student_nurse: { label: 'Student Nurse', requires_year: true, year_options: ['Year 1','Year 2','Year 3','Year 4'], order: 1 },
+                    rn: { label: 'RN', requires_year: false, order: 2 },
+                    bsn_rn: { label: 'BSN, RN', requires_year: false, order: 3 },
+                    instructor: { label: 'Instructor', requires_year: false, order: 4 },
+                    lpn: { label: 'LPN', requires_year: false, order: 5 }
+                };
+            }
+            populateRoleDropdowns();
+        }
+
+        function populateRoleDropdowns() {
+            const sorted = Object.entries(_rolesConfig).sort((a,b) => (a[1].order||99)-(b[1].order||99));
+            const optHtml = '<option value="" disabled selected>Select your role</option>' +
+                sorted.map(([id, r]) => '<option value="' + id + '">' + r.label + '</option>').join('');
+            ['regRole', 'createRole'].forEach(function(selId) {
+                const sel = document.getElementById(selId);
+                if (sel) sel.innerHTML = optHtml;
+            });
+        }
+
+        function onRegRoleChange(prefix) {
+            const sel = document.getElementById(prefix + 'Role');
+            const yearRow = document.getElementById(prefix + 'YearRow');
+            const yearSel = document.getElementById(prefix + 'Year');
+            if (!sel || !yearRow || !yearSel) return;
+            const roleId = sel.value;
+            const role = _rolesConfig[roleId] || {};
+            if (role.requires_year && role.year_options && role.year_options.length) {
+                yearSel.innerHTML = role.year_options.map(function(y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
+                yearRow.style.display = '';
+            } else {
+                yearRow.style.display = 'none';
+            }
+        }
+
+        function getRoleDataFromForm(prefix) {
+            const sel = document.getElementById(prefix + 'Role');
+            const roleId = sel ? sel.value : '';
+            const role = _rolesConfig[roleId] || {};
+            const yearSel = document.getElementById(prefix + 'Year');
+            const year = role.requires_year && yearSel ? yearSel.value : null;
+            return { id: roleId, label: role.label || roleId, requires_year: !!role.requires_year, year: year || null };
+        }
+
+        function cacheRoleLocally(roleData) {
+            localStorage.setItem('bsn9b_role_v2', JSON.stringify(roleData));
+        }
+        // ====== END DYNAMIC ROLE SYSTEM ======
+
+        // Load roles config from Firebase on page load
+        fetchRolesConfig();
+
         // Redirect only after Firebase confirms auth; clear stale local session if needed
         auth.onAuthStateChanged((user) => {
             if (user) {
@@ -1152,6 +1159,7 @@
             });
         }
     </script>
+    <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
 </body>
 </html>

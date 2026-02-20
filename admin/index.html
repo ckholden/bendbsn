@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
     <title>BSN9B Admin Panel</title>
@@ -237,7 +238,7 @@
 </head>
 <body>
     <header class="site-header">
-        <a href="/home/" class="logo-link"><img src="/logo.png" alt="BendBSN" class="site-logo"></a>
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo"></a>
     </header>
     <!-- Alert/FYI Banners -->
     <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: alertFlash 1s infinite;">
@@ -257,23 +258,6 @@
         body.has-fyi { padding-top: 50px; }
         body.has-alert.has-fyi { padding-top: 100px; }
         /* Toast notifications */
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 14px 24px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 500;
-            font-size: 14px;
-            z-index: 100000;
-            animation: slideIn 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            max-width: 400px;
-        }
-        .toast.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .toast.error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .toast.info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -687,6 +671,51 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Role Configuration -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+                    <span>Role Configuration</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn btn-sm" style="background: white; color: #1e40af;" onclick="showAddRoleForm()">+ Add Role</button>
+                        <button class="refresh-btn" onclick="loadRoles()">&#x21bb;</button>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: none; overflow: visible;">
+                    <div id="roleEditForm" style="display:none; padding: 12px; background: #f0f4ff; border-radius: 8px; margin-bottom: 12px; border: 1px solid #bfdbfe;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                            <div style="flex: 1; min-width: 160px;">
+                                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Label</label>
+                                <input type="text" id="roleFormLabel" placeholder="e.g., RN" style="width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                            </div>
+                            <div style="flex: 1; min-width: 160px;">
+                                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Role ID (auto if blank)</label>
+                                <input type="text" id="roleFormId" placeholder="e.g., rn" style="width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: monospace;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Order</label>
+                                <input type="number" id="roleFormOrder" value="99" min="1" max="99" style="width: 70px; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" id="roleFormRequiresYear" onchange="toggleRoleYearOptions()">
+                                Requires year level
+                            </label>
+                        </div>
+                        <div id="roleFormYearSection" style="display:none; margin-top: 10px;">
+                            <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Year Options (comma-separated)</label>
+                            <input type="text" id="roleFormYearOptions" placeholder="Year 1, Year 2, Year 3, Year 4" style="width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                        </div>
+                        <div style="margin-top: 12px; display: flex; gap: 8px;">
+                            <button class="btn btn-sm btn-primary" onclick="saveRoleForm()">Save</button>
+                            <button class="btn btn-sm" style="background: #e5e7eb; color: #374151;" onclick="hideRoleForm()">Cancel</button>
+                        </div>
+                        <input type="hidden" id="roleFormEditId" value="">
+                    </div>
+                    <div id="rolesList"><div class="empty-state"><div class="icon">&#128101;</div><p>Loading roles...</p></div></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -734,6 +763,9 @@
         const directMessagesRef = database.ref('directMessages');
         const userDocumentsRef = database.ref('userDocuments');
         const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Admin', 'Other'];
+
+        // Seed and load role configuration on init
+        setTimeout(function() { seedDefaultRoles(); loadRoles(); }, 1200);
         let userProfilesByEmail = {};
         let userProfilesByUid = {};
         let registeredUsersCache = [];
@@ -806,16 +838,6 @@
         let currentPostId = null;
 
         // Toast notification function
-        function showToast(message, type = 'info', duration = 3000) {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'slideIn 0.3s ease reverse';
-                setTimeout(() => toast.remove(), 300);
-            }, duration);
-        }
 
         // EmailJS Configuration
         const EMAILJS_PUBLIC_KEY = 'Paf-N3lByYsImp0af';
@@ -3165,6 +3187,141 @@
             <span class="label">Logout</span>
         </button>
     </nav>
+    <script>
+        // ====== ROLE CONFIGURATION ======
+        const DEFAULT_ROLES = {
+            student_nurse: { label: 'Student Nurse', requires_year: true, year_options: ['Year 1','Year 2','Year 3','Year 4'], order: 1 },
+            rn:            { label: 'RN',            requires_year: false, order: 2 },
+            bsn_rn:        { label: 'BSN, RN',       requires_year: false, order: 3 },
+            instructor:    { label: 'Instructor',    requires_year: false, order: 4 },
+            lpn:           { label: 'LPN',           requires_year: false, order: 5 }
+        };
+
+        async function seedDefaultRoles() {
+            try {
+                const snap = await database.ref('appConfig/roles').once('value');
+                if (!snap.exists()) {
+                    await database.ref('appConfig/roles').set(DEFAULT_ROLES);
+                    console.log('Seeded default roles');
+                }
+            } catch(e) { console.warn('seedDefaultRoles:', e); }
+        }
+
+        async function loadRoles() {
+            const el = document.getElementById('rolesList');
+            if (!el) return;
+            el.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+            try {
+                const snap = await database.ref('appConfig/roles').once('value');
+                renderRolesTable(snap.val() || {});
+            } catch(e) {
+                el.innerHTML = '<div class="empty-state"><p>Error: ' + e.message + '</p></div>';
+            }
+        }
+
+        function renderRolesTable(roles) {
+            const el = document.getElementById('rolesList');
+            if (!el) return;
+            window._adminRolesData = roles;
+            const sorted = Object.entries(roles).sort((a,b) => (a[1].order||99)-(b[1].order||99));
+            if (!sorted.length) {
+                el.innerHTML = '<div class="empty-state"><p>No roles configured. Click "+ Add Role".</p></div>';
+                return;
+            }
+            let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+            html += '<thead><tr style="border-bottom:2px solid #e2e8f0;">';
+            html += '<th style="text-align:left;padding:6px 8px;color:#64748b;font-weight:600;">Label</th>';
+            html += '<th style="text-align:left;padding:6px 8px;color:#64748b;">ID</th>';
+            html += '<th style="text-align:left;padding:6px 8px;color:#64748b;">Year Levels</th>';
+            html += '<th style="text-align:center;padding:6px 8px;color:#64748b;">Order</th>';
+            html += '<th></th></tr></thead><tbody>';
+            sorted.forEach(function([id, role]) {
+                const years = role.requires_year && role.year_options ? role.year_options.join(', ') : '\u2014';
+                html += '<tr style="border-bottom:1px solid #f1f5f9;">';
+                html += '<td style="padding:8px;font-weight:500;">' + escapeHtml(role.label || id) + '</td>';
+                html += '<td style="padding:8px;color:#94a3b8;font-size:11px;font-family:monospace;">' + escapeHtml(id) + '</td>';
+                html += '<td style="padding:8px;color:#64748b;font-size:12px;">' + escapeHtml(years) + '</td>';
+                html += '<td style="padding:8px;text-align:center;">' + (role.order || '\u2014') + '</td>';
+                html += '<td style="padding:8px;text-align:right;white-space:nowrap;">';
+                html += '<button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;margin-right:4px;" onclick="editRoleById(\'' + id.replace(/'/g,"\\'") + '\')">&#x270F;</button>';
+                html += '<button class="btn btn-sm btn-danger" onclick="deleteRoleById(\'' + id.replace(/'/g,"\\'") + '\')">&#x1F5D1;</button>';
+                html += '</td></tr>';
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        }
+
+        function editRoleById(id) {
+            const role = (window._adminRolesData || {})[id] || {};
+            document.getElementById('roleFormLabel').value = role.label || '';
+            document.getElementById('roleFormId').value = id;
+            document.getElementById('roleFormOrder').value = role.order || 99;
+            const req = !!role.requires_year;
+            document.getElementById('roleFormRequiresYear').checked = req;
+            document.getElementById('roleFormYearOptions').value = req && role.year_options ? role.year_options.join(', ') : '';
+            document.getElementById('roleFormYearSection').style.display = req ? '' : 'none';
+            document.getElementById('roleFormEditId').value = id;
+            document.getElementById('roleEditForm').style.display = '';
+            document.getElementById('roleFormLabel').focus();
+        }
+
+        function deleteRoleById(roleId) {
+            const role = (window._adminRolesData || {})[roleId] || {};
+            const label = role.label || roleId;
+            showConfirmModal('Delete Role', 'Delete "' + label + '"? This cannot be undone.', async function() {
+                try {
+                    await database.ref('appConfig/roles/' + roleId).remove();
+                    showToast('Deleted: ' + label, 'info');
+                    loadRoles();
+                    sessionStorage.removeItem('bsn9b_roles_config');
+                } catch(e) { showToast('Error: ' + e.message, 'error'); }
+            }, { danger: true, confirmText: 'Delete' });
+        }
+
+        function showAddRoleForm() {
+            document.getElementById('roleFormLabel').value = '';
+            document.getElementById('roleFormId').value = '';
+            document.getElementById('roleFormOrder').value = '99';
+            document.getElementById('roleFormRequiresYear').checked = false;
+            document.getElementById('roleFormYearOptions').value = '';
+            document.getElementById('roleFormYearSection').style.display = 'none';
+            document.getElementById('roleFormEditId').value = '';
+            document.getElementById('roleEditForm').style.display = '';
+            document.getElementById('roleFormLabel').focus();
+        }
+
+        function hideRoleForm() { document.getElementById('roleEditForm').style.display = 'none'; }
+
+        function toggleRoleYearOptions() {
+            document.getElementById('roleFormYearSection').style.display =
+                document.getElementById('roleFormRequiresYear').checked ? '' : 'none';
+        }
+
+        async function saveRoleForm() {
+            const label = document.getElementById('roleFormLabel').value.trim();
+            if (!label) { showToast('Label is required', 'warning'); return; }
+            let roleId = document.getElementById('roleFormId').value.trim();
+            const existingId = document.getElementById('roleFormEditId').value;
+            if (!roleId && !existingId) roleId = label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+            else if (!roleId) roleId = existingId;
+            const order = parseInt(document.getElementById('roleFormOrder').value, 10) || 99;
+            const requiresYear = document.getElementById('roleFormRequiresYear').checked;
+            const yearOptions = requiresYear
+                ? document.getElementById('roleFormYearOptions').value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+                : null;
+            const data = { label: label, order: order, requires_year: requiresYear };
+            if (requiresYear && yearOptions && yearOptions.length) data.year_options = yearOptions;
+            try {
+                await database.ref('appConfig/roles/' + roleId).set(data);
+                showToast('Role saved: ' + label, 'success');
+                hideRoleForm();
+                loadRoles();
+                sessionStorage.removeItem('bsn9b_roles_config');
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        }
+        // ====== END ROLE CONFIGURATION ======
+    </script>
+    <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
 </body>
 </html>

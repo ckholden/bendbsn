@@ -18,6 +18,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
     <title>Clinical Assessment Packet - BSN9B</title>
@@ -125,11 +126,6 @@
         .note-card{background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;}
         .note-card h5{font-size:13px;margin-bottom:8px;color:var(--accent);}
         /* Toast */
-        #toastContainer{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;}
-        .toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:var(--bg-primary);border:1px solid var(--border);box-shadow:0 4px 16px var(--shadow);min-width:250px;animation:slideIn .3s ease;}
-        .toast-success{border-left:4px solid #28a745;}.toast-error{border-left:4px solid #dc3545;}.toast-warning{border-left:4px solid #ff9800;}.toast-info{border-left:4px solid #2196f3;}
-        .toast-icon{font-size:18px;}.toast-message{flex:1;font-size:13px;color:var(--text-primary);}.toast-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-secondary);}
-        .toast.hiding{animation:slideOut .3s ease forwards;}
         @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
         @keyframes slideOut{from{opacity:1}to{transform:translateX(100%);opacity:0}}
         /* Bottom toolbar */
@@ -166,9 +162,8 @@
 </head>
 <body>
     <header class="site-header">
-        <a href="/home/" class="logo-link"><img src="/logo.png" alt="BendBSN" class="site-logo"></a>
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo"></a>
     </header>
-    <div id="toastContainer"></div>
 
     <!-- App Shell -->
     <div class="clx-shell">
@@ -1469,16 +1464,6 @@
         });
 
         // ========== TOAST ==========
-        function showToast(message, type = 'info', duration = 4000) {
-            const c = document.getElementById('toastContainer');
-            if (!c) return;
-            const icons = { success: '&#10003;', error: '&#10007;', warning: '&#9888;', info: '&#8505;' };
-            const t = document.createElement('div');
-            t.className = `toast toast-${type}`;
-            t.innerHTML = `<span class="toast-icon">${icons[type]||icons.info}</span><div class="toast-content"><div class="toast-message">${message}</div></div><button class="toast-close" onclick="this.parentElement.remove()">&times;</button>`;
-            c.appendChild(t);
-            setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, duration);
-        }
 
         // ========== TABS ==========
         function switchTab(tabName) {
@@ -2152,6 +2137,7 @@
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
     </script>
+    <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
 </body>
 </html>

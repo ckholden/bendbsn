@@ -22,6 +22,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
     <title>BendBSN — Dashboard</title>
@@ -499,6 +500,130 @@
         .dash-modal-btns button.primary:hover { background: var(--clx-accent-hover); }
 
         /* ================================================
+           DOCUMENTATION HERO
+        ================================================ */
+        .doc-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            background: linear-gradient(135deg, var(--clx-accent, #0f7490) 0%, #0d5f78 100%);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 14px;
+            color: #fff;
+        }
+        .doc-hero-left { flex: 1; min-width: 0; }
+        .doc-hero-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.75;
+            margin-bottom: 4px;
+        }
+        .doc-hero-title {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+        .doc-hero-sub {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-bottom: 14px;
+        }
+        .doc-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .doc-cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 7px;
+            border: none;
+            background: #fff;
+            color: var(--clx-accent, #0f7490);
+            cursor: pointer;
+            text-decoration: none;
+            font-family: inherit;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .doc-cta-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .doc-hero-sec-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 7px;
+            border: 1.5px solid rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .doc-hero-sec-btn:hover { background: rgba(255,255,255,0.2); }
+        .doc-hero-stat {
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .doc-hero-stat-num {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .doc-hero-stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        @media (max-width: 600px) {
+            .doc-hero { flex-direction: column; align-items: flex-start; }
+            .doc-hero-stat { display: none; }
+        }
+
+        /* ================================================
+           TOOLS ROW
+        ================================================ */
+        .tools-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .tool-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            border: 1px solid var(--clx-border);
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-secondary);
+            text-decoration: none;
+            font-family: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tool-chip:hover {
+            background: var(--clx-accent-subtle);
+            color: var(--clx-accent);
+            border-color: var(--clx-accent-subtle);
+        }
+
+        /* Collapsible panel body */
+        .panel-body-collapsed { display: none !important; }
+
+        /* ================================================
            BOTTOM TOOLBAR
         ================================================ */
         .bottom-toolbar {
@@ -615,65 +740,6 @@
         /* ================================================
            TOASTS
         ================================================ */
-        .toast-container {
-            position: fixed;
-            top: 20px; right: 20px;
-            z-index: 10001;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-width: 360px;
-        }
-        .toast {
-            padding: 12px 16px;
-            border-radius: 8px;
-            background: var(--clx-bg-surface);
-            border: 1px solid var(--clx-border);
-            border-left: 4px solid var(--clx-accent);
-            color: var(--clx-text-primary);
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 13px;
-            line-height: 1.4;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
-        .toast.toast-success { border-left-color: var(--clx-success); }
-        .toast.toast-error, .toast.toast-danger { border-left-color: var(--clx-danger); }
-        .toast.toast-warning { border-left-color: var(--clx-warning); }
-        .toast.toast-info { border-left-color: var(--clx-info); }
-        .toast-icon { font-size: 15px; flex-shrink: 0; }
-        .toast-content { flex: 1; }
-        .toast-close {
-            background: none; border: none;
-            color: var(--clx-text-muted);
-            cursor: pointer; font-size: 16px; padding: 0; line-height: 1;
-        }
-        .toast-close:hover { color: var(--clx-text-primary); }
-
-        @keyframes softFlashAlert { 0%,100%{opacity:1}50%{opacity:.85} }
-        @keyframes softFlashFyi   { 0%,100%{opacity:1}50%{opacity:.85} }
-        body.has-alert { padding-top: 50px; }
-        body.has-fyi   { padding-top: 50px; }
-        body.has-alert.has-fyi { padding-top: 100px; }
-
-        /* ================================================
-           FOCUS
-        ================================================ */
-        :focus-visible { outline: 2px solid var(--clx-focus); outline-offset: 2px; }
-
-        /* ================================================
-           RESPONSIVE
-        ================================================ */
-        @media (max-width: 700px) {
-            .dash-grid { grid-template-columns: 1fr; }
-            .ctx-item { padding: 8px 10px; }
-        }
-        @media (max-width: 480px) {
-            .dash-action-row { gap: 6px; }
-            .dash-btn { padding: 7px 12px; font-size: 12px; }
-            .toast-container { left: 10px; right: 10px; max-width: none; }
-        }
         @media (pointer: coarse) {
             .dash-btn, .toolbar-item, .more-menu-item { min-height: 44px; }
         }
@@ -688,7 +754,7 @@
 <body>
     <!-- Site header -->
     <header class="site-header">
-        <a href="/home/" class="logo-link"><img src="/logo.png" alt="BendBSN" class="site-logo"></a>
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo"></a>
         <div class="header-actions">
             <div class="online-count" id="onlineCount" onclick="toggleUserList()" title="Online users" aria-label="Online users" role="button" tabindex="0">
                 <span class="online-dot"></span>
@@ -698,7 +764,6 @@
     </header>
 
     <!-- Toast container -->
-    <div class="toast-container" id="toastContainer"></div>
 
     <!-- App Shell -->
     <div class="clx-shell">
@@ -825,37 +890,59 @@
     <!-- Dashboard -->
     <div class="dash-page">
 
-        <!-- Action row -->
-        <div class="dash-action-row">
-            <a href="/app/" class="dash-btn primary">📝 Start Note</a>
-            <a href="/resources/" class="dash-btn">📚 Resources</a>
-            <a href="/clinical/" class="dash-btn">📋 Clinical Packet</a>
-            <a href="/ai/" class="dash-btn">🩺 AI Assistant</a>
-            <button class="dash-btn" onclick="openLogHours()">⏱ Log Hours</button>
-        </div>
-
-        <!-- 2×2 grid -->
-        <div class="dash-grid">
-
-            <!-- Panel 1: Recent Notes -->
-            <div class="dash-panel">
-                <div class="dash-panel-hd">Recent Notes</div>
-                <div class="dash-panel-bd" id="recentNotesList">
-                    <div class="dash-empty">Loading notes…</div>
-                </div>
-                <div class="dash-panel-ft">
-                    <a href="/app/">Open Note Builder →</a>
+        <!-- Documentation Hero -->
+        <div class="doc-hero">
+            <div class="doc-hero-left">
+                <div class="doc-hero-label">Nursing Documentation</div>
+                <div class="doc-hero-title">Start Documenting</div>
+                <div class="doc-hero-sub">Build a professional nursing note in minutes.</div>
+                <div class="doc-hero-actions">
+                    <a href="/app/" class="doc-cta-btn">📝 Start New Note</a>
+                    <button class="doc-hero-sec-btn" onclick="openLogHours()">⏱ Log Hours</button>
                 </div>
             </div>
+            <div class="doc-hero-stat">
+                <div class="doc-hero-stat-num" id="docHeroNoteCount">—</div>
+                <div class="doc-hero-stat-label">Notes Saved</div>
+            </div>
+        </div>
 
-            <!-- Panel 2: Quick Reference -->
+        <!-- Recent Notes -->
+        <div class="dash-panel" style="margin-bottom:12px;">
+            <div class="dash-panel-hd">
+                Recent Notes
+                <a href="/app/" style="font-size:11px;color:var(--clx-accent);font-weight:600;text-decoration:none;margin-left:auto;">+ New Note</a>
+            </div>
+            <div class="dash-panel-bd" id="recentNotesList">
+                <div class="dash-empty">Loading notes…</div>
+            </div>
+        </div>
+
+        <!-- Secondary Tools Row -->
+        <div class="tools-row">
+            <a class="tool-chip" href="/chat/">💬 Chat</a>
+            <a class="tool-chip" href="/ai/">🩺 AI</a>
+            <a class="tool-chip" href="/resources/">📚 Resources</a>
+            <a class="tool-chip" href="/community/">👥 Community</a>
+            <a class="tool-chip" href="/clinical/">📋 Clinical Packet</a>
+            <a class="tool-chip" id="apaToolChip" href="/apa/">📄 APA Generator</a>
+            <a class="tool-chip" href="/labsched/">🗓 Lab Sched</a>
+        </div>
+
+        <!-- Collapsible reference + skills grid -->
+        <div class="dash-grid" style="margin-bottom:12px;">
+
+            <!-- Quick Reference (collapsible) -->
             <div class="dash-panel">
-                <div class="dash-panel-hd">Quick Reference</div>
-                <div class="dash-panel-bd">
+                <div class="dash-panel-hd" onclick="toggleHomePanel('quickRef')" style="cursor:pointer;user-select:none;">
+                    Quick Reference
+                    <span id="quickRefChev" style="font-size:11px;margin-left:auto;opacity:0.6;">▼</span>
+                </div>
+                <div class="dash-panel-bd panel-body-collapsed" id="quickRefBody">
                     <a class="dash-ref-link" href="/resources/">Vital Signs Reference</a>
                     <a class="dash-ref-link" href="/resources/">Lab Values</a>
-                    <a class="dash-ref-link" href="/resources/">Medication Dosage Calculator</a>
-                    <a class="dash-ref-link" href="/resources/">IV Drip Rate Calculator</a>
+                    <a class="dash-ref-link" href="/resources/">Dosage Calculator</a>
+                    <a class="dash-ref-link" href="/resources/">IV Drip Rate</a>
                     <a class="dash-ref-link" href="/resources/">Glasgow Coma Scale</a>
                     <a class="dash-ref-link" href="/resources/">APGAR Score</a>
                     <a class="dash-ref-link" href="/resources/">SBAR Template</a>
@@ -864,40 +951,40 @@
                 </div>
             </div>
 
-            <!-- Panel 3: Skill Checkoffs -->
+            <!-- Skill Checkoffs (collapsible) -->
             <div class="dash-panel">
-                <div class="dash-panel-hd">
+                <div class="dash-panel-hd" onclick="toggleHomePanel('skills')" style="cursor:pointer;user-select:none;">
                     Skill Checkoffs
-                    <button class="dash-small-btn" onclick="resetSkills()">Reset</button>
+                    <button class="dash-small-btn" onclick="event.stopPropagation();resetSkills()" style="margin-right:6px;">Reset</button>
+                    <span id="skillsChev" style="font-size:11px;opacity:0.6;">▼</span>
                 </div>
-                <div class="dash-panel-bd" id="skillsList"></div>
-            </div>
-
-            <!-- Panel 4: Structured Reminders -->
-            <div class="dash-panel" style="grid-column: 1 / -1;">
-                <div class="dash-panel-hd">
-                    My Reminders
-                    <span class="pill pill-neutral" id="reminderCount" style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:600;">0</span>
-                </div>
-                <div class="dash-panel-bd" style="max-height:none; flex:1; display:flex; flex-direction:column; padding:0;">
-                    <!-- Add row -->
-                    <div class="rem-add-row">
-                        <input id="remText" type="text" placeholder="New reminder…" class="rem-input"
-                            onkeydown="if(event.key==='Enter')addReminder()">
-                        <input id="remDue" type="date" class="rem-date">
-                        <select id="remPriority" class="rem-sel">
-                            <option value="med">Med</option>
-                            <option value="high">⚡ High</option>
-                            <option value="low">Low</option>
-                        </select>
-                        <button onclick="addReminder()" class="rem-add-btn">+ Add</button>
-                    </div>
-                    <!-- Reminder list -->
-                    <div id="reminderList" class="rem-list"></div>
-                </div>
+                <div class="dash-panel-bd panel-body-collapsed" id="skillsList"></div>
             </div>
 
         </div><!-- /dash-grid -->
+
+        <!-- Structured Reminders (full width) -->
+        <div class="dash-panel">
+            <div class="dash-panel-hd">
+                My Reminders
+                <span class="pill pill-neutral" id="reminderCount" style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:600;">0</span>
+            </div>
+            <div class="dash-panel-bd" style="max-height:none; flex:1; display:flex; flex-direction:column; padding:0;">
+                <div class="rem-add-row">
+                    <input id="remText" type="text" placeholder="New reminder…" class="rem-input"
+                        onkeydown="if(event.key==='Enter')addReminder()">
+                    <input id="remDue" type="date" class="rem-date">
+                    <select id="remPriority" class="rem-sel">
+                        <option value="med">Med</option>
+                        <option value="high">⚡ High</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <button onclick="addReminder()" class="rem-add-btn">+ Add</button>
+                </div>
+                <div id="reminderList" class="rem-list"></div>
+            </div>
+        </div>
+
     </div><!-- /dash-page -->
 
     </main><!-- /clx-main -->
@@ -1026,20 +1113,6 @@
         document.addEventListener('webkitfullscreenchange', () => updateFullscreenUI(!!document.webkitFullscreenElement));
 
         // ========== TOAST ==========
-        function showToast(message, type = 'info', duration = 4000) {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `
-                <span class="toast-icon">${icons[type] || icons.info}</span>
-                <div class="toast-content"><div class="toast-message">${message.replace(/\n/g,'<br>')}</div></div>
-                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
-            `;
-            container.appendChild(toast);
-            if (duration > 0) setTimeout(() => toast.remove(), duration);
-        }
 
         // ========== FIREBASE ==========
         const firebaseConfig = {
@@ -1171,9 +1244,11 @@
 
                 userProfilesRef.child(user.uid).once('value').then((snap) => {
                     const profile = snap.val();
-                    if (profile && profile.role === 'Instructor') {
+                    if (profile && (profile.role === 'Instructor' || profile.role_label === 'Instructor')) {
                         const apaLink = document.getElementById('apaMenuLink');
                         if (apaLink) apaLink.style.display = 'none';
+                        const apaChip = document.getElementById('apaToolChip');
+                        if (apaChip) apaChip.style.display = 'none';
                     }
                 });
 
@@ -1475,6 +1550,12 @@
         function loadRecentNotes(email) {
             if (!email) { renderRecentNotes([]); return; }
             const ref = database.ref('userDocuments/' + sanitizeEmail(email));
+            // Get total count for hero stat
+            ref.once('value', (snap) => {
+                const total = snap.numChildren();
+                const heroCount = document.getElementById('docHeroNoteCount');
+                if (heroCount) heroCount.textContent = total;
+            }).catch(() => {});
             ref.orderByChild('savedAt').limitToLast(5).once('value', (snap) => {
                 const docs = [];
                 snap.forEach((child) => {
@@ -1554,6 +1635,39 @@
             });
         }
         renderSkills();
+
+        // ========== COLLAPSIBLE HOME PANELS ==========
+        const HOME_PANEL_KEY = 'bsn9b_home_panels';
+        function loadPanelStates() {
+            try { return JSON.parse(localStorage.getItem(HOME_PANEL_KEY) || '{}'); } catch { return {}; }
+        }
+        function savePanelState(id, open) {
+            const s = loadPanelStates(); s[id] = open;
+            localStorage.setItem(HOME_PANEL_KEY, JSON.stringify(s));
+        }
+        function toggleHomePanel(id) {
+            const body = document.getElementById(id === 'quickRef' ? 'quickRefBody' : 'skillsList');
+            const chev = document.getElementById(id === 'quickRef' ? 'quickRefChev' : 'skillsChev');
+            if (!body) return;
+            const nowOpen = body.classList.toggle('panel-body-collapsed') === false; // true when we removed class (= open)
+            // classList.toggle returns true if class was ADDED (closed), false if removed (open)
+            const isOpen = !body.classList.contains('panel-body-collapsed');
+            if (chev) chev.textContent = isOpen ? '▲' : '▼';
+            savePanelState(id, isOpen);
+        }
+        // Restore panel states (default: collapsed)
+        (function() {
+            const states = loadPanelStates();
+            ['quickRef', 'skills'].forEach(id => {
+                const isOpen = !!states[id]; // default closed
+                const bodyId = id === 'quickRef' ? 'quickRefBody' : 'skillsList';
+                const chevId = id === 'quickRef' ? 'quickRefChev' : 'skillsChev';
+                const body = document.getElementById(bodyId);
+                const chev = document.getElementById(chevId);
+                if (body) { body.classList.toggle('panel-body-collapsed', !isOpen); }
+                if (chev) chev.textContent = isOpen ? '▲' : '▼';
+            });
+        })();
 
         // ========== STRUCTURED REMINDERS ==========
         const REMINDERS_V2_KEY = 'bsn9b_home_reminders_v2';
@@ -1686,6 +1800,7 @@
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
     </script>
+    <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
 </body>
 </html>

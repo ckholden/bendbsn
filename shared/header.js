@@ -27,7 +27,7 @@
         header.className = 'site-header';
         header.innerHTML =
             '<a href="' + logoHref + '" class="logo-link">' +
-                '<img src="/logo.png" alt="BendBSN" class="site-logo">' +
+                '<img src="/logo-dark.svg" alt="BendBSN" class="site-logo">' +
             '</a>';
 
         var root = document.getElementById('header-root');
