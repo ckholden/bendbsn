@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://script.google.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <script>
         if (localStorage.getItem('bsn9b_auth') !== 'true') {
@@ -1143,6 +1143,7 @@
                 localStorage.setItem('bsn9b_user', currentUsername);
                 localStorage.setItem('bsn9b_displayName', displayName);
                 syncUserProfile(user);
+                fetchAllUsers();
 
                 // Load admin role from Firebase profile
                 userProfilesRef.child(user.uid).once('value').then(snap => {
@@ -1432,7 +1433,7 @@
             try {
                 if (!text || typeof text !== 'string') return '';
                 let formatted = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                formatted = formatted.replace(/@(\w+)/g, function(match, name) {
+                formatted = formatted.replace(/@([\w.-]+)/g, function(match, name) {
                     const bgColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.2)';
                     const textColor = isMe ? '#fff' : '#7c3aed';
                     return `<span style="background: ${bgColor}; color: ${textColor}; padding: 1px 6px; border-radius: 10px; font-weight: 600;">@${name}</span>`;
@@ -2484,7 +2485,7 @@
 
         async function fetchAllUsers() {
             try {
-                // Always fetch active profiles from Firebase to validate
+                // Always fetch active profiles from Firebase to validate (if available)
                 const profilesSnapshot = await userProfilesRef.once('value');
                 const activeEmails = new Set();
                 if (profilesSnapshot.exists()) {
@@ -2495,12 +2496,16 @@
                         }
                     });
                 }
+                const allowAll = activeEmails.size === 0;
 
-                // Check cache first (but still filter against active profiles)
+                // Check cache first (but still filter against active profiles when available)
                 const cached = localStorage.getItem('bsn9b_userCache');
                 const cacheTime = parseInt(localStorage.getItem('bsn9b_userCacheTime') || '0');
                 if (cached && (Date.now() - cacheTime) < 10 * 60 * 1000) {
-                    allRegisteredUsers = JSON.parse(cached).filter(u => u.email && activeEmails.has(u.email.toLowerCase()));
+                    const cachedUsers = JSON.parse(cached);
+                    allRegisteredUsers = allowAll
+                        ? cachedUsers
+                        : cachedUsers.filter(u => u.email && activeEmails.has(u.email.toLowerCase()));
                     return;
                 }
 
@@ -2508,19 +2513,22 @@
 
                 const data = await sheetResponse.json();
                 if (data.success && data.users) {
-                    // Only include users who have an active Firebase profile
-                    allRegisteredUsers = data.users
-                        .filter(u => u.name && u.name.trim() && u.email && activeEmails.has(u.email.toLowerCase()))
-                        .map(u => ({
-                            name: u.name.trim(),
-                            firstName: u.name.trim().split(' ')[0],
-                            email: u.email || ''
-                        }));
+                    // Only include users who have an active Firebase profile when available
+                    const filtered = data.users.filter(u => {
+                        if (!u.name || !u.name.trim() || !u.email) return false;
+                        if (allowAll) return true;
+                        return activeEmails.has(u.email.toLowerCase());
+                    });
+                    allRegisteredUsers = filtered.map(u => ({
+                        name: u.name.trim(),
+                        firstName: u.name.trim().split(' ')[0],
+                        email: u.email || ''
+                    }));
                     localStorage.setItem('bsn9b_userCache', JSON.stringify(allRegisteredUsers));
                     localStorage.setItem('bsn9b_userCacheTime', Date.now().toString());
                 }
             } catch (e) {
-                // Failed to fetch users
+                console.warn('Chat: Failed to fetch users for DM/mentions', e);
             }
         }
 
@@ -2531,7 +2539,7 @@
             const value = chatInput.value;
             const cursorPos = chatInput.selectionStart;
             const textBeforeCursor = value.substring(0, cursorPos);
-            const atMatch = textBeforeCursor.match(/@(\w*)$/);
+            const atMatch = textBeforeCursor.match(/@([\w.-]*)$/);
 
             if (atMatch) {
                 const searchTerm = atMatch[1].toLowerCase();
@@ -2764,9 +2772,6 @@
         setupDMListener();
         setupMentionListeners();
         updateSoundToggleUI();
-
-        // Fetch all users for @mentions and DM
-        fetchAllUsers();
 
         // Load DM conversations
         loadDMConversations();

@@ -162,6 +162,14 @@
             color: #888;
         }
         .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
+        .updated-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.75);
+            margin-left: 8px;
+        }
+        .updated-label.muted {
+            color: #94a3b8;
+        }
 
         .refresh-btn {
             background: none;
@@ -291,6 +299,21 @@
                 <button class="btn btn-secondary" onclick="openFirebaseAuthModal()">Firebase Sign In</button>
                 <button class="btn btn-secondary" onclick="window.location.href='/app/'">Back to App</button>
                 <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Admin Status -->
+        <div class="action-bar" id="adminStatusPanel" style="justify-content: space-between;">
+            <div style="display: flex; gap: 18px; flex-wrap: wrap; align-items: center;">
+                <div style="font-size: 12px; color: #334155;">
+                    <strong>Admin UI:</strong> <span id="adminUiStatus">Unknown</span>
+                </div>
+                <div style="font-size: 12px; color: #334155;">
+                    <strong>Firebase Auth:</strong> <span id="adminFirebaseStatus">Not signed in</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="btn btn-secondary btn-sm" onclick="openFirebaseAuthModal()">Sign in to Firebase</button>
             </div>
         </div>
 
@@ -459,7 +482,10 @@
             <div class="card">
                 <div class="card-header">
                     <span>Online Users</span>
-                    <button class="refresh-btn" onclick="loadOnlineUsers()">&#x21bb;</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span class="updated-label" id="onlineUsersUpdated">Updated —</span>
+                        <button class="refresh-btn" onclick="loadOnlineUsers()">&#x21bb;</button>
+                    </div>
                 </div>
                 <div class="card-body" id="onlineUsersList">
                     <div class="empty-state">
@@ -473,7 +499,10 @@
             <div class="card">
                 <div class="card-header">
                     <span>Banned Users</span>
-                    <button class="refresh-btn" onclick="loadBannedUsers()">&#x21bb;</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span class="updated-label" id="bannedUsersUpdated">Updated —</span>
+                        <button class="refresh-btn" onclick="loadBannedUsers()">&#x21bb;</button>
+                    </div>
                 </div>
                 <div class="card-body" id="bannedUsersList">
                     <div class="empty-state">
@@ -488,12 +517,22 @@
                 <div class="card-header">
                     <span>Registered Users</span>
                     <div style="display: flex; gap: 8px;">
+                        <span class="updated-label muted" id="registeredUsersUpdated">Updated —</span>
                         <button class="btn btn-sm btn-warning" onclick="sendWelcomeEmailsToAll()" title="Send welcome email to all users">📧 Email All</button>
                         <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
                     </div>
                 </div>
                 <div style="padding: 8px 15px; background: #e3f2fd; font-size: 11px; color: #1565c0;">
                     <strong>Note:</strong> Ban users here. To fully delete accounts, go to <a href="https://console.firebase.google.com/project/bendbsn-17377/authentication/users" target="_blank" style="color: #1565c0;">Firebase Console → Authentication</a>
+                </div>
+                <div style="padding: 10px 15px; border-bottom: 1px solid #eef2f7; background: #f8fafc;">
+                    <input
+                        type="text"
+                        id="registeredUserSearch"
+                        placeholder="Search users by name, email, or username..."
+                        oninput="filterRegisteredUsers()"
+                        style="width: 100%; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;"
+                    >
                 </div>
                 <div class="card-body tall" id="registeredUsersList">
                     <div class="empty-state">
@@ -507,7 +546,10 @@
             <div class="card">
                 <div class="card-header">
                     <span>Recent Chat Messages</span>
-                    <button class="refresh-btn" onclick="loadMessages()">&#x21bb;</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span class="updated-label" id="messagesUpdated">Updated —</span>
+                        <button class="refresh-btn" onclick="loadMessages()">&#x21bb;</button>
+                    </div>
                 </div>
                 <div class="card-body tall" id="messagesList">
                     <div class="empty-state">
@@ -530,6 +572,7 @@
                             <option value="nclex">NCLEX</option>
                             <option value="general">General</option>
                         </select>
+                        <span class="updated-label" id="communityPostsUpdated">Updated —</span>
                         <button class="refresh-btn" onclick="loadCommunityPosts()">&#x21bb;</button>
                     </div>
                 </div>
@@ -587,6 +630,7 @@
         const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Admin', 'Other'];
         let userProfilesByEmail = {};
         let userProfilesByUid = {};
+        let registeredUsersCache = [];
 
         const SESSION_KEY = 'bsn9b_session_key';
         const SESSION_START_KEY = 'bsn9b_session_start';
@@ -756,6 +800,7 @@
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('adminContent').style.display = 'block';
                 sessionStorage.setItem('bsn9b_admin', 'true');
+                updateAdminStatusPanel();
                 initAdmin();
             } else {
                 document.getElementById('loginError').style.display = 'block';
@@ -771,6 +816,30 @@
             } else {
                 statusEl.textContent = 'Firebase: not signed in';
             }
+            updateAdminStatusPanel();
+        }
+
+        function updateAdminStatusPanel() {
+            const adminUiEl = document.getElementById('adminUiStatus');
+            const firebaseEl = document.getElementById('adminFirebaseStatus');
+            if (adminUiEl) {
+                const isAdminUi = sessionStorage.getItem('bsn9b_admin') === 'true';
+                adminUiEl.textContent = isAdminUi ? 'Active' : 'Inactive';
+                adminUiEl.style.color = isAdminUi ? '#16a34a' : '#dc2626';
+            }
+            if (firebaseEl) {
+                const user = auth.currentUser;
+                firebaseEl.textContent = user && user.email ? user.email : 'Not signed in';
+                firebaseEl.style.color = user && user.email ? '#16a34a' : '#dc2626';
+            }
+        }
+
+        function updateLastUpdated(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const time = new Date();
+            const label = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            el.textContent = 'Updated ' + label;
         }
 
         function openFirebaseAuthModal() {
@@ -854,6 +923,7 @@
                 const container = document.getElementById('onlineUsersList');
                 const count = snapshot.numChildren();
                 document.getElementById('statOnline').textContent = count;
+                updateLastUpdated('onlineUsersUpdated');
 
                 if (!snapshot.exists() || count === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="icon">&#128564;</div><p>No users online</p></div>';
@@ -898,6 +968,7 @@
                 const container = document.getElementById('bannedUsersList');
                 const count = snapshot.numChildren();
                 document.getElementById('statBanned').textContent = count;
+                updateLastUpdated('bannedUsersUpdated');
 
                 if (!snapshot.exists() || count === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="icon">&#9989;</div><p>No banned users</p></div>';
@@ -988,10 +1059,73 @@
             }
         }
 
+        function renderRegisteredUsers(users) {
+            const container = document.getElementById('registeredUsersList');
+            if (!container) return;
+
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">&#128100;</div><p>No registered users</p></div>';
+                return;
+            }
+
+            let html = '';
+            users.forEach((user) => {
+                const statusClass = user.status === 'approved' ? 'status-approved' :
+                                   user.status === 'banned' ? 'status-banned' : 'status-pending';
+                const emailKey = (user.email || '').toLowerCase();
+                const profile = userProfilesByEmail[emailKey] || null;
+                const roleValue = (profile && profile.role) || user.role || 'RN Student';
+                const roleLabel = roleValue || 'RN Student';
+                const profileUid = profile ? profile.uid : '';
+                const roleSelect = auth.currentUser
+                    ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; margin-right: 6px;">
+                           ${getRoleOptionsHtml(roleLabel)}
+                       </select>`
+                    : `<span style="font-size: 12px; color: #666;">${roleLabel}</span>`;
+                html += `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <div class="user-name">${user.name || user.username}</div>
+                            <div class="user-email">${user.email || ''} | @${user.username}</div>
+                            <div class="user-status ${statusClass}">${user.status || 'pending'}</div>
+                            <div class="user-status" style="font-size: 11px; color: #1f4e79;">Role: ${roleLabel}</div>
+                        </div>
+                        <div class="user-actions">
+                            ${user.status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveUser('${user.username}')">Approve</button>` : ''}
+                            ${auth.currentUser ? `
+                                ${roleSelect}
+                                <button class="btn btn-sm btn-primary" onclick="updateUserRole('${profileUid}', '${user.email || ''}', this.previousElementSibling.value)">Save Role</button>
+                            ` : ''}
+                            <button class="btn btn-danger btn-sm" onclick="banUser('${user.username}')">Ban</button>
+                            <button class="btn btn-sm" style="background:#dc3545;color:white;" onclick="deleteUser('${user.username}', '${user.email || ''}', '${profileUid}', '${user.name || user.username}')" title="Permanently delete user">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterRegisteredUsers() {
+            const input = document.getElementById('registeredUserSearch');
+            const search = (input?.value || '').toLowerCase().trim();
+            if (!search) {
+                renderRegisteredUsers(registeredUsersCache);
+                return;
+            }
+            const filtered = registeredUsersCache.filter(u => {
+                const name = (u.name || '').toLowerCase();
+                const email = (u.email || '').toLowerCase();
+                const username = (u.username || '').toLowerCase();
+                return name.includes(search) || email.includes(search) || username.includes(search);
+            });
+            renderRegisteredUsers(filtered);
+        }
+
         // Load registered users from Google Sheets
         async function loadRegisteredUsers() {
             const container = document.getElementById('registeredUsersList');
             container.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading users...</p></div>';
+            updateLastUpdated('registeredUsersUpdated');
 
             try {
                 // Try to refresh Firebase profiles (but don't fail if not signed in)
@@ -1019,49 +1153,9 @@
                 console.log('Users data:', data);
 
                 if (data.success && data.users) {
-                    const users = data.users;
-                    document.getElementById('statRegistered').textContent = users.length;
-
-                    if (users.length === 0) {
-                        container.innerHTML = '<div class="empty-state"><div class="icon">&#128100;</div><p>No registered users</p></div>';
-                        return;
-                    }
-
-                    let html = '';
-                    users.forEach((user) => {
-                        const statusClass = user.status === 'approved' ? 'status-approved' :
-                                           user.status === 'banned' ? 'status-banned' : 'status-pending';
-                        const emailKey = (user.email || '').toLowerCase();
-                        const profile = userProfilesByEmail[emailKey] || null;
-                        const roleValue = (profile && profile.role) || user.role || 'RN Student';
-                        const roleLabel = roleValue || 'RN Student';
-                        const profileUid = profile ? profile.uid : '';
-                        const roleSelect = auth.currentUser
-                            ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; margin-right: 6px;">
-                                   ${getRoleOptionsHtml(roleLabel)}
-                               </select>`
-                            : `<span style="font-size: 12px; color: #666;">${roleLabel}</span>`;
-                        html += `
-                            <div class="user-item">
-                                <div class="user-info">
-                                    <div class="user-name">${user.name || user.username}</div>
-                                    <div class="user-email">${user.email || ''} | @${user.username}</div>
-                                    <div class="user-status ${statusClass}">${user.status || 'pending'}</div>
-                                    <div class="user-status" style="font-size: 11px; color: #1f4e79;">Role: ${roleLabel}</div>
-                                </div>
-                                <div class="user-actions">
-                                    ${user.status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveUser('${user.username}')">Approve</button>` : ''}
-                                    ${auth.currentUser ? `
-                                        ${roleSelect}
-                                        <button class="btn btn-sm btn-primary" onclick="updateUserRole('${profileUid}', '${user.email || ''}', this.previousElementSibling.value)">Save Role</button>
-                                    ` : ''}
-                                    <button class="btn btn-danger btn-sm" onclick="banUser('${user.username}')">Ban</button>
-                                    <button class="btn btn-sm" style="background:#dc3545;color:white;" onclick="deleteUser('${user.username}', '${user.email || ''}', '${profileUid}', '${user.name || user.username}')" title="Permanently delete user">🗑️</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = html;
+                    registeredUsersCache = data.users;
+                    document.getElementById('statRegistered').textContent = registeredUsersCache.length;
+                    filterRegisteredUsers();
                 } else {
                     throw new Error('API returned success=false or no users array');
                 }
@@ -1094,6 +1188,7 @@
         function loadMessages() {
             chatRef.limitToLast(50).once('value', (snapshot) => {
                 const container = document.getElementById('messagesList');
+                updateLastUpdated('messagesUpdated');
 
                 if (!snapshot.exists()) {
                     container.innerHTML = '<div class="empty-state"><div class="icon">&#128172;</div><p>No messages</p></div>';
@@ -1880,6 +1975,7 @@
             const filter = document.getElementById('categoryFilter').value;
 
             communityPostsRef.once('value', (snapshot) => {
+                updateLastUpdated('communityPostsUpdated');
                 if (!snapshot.exists()) {
                     container.innerHTML = '<div class="empty-state"><div class="icon">&#128221;</div><p>No community posts</p></div>';
                     document.getElementById('statPosts').textContent = '0';

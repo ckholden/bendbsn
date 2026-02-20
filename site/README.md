@@ -311,13 +311,17 @@ Check browser console. If you see CSP errors:
 2. Add template code
 3. Use in pages:
 ```njk
+{% raw %}
 {% include "yourcomponent.njk" %}
+{% endraw %}
 ```
 
 ### Pass Data to Includes
 
 ```njk
+{% raw %}
 {% include "component.njk", { data: "value" } %}
+{% endraw %}
 ```
 
 ---
