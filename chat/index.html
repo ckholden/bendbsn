@@ -864,11 +864,9 @@
         /* Status picker popup */
         #statusPickerPanel {
             display: none;
-            position: absolute;
-            top: calc(100% + 6px);
-            right: 0;
-            min-width: 220px;
-            z-index: 500;
+            position: fixed;
+            min-width: 224px;
+            z-index: 9000;
             background: #1a2535;
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 10px;
@@ -919,6 +917,33 @@
         .status-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 6px 0; }
         /* Last seen */
         .last-seen-text { font-size: 10px; color: var(--text-secondary); }
+        /* Feature 2: DM hint on user status rows */
+        .dm-hint { font-size:11px;opacity:0;transition:opacity .15s;margin-left:auto;flex-shrink:0; }
+        .user-status-row:hover .dm-hint { opacity:0.6; }
+        /* Feature 3: Select mode */
+        .select-mode-btn { font-size:11px;padding:3px 8px;border:1px solid var(--clx-border,#e2e8f0);border-radius:12px;background:none;cursor:pointer;color:var(--text-secondary); }
+        .select-mode-btn.active { background:var(--accent);color:white;border-color:var(--accent); }
+        .create-group-btn { width:100%;padding:8px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600; }
+        .user-status-row.selected { background:rgba(99,102,241,0.12);border-radius:6px; }
+        .user-check { width:14px;height:14px;border-radius:3px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;margin-top:3px;background:none; }
+        .user-status-row.selected .user-check { background:var(--accent);border-color:var(--accent);color:white; }
+        /* Feature 4: Group chats */
+        .dm-section-header { font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-secondary);margin:8px 0 4px;opacity:0.7; }
+        .group-chat-item { padding:8px 12px;border-radius:8px;cursor:pointer;transition:background .1s;margin-bottom:2px; }
+        .group-chat-item:hover { background:var(--bg-secondary); }
+        .group-chat-item.active { background:rgba(99,102,241,0.15); }
+        .group-chat-name { font-size:13px;font-weight:600;color:var(--text-primary); }
+        .group-chat-meta { font-size:11px;color:var(--text-secondary);margin-top:1px; }
+        .leave-group-btn { font-size:11px;padding:3px 8px;border:1px solid rgba(220,38,38,0.4);border-radius:10px;background:none;cursor:pointer;color:#dc2626;white-space:nowrap;flex-shrink:0; }
+        .leave-group-btn:hover { background:rgba(220,38,38,0.1); }
+        /* Feature 5: Channel join/leave */
+        .channel-join-btn { font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:10px;background:none;cursor:pointer;color:rgba(255,255,255,0.5); }
+        .channel-join-btn:hover { color:white;border-color:rgba(255,255,255,0.5); }
+        .channel-item.not-joined { opacity:0.5; }
+        .channel-item.not-joined:hover { opacity:0.85; }
+        .channel-leave-btn { font-size:10px;padding:1px 5px;background:none;border:none;cursor:pointer;color:#dc2626;opacity:0;transition:opacity .15s;margin-left:2px; }
+        .channel-item:hover .channel-leave-btn { opacity:0.7; }
+        .channel-leave-btn:hover { opacity:1!important; }
     </style>
 </head>
 <body>
@@ -1012,37 +1037,10 @@
                     </div>
                     <div class="channel-header-actions">
                         <div class="my-status-wrapper">
-                            <button class="my-status-header-btn" id="myStatusHeaderBtn" onclick="toggleStatusPicker()" title="Set your status">
+                            <button class="my-status-header-btn" id="myStatusHeaderBtn" onclick="toggleStatusPicker(this)" title="Set your status">
                                 <span class="my-status-header-dot" id="myStatusHeaderDot" style="background:#22c55e;"></span>
                                 <span id="myStatusHeaderLabel">My Status</span>
                             </button>
-                            <div id="statusPickerPanel">
-                                <div class="status-picker-label">Set Status</div>
-                                <div class="status-custom-row">
-                                    <input class="status-custom-input" id="customStatusInput" maxlength="40" placeholder="What's your status?"
-                                        onclick="event.stopPropagation()"
-                                        onkeydown="if(event.key==='Enter'){event.stopPropagation();submitCustomStatus();}">
-                                    <button class="status-custom-set-btn" onclick="event.stopPropagation();submitCustomStatus()">Set</button>
-                                </div>
-                                <div class="status-emoji-row">
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('📚')" title="Studying">📚</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('☕')" title="Coffee break">☕</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🤒')" title="Sick">🤒</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('😴')" title="Tired">😴</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏥')" title="At hospital">🏥</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💊')" title="Medication">💊</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🧪')" title="Lab">🧪</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🎉')" title="Celebrating">🎉</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏃')" title="On the go">🏃</button>
-                                    <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💤')" title="Away">💤</button>
-                                </div>
-                                <div class="status-divider"></div>
-                                <button class="status-option active" data-status="" onclick="event.stopPropagation();selectStatusMsg('')"><span class="status-dot-sm" style="background:#22c55e;"></span> Online (clear)</button>
-                                <button class="status-option" data-status="In class" onclick="event.stopPropagation();selectStatusMsg('In class')"><span class="status-dot-sm" style="background:#f59e0b;"></span> In class</button>
-                                <button class="status-option" data-status="Studying" onclick="event.stopPropagation();selectStatusMsg('Studying')"><span class="status-dot-sm" style="background:#3b82f6;"></span> Studying</button>
-                                <button class="status-option" data-status="Do not disturb" onclick="event.stopPropagation();selectStatusMsg('Do not disturb')"><span class="status-dot-sm" style="background:#ef4444;"></span> Do not disturb</button>
-                                <button class="status-option" data-status="Be right back" onclick="event.stopPropagation();selectStatusMsg('Be right back')"><span class="status-dot-sm" style="background:#a855f7;"></span> Be right back</button>
-                            </div>
                         </div>
                         <button onclick="toggleUserList()" title="View user statuses">&#128101; Users</button>
                     </div>
@@ -1076,12 +1074,17 @@
                             <span class="channel-header-name">Direct Messages</span>
                         </div>
                         <div class="channel-header-actions">
+                            <button class="my-status-header-btn" id="myStatusHeaderBtnDM" onclick="toggleStatusPicker(this)" title="Set your status">
+                                <span class="my-status-header-dot" id="myStatusHeaderDotDM" style="background:#22c55e;"></span>
+                                <span id="myStatusHeaderLabelDM">My Status</span>
+                            </button>
                             <button onclick="showNewDMSelector()" title="New message">&#10133; New</button>
                         </div>
                     </div>
                     <div id="dmConversations" style="flex: 1; overflow-y: auto; padding: 16px 20px; background: var(--bg-secondary);">
                         <p style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No conversations yet. Start a new message!</p>
                     </div>
+                    <div id="groupChatSidebarList" style="padding: 0 20px 16px; background: var(--bg-secondary);"></div>
                 </div>
 
                 <!-- DM message view -->
@@ -1092,6 +1095,7 @@
                             <span class="dm-partner-name" id="dmPartnerName"></span>
                             <span class="dm-partner-status" id="dmPartnerStatus" style="background: var(--border); color: var(--text-secondary);">offline</span>
                         </div>
+                        <button id="leaveGroupBtn" class="leave-group-btn" style="display:none;margin-left:auto;" onclick="leaveCurrentGroup()">Leave Group</button>
                     </div>
                     <div class="dm-messages" id="dmMessages" aria-live="polite"></div>
                     <div class="dm-input-area">
@@ -1117,11 +1121,17 @@
 
             <!-- User list panel (slides in from right) -->
             <div class="user-list-panel" id="userListPanel">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <h4>&#128101; User Status</h4>
-                    <button onclick="toggleUserList()" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-secondary);">&times;</button>
+                    <div style="display:flex;gap:6px;">
+                        <button id="selectModeBtn" class="select-mode-btn" onclick="toggleUserSelectMode()">&#9745; Select</button>
+                        <button onclick="toggleUserList()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-secondary);">&times;</button>
+                    </div>
                 </div>
                 <div id="userListNames"></div>
+                <div id="userSelectFooter" style="display:none;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:8px;">
+                    <button id="createGroupBtn" class="create-group-btn" onclick="initiateGroupChatCreation()">Create Group (0 selected)</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1228,6 +1238,8 @@
         const userProfilesRef = database.ref('userProfiles');
         const channelsRef = database.ref('chat/channels');
         const directMessagesRef = database.ref('directMessages');
+        const groupChatsRef = database.ref('groupChats');
+        const channelMembersRef = database.ref('chat/channelMembers');
 
         // Current channel
         let currentChannel = 'general';
@@ -1306,6 +1318,9 @@
                 syncUserProfile(user);
                 fetchAllUsers();
                 if (typeof updateSidebarUserBar === 'function') updateSidebarUserBar();
+                // Re-init group chats and channel membership with confirmed identity
+                if (typeof loadGroupChats === 'function') loadGroupChats();
+                if (typeof loadChannelMembership === 'function') loadChannelMembership();
 
                 // Load admin role from Firebase profile
                 userProfilesRef.child(user.uid).once('value').then(snap => {
@@ -1506,29 +1521,33 @@
         }
 
         function updateMyStatusHeader() {
+            const cfg = STATUS_CONFIG[myStatusMsg] || { dot: '#94a3b8', label: myStatusMsg || 'Online' };
+            // Group chat header button
             const dot = document.getElementById('myStatusHeaderDot');
             const label = document.getElementById('myStatusHeaderLabel');
-            if (!dot || !label) return;
-            const cfg = STATUS_CONFIG[myStatusMsg] || { dot: '#94a3b8', label: myStatusMsg || 'Online' };
-            dot.style.background = cfg.dot;
-            label.textContent = myStatusMsg ? cfg.label : 'My Status';
+            if (dot) dot.style.background = cfg.dot;
+            if (label) label.textContent = myStatusMsg ? cfg.label : 'My Status';
+            // DM header button
+            const dotDM = document.getElementById('myStatusHeaderDotDM');
+            const labelDM = document.getElementById('myStatusHeaderLabelDM');
+            if (dotDM) dotDM.style.background = cfg.dot;
+            if (labelDM) labelDM.textContent = myStatusMsg ? cfg.label : 'My Status';
         }
 
-        function toggleStatusPicker() {
+        function toggleStatusPicker(btn) {
             const panel = document.getElementById('statusPickerPanel');
             if (!panel) return;
-            const isVisible = panel.style.display === 'block';
-            if (!isVisible) {
-                const input = document.getElementById('customStatusInput');
-                if (input) {
-                    input.value = (!STATUS_CONFIG.hasOwnProperty(myStatusMsg) && myStatusMsg) ? myStatusMsg : '';
-                }
-            }
-            panel.style.display = isVisible ? 'none' : 'block';
-            if (!isVisible) {
-                const input = document.getElementById('customStatusInput');
-                if (input) setTimeout(() => input.focus(), 50);
-            }
+            if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+            const refBtn = btn || document.getElementById('myStatusHeaderBtn');
+            const rect = refBtn.getBoundingClientRect();
+            const panelWidth = 224;
+            const leftPos = Math.max(4, rect.right - panelWidth);
+            panel.style.top = (rect.bottom + 6) + 'px';
+            panel.style.left = leftPos + 'px';
+            const input = document.getElementById('customStatusInput');
+            if (input) input.value = (!STATUS_CONFIG.hasOwnProperty(myStatusMsg) && myStatusMsg) ? myStatusMsg : '';
+            panel.style.display = 'block';
+            if (input) setTimeout(() => input.focus(), 50);
         }
 
         function appendStatusEmoji(emoji) {
@@ -1661,6 +1680,18 @@
         let typingTimeout = null;
         const TYPING_TIMEOUT_MS = 3000;
 
+        // User select mode (Feature 3)
+        let userSelectMode = false;
+        let selectedUsersForGroup = new Set(); // emails
+
+        // Group chat state (Feature 4)
+        let myGroupChats = {};
+        let currentGroupChatId = null;
+        let currentGroupChatListener = null;
+
+        // Channel membership (Feature 5)
+        let myJoinedChannels = new Set(['general']);
+
         // ========== NOTIFICATION SOUND ==========
         let soundTone = localStorage.getItem('chatSoundTone') || 'ding';
 
@@ -1775,8 +1806,7 @@
             // Close status picker on outside click
             const statusPanel = document.getElementById('statusPickerPanel');
             if (statusPanel && statusPanel.style.display === 'block') {
-                const wrapper = document.getElementById('myStatusWrapper') || document.getElementById('myStatusHeaderBtn');
-                if (!statusPanel.contains(e.target) && !wrapper?.contains(e.target)) {
+                if (!statusPanel.contains(e.target) && !e.target.closest('.my-status-header-btn')) {
                     statusPanel.style.display = 'none';
                 }
             }
@@ -1913,6 +1943,49 @@
             if (container) container.scrollTop = container.scrollHeight;
         }
 
+        // ========== CHANNEL MEMBERSHIP (Feature 5) ==========
+        let _channelMembershipListenerActive = false;
+        function loadChannelMembership() {
+            const uid = getCurrentUserUid();
+            if (!uid) { setTimeout(loadChannelMembership, 1500); return; }
+            if (_channelMembershipListenerActive) return; // avoid duplicate listeners
+            _channelMembershipListenerActive = true;
+            channelMembersRef.on('value', (snap) => {
+                const activeUid = getCurrentUserUid();
+                myJoinedChannels = new Set(['general']);
+                snap.forEach(channelSnap => {
+                    const id = channelSnap.key;
+                    const members = channelSnap.val() || {};
+                    if (members[activeUid]) myJoinedChannels.add(id);
+                });
+                renderChannelList();
+            });
+        }
+
+        function joinChannel(id) {
+            const uid = getCurrentUserUid();
+            if (!uid) return;
+            channelMembersRef.child(id + '/' + uid).set(true).then(() => {
+                myJoinedChannels.add(id);
+                showToast('Joined #' + (channels[id]?.name || id), 'success');
+                switchChannel(id);
+            });
+        }
+
+        function leaveChannel(id) {
+            if (id === 'general') { showToast('Cannot leave #general', 'warning'); return; }
+            const uid = getCurrentUserUid();
+            if (!uid) return;
+            showConfirmModal('Leave Channel', `Leave #${channels[id]?.name || id}?`, () => {
+                channelMembersRef.child(id + '/' + uid).remove().then(() => {
+                    myJoinedChannels.delete(id);
+                    showToast('Left #' + (channels[id]?.name || id), 'success');
+                    if (currentChannel === id) switchChannel('general');
+                    else renderChannelList();
+                });
+            }, { danger: false, confirmText: 'Leave' });
+        }
+
         // ========== CHANNELS SYSTEM ==========
         function loadChannels() {
             // Default general channel always exists
@@ -1949,15 +2022,20 @@
                 const unread = channelUnread[id] || 0;
                 const safeId = escapeForSingleQuotedJs(id);
                 const safeName = escapeForSingleQuotedJs(ch.name || id);
+                const isJoined = myJoinedChannels.has(id);
                 const adminActions = currentUserIsAdmin ? `
                     <span class="channel-actions">
-                        <button onclick="event.stopPropagation();renameChannel('${safeId}','${safeName}')" title="Rename">✏</button>
-                        ${id !== 'general' ? `<button onclick="event.stopPropagation();deleteChannel('${safeId}','${safeName}')" title="Delete">🗑</button>` : ''}
+                        <button onclick="event.stopPropagation();renameChannel('${safeId}','${safeName}')" title="Rename">&#9998;</button>
+                        ${id !== 'general' ? `<button onclick="event.stopPropagation();deleteChannel('${safeId}','${safeName}')" title="Delete">&#128465;</button>` : ''}
                     </span>` : '';
+                const leaveAction = isJoined && id !== 'general' ? `<button class="channel-leave-btn" onclick="event.stopPropagation();leaveChannel('${safeId}')" title="Leave channel">&#10005;</button>` : '';
+                const joinAction = !isJoined ? `<button class="channel-join-btn" onclick="event.stopPropagation();joinChannel('${safeId}')" title="Join channel">Join</button>` : '';
+                const clickAction = isJoined ? `switchChannel('${safeId}')` : `joinChannel('${safeId}')`;
                 html += `
-                    <div class="channel-item ${isActive ? 'active' : ''}" onclick="switchChannel('${safeId}')" title="${escapeAttr(ch.description || '')}">
+                    <div class="channel-item ${isActive ? 'active' : ''} ${!isJoined ? 'not-joined' : ''}" onclick="${clickAction}" title="${escapeAttr(ch.description || '')}">
                         <span class="channel-name"><span class="hash">#</span> ${escapeHtml(ch.name || id)}</span>
-                        <span class="channel-badge" id="channelBadge_${id}" style="${unread > 0 ? 'display:flex' : 'display:none'}">${unread > 9 ? '9+' : unread}</span>
+                        <span class="channel-badge" id="channelBadge_${id}" style="${unread > 0 && isJoined ? 'display:flex' : 'display:none'}">${unread > 9 ? '9+' : unread}</span>
+                        ${isJoined ? leaveAction : joinAction}
                         ${adminActions}
                     </div>
                 `;
@@ -2067,6 +2145,10 @@
             }).then(() => {
                 hideCreateChannelModal();
                 showToast('Channel #' + name + ' created!', 'success');
+                // Auto-join the channel you just created
+                const uid = getCurrentUserUid();
+                if (uid) channelMembersRef.child(name + '/' + uid).set(true).catch(() => {});
+                myJoinedChannels.add(name);
                 switchChannel(name);
             }).catch(err => {
                 showToast('Failed to create channel: ' + err.message, 'error');
@@ -2438,16 +2520,46 @@
                     const dotStyle = isOffline
                         ? `background:#6b7280;opacity:0.4;`
                         : `background:${dotColor};`;
-                    return `
-                        <div class="user-status-row${isOffline ? ' user-status-offline' : ''}">
-                            <span class="user-status-dot" style="${dotStyle}"></span>
-                            <div class="user-status-info">
-                                <div class="user-status-name">${escapeHtml(entry.name)}${meLabel}</div>
-                                ${statusMsg ? `<div class="user-status-msg-text" style="color:${msgColor};">${escapeHtml(statusMsg)}</div>` : ''}
+
+                    if (userSelectMode) {
+                        // Select mode: all non-self rows are checkable
+                        const isSelected = selectedUsersForGroup.has(entry.email);
+                        const safeEmail = escapeForSingleQuotedJs(entry.email);
+                        const safeName = escapeForSingleQuotedJs(entry.name);
+                        const clickAction = isMe ? '' : `onclick="toggleUserGroupSelect('${safeEmail}','${safeName}')"`;
+                        const checkMark = isMe ? '' : `<span class="user-check">${isSelected ? '&#10003;' : ''}</span>`;
+                        const selectedClass = isSelected ? ' selected' : '';
+                        const cursorStyle = isMe ? '' : 'cursor:pointer;';
+                        return `
+                            <div class="user-status-row${isOffline ? ' user-status-offline' : ''}${selectedClass}" ${clickAction} style="${cursorStyle}">
+                                <span class="user-status-dot" style="${dotStyle}"></span>
+                                <div class="user-status-info">
+                                    <div class="user-status-name">${escapeHtml(entry.name)}${meLabel}</div>
+                                    ${statusMsg ? `<div class="user-status-msg-text" style="color:${msgColor};">${escapeHtml(statusMsg)}</div>` : ''}
+                                </div>
+                                ${since ? `<span class="user-status-since">${since}</span>` : ''}
+                                ${checkMark}
                             </div>
-                            ${since ? `<span class="user-status-since">${since}</span>` : ''}
-                        </div>
-                    `;
+                        `;
+                    } else {
+                        // Normal mode: non-self, non-offline rows are clickable → open DM
+                        const canDM = !isMe && !isOffline;
+                        const safeNameJs = escapeForSingleQuotedJs(entry.name);
+                        const clickAction = canDM ? `onclick="startDMConversation('${safeNameJs}');toggleUserList();"` : '';
+                        const cursorStyle = canDM ? 'cursor:pointer;' : '';
+                        const dmHint = canDM ? `<span class="dm-hint">&#128172;</span>` : '';
+                        return `
+                            <div class="user-status-row${isOffline ? ' user-status-offline' : ''}" ${clickAction} style="${cursorStyle}">
+                                <span class="user-status-dot" style="${dotStyle}"></span>
+                                <div class="user-status-info">
+                                    <div class="user-status-name">${escapeHtml(entry.name)}${meLabel}</div>
+                                    ${statusMsg ? `<div class="user-status-msg-text" style="color:${msgColor};">${escapeHtml(statusMsg)}</div>` : ''}
+                                </div>
+                                ${since ? `<span class="user-status-since">${since}</span>` : ''}
+                                ${dmHint}
+                            </div>
+                        `;
+                    }
                 }).join('');
                 return `<div class="user-status-group"><div class="user-status-group-label">${label} — ${list.length}</div>${rows}</div>`;
             };
@@ -2460,6 +2572,25 @@
             }
 
             namesEl.innerHTML = html || '<div style="opacity:0.7;font-size:12px;color:var(--text-secondary);">No users found</div>';
+        }
+
+        // ========== USER SELECT MODE (Feature 3) ==========
+        function toggleUserSelectMode() {
+            userSelectMode = !userSelectMode;
+            selectedUsersForGroup.clear();
+            const btn = document.getElementById('selectModeBtn');
+            const footer = document.getElementById('userSelectFooter');
+            if (btn) { btn.textContent = userSelectMode ? '\u2715 Cancel' : '\u2611 Select'; btn.classList.toggle('active', userSelectMode); }
+            if (footer) footer.style.display = userSelectMode ? 'block' : 'none';
+            updateUserListPanel();
+        }
+
+        function toggleUserGroupSelect(email, name) {
+            if (selectedUsersForGroup.has(email)) selectedUsersForGroup.delete(email);
+            else selectedUsersForGroup.add(email);
+            const btn = document.getElementById('createGroupBtn');
+            if (btn) btn.textContent = `Create Group (${selectedUsersForGroup.size} selected)`;
+            updateUserListPanel();
         }
 
         // ========== MOBILE SIDEBAR ==========
@@ -2485,6 +2616,151 @@
                 list.style.display = 'none';
                 toggle.classList.add('collapsed');
             }
+        }
+
+        // ========== GROUP CHATS (Feature 4) ==========
+        function initiateGroupChatCreation() {
+            if (selectedUsersForGroup.size === 0) { showToast('Select at least one other user', 'warning'); return; }
+            const names = [...selectedUsersForGroup].map(email => {
+                const u = allRegisteredUsers.find(r => r.email.toLowerCase() === email.toLowerCase());
+                return u ? u.name : email;
+            });
+            const defaultName = names.slice(0,2).join(', ') + (names.length > 2 ? ` +${names.length-2}` : '');
+            showPromptModal('Group Name', 'Name for this group chat:', (groupName) => {
+                if (!groupName || !groupName.trim()) return;
+                createGroupChat(groupName.trim(), [...selectedUsersForGroup]);
+            }, { defaultValue: defaultName, submitText: 'Create' });
+        }
+
+        function createGroupChat(name, memberEmails) {
+            const myEmail = currentUsername.toLowerCase();
+            const members = { [myEmail]: displayName };
+            memberEmails.forEach(email => {
+                const u = allRegisteredUsers.find(r => r.email.toLowerCase() === email.toLowerCase());
+                members[email.toLowerCase()] = u ? u.name : email;
+            });
+            const newChatRef = groupChatsRef.push();
+            newChatRef.set({
+                name: name,
+                members: members,
+                createdBy: myEmail,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                showToast('Group chat created!', 'success');
+                toggleUserSelectMode();
+                toggleUserList();
+                openGroupChat(newChatRef.key, { name, members, createdBy: myEmail });
+            }).catch(err => { showToast('Failed to create group', 'error'); console.error(err); });
+        }
+
+        let _groupChatsListenerActive = false;
+        function loadGroupChats() {
+            if (_groupChatsListenerActive) return; // avoid duplicate listeners
+            _groupChatsListenerActive = true;
+            groupChatsRef.on('value', (snap) => {
+                const activeEmail = currentUsername.toLowerCase();
+                myGroupChats = {};
+                snap.forEach(child => {
+                    const data = child.val();
+                    if (data && data.members && data.members[activeEmail]) {
+                        myGroupChats[child.key] = { ...data, id: child.key };
+                    }
+                });
+                renderGroupChatsInDMSidebar();
+            });
+        }
+
+        function renderGroupChatsInDMSidebar() {
+            const container = document.getElementById('groupChatSidebarList');
+            if (!container) return;
+            const chats = Object.values(myGroupChats);
+            if (chats.length === 0) { container.innerHTML = ''; return; }
+            const sorted = chats.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+            container.innerHTML = '<div class="dm-section-header">Group Chats</div>' + sorted.map(chat => {
+                const isActive = currentGroupChatId === chat.id;
+                const memberCount = Object.keys(chat.members || {}).length;
+                const safeChatId = escapeForSingleQuotedJs(chat.id);
+                return `<div class="group-chat-item${isActive?' active':''}" onclick="openGroupChat('${safeChatId}',null)">
+                    <div class="group-chat-name">&#128101; ${escapeHtml(chat.name)}</div>
+                    <div class="group-chat-meta">${memberCount} members</div>
+                </div>`;
+            }).join('');
+        }
+
+        function openGroupChat(chatId, chatData) {
+            const data = chatData || myGroupChats[chatId];
+            if (!data) return;
+            currentGroupChatId = chatId;
+            currentDMConversation = { type: 'group', chatId, partnerName: data.name };
+            chatMode = 'dm';
+            document.getElementById('groupChatView').style.display = 'none';
+            document.getElementById('dmView').style.display = 'flex';
+            document.getElementById('dmConversationList').style.display = 'none';
+            document.getElementById('dmMessageView').style.display = 'flex';
+            const nameEl = document.getElementById('dmPartnerName');
+            const statusEl = document.getElementById('dmPartnerStatus');
+            const leaveBtn = document.getElementById('leaveGroupBtn');
+            if (nameEl) nameEl.textContent = data.name;
+            const memberCount = Object.keys(data.members || {}).length;
+            if (statusEl) { statusEl.textContent = memberCount + ' members'; statusEl.style.background = 'rgba(99,102,241,0.15)'; statusEl.style.color = '#818cf8'; }
+            if (leaveBtn) leaveBtn.style.display = 'inline-flex';
+            const msgs = document.getElementById('dmMessages');
+            if (msgs) msgs.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:12px;padding:20px;">Loading...</p>';
+            // Stop old listener
+            if (currentGroupChatListener) { currentGroupChatListener.off(); currentGroupChatListener = null; }
+            const msgsRef = database.ref('groupChats/' + chatId + '/messages');
+            currentGroupChatListener = msgsRef.orderByChild('timestamp').limitToLast(50);
+            currentGroupChatListener.on('value', (snap) => {
+                if (!msgs) return;
+                const msgList = [];
+                snap.forEach(c => msgList.push({id: c.key, ...c.val()}));
+                if (msgList.length === 0) { msgs.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:30px;">No messages yet. Say hello!</p>'; return; }
+                msgs.innerHTML = msgList.map(msg => {
+                    const isMe = msg.senderEmail === currentUsername.toLowerCase();
+                    return `<div class="dm-message ${isMe?'dm-message-mine':''}">
+                        ${!isMe ? `<div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">${escapeHtml(msg.senderName||'Unknown')}</div>` : ''}
+                        <div style="display:flex;align-items:flex-end;gap:8px;${isMe?'justify-content:flex-end;':''}">
+                            ${!isMe ? buildAvatar(msg.senderName||'Unknown','sm') : ''}
+                            <div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'};max-width:75%;">
+                                <div style="background:${isMe?'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)':'var(--chat-msg-other-bg)'};color:${isMe?'white':'var(--text-primary)'};padding:10px 14px;border-radius:${isMe?'16px 16px 4px 16px':'16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">${escapeHtml(msg.text||'')}</div>
+                                <div style="font-size:9px;color:var(--text-secondary);margin-top:3px;">${formatTime(msg.timestamp)}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+                msgs.scrollTop = msgs.scrollHeight;
+            });
+            renderGroupChatsInDMSidebar();
+            renderChannelList();
+            closeSidebar();
+        }
+
+        function sendGroupMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('dmInput');
+            const text = input ? input.value.trim() : '';
+            if (!text || !currentGroupChatId) return;
+            database.ref('groupChats/' + currentGroupChatId + '/messages').push({
+                text: text,
+                senderEmail: currentUsername.toLowerCase(),
+                senderName: displayName,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => { if (input) input.value = ''; });
+        }
+
+        function leaveCurrentGroup() {
+            if (!currentGroupChatId) return;
+            showConfirmModal('Leave Group', 'Are you sure you want to leave this group chat?', () => {
+                const myEmail = currentUsername.toLowerCase();
+                database.ref('groupChats/' + currentGroupChatId + '/members/' + myEmail).remove()
+                    .then(() => {
+                        showToast('Left group chat', 'success');
+                        if (currentGroupChatListener) { currentGroupChatListener.off(); currentGroupChatListener = null; }
+                        currentGroupChatId = null;
+                        currentDMConversation = null;
+                        closeDMConversation();
+                    });
+            }, { danger: true, confirmText: 'Leave' });
         }
 
         // ========== DM SYSTEM ==========
@@ -2725,7 +3001,15 @@
         }
 
         function closeDMConversation() {
+            // Cleanup group chat listener if leaving a group chat
+            if (currentGroupChatId && currentGroupChatListener) {
+                currentGroupChatListener.off();
+                currentGroupChatListener = null;
+            }
+            currentGroupChatId = null;
             currentDMConversation = null;
+            const lb = document.getElementById('leaveGroupBtn');
+            if (lb) lb.style.display = 'none';
             document.getElementById('dmMessageView').style.display = 'none';
             document.getElementById('dmConversationList').style.display = 'flex';
             loadDMConversations();
@@ -2908,6 +3192,7 @@
                     </div>
                 `;
             }).join('');
+            renderGroupChatsInDMSidebar();
         }
 
         function loadDMMessages(conversationId) {
@@ -2962,6 +3247,8 @@
 
         function sendDM(event) {
             event.preventDefault();
+            // If in a group chat, send to group instead
+            if (currentDMConversation?.type === 'group') { sendGroupMessage(event); return; }
             if (!currentDMConversation) return;
 
             const input = document.getElementById('dmInput');
@@ -3332,6 +3619,9 @@
                 if (typeof connectedRef !== 'undefined') connectedRef.off();
                 if (typeof channelsRef !== 'undefined') channelsRef.off();
                 if (typeof directMessagesRef !== 'undefined') directMessagesRef.off();
+                if (typeof groupChatsRef !== 'undefined') groupChatsRef.off();
+                if (typeof channelMembersRef !== 'undefined') channelMembersRef.off();
+                if (currentGroupChatListener) { currentGroupChatListener.off(); currentGroupChatListener = null; }
                 if (currentChatRef && currentChatListener) {
                     currentChatRef.off('value', currentChatListener);
                 }
@@ -3387,6 +3677,8 @@
 
         // Load DM conversations
         loadDMConversations();
+        loadGroupChats();
+        loadChannelMembership();
 
         // Set up initial DM unread
         directMessagesRef.once('value', (snapshot) => {
@@ -3477,6 +3769,34 @@
         <button onclick="pickReaction('👏')">👏</button>
         <button onclick="pickReaction('💯')">💯</button>
         <button onclick="pickReaction('🙏')">🙏</button>
+    </div>
+    <!-- Status Picker Panel (body-level, positioned by JS) -->
+    <div id="statusPickerPanel">
+        <div class="status-picker-label">Set Status</div>
+        <div class="status-custom-row">
+            <input class="status-custom-input" id="customStatusInput" maxlength="40" placeholder="What's your status?"
+                onclick="event.stopPropagation()"
+                onkeydown="if(event.key==='Enter'){event.stopPropagation();submitCustomStatus();}">
+            <button class="status-custom-set-btn" onclick="event.stopPropagation();submitCustomStatus()">Set</button>
+        </div>
+        <div class="status-emoji-row">
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('📚')" title="Studying">📚</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('☕')" title="Coffee break">☕</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🤒')" title="Sick">🤒</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('😴')" title="Tired">😴</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏥')" title="At hospital">🏥</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💊')" title="Medication">💊</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🧪')" title="Lab">🧪</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🎉')" title="Celebrating">🎉</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏃')" title="On the go">🏃</button>
+            <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💤')" title="Away">💤</button>
+        </div>
+        <div class="status-divider"></div>
+        <button class="status-option active" data-status="" onclick="event.stopPropagation();selectStatusMsg('')"><span class="status-dot-sm" style="background:#22c55e;"></span> Online (clear)</button>
+        <button class="status-option" data-status="In class" onclick="event.stopPropagation();selectStatusMsg('In class')"><span class="status-dot-sm" style="background:#f59e0b;"></span> In class</button>
+        <button class="status-option" data-status="Studying" onclick="event.stopPropagation();selectStatusMsg('Studying')"><span class="status-dot-sm" style="background:#3b82f6;"></span> Studying</button>
+        <button class="status-option" data-status="Do not disturb" onclick="event.stopPropagation();selectStatusMsg('Do not disturb')"><span class="status-dot-sm" style="background:#ef4444;"></span> Do not disturb</button>
+        <button class="status-option" data-status="Be right back" onclick="event.stopPropagation();selectStatusMsg('Be right back')"><span class="status-dot-sm" style="background:#a855f7;"></span> Be right back</button>
     </div>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
