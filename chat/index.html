@@ -1158,6 +1158,12 @@
                 console.log('Firebase Auth: Not logged in');
                 if (localStorage.getItem('bsn9b_auth') === 'true') {
                     console.warn('Session exists but Firebase auth lost');
+                    localStorage.removeItem('bsn9b_auth');
+                    localStorage.removeItem('bsn9b_user');
+                    localStorage.removeItem('bsn9b_displayName');
+                    localStorage.removeItem('bsn9b_uid');
+                    showToast('Session expired. Please sign in again.', 'warning', 4000);
+                    setTimeout(() => { window.location.href = '/'; }, 500);
                 } else {
                     window.location.href = '/';
                 }
@@ -2508,18 +2514,23 @@
         let mentionDropdownIndex = -1;
 
         async function fetchAllUsers() {
+            let activeEmails = new Set();
             try {
-                // Always fetch active profiles from Firebase to validate (if available)
-                const profilesSnapshot = await userProfilesRef.once('value');
-                const activeEmails = new Set();
-                if (profilesSnapshot.exists()) {
-                    profilesSnapshot.forEach(child => {
-                        const profile = child.val();
-                        if (profile && profile.email) {
-                            activeEmails.add(profile.email.toLowerCase());
-                        }
-                    });
+                // Try active profile lookup; permission-denied should not block user list
+                try {
+                    const profilesSnapshot = await userProfilesRef.once('value');
+                    if (profilesSnapshot.exists()) {
+                        profilesSnapshot.forEach(child => {
+                            const profile = child.val();
+                            if (profile && profile.email) {
+                                activeEmails.add(String(profile.email).toLowerCase());
+                            }
+                        });
+                    }
+                } catch (profileErr) {
+                    console.warn('Chat: Could not load full userProfiles list, continuing without profile filter', profileErr);
                 }
+
                 const allowAll = activeEmails.size === 0;
 
                 // Check cache first (but still filter against active profiles when available)
@@ -2534,11 +2545,11 @@
                 }
 
                 const sheetResponse = await fetch('https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?token=bsn_k7x9m2p4&action=getUsers');
-
                 const data = await sheetResponse.json();
-                if (data.success && data.users) {
+                const rawUsers = Array.isArray(data?.users) ? data.users : (Array.isArray(data) ? data : []);
+                if (rawUsers.length > 0) {
                     // Only include users who have an active Firebase profile when available
-                    const filtered = data.users.filter(u => {
+                    const filtered = rawUsers.filter(u => {
                         if (!u.name || !u.name.trim() || !u.email) return false;
                         if (allowAll) return true;
                         return activeEmails.has(u.email.toLowerCase());
@@ -2553,6 +2564,8 @@
                 }
             } catch (e) {
                 console.warn('Chat: Failed to fetch users for DM/mentions', e);
+                // Keep the UI usable with online users even if the directory fails
+                allRegisteredUsers = allRegisteredUsers || [];
             }
         }
 

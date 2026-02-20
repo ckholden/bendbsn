@@ -26,7 +26,7 @@ module.exports = function(eleventyConfig) {
       `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com`,
       "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:",
       "img-src 'self' data: https:",
-      "connect-src 'self' https://bendbsn-17377-default-rtdb.firebaseio.com https://firebaseinstallations.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://rxnav.nlm.nih.gov https://script.google.com https://script.googleusercontent.com https://en.wikipedia.org",
+      "connect-src 'self' https://bendbsn-17377-default-rtdb.firebaseio.com https://firebaseinstallations.googleapis.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://rxnav.nlm.nih.gov https://script.google.com https://script.googleusercontent.com https://en.wikipedia.org https://formsubmit.co https://api.emailjs.com https://*.firebaseio.com wss://*.firebaseio.com",
       "frame-src 'self'",
       "object-src 'none'",
       "base-uri 'self'",

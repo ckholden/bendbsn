@@ -545,6 +545,8 @@ pageScript: |
 
           // Send email notification to admin for auditing
           await sendEmailNotification(name, email, username, 'new_registration', role);
+          // Send welcome email to the new user
+          await sendWelcomeEmail(name, email);
 
           successMsg.textContent = 'Account created! Welcome, ' + name.split(' ')[0] + '!';
           successMsg.classList.add('show');
@@ -698,6 +700,9 @@ pageScript: |
 
               const response = await fetch('https://formsubmit.co/ajax/' + _ae, {
                   method: 'POST',
+                  headers: {
+                      'Accept': 'application/json'
+                  },
                   body: formData
               });
 
@@ -781,6 +786,24 @@ pageScript: |
           await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
       } catch (error) {
           console.error('Failed to send welcome email:', error);
+          // Fallback via FormSubmit if EmailJS is unavailable or blocked
+          try {
+              const formData = new FormData();
+              formData.append('name', 'BendBSN Welcome Bot');
+              formData.append('email', _ae);
+              formData.append('_subject', 'Welcome to BendBSN');
+              formData.append('message', `Hi ${name}, your BSN9B account is ready.\n\nLogin: https://bendbsn.com\nEmail: ${email}\n\nWelcome!`);
+
+              await fetch('https://formsubmit.co/ajax/' + email, {
+                  method: 'POST',
+                  headers: {
+                      'Accept': 'application/json'
+                  },
+                  body: formData
+              });
+          } catch (fallbackError) {
+              console.error('Welcome email fallback failed:', fallbackError);
+          }
       }
   }
 
