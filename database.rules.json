@@ -116,6 +116,17 @@
     "notificationLog": {
       ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
       ".write": "auth != null"
+    },
+    "userLastSeen": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.isNumber()"
+      }
+    },
+    "appConfig": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.email == \"christiankholden@gmail.com\")"
     }
   }
 }

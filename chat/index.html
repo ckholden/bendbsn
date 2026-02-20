@@ -829,6 +829,68 @@
         [data-theme="dark"] .reaction-pill { background:rgba(255,255,255,0.06); border-color:#334155; }
         [data-theme="dark"] .reaction-pill.reacted { background:rgba(99,102,241,0.2); }
         [data-theme="dark"] #reactionPicker { background:#1e293b; border-color:#334155; }
+
+        /* User status bar */
+        .sidebar-user-bar {
+            padding: 8px 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s;
+        }
+        .sidebar-user-bar:hover { background: rgba(255,255,255,0.05); }
+        .sidebar-user-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 11px; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .sidebar-user-info { flex: 1; min-width: 0; }
+        .sidebar-user-name {
+            color: rgba(255,255,255,0.9);
+            font-size: 12px; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .sidebar-user-status {
+            color: rgba(255,255,255,0.45);
+            font-size: 10px; margin-top: 1px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        /* Status picker popup */
+        #statusPickerPanel {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 4px);
+            left: 0; right: 0;
+            z-index: 200;
+            background: #1a2535;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            padding: 8px;
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+        }
+        .status-picker-label {
+            font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+            text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 6px; padding: 0 2px;
+        }
+        .status-option {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; background: none;
+            border: 1px solid transparent; border-radius: 6px;
+            color: rgba(255,255,255,0.75); font-size: 12px;
+            padding: 6px 8px; cursor: pointer; text-align: left;
+            transition: background 0.15s;
+        }
+        .status-option:hover { background: rgba(255,255,255,0.07); color: white; }
+        .status-option.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: white; }
+        .status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        /* Last seen */
+        .last-seen-text { font-size: 10px; color: var(--text-secondary); }
     </style>
 </head>
 <body>
@@ -904,6 +966,23 @@
                 <button class="add-btn visible" onclick="event.stopPropagation(); showNewDMSelector()" title="New message">+</button>
             </div>
             <div id="dmListSidebar" style="padding: 0 6px;"></div>
+
+            <!-- User status bar -->
+            <div class="sidebar-user-bar" id="userStatusBar" onclick="toggleStatusPicker()">
+                <div class="sidebar-user-avatar" id="sidebarUserAvatar">?</div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarUserName">...</div>
+                    <div class="sidebar-user-status" id="sidebarUserStatus"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#22c55e;margin-right:4px;"></span>Online</div>
+                </div>
+                <div id="statusPickerPanel">
+                    <div class="status-picker-label">Set Status</div>
+                    <button class="status-option active" data-status="" onclick="event.stopPropagation();selectStatusMsg('')"><span class="status-dot-sm" style="background:#22c55e;"></span> Online</button>
+                    <button class="status-option" data-status="In class" onclick="event.stopPropagation();selectStatusMsg('In class')"><span class="status-dot-sm" style="background:#f59e0b;"></span> In class</button>
+                    <button class="status-option" data-status="Studying" onclick="event.stopPropagation();selectStatusMsg('Studying')"><span class="status-dot-sm" style="background:#3b82f6;"></span> Studying</button>
+                    <button class="status-option" data-status="Do not disturb" onclick="event.stopPropagation();selectStatusMsg('Do not disturb')"><span class="status-dot-sm" style="background:#ef4444;"></span> Do not disturb</button>
+                    <button class="status-option" data-status="Be right back" onclick="event.stopPropagation();selectStatusMsg('Be right back')"><span class="status-dot-sm" style="background:#a855f7;"></span> Be right back</button>
+                </div>
+            </div>
 
             <!-- Online count at bottom -->
             <div class="sidebar-online-count" id="onlineCount" onclick="toggleUserList()">0 online</div>
@@ -1181,6 +1260,7 @@
                 localStorage.setItem('bsn9b_displayName', displayName);
                 syncUserProfile(user);
                 fetchAllUsers();
+                if (typeof updateSidebarUserBar === 'function') updateSidebarUserBar();
 
                 // Load admin role from Firebase profile
                 userProfilesRef.child(user.uid).once('value').then(snap => {
@@ -1261,14 +1341,19 @@
             const uid = getCurrentUserUid();
             if (!uid) return;
             myPresenceRef = presenceRef.child(uid);
-            myPresenceRef.set({
+            const presenceData = {
                 user: displayName,
                 username: currentUsername,
                 uid: uid,
                 status: status,
                 lastActive: firebase.database.ServerValue.TIMESTAMP
-            });
+            };
+            const statusMsg = localStorage.getItem('bsn9b_chat_status') || '';
+            if (statusMsg) presenceData.statusMsg = statusMsg;
+            myPresenceRef.set(presenceData);
             myPresenceRef.onDisconnect().remove();
+            // Save last seen timestamp when user disconnects
+            database.ref('userLastSeen/' + uid).onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
             currentPresenceStatus = status;
         }
 
@@ -1327,8 +1412,76 @@
             recordActivity();
         }
 
+        // ========== CUSTOM STATUS & LAST SEEN ==========
+        let myStatusMsg = localStorage.getItem('bsn9b_chat_status') || '';
+        let partnerLastSeenCache = {};
+
+        function loadPartnerLastSeen() {
+            database.ref('userLastSeen').once('value', snap => {
+                partnerLastSeenCache = snap.val() || {};
+            });
+        }
+
+        function formatLastSeen(ts) {
+            if (!ts) return 'a while ago';
+            const diff = Date.now() - ts;
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return mins + 'm ago';
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + 'h ago';
+            const days = Math.floor(hrs / 24);
+            return days === 1 ? 'yesterday' : days + 'd ago';
+        }
+
+        function selectStatusMsg(msg) {
+            myStatusMsg = msg;
+            localStorage.setItem('bsn9b_chat_status', msg);
+            const uid = getCurrentUserUid();
+            if (uid) {
+                presenceRef.child(uid).update({
+                    statusMsg: msg || null,
+                    lastActive: firebase.database.ServerValue.TIMESTAMP
+                }).catch(() => {});
+            }
+            updateSidebarUserBar();
+            document.getElementById('statusPickerPanel').style.display = 'none';
+        }
+
+        function toggleStatusPicker() {
+            const panel = document.getElementById('statusPickerPanel');
+            if (!panel) return;
+            const isVisible = panel.style.display === 'block';
+            panel.style.display = isVisible ? 'none' : 'block';
+        }
+
+        const STATUS_CONFIG = {
+            '':                 { dot: '#22c55e', label: 'Online' },
+            'In class':         { dot: '#f59e0b', label: 'In class' },
+            'Studying':         { dot: '#3b82f6', label: 'Studying' },
+            'Do not disturb':   { dot: '#ef4444', label: 'Do not disturb' },
+            'Be right back':    { dot: '#a855f7', label: 'Be right back' }
+        };
+
+        function updateSidebarUserBar() {
+            const nameEl = document.getElementById('sidebarUserName');
+            const statusEl = document.getElementById('sidebarUserStatus');
+            const avatarEl = document.getElementById('sidebarUserAvatar');
+            if (nameEl) nameEl.textContent = displayName || 'You';
+            if (avatarEl) avatarEl.textContent = (displayName || '?')[0].toUpperCase();
+            if (statusEl) {
+                const cfg = STATUS_CONFIG[myStatusMsg] || { dot: '#22c55e', label: myStatusMsg || 'Online' };
+                statusEl.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${cfg.dot};margin-right:4px;vertical-align:middle;"></span>${escapeHtml(cfg.label)}`;
+            }
+            document.querySelectorAll('#statusPickerPanel .status-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.status === myStatusMsg);
+            });
+        }
+
         setPresence('online');
         initActivityTracking();
+        loadPartnerLastSeen();
+        updateSidebarUserBar();
 
         // ========== THEME FUNCTIONS ==========
         function initTheme() {
@@ -1536,6 +1689,14 @@
                 const btn = document.getElementById('soundToggleBtn');
                 if (!panel.contains(e.target) && e.target !== btn) {
                     panel.style.display = 'none';
+                }
+            }
+            // Close status picker on outside click
+            const statusPanel = document.getElementById('statusPickerPanel');
+            if (statusPanel && statusPanel.style.display === 'block') {
+                const bar = document.getElementById('userStatusBar');
+                if (!statusPanel.contains(e.target) && !bar?.contains(e.target)) {
+                    statusPanel.style.display = 'none';
                 }
             }
         });
@@ -2170,12 +2331,20 @@
                 return (a.user || '').localeCompare(b.user || '');
             });
 
-            namesEl.innerHTML = sorted.map(u => `
-                <div class="user-entry">
-                    <span class="status-dot ${u.status === 'online' ? 'status-online' : 'status-away'}"></span>
-                    <span>${escapeHtml(u.user || 'Unknown')}</span>
-                </div>
-            `).join('');
+            namesEl.innerHTML = sorted.map(u => {
+                const dotClass = u.status === 'online' ? 'status-online' : 'status-away';
+                const statusMsg = u.statusMsg ? escapeHtml(u.statusMsg) : '';
+                const sCfg = STATUS_CONFIG[u.statusMsg || ''] || {};
+                return `
+                    <div class="user-entry" style="flex-direction:column;align-items:flex-start;gap:1px;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span class="status-dot ${dotClass}"></span>
+                            <span>${escapeHtml(u.user || 'Unknown')}</span>
+                        </div>
+                        ${statusMsg ? `<div style="font-size:10px;color:${sCfg.dot || '#94a3b8'};padding-left:18px;">${statusMsg}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         // ========== MOBILE SIDEBAR ==========
@@ -2409,11 +2578,22 @@
             const statusEl = document.getElementById('dmPartnerStatus');
             if (partnerEl) partnerEl.textContent = partnerName;
 
-            const isOnline = onlineUsers.some(u => u.toLowerCase() === partnerName.toLowerCase());
+            const partnerOnlineData = onlineUsersData.find(u => u.user?.toLowerCase() === partnerName.toLowerCase());
             if (statusEl) {
-                statusEl.textContent = isOnline ? 'online' : 'offline';
-                statusEl.style.background = isOnline ? '#dcfce7' : 'var(--border)';
-                statusEl.style.color = isOnline ? '#16a34a' : 'var(--text-secondary)';
+                if (partnerOnlineData) {
+                    const sMsg = partnerOnlineData.statusMsg || '';
+                    const sCfg = STATUS_CONFIG[sMsg] || { dot: '#22c55e', label: sMsg || 'online' };
+                    statusEl.textContent = sMsg || (partnerOnlineData.status === 'away' ? 'away' : 'online');
+                    statusEl.style.background = partnerOnlineData.status === 'away' ? '#fef9c3' : '#dcfce7';
+                    statusEl.style.color = partnerOnlineData.status === 'away' ? '#92400e' : '#16a34a';
+                } else {
+                    // Check last seen
+                    const conv = dmConversations.find(c => c.partnerName === partnerName);
+                    const lastSeenTs = conv?.partnerUid ? partnerLastSeenCache[conv.partnerUid] : null;
+                    statusEl.textContent = lastSeenTs ? `last seen ${formatLastSeen(lastSeenTs)}` : 'offline';
+                    statusEl.style.background = 'var(--border)';
+                    statusEl.style.color = 'var(--text-secondary)';
+                }
             }
 
             loadDMMessages(currentDMConversation.conversationId);
@@ -2489,9 +2669,19 @@
                                 partnerName = 'Unknown User';
                             }
 
+                            // Extract partner UID from participants
+                            const myUid = getCurrentUserUid();
+                            let partnerUid = null;
+                            if (myUid) {
+                                if (participants.user1_uid && participants.user2_uid) {
+                                    partnerUid = participants.user1_uid === myUid ? participants.user2_uid : participants.user1_uid;
+                                }
+                            }
+
                             dmConversations.push({
                                 conversationId: convId,
                                 partnerName: partnerName,
+                                partnerUid: partnerUid,
                                 lastMessage: data.lastMessage,
                                 unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
                             });
@@ -2522,16 +2712,35 @@
                 const safePartnerName = escapeHtml(conv.partnerName);
                 if (isUnread) totalUnread++;
 
+                // Determine online/away/last-seen for partner
+                const partnerData = onlineUsersData.find(u => u.user?.toLowerCase() === conv.partnerName?.toLowerCase());
+                let statusHtml = '';
+                if (partnerData) {
+                    if (partnerData.status === 'online') {
+                        const sMsg = partnerData.statusMsg ? escapeHtml(partnerData.statusMsg) : 'Online';
+                        const sCfg = STATUS_CONFIG[partnerData.statusMsg || ''] || { dot: '#22c55e' };
+                        statusHtml = `<span style="font-size:10px;color:${sCfg.dot};">&#9679; ${sMsg}</span>`;
+                    } else {
+                        statusHtml = `<span style="font-size:10px;color:#eab308;">&#9679; Away</span>`;
+                    }
+                } else if (conv.partnerUid && partnerLastSeenCache[conv.partnerUid]) {
+                    statusHtml = `<span class="last-seen-text">Last seen ${formatLastSeen(partnerLastSeenCache[conv.partnerUid])}</span>`;
+                }
+
                 return `
                     <div onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')" style="padding:12px 14px;background:${isUnread ? 'var(--bg-tertiary)' : 'var(--bg-primary)'};border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid ${isUnread ? '#8b5cf6' : 'var(--border)'};transition:all 0.2s;display:flex;align-items:center;gap:12px;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : 'var(--border)'}' ">
-                        ${buildAvatar(conv.partnerName, 'md')}
+                        <span style="position:relative;flex-shrink:0;">
+                            ${buildAvatar(conv.partnerName, 'md')}
+                            <span style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:${partnerData ? (partnerData.status === 'online' ? '#22c55e' : '#eab308') : '#6b7280'};border:2px solid var(--bg-primary);"></span>
+                        </span>
                         <div style="flex:1;min-width:0;">
-                            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
+                            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
                                 <div style="font-weight:${isUnread ? '700' : '600'};color:var(--text-primary);">
                                     ${isUnread ? '\u25CF ' : ''}${safePartnerName}
                                 </div>
                                 <div style="font-size:10px;color:var(--text-secondary);white-space:nowrap;margin-left:8px;">${time}</div>
                             </div>
+                            ${statusHtml ? `<div style="margin-bottom:2px;">${statusHtml}</div>` : ''}
                             <div style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                                 ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${escapeHtml(preview)}
                             </div>
@@ -2554,17 +2763,31 @@
 
             container.innerHTML = dmConversations.slice(0, 10).map(conv => {
                 const isActive = chatMode === 'dm' && currentDMConversation?.partnerName === conv.partnerName;
-                const isOnline = onlineUsers.some(u => u.toLowerCase() === conv.partnerName.toLowerCase());
+                const partnerData = onlineUsersData.find(u => u.user?.toLowerCase() === conv.partnerName?.toLowerCase());
+                const isOnline = !!partnerData;
+                const dotColor = partnerData ? (partnerData.status === 'online' ? '#22c55e' : '#eab308') : '#6b7280';
                 const isUnread = conv.unread && conv.lastMessage?.sender !== displayName;
+
+                // Subtitle: show status message or last seen
+                let subtitle = '';
+                if (partnerData?.statusMsg) {
+                    const sCfg = STATUS_CONFIG[partnerData.statusMsg] || {};
+                    subtitle = `<div style="font-size:10px;color:${sCfg.dot || '#94a3b8'};margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(partnerData.statusMsg)}</div>`;
+                } else if (!isOnline && conv.partnerUid && partnerLastSeenCache[conv.partnerUid]) {
+                    subtitle = `<div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:1px;">${formatLastSeen(partnerLastSeenCache[conv.partnerUid])}</div>`;
+                }
 
                 return `
                     <div class="dm-item ${isActive ? 'active' : ''}" onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')">
-                        <span class="dm-name" style="display:flex;align-items:center;gap:8px;">
+                        <span class="dm-name" style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
                             <span style="position:relative;flex-shrink:0;">
                                 ${buildAvatar(conv.partnerName, 'sm')}
-                                <span style="position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:${isOnline ? '#22c55e' : '#6b7280'};border:1.5px solid #1a1a2e;"></span>
+                                <span style="position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:${dotColor};border:1.5px solid #1a1a2e;"></span>
                             </span>
-                            ${escapeHtml(conv.partnerName)}
+                            <span style="min-width:0;flex:1;">
+                                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(conv.partnerName)}</div>
+                                ${subtitle}
+                            </span>
                         </span>
                         <span class="dm-badge" style="${isUnread ? 'display:flex' : 'display:none'}">!</span>
                     </div>
