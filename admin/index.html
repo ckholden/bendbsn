@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
@@ -344,17 +344,37 @@
         <!-- Action Bar -->
         <div class="action-bar">
             <label>Quick Actions:</label>
-            <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
-            <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
             <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
             <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
             <button class="btn btn-sm" style="background: #17a2b8; color: white;" onclick="showExportHistory()">Export History</button>
             <button class="btn btn-sm" style="background: #28a745; color: white;" onclick="showNotificationLog()">📧 Email Notifications</button>
             <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
             <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showCommunityStats()">Community Stats</button>
-            <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
             <button class="btn btn-sm" style="background: #1f4e79; color: white;" onclick="normalizeUserRoles()">Normalize Roles</button>
-            <button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="clearAppCache()">🗑️ Clear Cache</button>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header" style="background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);">
+                <span>Danger Zone</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">
+                    High-impact actions. Use with care.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                    <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
+                    <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
+                    <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
+                    <button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="clearAppCache()">🗑️ Clear Cache</button>
+                    <button class="btn btn-sm" style="background: #b91c1c; color: white;" onclick="clearChatPresence()">Clear Chat Presence</button>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <input id="dmPurgeSearch" type="text" placeholder="Purge DMs by name/email/uid" style="flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;">
+                        <button class="btn btn-danger btn-sm" onclick="purgeDMsBySearch()">Purge DMs</button>
+                    </div>
+                    <button class="btn btn-sm" style="background: #7f1d1d; color: white;" onclick="purgeOrphanedDMs()">Purge Orphan DMs</button>
+                </div>
+            </div>
         </div>
 
         <!-- Login History Modal -->
@@ -631,6 +651,7 @@
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
         const userProfilesRef = database.ref('userProfiles');
+        const directMessagesRef = database.ref('directMessages');
         const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Admin', 'Other'];
         let userProfilesByEmail = {};
         let userProfilesByUid = {};
@@ -1415,6 +1436,119 @@
                     })
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
             }, { confirmText: 'Delete All', danger: true });
+        }
+
+        // Clear chat presence (online users)
+        function clearChatPresence() {
+            showConfirmModal('Clear Presence', 'Remove all online presence entries? Users will reconnect on refresh.', function() {
+                presenceRef.remove()
+                    .then(() => {
+                        showToast('Presence cleared', 'success');
+                        loadOnlineUsers();
+                    })
+                    .catch((e) => showToast('Error: ' + e.message, 'error'));
+            }, { confirmText: 'Clear Presence', danger: true });
+        }
+
+        // Purge DMs by search term (name/email/uid)
+        async function purgeDMsBySearch() {
+            const input = document.getElementById('dmPurgeSearch');
+            const term = (input?.value || '').trim().toLowerCase();
+            if (!term) {
+                showToast('Enter a name, email, or uid', 'error');
+                return;
+            }
+
+            let uidFromEmail = '';
+            if (term.includes('@')) {
+                const profile = userProfilesByEmail[term];
+                if (profile && profile.uid) uidFromEmail = profile.uid;
+            }
+
+            showConfirmModal('Purge DMs', `Delete DM threads matching "${term}"?`, async function() {
+                try {
+                    const snapshot = await directMessagesRef.once('value');
+                    if (!snapshot.exists()) {
+                        showToast('No DM threads found', 'info');
+                        return;
+                    }
+                    let removed = 0;
+                    snapshot.forEach((child) => {
+                        const data = child.val() || {};
+                        const p = data.participants || {};
+                        const name1 = (p.user1 || '').toLowerCase();
+                        const name2 = (p.user2 || '').toLowerCase();
+                        const uid1 = (p.user1_uid || '').toLowerCase();
+                        const uid2 = (p.user2_uid || '').toLowerCase();
+
+                        const match =
+                            name1.includes(term) ||
+                            name2.includes(term) ||
+                            uid1 === term ||
+                            uid2 === term ||
+                            (uidFromEmail && (uid1 === uidFromEmail || uid2 === uidFromEmail));
+
+                        if (match) {
+                            child.ref.remove();
+                            removed += 1;
+                        }
+                    });
+                    showToast(`Purged ${removed} DM thread(s)`, 'success');
+                } catch (e) {
+                    showToast('Error: ' + e.message, 'error');
+                }
+            }, { confirmText: 'Purge DMs', danger: true });
+        }
+
+        // Purge DM threads where participants no longer exist in userProfiles
+        async function purgeOrphanedDMs() {
+            if (!auth.currentUser) {
+                showToast('Firebase sign-in required', 'error');
+                return;
+            }
+
+            showConfirmModal('Purge Orphan DMs', 'Delete DM threads where both participants no longer exist?', async function() {
+                try {
+                    const profileSnap = await userProfilesRef.once('value');
+                    const validNames = new Set();
+                    if (profileSnap.exists()) {
+                        profileSnap.forEach((child) => {
+                            const p = child.val() || {};
+                            if (p.displayName) validNames.add(String(p.displayName).toLowerCase());
+                            if (p.firstName) validNames.add(String(p.firstName).toLowerCase());
+                            if (p.email) {
+                                validNames.add(String(p.email).toLowerCase());
+                                const local = String(p.email).split('@')[0];
+                                if (local) validNames.add(local.toLowerCase());
+                            }
+                        });
+                    }
+
+                    const snapshot = await directMessagesRef.once('value');
+                    if (!snapshot.exists()) {
+                        showToast('No DM threads found', 'info');
+                        return;
+                    }
+
+                    let removed = 0;
+                    snapshot.forEach((child) => {
+                        const data = child.val() || {};
+                        const p = data.participants || {};
+                        const name1 = (p.user1 || '').toLowerCase();
+                        const name2 = (p.user2 || '').toLowerCase();
+                        const keep1 = name1 && validNames.has(name1);
+                        const keep2 = name2 && validNames.has(name2);
+
+                        if (!keep1 && !keep2) {
+                            child.ref.remove();
+                            removed += 1;
+                        }
+                    });
+                    showToast(`Purged ${removed} orphan DM thread(s)`, 'success');
+                } catch (e) {
+                    showToast('Error: ' + e.message, 'error');
+                }
+            }, { confirmText: 'Purge Orphan DMs', danger: true });
         }
 
         // Refresh all data
@@ -2472,3 +2606,4 @@
     <script src="/shared/header.js"></script>
 </body>
 </html>
+

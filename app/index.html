@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org https://rxnav.nlm.nih.gov wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org https://rxnav.nlm.nih.gov wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
@@ -211,6 +211,29 @@
             margin: 25px 0 15px 0;
             padding-bottom: 8px;
             border-bottom: 2px solid var(--accent);
+        }
+        .quick-jump {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 16px 0 24px 0;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .quick-jump label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .quick-jump select {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-input);
+            font-size: 12px;
+            color: var(--text-primary);
         }
         .note-fields { display: none; }
         .note-fields.active { display: block; }
@@ -851,6 +874,18 @@
             <p>Progress Notes | Head-to-Toe | NANDA Diagnoses</p>
             <a href="/resources/" style="display: inline-block; margin-top: 15px; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; text-decoration: none; padding: 14px 30px; border-radius: 25px; font-size: 16px; font-weight: 700; transition: all 0.3s; box-shadow: 0 4px 15px rgba(255,107,53,0.4); animation: pulse-btn 2s infinite;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(255,107,53,0.6)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255,107,53,0.4)'">📚 RN Resources - Click Here!</a>
         </div>
+        <div class="quick-jump">
+            <label for="quickJumpSelect">Quick jump:</label>
+            <select id="quickJumpSelect" onchange="jumpToSection(this.value)">
+                <option value="">Select section...</option>
+                <option value="section-patient">Patient & Nurse Info</option>
+                <option value="section-format">Documentation Format</option>
+                <option value="section-quick-entry">Quick Entry Tools</option>
+                <option value="section-docs">Documentation</option>
+                <option value="section-h2t">Head-to-Toe Assessment</option>
+                <option value="section-history">Document History</option>
+            </select>
+        </div>
         <div class="form-container">
             <div class="warning-box">
                 <strong>HIPAA Notice:</strong> Do NOT enter any real patient information including names, initials, DOB, or MRN. Use fictional identifiers only (e.g., "Patient A", "Room 302", "Sim Patient").
@@ -955,7 +990,7 @@
                 </div>
             </div>
 
-            <h2 class="section-title">Patient & Nurse Information</h2>
+            <h2 class="section-title" id="section-patient">Patient & Nurse Information</h2>
             <div class="form-row">
                 <div class="form-group">
                     <label>Nurse Name</label>
@@ -999,7 +1034,7 @@
                 </div>
             </div>
 
-            <h2 class="section-title">Documentation Format</h2>
+            <h2 class="section-title" id="section-format">Documentation Format</h2>
             <div class="note-type-grid">
                 <div class="note-type-card active" data-note-type="dar">
                     <h3>DAR</h3>
@@ -1046,7 +1081,7 @@
             </div>
 
             <!-- Quick Entry Panels -->
-            <h2 class="section-title">Quick Entry Tools</h2>
+            <h2 class="section-title" id="section-quick-entry">Quick Entry Tools</h2>
 
             <!-- Vitals Quick-Entry Panel -->
             <div class="vitals-panel" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #4caf50; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
@@ -1378,7 +1413,7 @@
             </div>
 
 
-            <h2 class="section-title">Documentation</h2>
+            <h2 class="section-title" id="section-docs">Documentation</h2>
 
             <div class="form-group" id="focusGroup">
                 <label>FOCUS</label>
@@ -1513,6 +1548,7 @@
                 </div>
             </div>
 
+            <h2 class="section-title" id="section-h2t">Head-to-Toe Assessment</h2>
             <!-- Head-to-Toe Assessment -->
             <div id="h2tFields" class="note-fields">
                 <p style="font-size:12px;color:#666;margin-bottom:15px;">Click quick-fill buttons to insert common findings, then edit as needed.</p>
@@ -2038,6 +2074,7 @@
                 <button class="btn btn-pdf" id="btnExportPdf" onclick="generatePDF(this)">Export PDF</button>
             </div>
 
+            <div id="section-history"></div>
             <!-- Document History Section -->
             <div style="margin-top: 20px; padding: 15px; background: var(--nanda-bg); border-radius: 10px; border: 1px solid var(--nanda-border); transition: background 0.3s ease, border-color 0.3s ease;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -2334,6 +2371,14 @@
                     document.webkitExitFullscreen();
                 }
                 updateFullscreenUI(false);
+            }
+        }
+
+        function jumpToSection(id) {
+            if (!id) return;
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -6000,3 +6045,4 @@
     <script src="/shared/header.js"></script>
 </body>
 </html>
+
