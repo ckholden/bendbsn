@@ -1429,10 +1429,30 @@
             }
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function escapeAttr(value) {
+            return escapeHtml(value);
+        }
+
+        function escapeForSingleQuotedJs(value) {
+            return String(value ?? '')
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/\r?\n/g, ' ');
+        }
+
         function formatMessageWithMentions(text, isMe) {
             try {
                 if (!text || typeof text !== 'string') return '';
-                let formatted = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                let formatted = escapeHtml(text);
                 formatted = formatted.replace(/@([\w.-]+)/g, function(match, name) {
                     const bgColor = isMe ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.2)';
                     const textColor = isMe ? '#fff' : '#7c3aed';
@@ -1484,8 +1504,8 @@
                 const isActive = id === currentChannel && chatMode === 'group';
                 const unread = channelUnread[id] || 0;
                 html += `
-                    <div class="channel-item ${isActive ? 'active' : ''}" onclick="switchChannel('${id}')" title="${ch.description || ''}">
-                        <span class="channel-name"><span class="hash">#</span> ${ch.name || id}</span>
+                    <div class="channel-item ${isActive ? 'active' : ''}" onclick="switchChannel('${escapeForSingleQuotedJs(id)}')" title="${escapeAttr(ch.description || '')}">
+                        <span class="channel-name"><span class="hash">#</span> ${escapeHtml(ch.name || id)}</span>
                         <span class="channel-badge" id="channelBadge_${id}" style="${unread > 0 ? 'display:flex' : 'display:none'}">${unread > 9 ? '9+' : unread}</span>
                     </div>
                 `;
@@ -1680,10 +1700,11 @@
 
                     const formattedText = formatMessageWithMentions(msg.text, isMe);
                     const mentionsMe = msg.text && msg.text.toLowerCase().includes('@' + displayName.split(' ')[0].toLowerCase());
+                    const displayUser = isMe ? 'You' : escapeHtml(msg.user || 'Anonymous');
 
                     html += `
                         <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                            <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 3px;">${isMe ? 'You' : (msg.user || 'Anonymous')}</div>
+                            <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 3px;">${displayUser}</div>
                             <div style="background: ${mentionsMe && !isMe ? 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%)' : 'var(--chat-msg-other-bg)')}; color: ${mentionsMe || isMe ? 'white' : 'var(--text-primary)'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 75%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
                                 ${formattedText}
                             </div>
@@ -1800,9 +1821,9 @@
                 if (typers.length === 0) {
                     indicator.innerHTML = '';
                 } else if (typers.length === 1) {
-                    indicator.innerHTML = '<span class="typing-dots">' + typers[0] + ' is typing<span>.</span><span>.</span><span>.</span></span>';
+                    indicator.innerHTML = '<span class="typing-dots">' + escapeHtml(typers[0]) + ' is typing<span>.</span><span>.</span><span>.</span></span>';
                 } else if (typers.length === 2) {
-                    indicator.innerHTML = '<span class="typing-dots">' + typers[0] + ' and ' + typers[1] + ' are typing<span>.</span><span>.</span><span>.</span></span>';
+                    indicator.innerHTML = '<span class="typing-dots">' + escapeHtml(typers[0]) + ' and ' + escapeHtml(typers[1]) + ' are typing<span>.</span><span>.</span><span>.</span></span>';
                 } else {
                     indicator.innerHTML = '<span class="typing-dots">Several people are typing<span>.</span><span>.</span><span>.</span></span>';
                 }
@@ -1915,7 +1936,7 @@
             namesEl.innerHTML = sorted.map(u => `
                 <div class="user-entry">
                     <span class="status-dot ${u.status === 'online' ? 'status-online' : 'status-away'}"></span>
-                    <span>${u.user || 'Unknown'}</span>
+                    <span>${escapeHtml(u.user || 'Unknown')}</span>
                 </div>
             `).join('');
         }
@@ -2118,8 +2139,8 @@
             }
 
             container.innerHTML = users.map(u => `
-                <div onclick="startDMConversation('${u.name.replace(/'/g, "\\'")}')" style="padding: 12px; background: var(--bg-primary); border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='var(--border)'">
-                    <div><div style="font-weight: 600; color: var(--text-primary);">${u.name}${u.fullName && u.fullName !== u.name ? ' <span style="color:var(--text-secondary);font-weight:normal;font-size:12px;">(' + u.fullName + ')</span>' : ''}</div></div>
+                <div onclick="startDMConversation('${escapeForSingleQuotedJs(u.name)}')" style="padding: 12px; background: var(--bg-primary); border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='var(--border)'">
+                    <div><div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(u.name)}${u.fullName && u.fullName !== u.name ? ' <span style="color:var(--text-secondary);font-weight:normal;font-size:12px;">(' + escapeHtml(u.fullName) + ')</span>' : ''}</div></div>
                     ${u.online ? '<span style="font-size: 10px; background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px;">online</span>' : '<span style="font-size: 10px; color: var(--text-secondary);">offline</span>'}
                 </div>
             `).join('');
@@ -2261,17 +2282,18 @@
                 const time = conv.lastMessage ? formatTime(conv.lastMessage.timestamp) : '';
                 const preview = conv.lastMessage ? (conv.lastMessage.text || '').substring(0, 50) + (conv.lastMessage.text?.length > 50 ? '...' : '') : '';
                 const isUnread = conv.unread && conv.lastMessage?.sender !== displayName;
+                const safePartnerName = escapeHtml(conv.partnerName);
                 if (isUnread) totalUnread++;
 
                 return `
-                    <div onclick="startDMConversation('${conv.partnerName.replace(/'/g, "\\'")}')" style="padding: 14px; background: ${isUnread ? 'var(--bg-tertiary)' : 'var(--bg-primary)'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : 'var(--border)'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : 'var(--border)'}' ">
+                    <div onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')" style="padding: 14px; background: ${isUnread ? 'var(--bg-tertiary)' : 'var(--bg-primary)'}; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid ${isUnread ? '#8b5cf6' : 'var(--border)'}; transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : 'var(--border)'}' ">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: ${isUnread ? '700' : '600'}; color: var(--text-primary); margin-bottom: 4px;">
-                                    ${isUnread ? '\u25CF ' : ''}${conv.partnerName}
+                                    ${isUnread ? '\u25CF ' : ''}${safePartnerName}
                                 </div>
                                 <div style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${preview.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                                    ${conv.lastMessage?.sender === displayName ? 'You: ' : ''}${escapeHtml(preview)}
                                 </div>
                             </div>
                             <div style="font-size: 10px; color: var(--text-secondary); white-space: nowrap; margin-left: 10px;">
@@ -2300,10 +2322,10 @@
                 const isUnread = conv.unread && conv.lastMessage?.sender !== displayName;
 
                 return `
-                    <div class="dm-item ${isActive ? 'active' : ''}" onclick="startDMConversation('${conv.partnerName.replace(/'/g, "\\'")}')">
+                    <div class="dm-item ${isActive ? 'active' : ''}" onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')">
                         <span class="dm-name">
                             <span class="dm-status-dot" style="background: ${isOnline ? '#22c55e' : '#6b7280'};"></span>
-                            ${conv.partnerName}
+                            ${escapeHtml(conv.partnerName)}
                         </span>
                         <span class="dm-badge" style="${isUnread ? 'display:flex' : 'display:none'}">!</span>
                     </div>
@@ -2332,12 +2354,14 @@
                 let html = '';
                 messages.forEach(msg => {
                     const isMe = msg.senderName === displayName || msg.sender === currentUsername;
+                    const safeSender = isMe ? 'You' : escapeHtml(msg.senderName || 'Unknown');
+                    const safeText = escapeHtml(msg.text || '');
 
                     html += `
                         <div style="margin-bottom: 12px; display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
-                            <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 3px;">${isMe ? 'You' : (msg.senderName || 'Unknown')}</div>
+                            <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 3px;">${safeSender}</div>
                             <div style="background: ${isMe ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'var(--chat-msg-other-bg)'}; color: ${isMe ? 'white' : 'var(--text-primary)'}; padding: 10px 14px; border-radius: ${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 75%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
-                                ${(msg.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                                ${safeText}
                             </div>
                             <div style="font-size: 9px; color: var(--text-secondary); margin-top: 3px;">
                                 ${formatTime(msg.timestamp)}${isMe ? (msg.read ? ' <span style="color: #4ade80;" title="Seen">\u2713\u2713</span>' : ' <span style="color: var(--text-secondary);" title="Delivered">\u2713</span>') : ''}
@@ -2581,11 +2605,11 @@
 
             mentionDropdownIndex = 0;
             mentionDropdown.innerHTML = matches.map((m, i) => `
-                <div class="mention-item ${i === 0 ? 'highlighted' : ''}" data-name="${m.name}"
-                     onclick="selectMention('${m.name}')"
+                <div class="mention-item ${i === 0 ? 'highlighted' : ''}" data-name="${escapeAttr(m.name)}"
+                     onclick="selectMention('${escapeForSingleQuotedJs(m.name)}')"
                      onmouseover="this.classList.add('highlighted')"
                      onmouseout="this.classList.remove('highlighted')">
-                    <span style="font-weight: 500;">@${m.name}${m.fullName && m.fullName !== m.name ? ' <span style="color:var(--text-secondary);font-weight:normal;">(' + m.fullName + ')</span>' : ''}</span>
+                    <span style="font-weight: 500;">@${escapeHtml(m.name)}${m.fullName && m.fullName !== m.name ? ' <span style="color:var(--text-secondary);font-weight:normal;">(' + escapeHtml(m.fullName) + ')</span>' : ''}</span>
                     ${m.online ? '<span style="font-size: 10px; background: #22c55e; color: white; padding: 2px 6px; border-radius: 10px;">online</span>' : ''}
                 </div>
             `).join('');

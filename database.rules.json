@@ -36,7 +36,7 @@
     "directMessages": {
       "$convId": {
         ".read": "auth != null && (data.child('participants').child('user1_uid').val() === auth.uid || data.child('participants').child('user2_uid').val() === auth.uid)",
-        ".write": "auth != null && (!data.exists() ? (newData.child('participants').child('user1_uid').val() === auth.uid || newData.child('participants').child('user2_uid').val() === auth.uid) : (data.child('participants').child('user1_uid').val() === auth.uid || data.child('participants').child('user2_uid').val() === auth.uid || newData.child('participants').child('user1_uid').val() === auth.uid || newData.child('participants').child('user2_uid').val() === auth.uid))"
+        ".write": "auth != null && (!data.exists() ? ((newData.child('participants').child('user1_uid').val() === auth.uid || newData.child('participants').child('user2_uid').val() === auth.uid) && newData.child('participants').child('user1_uid').val() != null && newData.child('participants').child('user2_uid').val() != null) : ((data.child('participants').child('user1_uid').val() === auth.uid || data.child('participants').child('user2_uid').val() === auth.uid) && newData.child('participants').child('user1_uid').val() === data.child('participants').child('user1_uid').val() && newData.child('participants').child('user2_uid').val() === data.child('participants').child('user2_uid').val()))"
       }
     },
     "community": {
