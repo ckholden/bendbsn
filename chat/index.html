@@ -1940,12 +1940,81 @@
         }
 
         // ========== DM SYSTEM ==========
-        function getConversationId(name1, name2) {
-            return [name1, name2].sort().join('_').replace(/[.@\s]/g, '_').toLowerCase();
+        // User UID cache for DM lookups
+        const userUidCache = {};
+
+        function getConversationId(id1, id2) {
+            // Create conversation ID from two identifiers (UIDs or emails)
+            // Sort to ensure consistent ID regardless of who initiates
+            return [id1, id2].sort().join('_').replace(/[.@\s#$/\[\]]/g, '_').toLowerCase();
         }
 
         function getDMIdentifier(uid, email) {
             return uid || (email || '').replace(/[.@]/g, '_');
+        }
+
+        // Look up UID by display name from user profiles
+        async function lookupUidByName(displayName) {
+            // Check cache first
+            if (userUidCache[displayName]) {
+                return userUidCache[displayName];
+            }
+
+            try {
+                // Search in user profiles for matching display name
+                const snapshot = await userProfilesRef.orderByChild('displayName').equalTo(displayName).once('value');
+                if (snapshot.exists()) {
+                    let foundUid = null;
+                    snapshot.forEach(child => {
+                        if (!foundUid) foundUid = child.key; // Get first match
+                    });
+                    if (foundUid) {
+                        userUidCache[displayName] = foundUid;
+                        return foundUid;
+                    }
+                }
+
+                // Fallback: search by firstName
+                const firstSnapshot = await userProfilesRef.orderByChild('firstName').equalTo(displayName).once('value');
+                if (firstSnapshot.exists()) {
+                    let foundUid = null;
+                    firstSnapshot.forEach(child => {
+                        if (!foundUid) foundUid = child.key;
+                    });
+                    if (foundUid) {
+                        userUidCache[displayName] = foundUid;
+                        return foundUid;
+                    }
+                }
+
+                // Not found - return null
+                return null;
+            } catch (e) {
+                console.error('Error looking up UID:', e);
+                return null;
+            }
+        }
+
+        // Get conversation ID between current user and partner
+        async function getConversationIdForPartner(partnerName) {
+            const currentUid = getCurrentUserUid();
+            const currentEmail = getCurrentUserEmail();
+
+            // Get partner's UID
+            const partnerUid = await lookupUidByName(partnerName);
+
+            // Use UIDs if both available, otherwise fall back to name-based
+            if (currentUid && partnerUid) {
+                return getConversationId(currentUid, partnerUid);
+            } else if (currentUid) {
+                // Current user has UID, partner doesn't - use mixed mode
+                const partnerIdentifier = partnerUid || partnerName.replace(/[.@\s]/g, '_').toLowerCase();
+                return getConversationId(currentUid, partnerIdentifier);
+            } else {
+                // Fallback to old name-based system (legacy)
+                console.warn('DM: Using legacy name-based conversation ID');
+                return getConversationId(displayName, partnerName);
+            }
         }
 
         function switchToDM() {
@@ -2050,18 +2119,27 @@
             `).join('');
         }
 
-        function startDMConversation(partnerName) {
-            currentDMConversation = {
-                partnerName: partnerName,
-                conversationId: getConversationId(displayName, partnerName)
-            };
-
+        async function startDMConversation(partnerName) {
+            // Show loading state
             chatMode = 'dm';
             document.getElementById('groupChatView').style.display = 'none';
             document.getElementById('dmView').style.display = 'flex';
             document.getElementById('dmConversationList').style.display = 'none';
             document.getElementById('newDMSelector').style.display = 'none';
             document.getElementById('dmMessageView').style.display = 'flex';
+
+            const container = document.getElementById('dmMessages');
+            if (container) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 20px;">Starting conversation...</p>';
+            }
+
+            // Get UID-based conversation ID
+            const conversationId = await getConversationIdForPartner(partnerName);
+
+            currentDMConversation = {
+                partnerName: partnerName,
+                conversationId: conversationId
+            };
 
             const partnerEl = document.getElementById('dmPartnerName');
             const statusEl = document.getElementById('dmPartnerStatus');
@@ -2104,23 +2182,48 @@
                 dmConversations = [];
 
                 if (snapshot.exists()) {
+                    const currentUid = getCurrentUserUid();
+
                     snapshot.forEach((child) => {
                         const convId = child.key;
                         const data = child.val();
                         if (!data) return;
 
                         const participants = data.participants || {};
-                        const isParticipant = Object.values(participants).some(p =>
-                            p && (p.toLowerCase() === displayName.toLowerCase() || p.toLowerCase() === currentUsername.toLowerCase())
+
+                        // Check if current user is participant (by UID or name)
+                        const isParticipantByUid = currentUid && (
+                            participants.user1_uid === currentUid ||
+                            participants.user2_uid === currentUid
                         );
 
+                        const isParticipantByName = Object.keys(participants).some(key => {
+                            if (key.endsWith('_uid')) return false; // Skip UID keys
+                            const p = participants[key];
+                            return p && (
+                                p.toLowerCase() === displayName.toLowerCase() ||
+                                p.toLowerCase() === currentUsername.toLowerCase()
+                            );
+                        });
+
+                        const isParticipant = isParticipantByUid || isParticipantByName;
+
                         if (isParticipant && data.lastMessage) {
+                            // Find partner name (the other participant)
                             let partnerName = '';
-                            Object.values(participants).forEach(p => {
+
+                            Object.keys(participants).forEach(key => {
+                                if (key.endsWith('_uid')) return; // Skip UID keys
+                                const p = participants[key];
                                 if (p && p.toLowerCase() !== displayName.toLowerCase() && p.toLowerCase() !== currentUsername.toLowerCase()) {
                                     partnerName = p;
                                 }
                             });
+
+                            // Fallback: If no partner name found, try to extract from conversation ID
+                            if (!partnerName) {
+                                partnerName = 'Unknown User';
+                            }
 
                             dmConversations.push({
                                 conversationId: convId,
@@ -2274,16 +2377,35 @@
             };
 
             try {
+                // Push message
                 directMessagesRef.child(conversationId + '/messages').push(messageData);
-                directMessagesRef.child(conversationId + '/participants').set({
+
+                // Store participants with both UIDs and names for robust lookups
+                const currentUid = getCurrentUserUid();
+                const partnerUid = userUidCache[partnerName] || null;
+
+                const participantsData = {
                     user1: displayName,
                     user2: partnerName
-                });
+                };
+
+                // Add UIDs if available (improves privacy and prevents name collision)
+                if (currentUid) {
+                    participantsData.user1_uid = currentUid;
+                }
+                if (partnerUid) {
+                    participantsData.user2_uid = partnerUid;
+                }
+
+                directMessagesRef.child(conversationId + '/participants').update(participantsData);
+
+                // Update last message for conversation list
                 directMessagesRef.child(conversationId + '/lastMessage').set({
                     text: text,
                     timestamp: Date.now(),
                     sender: displayName
                 });
+
                 input.value = '';
             } catch (e) {
                 console.error('Chat: Error sending DM:', e);
@@ -2315,9 +2437,24 @@
                     if (!data) return;
 
                     const participants = data.participants || {};
-                    const isParticipant = Object.values(participants).some(p =>
-                        p && (p.toLowerCase() === displayName.toLowerCase() || p.toLowerCase() === currentUsername.toLowerCase())
+                    const currentUid = getCurrentUserUid();
+
+                    // Check if current user is participant (by UID or name)
+                    const isParticipantByUid = currentUid && (
+                        participants.user1_uid === currentUid ||
+                        participants.user2_uid === currentUid
                     );
+
+                    const isParticipantByName = Object.keys(participants).some(key => {
+                        if (key.endsWith('_uid')) return false; // Skip UID keys
+                        const p = participants[key];
+                        return p && (
+                            p.toLowerCase() === displayName.toLowerCase() ||
+                            p.toLowerCase() === currentUsername.toLowerCase()
+                        );
+                    });
+
+                    const isParticipant = isParticipantByUid || isParticipantByName;
 
                     if (!isParticipant) return;
 
@@ -2633,12 +2770,29 @@
         directMessagesRef.once('value', (snapshot) => {
             if (!snapshot.exists()) return;
             let totalUnread = 0;
+            const currentUid = getCurrentUserUid();
+
             snapshot.forEach((child) => {
                 const data = child.val();
                 const participants = data.participants || {};
-                const isParticipant = Object.values(participants).some(p =>
-                    p && (p.toLowerCase() === displayName.toLowerCase() || p.toLowerCase() === currentUsername.toLowerCase())
+
+                // Check if current user is participant (by UID or name)
+                const isParticipantByUid = currentUid && (
+                    participants.user1_uid === currentUid ||
+                    participants.user2_uid === currentUid
                 );
+
+                const isParticipantByName = Object.keys(participants).some(key => {
+                    if (key.endsWith('_uid')) return false; // Skip UID keys
+                    const p = participants[key];
+                    return p && (
+                        p.toLowerCase() === displayName.toLowerCase() ||
+                        p.toLowerCase() === currentUsername.toLowerCase()
+                    );
+                });
+
+                const isParticipant = isParticipantByUid || isParticipantByName;
+
                 if (isParticipant && data.lastMessage && data.lastMessage.sender !== displayName) {
                     const lastRead = dmLastReadTimestamps[child.key] || 0;
                     if (data.lastMessage.timestamp > lastRead) {

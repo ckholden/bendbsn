@@ -1072,10 +1072,41 @@
                 navigator.serviceWorker.register('/sw.js')
                     .then(registration => {
                         console.log('SW registered:', registration.scope);
+
+                        // Check for updates every 5 minutes
+                        setInterval(() => {
+                            registration.update();
+                        }, 5 * 60 * 1000);
+
+                        // Listen for service worker updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (!newWorker) return;
+
+                            newWorker.addEventListener('statechange', () => {
+                                // If new SW is waiting and there's an active controller, show update prompt
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showToast(
+                                        'Update available! Click here to reload and get the latest version.',
+                                        0, // Don't auto-dismiss
+                                        () => {
+                                            // Tell the new SW to skip waiting
+                                            newWorker.postMessage({type: 'SKIP_WAITING'});
+                                        }
+                                    );
+                                }
+                            });
+                        });
                     })
                     .catch(error => {
                         console.log('SW registration failed:', error);
                     });
+            });
+
+            // Listen for controller change (new SW activated)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                // Reload the page to use the new service worker
+                window.location.reload();
             });
         }
     </script>

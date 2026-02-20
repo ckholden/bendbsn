@@ -331,6 +331,7 @@
             <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showCommunityStats()">Community Stats</button>
             <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
             <button class="btn btn-sm" style="background: #1f4e79; color: white;" onclick="normalizeUserRoles()">Normalize Roles</button>
+            <button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="clearAppCache()">🗑️ Clear Cache</button>
         </div>
 
         <!-- Login History Modal -->
@@ -2223,6 +2224,68 @@
                 showToast('Failed to normalize roles: ' + e.message, 'error');
             }
             }, { confirmText: 'Normalize Roles' });
+        }
+
+        // ========== CLEAR CACHE ==========
+        function clearAppCache() {
+            showConfirmModal(
+                'Clear App Cache',
+                'This will clear all cached files and reload the page. Users will get the latest version immediately. Continue?',
+                function() {
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({type: 'CLEAR_CACHE'});
+                        showToast('Cache cleared! Reloading in 1 second...', 2000);
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        showToast('No service worker found. Try refreshing the page.', 'warning');
+                    }
+                },
+                { danger: true, confirmText: 'Clear Cache' }
+            );
+        }
+
+        // ========== SERVICE WORKER ==========
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration.scope);
+
+                        // Check for updates every 5 minutes
+                        setInterval(() => {
+                            registration.update();
+                        }, 5 * 60 * 1000);
+
+                        // Listen for service worker updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (!newWorker) return;
+
+                            newWorker.addEventListener('statechange', () => {
+                                // If new SW is waiting and there's an active controller, show update prompt
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showToast(
+                                        'Update available! Click here to reload and get the latest version.',
+                                        0, // Don't auto-dismiss
+                                        () => {
+                                            // Tell the new SW to skip waiting
+                                            newWorker.postMessage({type: 'SKIP_WAITING'});
+                                        }
+                                    );
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+
+            // Listen for controller change (new SW activated)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                // Reload the page to use the new service worker
+                window.location.reload();
+            });
         }
 
     </script>

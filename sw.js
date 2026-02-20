@@ -1,7 +1,10 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v34';
+const CACHE_VERSION = 'v35';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
+
+// Development mode - set to true to bypass all caching
+const DEV_MODE = false;
 
 // Resources to cache for offline use
 const OFFLINE_URLS = [
@@ -40,6 +43,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+    console.log(`🔄 Service Worker v${CACHE_VERSION} activating`);
     event.waitUntil(
         caches.keys()
             .then((cacheNames) => {
@@ -47,12 +51,16 @@ self.addEventListener('activate', (event) => {
                     cacheNames.map((cacheName) => {
                         // Delete all caches that don't match current version
                         if (cacheName.startsWith('bsn9b-') && cacheName !== CACHE_NAME) {
+                            console.log(`🗑️ Deleting old cache: ${cacheName}`);
                             return caches.delete(cacheName);
                         }
                     })
                 );
             })
-            .then(() => self.clients.claim())
+            .then(() => {
+                console.log(`✅ Service Worker v${CACHE_VERSION} activated`);
+                return self.clients.claim();
+            })
     );
 });
 
@@ -63,6 +71,12 @@ function shouldRevalidate(url) {
 
 // Fetch event - improved caching strategy
 self.addEventListener('fetch', (event) => {
+    // Skip caching in dev mode - always fetch from network
+    if (DEV_MODE) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
     // Skip non-GET requests
     if (event.request.method !== 'GET') {
         return;
@@ -73,32 +87,35 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Detect hard refresh (cache: 'reload' in request)
+    const isHardRefresh = event.request.cache === 'reload';
+
     // Always fetch admin fresh to avoid stale cached UI
     if (event.request.url.includes('/admin/')) {
         event.respondWith(fetch(event.request));
         return;
     }
 
-    // For HTML pages, use stale-while-revalidate
+    // For HTML pages, use NETWORK-FIRST strategy (ensures fresh content when online)
     if (shouldRevalidate(event.request.url) || event.request.mode === 'navigate') {
         event.respondWith(
-            caches.open(CACHE_NAME).then((cache) => {
-                return cache.match(event.request).then((cachedResponse) => {
-                    // Fetch fresh version in background
-                    const fetchPromise = fetch(event.request).then((networkResponse) => {
-                        if (networkResponse && networkResponse.status === 200) {
-                            cache.put(event.request, networkResponse.clone());
-                        }
-                        return networkResponse;
-                    }).catch(() => null);
-
-                    // Return cached version immediately, update in background
-                    return cachedResponse || fetchPromise;
-                });
-            }).catch(() => {
-                // Fallback to home page if offline
-                return caches.match('/home/');
-            })
+            fetch(event.request)
+                .then((networkResponse) => {
+                    // Cache successful responses for offline fallback
+                    if (networkResponse && networkResponse.status === 200) {
+                        const responseToCache = networkResponse.clone();
+                        caches.open(CACHE_NAME).then(cache => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => {
+                    // Offline fallback - return cached version
+                    return caches.match(event.request).then(cachedResponse => {
+                        return cachedResponse || caches.match('/home/');
+                    });
+                })
         );
         return;
     }
@@ -107,7 +124,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {
-                if (cachedResponse) {
+                if (cachedResponse && !isHardRefresh) {
                     return cachedResponse;
                 }
 
@@ -125,7 +142,7 @@ self.addEventListener('fetch', (event) => {
 
                         return response;
                     })
-                    .catch(() => null);
+                    .catch(() => cachedResponse || null);
             })
     );
 });
@@ -133,16 +150,29 @@ self.addEventListener('fetch', (event) => {
 // Handle messages from clients
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
+        console.log('⏭️ Skipping waiting - activating new service worker');
         self.skipWaiting();
     }
 
     // Support for cache clear request
     if (event.data && event.data.type === 'CLEAR_CACHE') {
+        console.log('🗑️ Clearing all caches');
         event.waitUntil(
             caches.keys().then((cacheNames) => {
                 return Promise.all(
-                    cacheNames.map((cacheName) => caches.delete(cacheName))
+                    cacheNames.map((cacheName) => {
+                        console.log(`🗑️ Deleting cache: ${cacheName}`);
+                        return caches.delete(cacheName);
+                    })
                 );
+            }).then(() => {
+                console.log('✅ All caches cleared');
+                // Notify all clients that cache was cleared
+                return self.clients.matchAll().then(clients => {
+                    clients.forEach(client => {
+                        client.postMessage({type: 'CACHE_CLEARED'});
+                    });
+                });
             })
         );
     }
