@@ -857,13 +857,19 @@
 
                 if (!snapshot.exists() || count === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="icon">&#128564;</div><p>No users online</p></div>';
+                    // Update header count to 0
+                    if (typeof window.updateOnlineCount === 'function') {
+                        window.updateOnlineCount(0, []);
+                    }
                     return;
                 }
 
                 let html = '';
+                const userNames = [];
                 snapshot.forEach((child) => {
                     const user = child.val();
                     const key = child.key;
+                    userNames.push(user.user || 'Anonymous');
                     html += `
                         <div class="user-item">
                             <div class="user-info">
@@ -878,6 +884,11 @@
                     `;
                 });
                 container.innerHTML = html;
+
+                // Update header online count (injected by shared/header.js)
+                if (typeof window.updateOnlineCount === 'function') {
+                    window.updateOnlineCount(count, userNames);
+                }
             });
         }
 

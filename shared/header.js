@@ -215,4 +215,55 @@
         offlineBanner.classList.add('visible');
     }
 
+    // ========== ONLINE USER COUNT ==========
+    // Inject online count indicator into header
+    var header = document.querySelector('.site-header');
+    if (header) {
+        var onlineCountEl = document.createElement('div');
+        onlineCountEl.className = 'online-count';
+        onlineCountEl.id = 'bsnOnlineCount';
+        onlineCountEl.title = 'Click to see who\'s online';
+        onlineCountEl.innerHTML = '<span class="online-dot"></span><span class="online-count-text">0 online</span>';
+        onlineCountEl.style.display = 'none'; // Hidden until Firebase loads
+
+        // Insert before header-actions if they exist, otherwise at the end
+        var headerActions = header.querySelector('.header-actions');
+        if (headerActions) {
+            header.insertBefore(onlineCountEl, headerActions);
+        } else {
+            header.appendChild(onlineCountEl);
+        }
+
+        // Update online count (to be called by pages with Firebase)
+        window.updateOnlineCount = function(count, users) {
+            if (count > 0) {
+                onlineCountEl.style.display = 'flex';
+                var text = count === 1 ? '1 online' : count + ' online';
+                var countText = onlineCountEl.querySelector('.online-count-text');
+                if (countText) countText.textContent = text;
+
+                // Update title with user list
+                if (users && users.length > 0) {
+                    var userList = users.slice(0, 10).join(', ');
+                    if (users.length > 10) userList += ', +' + (users.length - 10) + ' more';
+                    onlineCountEl.title = 'Online: ' + userList;
+                }
+            } else {
+                onlineCountEl.style.display = 'none';
+            }
+        };
+
+        // Click handler to show online users (opens chat if available)
+        onlineCountEl.addEventListener('click', function() {
+            // If on chat page, open user list
+            if (typeof toggleUserListPanel === 'function') {
+                toggleUserListPanel();
+            }
+            // Otherwise, navigate to chat page
+            else if (window.location.pathname !== '/chat/' && window.location.pathname !== '/chat/index.html') {
+                window.open('/chat/', '_blank');
+            }
+        });
+    }
+
 })();
