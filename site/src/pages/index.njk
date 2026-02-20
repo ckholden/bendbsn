@@ -176,10 +176,7 @@ inlineStyles: |
       .toast-container { left: 10px; right: 10px; max-width: none; }
   }
 pageScript: |
-  // Early auth check - redirect to home if already logged in
-  if (localStorage.getItem('bsn9b_auth') === 'true') {
-      window.location.href = '/home/';
-  }
+  // Do not redirect here; wait for Firebase Auth state to avoid redirect loops
 
   // ========== TOAST NOTIFICATION SYSTEM ==========
   function showToast(message, type = 'info', duration = 4000) {
@@ -740,6 +737,22 @@ pageScript: |
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const database = firebase.database();
+
+  // Redirect only after Firebase confirms auth; clear stale local session if needed
+  auth.onAuthStateChanged((user) => {
+      if (user) {
+          localStorage.setItem('bsn9b_auth', 'true');
+          localStorage.setItem('bsn9b_user', user.email || '');
+          localStorage.setItem('bsn9b_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
+          localStorage.setItem('bsn9b_uid', user.uid || '');
+          window.location.href = '/home/';
+      } else if (localStorage.getItem('bsn9b_auth') === 'true') {
+          localStorage.removeItem('bsn9b_auth');
+          localStorage.removeItem('bsn9b_user');
+          localStorage.removeItem('bsn9b_displayName');
+          localStorage.removeItem('bsn9b_uid');
+      }
+  });
 
   // EmailJS Configuration
   const EMAILJS_PUBLIC_KEY = 'Paf-N3lByYsImp0af';
