@@ -1,0 +1,729 @@
+/* =========================================================
+   BendBSN Clinical UI Design System
+   Drop-in CSS override — link AFTER /shared/header.css
+   All custom properties prefixed --clx- to avoid collision
+   ========================================================= */
+
+/* =========================================================
+   TOKEN PALETTE — Light Mode
+   ========================================================= */
+:root {
+    --clx-bg-canvas:      #f0f4f8;
+    --clx-bg-surface:     #ffffff;
+    --clx-bg-surface-2:   #f5f8fa;
+    --clx-bg-surface-3:   #eef2f6;
+    --clx-border:         #d1dce8;
+    --clx-border-strong:  #b0bec5;
+    --clx-text-primary:   #1a2532;
+    --clx-text-secondary: #4a5568;
+    --clx-text-muted:     #718096;
+    --clx-accent:         #0f7490;
+    --clx-accent-hover:   #0c6478;
+    --clx-accent-subtle:  #e0f2f8;
+    --clx-accent-text:    #ffffff;
+    --clx-focus:          #0891b2;
+    /* Status colors */
+    --clx-success:        #059669;
+    --clx-success-bg:     #ecfdf5;
+    --clx-success-text:   #065f46;
+    --clx-warning:        #d97706;
+    --clx-warning-bg:     #fffbeb;
+    --clx-warning-text:   #92400e;
+    --clx-danger:         #dc2626;
+    --clx-danger-bg:      #fef2f2;
+    --clx-danger-text:    #991b1b;
+    --clx-info:           #0284c7;
+    --clx-info-bg:        #e0f2fe;
+    --clx-info-text:      #0c4a6e;
+}
+
+/* =========================================================
+   TOKEN PALETTE — Dark Mode
+   ========================================================= */
+[data-theme="dark"] {
+    --clx-bg-canvas:      #0d1117;
+    --clx-bg-surface:     #161b22;
+    --clx-bg-surface-2:   #1c2333;
+    --clx-bg-surface-3:   #212d3d;
+    --clx-border:         #2d3a4a;
+    --clx-border-strong:  #3d4e5e;
+    --clx-text-primary:   #e2e8f0;
+    --clx-text-secondary: #94a3b8;
+    --clx-text-muted:     #64748b;
+    --clx-accent:         #22a8c4;
+    --clx-accent-hover:   #2bbad8;
+    --clx-accent-subtle:  #0f2d36;
+    --clx-focus:          #22d3ee;
+    /* Status colors — dark */
+    --clx-success:        #34d399;
+    --clx-success-bg:     #064e3b;
+    --clx-success-text:   #6ee7b7;
+    --clx-warning:        #fbbf24;
+    --clx-warning-bg:     #451a03;
+    --clx-warning-text:   #fcd34d;
+    --clx-danger:         #f87171;
+    --clx-danger-bg:      #450a0a;
+    --clx-danger-text:    #fca5a5;
+    --clx-info:           #38bdf8;
+    --clx-info-bg:        #0c2a3d;
+    --clx-info-text:      #7dd3fc;
+}
+
+/* =========================================================
+   PAGE / BODY BACKGROUND
+   ========================================================= */
+body {
+    background: var(--clx-bg-canvas) !important;
+    /* Override any gradient backgrounds */
+    background-image: none !important;
+    color: var(--clx-text-primary);
+}
+
+/* =========================================================
+   SITE HEADER — Recolor, Keep Structure
+   ========================================================= */
+.site-header {
+    background: #0d1f2d !important;
+    border-bottom: 1px solid #1e3448 !important;
+}
+
+.header-btn {
+    border-color: rgba(255,255,255,0.12) !important;
+    color: rgba(255,255,255,0.82) !important;
+    transition: background 0.15s, border-color 0.15s !important;
+}
+
+.header-btn:hover {
+    background: rgba(34,168,196,0.18) !important;
+    border-color: rgba(34,168,196,0.4) !important;
+    color: #ffffff !important;
+}
+
+.header-btn:focus-visible {
+    outline: 2px solid var(--clx-focus) !important;
+    outline-offset: 2px !important;
+}
+
+/* =========================================================
+   BOTTOM TOOLBAR — Recolor, Keep Structure + Z-index
+   ========================================================= */
+.bottom-toolbar {
+    background: var(--clx-bg-surface) !important;
+    border-top: 1px solid var(--clx-border) !important;
+    /* height: 60px and z-index: 1000 preserved via existing CSS */
+}
+
+.toolbar-item {
+    color: var(--clx-text-secondary) !important;
+    transition: color 0.15s !important;
+}
+
+.toolbar-item:hover,
+.toolbar-item.active {
+    color: var(--clx-accent) !important;
+}
+
+.toolbar-item .toolbar-icon {
+    color: inherit !important;
+}
+
+/* More menu overlay */
+.more-menu {
+    background: var(--clx-bg-surface) !important;
+    border: 1px solid var(--clx-border) !important;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.12) !important;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.more-menu-item {
+    color: var(--clx-text-primary) !important;
+}
+
+.more-menu-item:hover {
+    background: var(--clx-accent-subtle) !important;
+    color: var(--clx-accent) !important;
+}
+
+/* =========================================================
+   CARDS — Remove Gradients, Flat Borders
+   ========================================================= */
+.card,
+.container,
+[class*="-card"],
+[class*="-panel"],
+.panel {
+    background: var(--clx-bg-surface) !important;
+    border: 1px solid var(--clx-border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    background-image: none !important;
+}
+
+/* Card headers */
+.card-header,
+.panel-header,
+[class*="-header"]:not(.site-header):not(.bsn-modal-header) {
+    background: var(--clx-bg-surface-2) !important;
+    background-image: none !important;
+    border-bottom: 1px solid var(--clx-border) !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* Section / collapsible headers (not nav header) */
+.collapsible-header,
+.accordion-header,
+.section-header {
+    background: var(--clx-bg-surface-2) !important;
+    background-image: none !important;
+    border-bottom: 1px solid var(--clx-border) !important;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+/* Reset transform-based hover effects */
+button,
+.btn,
+[class*="btn-"] {
+    transform: none !important;
+    transition: background 0.15s, border-color 0.15s,
+                box-shadow 0.15s, color 0.15s, filter 0.15s !important;
+}
+
+/* Primary button */
+.btn,
+button.btn,
+a.btn,
+input[type="submit"],
+input[type="button"] {
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
+    line-height: 1.4;
+    text-decoration: none;
+}
+
+.btn-primary,
+button.btn-primary {
+    background: var(--clx-accent) !important;
+    color: var(--clx-accent-text) !important;
+    border-color: var(--clx-accent) !important;
+}
+.btn-primary:hover,
+button.btn-primary:hover {
+    background: var(--clx-accent-hover) !important;
+    border-color: var(--clx-accent-hover) !important;
+    box-shadow: 0 2px 6px rgba(15,116,144,0.25) !important;
+}
+
+/* Secondary / outline */
+.btn-secondary,
+button.btn-secondary,
+.btn-outline,
+button.btn-outline {
+    background: transparent !important;
+    border: 1px solid var(--clx-border) !important;
+    color: var(--clx-text-primary) !important;
+}
+.btn-secondary:hover,
+button.btn-secondary:hover,
+.btn-outline:hover,
+button.btn-outline:hover {
+    background: var(--clx-bg-surface-2) !important;
+    border-color: var(--clx-border-strong) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+}
+
+/* Danger */
+.btn-danger,
+button.btn-danger {
+    background: var(--clx-danger) !important;
+    color: #ffffff !important;
+    border-color: var(--clx-danger) !important;
+}
+.btn-danger:hover,
+button.btn-danger:hover {
+    filter: brightness(0.92) !important;
+    box-shadow: 0 2px 6px rgba(220,38,38,0.25) !important;
+}
+
+/* Small buttons */
+.btn-sm,
+button.btn-sm {
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+}
+
+/* Focus visible — all interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--clx-focus) !important;
+    outline-offset: 2px !important;
+}
+
+/* =========================================================
+   INPUTS, SELECTS, TEXTAREAS
+   ========================================================= */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    border: 1px solid var(--clx-border) !important;
+    border-radius: 6px !important;
+    background: var(--clx-bg-surface) !important;
+    color: var(--clx-text-primary) !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--clx-accent) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(15,116,144,0.12) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--clx-text-muted) !important;
+}
+
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="url"],
+[data-theme="dark"] input[type="tel"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background: var(--clx-bg-surface-2) !important;
+    color: var(--clx-text-primary) !important;
+    border-color: var(--clx-border) !important;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+    box-shadow: 0 0 0 3px rgba(34,168,196,0.15) !important;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+table {
+    font-size: 13px !important;
+    border-collapse: collapse !important;
+    width: 100%;
+}
+
+thead th,
+th {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    background: var(--clx-bg-surface-2) !important;
+    background-image: none !important;
+    border-bottom: 2px solid var(--clx-border-strong) !important;
+    padding: 10px 12px !important;
+    color: var(--clx-text-secondary) !important;
+    white-space: nowrap;
+}
+
+td {
+    padding: 8px 12px !important;
+    border-bottom: 1px solid var(--clx-border) !important;
+    color: var(--clx-text-primary) !important;
+    background: transparent !important;
+    vertical-align: middle;
+}
+
+/* Zebra rows */
+tbody tr:nth-child(even) td {
+    background: var(--clx-bg-surface-3) !important;
+}
+
+/* Row hover */
+tbody tr:hover td {
+    background: var(--clx-accent-subtle) !important;
+}
+
+/* =========================================================
+   STATUS PILLS (utility classes)
+   ========================================================= */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+
+.pill-success,
+.pill-approved {
+    background: var(--clx-success-bg);
+    color: var(--clx-success-text);
+}
+
+.pill-warning,
+.pill-pending {
+    background: var(--clx-warning-bg);
+    color: var(--clx-warning-text);
+}
+
+.pill-danger {
+    background: var(--clx-danger-bg);
+    color: var(--clx-danger-text);
+}
+
+.pill-info {
+    background: var(--clx-info-bg);
+    color: var(--clx-info-text);
+}
+
+.pill-neutral {
+    background: var(--clx-bg-surface-3);
+    color: var(--clx-text-secondary);
+}
+
+/* =========================================================
+   SECTION TITLES
+   ========================================================= */
+.section-title,
+h3.section-title,
+.h2t-section-title {
+    color: var(--clx-text-primary) !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.07em !important;
+    border-bottom: 2px solid var(--clx-accent) !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 12px !important;
+    background: none !important;
+    background-image: none !important;
+}
+
+/* =========================================================
+   TOASTS — Flat Clinical Colors
+   ========================================================= */
+.toast,
+#toastContainer .toast,
+[class*="toast-"] {
+    background: var(--clx-bg-surface) !important;
+    background-image: none !important;
+    border: 1px solid var(--clx-border) !important;
+    border-left: 4px solid var(--clx-accent) !important;
+    color: var(--clx-text-primary) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+    border-radius: 8px !important;
+}
+
+.toast.toast-success,
+.toast[data-type="success"] {
+    border-left-color: var(--clx-success) !important;
+}
+
+.toast.toast-warning,
+.toast[data-type="warning"] {
+    border-left-color: var(--clx-warning) !important;
+}
+
+.toast.toast-error,
+.toast.toast-danger,
+.toast[data-type="error"],
+.toast[data-type="danger"] {
+    border-left-color: var(--clx-danger) !important;
+}
+
+.toast.toast-info,
+.toast[data-type="info"] {
+    border-left-color: var(--clx-info) !important;
+}
+
+/* =========================================================
+   STAT BOXES (admin panel) — Flat Left Border
+   ========================================================= */
+.stat-box,
+.stat-card,
+[class*="stat-"] {
+    background: var(--clx-bg-surface) !important;
+    background-image: none !important;
+    border: 1px solid var(--clx-border) !important;
+    border-left: 3px solid var(--clx-accent) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+.stat-box .stat-number,
+.stat-card .stat-number,
+[class*="stat-"] .stat-number {
+    color: var(--clx-accent) !important;
+}
+
+/* =========================================================
+   APP SHELL LAYOUT (opt-in via .clx-shell)
+   ========================================================= */
+.clx-shell {
+    display: flex;
+    gap: 0;
+    min-height: calc(100dvh - 56px - 60px);
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* Sidebar — hidden by default on mobile */
+.clx-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--clx-bg-surface);
+    border-right: 1px solid var(--clx-border);
+    padding: 16px 0;
+    overflow-y: auto;
+}
+
+/* Main content area */
+.clx-main {
+    flex: 1;
+    min-width: 0;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+/* Sidebar nav items */
+.clx-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--clx-text-secondary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.clx-sidebar-item:hover {
+    color: var(--clx-accent);
+    background: var(--clx-accent-subtle);
+    border-left-color: var(--clx-accent-subtle);
+}
+
+.clx-sidebar-item.active,
+.clx-sidebar-item[aria-current="page"] {
+    color: var(--clx-accent);
+    background: var(--clx-accent-subtle);
+    border-left-color: var(--clx-accent);
+    font-weight: 600;
+}
+
+.clx-sidebar-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--clx-text-muted);
+    padding: 12px 16px 4px;
+}
+
+/* Hide sidebar on small screens */
+@media (max-width: 768px) {
+    .clx-sidebar {
+        display: none;
+    }
+}
+
+/* =========================================================
+   MODAL — Update Modal to Use Clinical Vars
+   ========================================================= */
+.bsn-confirm-modal {
+    background: var(--clx-bg-surface) !important;
+    border: 1px solid var(--clx-border) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+    border-radius: 10px !important;
+}
+
+.bsn-confirm-modal h3 {
+    color: var(--clx-text-primary) !important;
+}
+
+.bsn-confirm-modal p {
+    color: var(--clx-text-secondary) !important;
+}
+
+.bsn-confirm-modal .bsn-modal-input {
+    background: var(--clx-bg-surface) !important;
+    border-color: var(--clx-border) !important;
+    color: var(--clx-text-primary) !important;
+    border-radius: 6px !important;
+}
+
+.bsn-confirm-modal .bsn-modal-input:focus {
+    border-color: var(--clx-accent) !important;
+    box-shadow: 0 0 0 3px rgba(15,116,144,0.12) !important;
+    outline: none !important;
+}
+
+.bsn-modal-btns .bsn-btn-cancel {
+    background: var(--clx-bg-surface-2) !important;
+    border: 1px solid var(--clx-border) !important;
+    color: var(--clx-text-primary) !important;
+    border-radius: 6px !important;
+}
+
+.bsn-modal-btns .bsn-btn-cancel:hover {
+    background: var(--clx-bg-surface-3) !important;
+}
+
+.bsn-modal-btns .bsn-btn-confirm {
+    background: var(--clx-accent) !important;
+    border-radius: 6px !important;
+}
+
+.bsn-modal-btns .bsn-btn-confirm:hover {
+    background: var(--clx-accent-hover) !important;
+}
+
+.bsn-modal-btns .bsn-btn-danger {
+    background: var(--clx-danger) !important;
+    border-radius: 6px !important;
+}
+
+[data-theme="dark"] .bsn-confirm-modal {
+    background: var(--clx-bg-surface) !important;
+    border-color: var(--clx-border) !important;
+}
+
+/* =========================================================
+   MISCELLANEOUS HELPERS
+   ========================================================= */
+
+/* Dividers */
+hr,
+.divider {
+    border: none !important;
+    border-top: 1px solid var(--clx-border) !important;
+    margin: 16px 0 !important;
+}
+
+/* Labels */
+label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--clx-text-secondary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Scrollbars (Webkit) */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--clx-bg-surface-2);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--clx-border-strong);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--clx-text-muted);
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--clx-accent);
+    color: var(--clx-accent-text);
+    min-width: 18px;
+}
+
+/* Loading state */
+.btn-loading {
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+/* =========================================================
+   PRINT — Reset Clinical Styles
+   ========================================================= */
+@media print {
+    :root {
+        --clx-bg-canvas:     #ffffff;
+        --clx-bg-surface:    #ffffff;
+        --clx-bg-surface-2:  #f5f5f5;
+        --clx-bg-surface-3:  #eeeeee;
+        --clx-border:        #cccccc;
+        --clx-border-strong: #999999;
+        --clx-text-primary:  #000000;
+        --clx-text-secondary:#333333;
+        --clx-text-muted:    #666666;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .clx-sidebar,
+    .bottom-toolbar,
+    .site-header {
+        display: none !important;
+    }
+
+    .clx-shell {
+        display: block;
+        min-height: unset;
+    }
+
+    .clx-main {
+        padding: 0;
+    }
+}
