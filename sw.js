@@ -1,6 +1,6 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v43';
+const CACHE_VERSION = 'v44';
 const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -15,6 +15,7 @@ const OFFLINE_URLS = [
     '/clinical/',
     '/shared/header.css',
     '/shared/clinical-ui.css',
+    '/shared/app-shell.css',
     '/shared/header.js',
     '/manifest.json',
     '/logo.png',

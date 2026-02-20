@@ -23,6 +23,7 @@
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
     <title>BendBSN — Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -348,23 +349,88 @@
             color: var(--clx-text-primary);
         }
 
-        /* ---- Reminders textarea ---- */
-        .dash-textarea {
-            width: 100%;
-            height: 100%;
-            min-height: 200px;
-            padding: 12px 14px;
-            font-size: 13px;
-            font-family: inherit;
-            border: none !important;
-            background: transparent !important;
-            color: var(--clx-text-primary) !important;
-            resize: none;
-            outline: none !important;
-            box-shadow: none !important;
-            line-height: 1.6;
+        /* ---- Structured Reminders ---- */
+        .rem-add-row {
+            display: flex;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--clx-border);
+            flex-wrap: wrap;
+            align-items: center;
         }
-        .dash-textarea::placeholder { color: var(--clx-text-muted); }
+        .rem-input {
+            flex: 1;
+            min-width: 140px;
+        }
+        .rem-date {
+            width: 140px;
+        }
+        .rem-sel {
+            width: 90px;
+        }
+        .rem-add-btn {
+            white-space: nowrap;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--clx-accent);
+            background: var(--clx-accent);
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .rem-add-btn:hover { background: var(--clx-accent-hover); }
+        .rem-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 240px;
+        }
+        .rem-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--clx-border);
+            font-size: 13px;
+        }
+        .rem-item:last-child { border-bottom: none; }
+        .rem-item.overdue { background: var(--clx-danger-bg); }
+        .rem-text {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--clx-text-primary);
+        }
+        .rem-due {
+            font-size: 11px;
+            color: var(--clx-text-muted);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .rem-due.overdue { color: var(--clx-danger); font-weight: 600; }
+        .rem-due.today { color: var(--clx-warning); font-weight: 600; }
+        .rem-actions { display: flex; gap: 2px; flex-shrink: 0; }
+        .rem-del-btn {
+            background: none; border: none; cursor: pointer;
+            color: var(--clx-text-muted); font-size: 14px; padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .rem-del-btn:hover { color: var(--clx-danger); background: var(--clx-danger-bg); }
+        .rem-email-btn {
+            background: none; border: none; cursor: pointer;
+            color: var(--clx-text-muted); font-size: 13px; padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .rem-email-btn:hover { color: var(--clx-accent); background: var(--clx-accent-subtle); }
+        .rem-empty {
+            padding: 20px 14px;
+            font-size: 13px;
+            color: var(--clx-text-muted);
+            text-align: center;
+        }
 
         /* ---- Log hours modal ---- */
         .dash-modal-overlay {
@@ -634,6 +700,71 @@
     <!-- Toast container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- App Shell -->
+    <div class="clx-shell">
+
+    <!-- Left Sidebar (desktop only) -->
+    <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
+        <div class="clx-sidebar-section">Navigation</div>
+        <a href="/home/" class="clx-sidebar-item active" data-page="home">
+            <span class="clx-sidebar-icon">🏠</span>
+            <span class="clx-sidebar-label">Home</span>
+        </a>
+        <a href="/app/" class="clx-sidebar-item" data-page="app">
+            <span class="clx-sidebar-icon">📝</span>
+            <span class="clx-sidebar-label">RN Notes</span>
+        </a>
+        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
+            <span class="clx-sidebar-icon">💬</span>
+            <span class="clx-sidebar-label">Chat</span>
+        </a>
+        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
+            <span class="clx-sidebar-icon">🩺</span>
+            <span class="clx-sidebar-label">AI Assistant</span>
+        </a>
+        <a href="/community/" class="clx-sidebar-item" data-page="community">
+            <span class="clx-sidebar-icon">👥</span>
+            <span class="clx-sidebar-label">Community</span>
+        </a>
+        <a href="/resources/" class="clx-sidebar-item" data-page="resources">
+            <span class="clx-sidebar-icon">📚</span>
+            <span class="clx-sidebar-label">Resources</span>
+        </a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">🩻</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
+        <a href="/apa/" class="clx-sidebar-item" data-page="apa">
+            <span class="clx-sidebar-icon">📄</span>
+            <span class="clx-sidebar-label">APA Generator</span>
+        </a>
+        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
+            <span class="clx-sidebar-icon">🗓️</span>
+            <span class="clx-sidebar-label">Sched Generator</span>
+        </a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+        <button class="clx-sidebar-item" onclick="toggleDarkMode()">
+            <span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span>
+            <span class="clx-sidebar-label">Dark Mode</span>
+        </button>
+        <button class="clx-sidebar-item" onclick="lockScreen()">
+            <span class="clx-sidebar-icon">🔒</span>
+            <span class="clx-sidebar-label">Lock</span>
+        </button>
+        <button class="clx-sidebar-item" onclick="logout()">
+            <span class="clx-sidebar-icon">🚪</span>
+            <span class="clx-sidebar-label">Logout</span>
+        </button>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
+            <span class="clx-sidebar-icon" id="sidebarToggleIcon">◀</span>
+            <span class="clx-sidebar-toggle-label">Collapse</span>
+        </button>
+    </aside>
+
+    <!-- Main content -->
+    <main class="clx-main" role="main">
+
     <!-- Alert / FYI banners -->
     <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;animation:softFlashAlert 2s ease-in-out infinite;">
         <span id="alertText"></span>
@@ -684,6 +815,10 @@
         <div class="ctx-item">
             <span class="ctx-label">Clin. Hours</span>
             <span class="ctx-value accent" id="ctxHours">0 hrs</span>
+        </div>
+        <div class="ctx-item">
+            <span class="ctx-label">Graduation</span>
+            <span class="ctx-value editable" id="ctxGrad" onclick="editCtx('grad')" title="Click to set graduation month">—</span>
         </div>
     </div>
 
@@ -738,21 +873,35 @@
                 <div class="dash-panel-bd" id="skillsList"></div>
             </div>
 
-            <!-- Panel 4: Reminders -->
-            <div class="dash-panel">
+            <!-- Panel 4: Structured Reminders -->
+            <div class="dash-panel" style="grid-column: 1 / -1;">
                 <div class="dash-panel-hd">
                     My Reminders
-                    <span style="font-size:10px;font-weight:400;color:var(--clx-text-muted);text-transform:none;letter-spacing:0;">auto-saved</span>
+                    <span class="pill pill-neutral" id="reminderCount" style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:600;">0</span>
                 </div>
-                <div class="dash-panel-bd" style="max-height:none;flex:1;">
-                    <textarea class="dash-textarea" id="remindersText"
-                        placeholder="Upcoming assignments, due dates, clinical goals, to-dos…"
-                        oninput="saveReminders()"></textarea>
+                <div class="dash-panel-bd" style="max-height:none; flex:1; display:flex; flex-direction:column; padding:0;">
+                    <!-- Add row -->
+                    <div class="rem-add-row">
+                        <input id="remText" type="text" placeholder="New reminder…" class="rem-input"
+                            onkeydown="if(event.key==='Enter')addReminder()">
+                        <input id="remDue" type="date" class="rem-date">
+                        <select id="remPriority" class="rem-sel">
+                            <option value="med">Med</option>
+                            <option value="high">⚡ High</option>
+                            <option value="low">Low</option>
+                        </select>
+                        <button onclick="addReminder()" class="rem-add-btn">+ Add</button>
+                    </div>
+                    <!-- Reminder list -->
+                    <div id="reminderList" class="rem-list"></div>
                 </div>
             </div>
 
         </div><!-- /dash-grid -->
     </div><!-- /dash-page -->
+
+    </main><!-- /clx-main -->
+    </div><!-- /clx-shell -->
 
     <!-- User list dropdown (online presence) -->
     <div id="userListDropdown" style="display:none;position:fixed;top:56px;right:10px;background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);padding:8px 0;min-width:180px;z-index:1001;max-height:300px;overflow-y:auto;">
@@ -1161,8 +1310,10 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const icon = document.getElementById('themeMenuIcon');
             const text = document.getElementById('themeMenuText');
+            const sidebarIcon = document.getElementById('sidebarThemeIcon');
             if (icon) icon.textContent = isDark ? '☀️' : '🌙';
             if (text) text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            if (sidebarIcon) sidebarIcon.textContent = isDark ? '☀️' : '🌙';
         }
         initTheme();
 
@@ -1248,9 +1399,39 @@
             if (exam) document.getElementById('ctxExam').textContent = exam;
             document.getElementById('ctxHours').textContent = hours + ' hrs';
             document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bsn9b_displayName') || '—';
+            // Graduation countdown
+            const grad = localStorage.getItem('bsn9b_home_grad');
+            if (grad) document.getElementById('ctxGrad').textContent = calcGradCountdown(grad);
         })();
 
+        function calcGradCountdown(gradStr) {
+            // gradStr = "May 2027" format — parse as 1st of that month
+            const target = new Date(gradStr + ' 01');
+            if (isNaN(target.getTime())) return gradStr;
+            const now = new Date();
+            if (target <= now) return '🎓 Done!';
+            const diffMs = target - now;
+            const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            if (days <= 30) return days + ' days';
+            const months = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30.44));
+            if (months < 24) return months + ' mo';
+            const years = Math.floor(months / 12);
+            const remMonths = months % 12;
+            return remMonths ? years + 'y ' + remMonths + 'mo' : years + 'y';
+        }
+
         function editCtx(field) {
+            if (field === 'grad') {
+                const el = document.getElementById('ctxGrad');
+                const current = (el.textContent === '—' || el.textContent.includes('🎓') || el.textContent.includes('mo') || el.textContent.includes('y') || el.textContent.includes('days')) ? (localStorage.getItem('bsn9b_home_grad') || '') : el.textContent;
+                showPromptModal('Graduation Date', 'Enter your expected graduation (e.g. May 2027)', (val) => {
+                    if (val && val.trim()) {
+                        localStorage.setItem('bsn9b_home_grad', val.trim());
+                        el.textContent = calcGradCountdown(val.trim());
+                    }
+                }, { defaultValue: current, placeholder: 'May 2027' });
+                return;
+            }
             const el = document.getElementById(field === 'term' ? 'ctxTerm' : 'ctxExam');
             const current = el.textContent === '—' ? '' : el.textContent;
             const label = field === 'term' ? 'Current term (e.g. Spring 2026)' : 'Next exam date (e.g. Mar 3 — NCLEX Review)';
@@ -1374,15 +1555,135 @@
         }
         renderSkills();
 
-        // ========== REMINDERS ==========
-        const REMINDERS_KEY = 'bsn9b_home_reminders';
-        (function initReminders() {
-            const el = document.getElementById('remindersText');
-            if (el) el.value = localStorage.getItem(REMINDERS_KEY) || '';
+        // ========== STRUCTURED REMINDERS ==========
+        const REMINDERS_V2_KEY = 'bsn9b_home_reminders_v2';
+
+        function loadRemindersData() {
+            try { return JSON.parse(localStorage.getItem(REMINDERS_V2_KEY) || '[]'); }
+            catch { return []; }
+        }
+        function saveRemindersData(arr) {
+            localStorage.setItem(REMINDERS_V2_KEY, JSON.stringify(arr));
+        }
+
+        function addReminder() {
+            const text = (document.getElementById('remText')?.value || '').trim();
+            if (!text) { showToast('Enter a reminder first.', 'warning'); return; }
+            const due = document.getElementById('remDue')?.value || '';
+            const priority = document.getElementById('remPriority')?.value || 'med';
+            const arr = loadRemindersData();
+            arr.push({ id: Date.now(), text, due, priority, created: Date.now() });
+            saveRemindersData(arr);
+            document.getElementById('remText').value = '';
+            document.getElementById('remDue').value = '';
+            document.getElementById('remPriority').value = 'med';
+            renderReminderList();
+        }
+
+        function deleteReminder(id) {
+            const arr = loadRemindersData().filter(r => r.id !== id);
+            saveRemindersData(arr);
+            renderReminderList();
+        }
+
+        function emailReminder(rem) {
+            const userEmail = localStorage.getItem('bsn9b_user') || '';
+            const subject = encodeURIComponent('Reminder: ' + rem.text);
+            const body = encodeURIComponent('Due: ' + (rem.due ? formatRemDue(rem.due) : 'No due date') + '\n\nPriority: ' + rem.priority);
+            window.open('mailto:' + userEmail + '?subject=' + subject + '&body=' + body);
+        }
+
+        function formatRemDue(due) {
+            if (!due) return '—';
+            const d = new Date(due + 'T00:00:00');
+            const today = new Date(); today.setHours(0,0,0,0);
+            const diff = d - today;
+            if (diff < 0) return 'Overdue';
+            if (diff === 0) return 'Today';
+            if (diff === 86400000) return 'Tomorrow';
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function getRemDueClass(due) {
+            if (!due) return '';
+            const d = new Date(due + 'T00:00:00');
+            const today = new Date(); today.setHours(0,0,0,0);
+            const diff = d - today;
+            if (diff < 0) return 'overdue';
+            if (diff === 0) return 'today';
+            return '';
+        }
+
+        function getReminderPillClass(priority) {
+            if (priority === 'high') return 'pill-danger';
+            if (priority === 'low') return 'pill-info';
+            return 'pill-warning';
+        }
+
+        function renderReminderList() {
+            const el = document.getElementById('reminderList');
+            const countEl = document.getElementById('reminderCount');
+            if (!el) return;
+            const arr = loadRemindersData();
+            // Sort: overdue first, then by date, then no date
+            arr.sort((a, b) => {
+                const da = a.due ? new Date(a.due + 'T00:00:00') : null;
+                const db = b.due ? new Date(b.due + 'T00:00:00') : null;
+                const today = new Date(); today.setHours(0,0,0,0);
+                const aOver = da && da < today;
+                const bOver = db && db < today;
+                if (aOver && !bOver) return -1;
+                if (!aOver && bOver) return 1;
+                if (da && db) return da - db;
+                if (da) return -1;
+                if (db) return 1;
+                return b.created - a.created;
+            });
+            if (countEl) countEl.textContent = arr.length;
+            if (!arr.length) {
+                el.innerHTML = '<div class="rem-empty">No reminders yet. Add one above!</div>';
+                return;
+            }
+            const today = new Date(); today.setHours(0,0,0,0);
+            el.innerHTML = arr.map(rem => {
+                const dueLabel = formatRemDue(rem.due);
+                const dueClass = getRemDueClass(rem.due);
+                const isOverdue = dueClass === 'overdue';
+                const pillClass = getReminderPillClass(rem.priority);
+                return `<div class="rem-item${isOverdue ? ' overdue' : ''}">
+                    <span class="pill ${pillClass}" style="flex-shrink:0;font-size:9px;">${rem.priority}</span>
+                    <span class="rem-text" title="${escHtml(rem.text)}">${escHtml(rem.text)}</span>
+                    <span class="rem-due ${dueClass}">${escHtml(dueLabel)}</span>
+                    <div class="rem-actions">
+                        <button class="rem-email-btn" onclick="emailReminder(${JSON.stringify(rem).replace(/"/g,'&quot;')})" title="Email this reminder">✉</button>
+                        <button class="rem-del-btn" onclick="deleteReminder(${rem.id})" title="Delete reminder">×</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Initialize reminders on load
+        renderReminderList();
+
+        // ========== SIDEBAR ==========
+        (function initSidebar() {
+            document.body.classList.add('has-sidebar');
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+                const icon = document.getElementById('sidebarToggleIcon');
+                if (icon) icon.textContent = '▶';
+            }
         })();
-        function saveReminders() {
-            const el = document.getElementById('remindersText');
-            if (el) localStorage.setItem(REMINDERS_KEY, el.value);
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('bsn9b_sidebar_collapsed', String(collapsed));
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
     </script>
     <script src="/shared/header.js"></script>

@@ -24,6 +24,7 @@
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
     <title>Community Hub - BSN9B</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -774,11 +775,74 @@
         </div>
     </div>
 
+<!-- App Shell -->
+<div class="clx-shell">
+
+<!-- Left Sidebar (desktop only) -->
+<aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
+    <div class="clx-sidebar-section">Navigation</div>
+    <a href="/home/" class="clx-sidebar-item" data-page="home">
+        <span class="clx-sidebar-icon">&#127968;</span>
+        <span class="clx-sidebar-label">Home</span>
+    </a>
+    <a href="/app/" class="clx-sidebar-item" data-page="app">
+        <span class="clx-sidebar-icon">&#128221;</span>
+        <span class="clx-sidebar-label">RN Notes</span>
+    </a>
+    <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
+        <span class="clx-sidebar-icon">&#128172;</span>
+        <span class="clx-sidebar-label">Chat</span>
+    </a>
+    <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
+        <span class="clx-sidebar-icon">&#129658;</span>
+        <span class="clx-sidebar-label">AI Assistant</span>
+    </a>
+    <a href="/community/" class="clx-sidebar-item active" data-page="community">
+        <span class="clx-sidebar-icon">&#128101;</span>
+        <span class="clx-sidebar-label">Community</span>
+    </a>
+    <a href="/resources/" class="clx-sidebar-item" data-page="resources">
+        <span class="clx-sidebar-icon">&#128218;</span>
+        <span class="clx-sidebar-label">Resources</span>
+    </a>
+    <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
+    <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+        <span class="clx-sidebar-icon">&#129659;</span>
+        <span class="clx-sidebar-label">Clinical Packet</span>
+    </a>
+    <a href="/apa/" class="clx-sidebar-item" data-page="apa">
+        <span class="clx-sidebar-icon">&#128196;</span>
+        <span class="clx-sidebar-label">APA Generator</span>
+    </a>
+    <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
+        <span class="clx-sidebar-icon">&#128199;</span>
+        <span class="clx-sidebar-label">Sched Generator</span>
+    </a>
+    <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+    <button class="clx-sidebar-item" onclick="toggleDarkMode()">
+        <span class="clx-sidebar-icon" id="sidebarThemeIcon">&#127769;</span>
+        <span class="clx-sidebar-label">Dark Mode</span>
+    </button>
+    <button class="clx-sidebar-item" onclick="lockScreen ? lockScreen() : logout()">
+        <span class="clx-sidebar-icon">&#128274;</span>
+        <span class="clx-sidebar-label">Lock</span>
+    </button>
+    <button class="clx-sidebar-item" onclick="logout()">
+        <span class="clx-sidebar-icon">&#128682;</span>
+        <span class="clx-sidebar-label">Logout</span>
+    </button>
+    <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
+        <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9664;</span>
+        <span class="clx-sidebar-toggle-label">Collapse</span>
+    </button>
+</aside>
+
+<!-- Main content -->
+<main class="clx-main" role="main">
     <div class="container">
-        <div class="header">
-            <h1>Community Hub</h1>
-            <p>Announcements | Study Tips | Career Resources | NCLEX Prep</p>
-            <a href="/home/" class="back-btn">Back to Home</a>
+        <div class="clx-page-title-bar">
+            <h1 class="clx-page-title">Community Hub</h1>
+            <p class="clx-page-subtitle">Announcements &middot; Study Tips &middot; Career &middot; NCLEX</p>
         </div>
 
         <div class="content">
@@ -828,6 +892,8 @@
             </div>
         </div>
     </div>
+</main><!-- /clx-main -->
+</div><!-- /clx-shell -->
 
     <!-- Create Post Modal -->
     <div id="createPostModal" class="modal-overlay hidden">
@@ -1392,6 +1458,8 @@
             if (themeMenuText) {
                 themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
             }
+                    const sidebarIcon = document.getElementById('sidebarThemeIcon');
+            if (sidebarIcon) sidebarIcon.textContent = isDark ? '☀️' : '🌙';
         }
 
         // More menu toggle
@@ -1907,6 +1975,27 @@
                 // Reload the page to use the new service worker
                 window.location.reload();
             });
+        }
+
+        // ========== SIDEBAR ==========
+        (function initSidebar() {
+            document.body.classList.add('has-sidebar');
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+                const icon = document.getElementById('sidebarToggleIcon');
+                if (icon) icon.textContent = '▶';
+            }
+        })();
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('bsn9b_sidebar_collapsed', String(collapsed));
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◄';
         }
     </script>
     <script src="/shared/header.js"></script>

@@ -1,0 +1,241 @@
+/* =========================================================
+   BendBSN App Shell — Left Sidebar Layout
+   Link AFTER /shared/clinical-ui.css on applicable pages.
+   Sidebar shown on desktop ≥900px; hidden on mobile.
+   ========================================================= */
+
+/* =========================================================
+   SHELL WRAPPER
+   ========================================================= */
+.clx-shell {
+    display: flex;
+    min-height: calc(100dvh - 56px);
+    /* override any max-width from clinical-ui.css */
+    max-width: none;
+    margin: 0;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+.clx-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--clx-bg-surface, #fff);
+    border-right: 1px solid var(--clx-border, #d1dce8);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 56px;
+    height: calc(100dvh - 56px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width 0.2s ease;
+    z-index: 100;
+}
+
+/* Collapsed state */
+.clx-sidebar.collapsed {
+    width: 56px;
+}
+.clx-sidebar.collapsed .clx-sidebar-label,
+.clx-sidebar.collapsed .clx-sidebar-section,
+.clx-sidebar.collapsed .clx-sidebar-toggle-label {
+    display: none;
+}
+.clx-sidebar.collapsed .clx-sidebar-item {
+    justify-content: center;
+    padding: 12px 0;
+}
+.clx-sidebar.collapsed .clx-sidebar-toggle {
+    justify-content: center;
+    padding: 11px 0;
+}
+
+/* =========================================================
+   SIDEBAR NAVIGATION ITEMS
+   ========================================================= */
+.clx-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: var(--clx-text-secondary, #4a5568);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    cursor: pointer;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    white-space: nowrap;
+    /* override clinical-ui.css transform rule */
+    transform: none !important;
+}
+.clx-sidebar-item:hover {
+    background: var(--clx-accent-subtle, #e0f2f8);
+    color: var(--clx-accent, #0f7490);
+    border-left-color: var(--clx-accent-subtle, #e0f2f8);
+}
+.clx-sidebar-item.active,
+.clx-sidebar-item[aria-current="page"] {
+    color: var(--clx-accent, #0f7490);
+    border-left-color: var(--clx-accent, #0f7490);
+    background: var(--clx-accent-subtle, #e0f2f8);
+    font-weight: 600;
+}
+
+.clx-sidebar-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* Text label inside each nav item */
+.clx-sidebar-label {
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: inherit;
+    /* override clinical-ui.css .clx-sidebar-label which styled this as section header */
+    text-transform: none;
+    letter-spacing: normal;
+    color: inherit;
+    padding: 0;
+}
+
+/* Section dividers */
+.clx-sidebar-section {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--clx-text-muted, #718096);
+    padding: 12px 16px 4px;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   SIDEBAR COLLAPSE TOGGLE (bottom)
+   ========================================================= */
+.clx-sidebar-toggle {
+    margin-top: auto;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    color: var(--clx-text-muted, #718096);
+    border-top: 1px solid var(--clx-border, #d1dce8);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    font-size: 12px;
+    font-family: inherit;
+    background: none;
+    width: 100%;
+    text-align: left;
+    white-space: nowrap;
+    transform: none !important;
+}
+.clx-sidebar-toggle:hover {
+    background: var(--clx-bg-surface-2, #f5f8fa);
+    color: var(--clx-text-secondary, #4a5568);
+}
+
+/* =========================================================
+   MAIN CONTENT AREA
+   ========================================================= */
+.clx-main {
+    flex: 1;
+    min-width: 0;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+/* =========================================================
+   PAGE TITLE BAR (replaces gradient hero)
+   ========================================================= */
+.clx-page-title-bar {
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid var(--clx-border, #d1dce8);
+    margin-bottom: 16px;
+}
+.clx-page-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--clx-text-primary, #1a2532);
+    margin: 0;
+}
+.clx-page-subtitle {
+    font-size: 13px;
+    color: var(--clx-text-muted, #718096);
+    margin: 2px 0 0;
+}
+
+/* =========================================================
+   DESKTOP ≥900px — Sidebar visible, bottom toolbar hidden
+   ========================================================= */
+@media (min-width: 900px) {
+    body.has-sidebar .bottom-toolbar {
+        display: none !important;
+    }
+    body.has-sidebar {
+        padding: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    /* Remove the outer container padding that was for mobile layout */
+    body.has-sidebar > .container {
+        padding: 0;
+    }
+}
+
+/* =========================================================
+   MOBILE <900px — Sidebar hidden, bottom toolbar visible
+   ========================================================= */
+@media (max-width: 899px) {
+    .clx-sidebar {
+        display: none;
+    }
+    .clx-shell {
+        padding-bottom: 60px;
+    }
+    /* Override the sticky height for safety */
+    .clx-main {
+        padding: 12px;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+[data-theme="dark"] .clx-sidebar {
+    background: var(--clx-bg-surface);
+    border-right-color: var(--clx-border);
+}
+[data-theme="dark"] .clx-sidebar-toggle {
+    border-top-color: var(--clx-border);
+}
+
+/* =========================================================
+   PRINT — Hide sidebar and bottom toolbar
+   ========================================================= */
+@media print {
+    .clx-sidebar {
+        display: none !important;
+    }
+    .clx-shell {
+        display: block !important;
+    }
+    body.has-sidebar .bottom-toolbar {
+        display: none !important;
+    }
+}

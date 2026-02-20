@@ -22,6 +22,7 @@
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
     <title>RN Resources - BSN9B</title>
     <script>
         if (localStorage.getItem('bsn9b_auth') !== 'true') {
@@ -1252,18 +1253,77 @@
         <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
     </div>
 
-    <div class="container">
-        <div class="header" style="position: relative;">
-            <div style="position: absolute; top: 15px; right: 20px;">
-                <span id="userDisplay" style="color: rgba(255,255,255,0.8); font-size: 12px; margin-right: 10px;"></span>
-                <button onclick="logout()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">Logout</button>
-            </div>
-            <h1>RN Resources</h1>
-            <p>Drug Information | Lab Values | Calculations | References</p>
-            <a href="/home/" class="back-btn">← Back to Home</a>
+    <!-- App Shell -->
+    <div class="clx-shell">
+
+    <!-- Left Sidebar (desktop only) -->
+    <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
+        <div class="clx-sidebar-section">Navigation</div>
+        <a href="/home/" class="clx-sidebar-item" data-page="home">
+            <span class="clx-sidebar-icon">🏠</span>
+            <span class="clx-sidebar-label">Home</span>
+        </a>
+        <a href="/app/" class="clx-sidebar-item" data-page="app">
+            <span class="clx-sidebar-icon">📝</span>
+            <span class="clx-sidebar-label">RN Notes</span>
+        </a>
+        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
+            <span class="clx-sidebar-icon">💬</span>
+            <span class="clx-sidebar-label">Chat</span>
+        </a>
+        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
+            <span class="clx-sidebar-icon">🩺</span>
+            <span class="clx-sidebar-label">AI Assistant</span>
+        </a>
+        <a href="/community/" class="clx-sidebar-item" data-page="community">
+            <span class="clx-sidebar-icon">👥</span>
+            <span class="clx-sidebar-label">Community</span>
+        </a>
+        <a href="/resources/" class="clx-sidebar-item active" data-page="resources">
+            <span class="clx-sidebar-icon">📚</span>
+            <span class="clx-sidebar-label">Resources</span>
+        </a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">🩻</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
+        <a href="/apa/" class="clx-sidebar-item" data-page="apa">
+            <span class="clx-sidebar-icon">📄</span>
+            <span class="clx-sidebar-label">APA Generator</span>
+        </a>
+        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
+            <span class="clx-sidebar-icon">🗓️</span>
+            <span class="clx-sidebar-label">Sched Generator</span>
+        </a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+        <button class="clx-sidebar-item" onclick="toggleDarkMode()">
+            <span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span>
+            <span class="clx-sidebar-label">Dark Mode</span>
+        </button>
+        <button class="clx-sidebar-item" onclick="lockScreen()">
+            <span class="clx-sidebar-icon">🔒</span>
+            <span class="clx-sidebar-label">Lock</span>
+        </button>
+        <button class="clx-sidebar-item" onclick="logout()">
+            <span class="clx-sidebar-icon">🚪</span>
+            <span class="clx-sidebar-label">Logout</span>
+        </button>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
+            <span class="clx-sidebar-icon" id="sidebarToggleIcon">◀</span>
+            <span class="clx-sidebar-toggle-label">Collapse</span>
+        </button>
+    </aside>
+
+    <!-- Main content -->
+    <main class="clx-main" role="main">
+        <div class="clx-page-title-bar">
+            <h1 class="clx-page-title">Clinical Resources</h1>
+            <p class="clx-page-subtitle">Quick references, calculators, and clinical tools</p>
         </div>
 
-        <div class="content">
+        <div class="container">
+        <div class="content" style="border-radius:8px;">
             <!-- Educational Disclaimer Banner (dismissible) -->
             <div id="eduBanner" class="edu-banner">
                 <span class="edu-banner-text"><strong>⚠️ EDUCATIONAL USE ONLY</strong> — Not for clinical decisions. Always verify with official sources.</span>
@@ -2381,7 +2441,9 @@
                 <p style="font-size: 11px; color: #333; margin: 0;"><strong>Note:</strong> This resource is intended for educational purposes only. Always verify clinical information with current institutional protocols and authoritative sources. Content is updated periodically to reflect current evidence-based practice.</p>
             </div>
         </div>
-    </div>
+        </div><!-- /container -->
+    </main><!-- /clx-main -->
+    </div><!-- /clx-shell -->
 
     <!-- Lock Screen Overlay -->
     <div id="lockScreenOverlay">
@@ -2556,12 +2618,10 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const themeMenuIcon = document.getElementById('themeMenuIcon');
             const themeMenuText = document.getElementById('themeMenuText');
-            if (themeMenuIcon) {
-                themeMenuIcon.textContent = isDark ? '☀️' : '🌙';
-            }
-            if (themeMenuText) {
-                themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-            }
+            const sidebarThemeIcon = document.getElementById('sidebarThemeIcon');
+            if (themeMenuIcon) themeMenuIcon.textContent = isDark ? '☀️' : '🌙';
+            if (themeMenuText) themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            if (sidebarThemeIcon) sidebarThemeIcon.textContent = isDark ? '☀️' : '🌙';
         }
 
         // More menu toggle
@@ -3707,6 +3767,27 @@ Generated: ${new Date().toLocaleString()}`;
                 // Reload the page to use the new service worker
                 window.location.reload();
             });
+        }
+
+        // ========== SIDEBAR ==========
+        (function initSidebar() {
+            document.body.classList.add('has-sidebar');
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+                const icon = document.getElementById('sidebarToggleIcon');
+                if (icon) icon.textContent = '▶';
+            }
+        })();
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('bsn9b_sidebar_collapsed', String(collapsed));
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
     </script>
 
