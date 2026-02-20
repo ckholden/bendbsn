@@ -11,7 +11,7 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#1f4e79">
+    <meta name="theme-color" content="#0d1f2d">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
@@ -19,480 +19,744 @@
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link rel="icon" type="image/png" href="/favicon.png?v=3">
     <link rel="shortcut icon" href="/favicon.png?v=3">
-    <!-- Preconnect hints for faster external resource loading -->
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
-    <title>BendBSN - Home</title>
+    <title>BendBSN — Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* CSS Variables for theming */
+        /* ---- Base ---- */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --bg-page: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-tertiary: #fafafa;
-            --bg-input: #fafafa;
-            --text-primary: #1a1a2e;
-            --text-secondary: #666666;
-            --accent: #1f4e79;
-            --accent-light: #2d5a87;
-            --shadow: rgba(0,0,0,0.4);
-            --border: #e0e0e0;
+            --bg-secondary: #f5f8fa;
+            --bg-input: #ffffff;
+            --text-primary: #1a2532;
+            --text-secondary: #4a5568;
+            --accent: #0f7490;
+            --border: #d1dce8;
         }
-
         [data-theme="dark"] {
-            --bg-page: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #161b22 100%);
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-tertiary: #1e2a3a;
-            --bg-input: #16213e;
-            --text-primary: #e6e6e6;
-            --text-secondary: #aaaaaa;
-            --accent: #4a90d9;
-            --accent-light: #5a9fe8;
-            --shadow: rgba(0,0,0,0.6);
-            --border: #2d3748;
+            --bg-primary: #161b22;
+            --bg-secondary: #1c2333;
+            --bg-input: #1c2333;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #22a8c4;
+            --border: #2d3a4a;
         }
 
-        /* Status indicator colors for presence */
-        .status-online { background: #22c55e; }  /* Green */
-        .status-away { background: #eab308; }    /* Yellow */
-        .status-offline { background: #6b7280; } /* Gray */
+        .status-online  { background: #22c55e; }
+        .status-away    { background: #eab308; }
+        .status-offline { background: #6b7280; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            flex-shrink: 0;
-        }
-
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-page);
+            font-size: 14px;
+            background: var(--clx-bg-canvas);
+            color: var(--clx-text-primary);
             min-height: 100vh;
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding-bottom: 60px;
         }
 
-        .container {
-            text-align: center;
-            max-width: 800px;
-            width: 100%;
-        }
-
-        .hero-heading {
-            font-size: 40px;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
-        }
-
-        .hero-subheading {
-            font-size: 18px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 24px;
-        }
-
-        .hero-description {
-            font-size: 16px;
-            color: rgba(255,255,255,0.6);
-            line-height: 1.6;
-            max-width: 540px;
-            margin: 0 auto 36px;
-        }
-
-        .quick-start {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 0 auto 36px;
-            max-width: 760px;
-            text-align: left;
-        }
-        .quick-start h2 {
-            font-size: 18px;
-            color: #ffffff;
-            margin-bottom: 6px;
-        }
-        .quick-start p {
+        /* ================================================
+           CONTEXT BAR
+        ================================================ */
+        .dash-context-bar {
+            background: var(--clx-bg-surface);
+            border-bottom: 1px solid var(--clx-border);
+            padding: 0 16px;
+            display: flex;
+            align-items: stretch;
+            gap: 0;
             font-size: 13px;
-            color: rgba(255,255,255,0.6);
+            overflow-x: auto;
+            scrollbar-width: none;
+            flex-shrink: 0;
+        }
+        .dash-context-bar::-webkit-scrollbar { display: none; }
+
+        .ctx-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 8px 16px;
+            border-right: 1px solid var(--clx-border);
+            white-space: nowrap;
+            min-width: 0;
+        }
+        .ctx-item:last-child { border-right: none; }
+
+        .ctx-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--clx-text-muted);
+            margin-bottom: 1px;
+        }
+        .ctx-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--clx-text-primary);
+        }
+        .ctx-value.editable {
+            cursor: pointer;
+            border-bottom: 1px dashed var(--clx-border-strong);
+        }
+        .ctx-value.editable:hover {
+            color: var(--clx-accent);
+            border-bottom-color: var(--clx-accent);
+        }
+        .ctx-value.accent { color: var(--clx-accent); }
+
+        /* ================================================
+           MAIN DASHBOARD AREA
+        ================================================ */
+        .dash-page {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 14px 16px 16px;
+            flex: 1;
+        }
+
+        /* ================================================
+           ACTION ROW
+        ================================================ */
+        .dash-action-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
             margin-bottom: 14px;
         }
-        .quick-start-grid {
+
+        .dash-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--clx-border);
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            cursor: pointer;
+            text-decoration: none;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .dash-btn:hover {
+            background: var(--clx-bg-surface-2);
+            border-color: var(--clx-border-strong);
+        }
+        .dash-btn.primary {
+            background: var(--clx-accent);
+            color: #fff;
+            border-color: var(--clx-accent);
+        }
+        .dash-btn.primary:hover {
+            background: var(--clx-accent-hover);
+            border-color: var(--clx-accent-hover);
+        }
+        .dash-btn:focus-visible {
+            outline: 2px solid var(--clx-focus);
+            outline-offset: 2px;
+        }
+
+        /* ================================================
+           DASHBOARD GRID
+        ================================================ */
+        .dash-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
-        .quick-card {
-            background: rgba(255,255,255,0.9);
-            color: var(--text-primary);
-            border-radius: 12px;
-            padding: 14px 16px;
-            text-decoration: none;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+
+        /* ================================================
+           PANELS
+        ================================================ */
+        .dash-panel {
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        .quick-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 28px rgba(0,0,0,0.25);
-        }
-        .quick-card .label {
+
+        .dash-panel-hd {
+            background: var(--clx-bg-surface-2);
+            border-bottom: 1px solid var(--clx-border);
+            padding: 9px 14px;
+            font-size: 11px;
             font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--clx-text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-shrink: 0;
         }
-        .quick-card .desc {
+
+        .dash-panel-bd {
+            flex: 1;
+            padding: 0;
+            overflow-y: auto;
+            max-height: 260px;
+        }
+
+        .dash-panel-ft {
+            border-top: 1px solid var(--clx-border);
+            padding: 8px 14px;
+            flex-shrink: 0;
+        }
+        .dash-panel-ft a {
             font-size: 12px;
-            color: #475569;
-        }
-
-        .cta-primary {
-            display: inline-block;
-            background: #3b82f6;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 600;
-            padding: 14px 36px;
-            border-radius: 10px;
+            color: var(--clx-accent);
             text-decoration: none;
-            transition: background 0.2s, transform 0.15s;
-            box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+            font-weight: 600;
+        }
+        .dash-panel-ft a:hover { text-decoration: underline; }
+
+        .dash-empty {
+            padding: 20px 14px;
+            font-size: 13px;
+            color: var(--clx-text-muted);
+            text-align: center;
         }
 
-        .cta-primary:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(59,130,246,0.45);
+        /* ---- Note items ---- */
+        .dash-note-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--clx-border);
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .dash-note-item:last-child { border-bottom: none; }
+        .dash-note-item:hover { background: var(--clx-accent-subtle); }
+
+        .dash-note-type {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--clx-accent-subtle);
+            color: var(--clx-accent);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .dash-note-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--clx-text-primary);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .dash-note-date {
+            font-size: 11px;
+            color: var(--clx-text-muted);
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .cta-primary:active {
-            transform: translateY(0);
+        /* ---- Quick ref links ---- */
+        .dash-ref-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--clx-border);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--clx-text-primary);
+            text-decoration: none;
+        }
+        .dash-ref-link:last-child { border-bottom: none; }
+        .dash-ref-link:hover {
+            background: var(--clx-accent-subtle);
+            color: var(--clx-accent);
+        }
+        .dash-ref-link::before {
+            content: '→';
+            font-size: 11px;
+            color: var(--clx-text-muted);
+            flex-shrink: 0;
         }
 
-        .welcome {
+        /* ---- Skill checkoffs ---- */
+        .dash-skill-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--clx-border);
+        }
+        .dash-skill-item:last-child { border-bottom: none; }
+        .dash-skill-item input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--clx-accent);
+            cursor: pointer;
+            flex-shrink: 0;
+            border: none !important;
+            padding: 0 !important;
+        }
+        .dash-skill-label {
+            font-size: 13px;
+            color: var(--clx-text-primary);
+            cursor: pointer;
+            flex: 1;
+        }
+        .dash-skill-item.checked .dash-skill-label {
+            text-decoration: line-through;
+            color: var(--clx-text-muted);
+        }
+
+        .dash-small-btn {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--clx-border);
+            background: transparent;
+            color: var(--clx-text-muted);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .dash-small-btn:hover {
+            background: var(--clx-bg-surface-3);
+            color: var(--clx-text-primary);
+        }
+
+        /* ---- Reminders textarea ---- */
+        .dash-textarea {
+            width: 100%;
+            height: 100%;
+            min-height: 200px;
+            padding: 12px 14px;
+            font-size: 13px;
+            font-family: inherit;
+            border: none !important;
+            background: transparent !important;
+            color: var(--clx-text-primary) !important;
+            resize: none;
+            outline: none !important;
+            box-shadow: none !important;
+            line-height: 1.6;
+        }
+        .dash-textarea::placeholder { color: var(--clx-text-muted); }
+
+        /* ---- Log hours modal ---- */
+        .dash-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 10005;
+            align-items: center;
+            justify-content: center;
+        }
+        .dash-modal-overlay.open { display: flex; }
+        .dash-modal {
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: 10px;
+            padding: 22px 24px;
+            width: 320px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+        .dash-modal h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--clx-text-primary);
+            margin-bottom: 6px;
+        }
+        .dash-modal p {
+            font-size: 13px;
+            color: var(--clx-text-secondary);
+            margin-bottom: 14px;
+        }
+        .dash-modal input[type="number"] {
+            width: 100%;
+            padding: 8px 12px;
             font-size: 14px;
-            color: rgba(255,255,255,0.4);
-            margin-top: 28px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            margin-bottom: 14px;
+            font-family: inherit;
         }
+        .dash-modal input[type="number"]:focus {
+            border-color: var(--clx-accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(15,116,144,0.12);
+        }
+        .dash-modal-btns { display: flex; gap: 8px; }
+        .dash-modal-btns button {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid var(--clx-border);
+            background: var(--clx-bg-surface-2);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+        }
+        .dash-modal-btns button.primary {
+            background: var(--clx-accent);
+            color: #fff;
+            border-color: var(--clx-accent);
+        }
+        .dash-modal-btns button.primary:hover { background: var(--clx-accent-hover); }
 
-
-        /* Bottom Toolbar */
+        /* ================================================
+           BOTTOM TOOLBAR
+        ================================================ */
         .bottom-toolbar {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             height: 60px;
-            background: var(--bg-primary);
-            border-top: 1px solid var(--border);
+            background: var(--clx-bg-surface);
+            border-top: 1px solid var(--clx-border);
             display: flex;
             justify-content: space-around;
             align-items: center;
             z-index: 1000;
             padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
-
         .toolbar-item {
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 6px 8px;
-            color: var(--text-secondary);
+            color: var(--clx-text-secondary);
             text-decoration: none;
             font-size: 10px;
-            transition: color 0.2s;
             background: none;
             border: none;
             cursor: pointer;
             font-family: inherit;
         }
-
-        .toolbar-item:hover { color: var(--accent); }
-        .toolbar-item.active { color: var(--accent); }
-        .toolbar-item .icon { font-size: 24px; margin-bottom: 2px; }
+        .toolbar-item:hover, .toolbar-item.active { color: var(--clx-accent); }
+        .toolbar-item .icon { font-size: 22px; margin-bottom: 2px; }
         .toolbar-item .label { font-weight: 600; }
 
-        /* More Menu */
         .more-menu {
             position: fixed;
-            bottom: 70px;
-            right: 10px;
-            background: var(--bg-primary);
+            bottom: 70px; right: 10px;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            padding: 8px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 6px 0;
             display: none;
             z-index: 1001;
             min-width: 160px;
-            border: 1px solid var(--border);
         }
-
         .more-menu.show { display: block; }
-
         .more-menu-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: var(--text-primary);
+            gap: 10px;
+            padding: 10px 16px;
+            color: var(--clx-text-primary);
             text-decoration: none;
-            font-size: 14px;
-            transition: background 0.2s;
+            font-size: 13px;
             cursor: pointer;
             border: none;
             background: none;
             width: 100%;
             font-family: inherit;
         }
+        .more-menu-item:hover { background: var(--clx-accent-subtle); color: var(--clx-accent); }
+        .more-menu-item .menu-icon { font-size: 16px; }
 
-        .more-menu-item:hover { background: var(--bg-secondary); }
-        .more-menu-item .menu-icon { font-size: 18px; }
-
-        /* Adjust body padding for toolbar */
-        body {
-            padding-bottom: 80px;
-        }
-
-        /* Dark mode specific */
-        /* Feedback Modal */
+        /* ================================================
+           MODALS (feedback)
+        ================================================ */
         .modal-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            inset: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 1000;
+            z-index: 10002;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
         .modal-overlay.hidden { display: none; }
-
         .modal-content {
-            background: var(--bg-primary);
-            border-radius: 16px;
-            padding: 25px;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: 10px;
+            padding: 22px 24px;
             max-width: 500px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            color: var(--clx-text-primary);
         }
-
         .modal-content input,
         .modal-content select,
         .modal-content textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 15px;
-            background: var(--bg-input);
-            color: var(--text-primary);
+            padding: 9px 12px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-family: inherit;
         }
+        .modal-content textarea { min-height: 100px; resize: vertical; }
 
-        .modal-content textarea { min-height: 120px; resize: vertical; }
-
-        /* Lock Screen */
+        /* ================================================
+           LOCK SCREEN
+        ================================================ */
         #lockScreenOverlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            inset: 0;
+            background: #0d1f2d;
             z-index: 99999;
             align-items: center;
             justify-content: center;
             flex-direction: column;
         }
 
-        /* Focus visible styles for keyboard navigation */
-        :focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
+        /* ================================================
+           TOASTS
+        ================================================ */
+        .toast-container {
+            position: fixed;
+            top: 20px; right: 20px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 360px;
         }
-        button:focus-visible, a:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
+        .toast {
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-left: 4px solid var(--clx-accent);
+            color: var(--clx-text-primary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
-
-        /* ========== MOBILE RESPONSIVE STYLES ========== */
-
-        /* Smooth scrolling */
-        html { scroll-behavior: smooth; }
-
-        /* Minimum touch target size (44px) */
-        @media (pointer: coarse) {
-            button, .btn, .toolbar-item, .more-menu-item {
-                min-height: 44px;
-            }
+        .toast.toast-success { border-left-color: var(--clx-success); }
+        .toast.toast-error, .toast.toast-danger { border-left-color: var(--clx-danger); }
+        .toast.toast-warning { border-left-color: var(--clx-warning); }
+        .toast.toast-info { border-left-color: var(--clx-info); }
+        .toast-icon { font-size: 15px; flex-shrink: 0; }
+        .toast-content { flex: 1; }
+        .toast-close {
+            background: none; border: none;
+            color: var(--clx-text-muted);
+            cursor: pointer; font-size: 16px; padding: 0; line-height: 1;
         }
+        .toast-close:hover { color: var(--clx-text-primary); }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            .title { font-size: 36px; }
-            /* no nav-card grid on home */
+        @keyframes softFlashAlert { 0%,100%{opacity:1}50%{opacity:.85} }
+        @keyframes softFlashFyi   { 0%,100%{opacity:1}50%{opacity:.85} }
+        body.has-alert { padding-top: 50px; }
+        body.has-fyi   { padding-top: 50px; }
+        body.has-alert.has-fyi { padding-top: 100px; }
+
+        /* ================================================
+           FOCUS
+        ================================================ */
+        :focus-visible { outline: 2px solid var(--clx-focus); outline-offset: 2px; }
+
+        /* ================================================
+           RESPONSIVE
+        ================================================ */
+        @media (max-width: 700px) {
+            .dash-grid { grid-template-columns: 1fr; }
+            .ctx-item { padding: 8px 10px; }
         }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            body {
-                padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-            }
-
-            .bottom-toolbar {
-                padding-bottom: env(safe-area-inset-bottom, 0px);
-            }
-        }
-
-        /* Small phones */
         @media (max-width: 480px) {
-            .title { font-size: 28px; }
-            /* no nav-card grid on home */
-
-            /* Prevent iOS zoom on input focus */
-            input, select, textarea {
-                font-size: 16px !important;
-            }
+            .dash-action-row { gap: 6px; }
+            .dash-btn { padding: 7px 12px; font-size: 12px; }
+            .toast-container { left: 10px; right: 10px; max-width: none; }
         }
-
-        /* Landscape orientation */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .container { padding: 20px; }
-            .title { font-size: 24px; margin-bottom: 15px; }
-            .bottom-toolbar { height: 50px; }
-            .toolbar-item .label { display: none; }
+        @media (pointer: coarse) {
+            .dash-btn, .toolbar-item, .more-menu-item { min-height: 44px; }
         }
-
-        /* Safe area insets for bottom toolbar */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .bottom-toolbar {
                 padding-bottom: env(safe-area-inset-bottom);
                 height: calc(60px + env(safe-area-inset-bottom));
             }
         }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 380px;
-        }
-        .toast {
-            padding: 14px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            animation: toastSlideIn 0.3s ease;
-            color: white;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        .toast.hiding { animation: toastSlideOut 0.3s ease forwards; }
-        .toast-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .toast-error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .toast-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .toast-info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-        .toast-icon { font-size: 18px; flex-shrink: 0; }
-        .toast-content { flex: 1; }
-        .toast-message { opacity: 0.95; }
-        .toast-close { background: none; border: none; color: white; opacity: 0.7; cursor: pointer; font-size: 18px; padding: 0; line-height: 1; }
-        .toast-close:hover { opacity: 1; }
-        @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-        @media (max-width: 480px) { .toast-container { left: 10px; right: 10px; max-width: none; } }
     </style>
 </head>
 <body>
+    <!-- Site header -->
     <header class="site-header">
         <a href="/home/" class="logo-link"><img src="/logo.png" alt="BendBSN" class="site-logo"></a>
-    </header>
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- Alert/FYI Banners - Fixed at top -->
-    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: softFlashAlert 2s ease-in-out infinite;">
-        <span id="alertText"></span>
-        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.8;">⚠️ ALERT</span>
-    </div>
-    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); animation: softFlashFyi 2s ease-in-out infinite;">
-        <span id="fyiText"></span>
-        <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
-    </div>
-    <style>
-        @keyframes softFlashAlert {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.85; }
-        }
-        @keyframes softFlashFyi {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.85; }
-        }
-        body.has-alert { padding-top: 50px; }
-        body.has-fyi { padding-top: 50px; }
-        body.has-alert.has-fyi { padding-top: 100px; }
-    </style>
-
-    <!-- Lock Screen Overlay -->
-    <div id="lockScreenOverlay">
-        <div style="text-align: center; color: white;">
-            <div style="font-size: 80px; margin-bottom: 20px;">🔒</div>
-            <h1 style="font-size: 42px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">BendBSN</h1>
-            <p style="font-size: 18px; opacity: 0.8; margin-bottom: 40px;">Portal Locked</p>
-            <button onclick="unlockScreen()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 18px 50px; border-radius: 30px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);">
-                🔓 Unlock Portal
-            </button>
-            <p style="margin-top: 30px; font-size: 12px; opacity: 0.5;">Click unlock to return to your session</p>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="container">
-        <h1 class="hero-heading">BendBSN</h1>
-        <p class="hero-subheading">Nursing Documentation Tools</p>
-        <p class="hero-description">Create structured nursing notes, head-to-toe assessments, and clinical documentation—fast.</p>
-        <a href="/app/" class="cta-primary">Start a Note</a>
-        <div class="quick-start">
-            <h2>Quick Start</h2>
-            <p>Pick a task to get moving quickly.</p>
-            <div class="quick-start-grid">
-                <a class="quick-card" href="/app/">
-                    <div class="label">Create a Note</div>
-                    <div class="desc">DAR, SOAP, Head-to-Toe, and more.</div>
-                </a>
-                <a class="quick-card" href="/resources/">
-                    <div class="label">Open Resources</div>
-                    <div class="desc">Drug tools, calculators, and references.</div>
-                </a>
-                <a class="quick-card" href="/chat/">
-                    <div class="label">Join Chat</div>
-                    <div class="desc">Ask questions or DM classmates.</div>
-                </a>
+        <div class="header-actions">
+            <div class="online-count" id="onlineCount" onclick="toggleUserList()" title="Online users" aria-label="Online users" role="button" tabindex="0">
+                <span class="online-dot"></span>
+                <span class="online-count-text" id="onlineCountText">—</span>
             </div>
         </div>
-        <p class="welcome" id="welcomeMessage">Welcome back</p>
+    </header>
 
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Alert / FYI banners -->
+    <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;animation:softFlashAlert 2s ease-in-out infinite;">
+        <span id="alertText"></span>
+        <span style="position:absolute;right:15px;font-size:11px;opacity:.8;">⚠ ALERT</span>
+    </div>
+    <div id="fyiBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#d97706;color:#1a1a2e;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:9999;animation:softFlashFyi 2s ease-in-out infinite;">
+        <span id="fyiText"></span>
+        <span style="position:absolute;right:15px;font-size:11px;opacity:.7;">ℹ FYI</span>
+    </div>
+
+    <!-- Lock screen -->
+    <div id="lockScreenOverlay">
+        <div style="text-align:center;color:white;">
+            <div style="font-size:60px;margin-bottom:16px;">🔒</div>
+            <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
+            <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
+            <button onclick="unlockScreen()" style="background:var(--clx-accent);color:white;border:none;padding:14px 40px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">🔓 Unlock</button>
+        </div>
+    </div>
+
+    <!-- Log Hours Modal -->
+    <div class="dash-modal-overlay" id="logHoursModal" onclick="if(event.target===this)closeLogHours()">
+        <div class="dash-modal">
+            <h3>⏱ Log Clinical Hours</h3>
+            <p id="hoursCurrentTotal">Total logged: 0 hrs</p>
+            <input type="number" id="hoursInput" min="0" max="24" step="0.5" placeholder="Hours to add (e.g. 8)">
+            <div class="dash-modal-btns">
+                <button onclick="closeLogHours()">Cancel</button>
+                <button class="primary" onclick="confirmLogHours()">Add Hours</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context bar -->
+    <div class="dash-context-bar" id="dashContextBar">
+        <div class="ctx-item">
+            <span class="ctx-label">Student</span>
+            <span class="ctx-value" id="ctxName">—</span>
+        </div>
+        <div class="ctx-item">
+            <span class="ctx-label">Term</span>
+            <span class="ctx-value editable" id="ctxTerm" onclick="editCtx('term')" title="Click to edit">Spring 2026</span>
+        </div>
+        <div class="ctx-item">
+            <span class="ctx-label">Next Exam</span>
+            <span class="ctx-value editable" id="ctxExam" onclick="editCtx('exam')" title="Click to edit">—</span>
+        </div>
+        <div class="ctx-item">
+            <span class="ctx-label">Clin. Hours</span>
+            <span class="ctx-value accent" id="ctxHours">0 hrs</span>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dash-page">
+
+        <!-- Action row -->
+        <div class="dash-action-row">
+            <a href="/app/" class="dash-btn primary">📝 Start Note</a>
+            <a href="/resources/" class="dash-btn">📚 Resources</a>
+            <a href="/clinical/" class="dash-btn">📋 Clinical Packet</a>
+            <a href="/ai/" class="dash-btn">🩺 AI Assistant</a>
+            <button class="dash-btn" onclick="openLogHours()">⏱ Log Hours</button>
+        </div>
+
+        <!-- 2×2 grid -->
+        <div class="dash-grid">
+
+            <!-- Panel 1: Recent Notes -->
+            <div class="dash-panel">
+                <div class="dash-panel-hd">Recent Notes</div>
+                <div class="dash-panel-bd" id="recentNotesList">
+                    <div class="dash-empty">Loading notes…</div>
+                </div>
+                <div class="dash-panel-ft">
+                    <a href="/app/">Open Note Builder →</a>
+                </div>
+            </div>
+
+            <!-- Panel 2: Quick Reference -->
+            <div class="dash-panel">
+                <div class="dash-panel-hd">Quick Reference</div>
+                <div class="dash-panel-bd">
+                    <a class="dash-ref-link" href="/resources/">Vital Signs Reference</a>
+                    <a class="dash-ref-link" href="/resources/">Lab Values</a>
+                    <a class="dash-ref-link" href="/resources/">Medication Dosage Calculator</a>
+                    <a class="dash-ref-link" href="/resources/">IV Drip Rate Calculator</a>
+                    <a class="dash-ref-link" href="/resources/">Glasgow Coma Scale</a>
+                    <a class="dash-ref-link" href="/resources/">APGAR Score</a>
+                    <a class="dash-ref-link" href="/resources/">SBAR Template</a>
+                    <a class="dash-ref-link" href="/resources/">Drug Lookup (RxNav)</a>
+                    <a class="dash-ref-link" href="/ai/">Ask AI Nursing Assistant</a>
+                </div>
+            </div>
+
+            <!-- Panel 3: Skill Checkoffs -->
+            <div class="dash-panel">
+                <div class="dash-panel-hd">
+                    Skill Checkoffs
+                    <button class="dash-small-btn" onclick="resetSkills()">Reset</button>
+                </div>
+                <div class="dash-panel-bd" id="skillsList"></div>
+            </div>
+
+            <!-- Panel 4: Reminders -->
+            <div class="dash-panel">
+                <div class="dash-panel-hd">
+                    My Reminders
+                    <span style="font-size:10px;font-weight:400;color:var(--clx-text-muted);text-transform:none;letter-spacing:0;">auto-saved</span>
+                </div>
+                <div class="dash-panel-bd" style="max-height:none;flex:1;">
+                    <textarea class="dash-textarea" id="remindersText"
+                        placeholder="Upcoming assignments, due dates, clinical goals, to-dos…"
+                        oninput="saveReminders()"></textarea>
+                </div>
+            </div>
+
+        </div><!-- /dash-grid -->
+    </div><!-- /dash-page -->
+
+    <!-- User list dropdown (online presence) -->
+    <div id="userListDropdown" style="display:none;position:fixed;top:56px;right:10px;background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);padding:8px 0;min-width:180px;z-index:1001;max-height:300px;overflow-y:auto;">
+        <div style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--clx-text-muted);border-bottom:1px solid var(--clx-border);margin-bottom:4px;">Online Now</div>
+        <div id="userListNames"></div>
     </div>
 
     <!-- Bottom Toolbar -->
@@ -501,7 +765,7 @@
             <span class="icon" aria-hidden="true">🏠</span>
             <span class="label">Home</span>
         </a>
-        <a href="/app/" class="toolbar-item" aria-label="RN Notes documentation generator">
+        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
             <span class="icon" aria-hidden="true">📝</span>
             <span class="label">RN Notes</span>
         </a>
@@ -513,11 +777,11 @@
             <span class="icon" aria-hidden="true">🩺</span>
             <span class="label">AI</span>
         </a>
-        <a href="/community/" class="toolbar-item" aria-label="Community hub">
+        <a href="/community/" class="toolbar-item" aria-label="Community">
             <span class="icon" aria-hidden="true">👥</span>
             <span class="label">Community</span>
         </a>
-        <a href="/resources/" class="toolbar-item" aria-label="Nursing resources">
+        <a href="/resources/" class="toolbar-item" aria-label="Resources">
             <span class="icon" aria-hidden="true">📚</span>
             <span class="label">Resources</span>
         </a>
@@ -529,75 +793,74 @@
 
     <!-- More Menu -->
     <div id="moreMenu" class="more-menu" role="menu" aria-label="More options menu">
-        <button class="more-menu-item" onclick="toggleDarkMode(); toggleMoreMenu();" role="menuitem" aria-label="Toggle dark mode">
+        <button class="more-menu-item" onclick="toggleDarkMode();toggleMoreMenu();" role="menuitem">
             <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">🌙</span>
             <span id="themeMenuText">Dark Mode</span>
         </button>
-        <button class="more-menu-item" onclick="lockScreen(); toggleMoreMenu();" role="menuitem" aria-label="Lock screen">
+        <button class="more-menu-item" onclick="lockScreen();toggleMoreMenu();" role="menuitem">
             <span class="menu-icon" aria-hidden="true">🔒</span>
             <span>Lock Screen</span>
         </button>
-        <button class="more-menu-item" onclick="toggleFullscreen(); toggleMoreMenu();" role="menuitem" aria-label="Toggle full screen" id="fullscreenBtn">
-            <span class="menu-icon" aria-hidden="true" id="fullscreenIcon">⛶</span>
+        <button class="more-menu-item" onclick="toggleFullscreen();toggleMoreMenu();" role="menuitem" id="fullscreenBtn">
+            <span class="menu-icon" id="fullscreenIcon" aria-hidden="true">⛶</span>
             <span id="fullscreenText">Full Screen</span>
         </button>
-        <a href="/labsched/" class="more-menu-item" role="menuitem" aria-label="Lab Schedule Generator" style="text-decoration: none; color: inherit;">
+        <a href="/labsched/" class="more-menu-item" role="menuitem" style="text-decoration:none;color:inherit;">
             <span class="menu-icon" aria-hidden="true">📅</span>
             <span>Sched Generator</span>
         </a>
-        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" id="apaMenuLink" style="text-decoration: none; color: inherit;">
+        <a href="/apa/" class="more-menu-item" role="menuitem" id="apaMenuLink" style="text-decoration:none;color:inherit;">
             <span class="menu-icon" aria-hidden="true">📄</span>
             <span>APA Generator</span>
         </a>
-        <a href="/clinical/" class="more-menu-item" role="menuitem" aria-label="Clinical Packet Builder" id="clinicalMenuLink" style="text-decoration: none; color: inherit;">
+        <a href="/clinical/" class="more-menu-item" role="menuitem" id="clinicalMenuLink" style="text-decoration:none;color:inherit;">
             <span class="menu-icon" aria-hidden="true">📋</span>
             <span>Clinical Packet</span>
         </a>
-        <button class="more-menu-item" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();" role="menuitem" aria-label="Send feedback">
+        <button class="more-menu-item" onclick="document.getElementById('feedbackModal').classList.remove('hidden');toggleMoreMenu();" role="menuitem">
             <span class="menu-icon" aria-hidden="true">💡</span>
             <span>Feedback</span>
         </button>
-        <button class="more-menu-item" onclick="logout();" role="menuitem" aria-label="Logout">
+        <button class="more-menu-item" onclick="logout();" role="menuitem">
             <span class="menu-icon" aria-hidden="true">🚪</span>
             <span>Logout</span>
         </button>
     </div>
 
     <!-- Feedback Modal -->
-    <div id="feedbackModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+    <div id="feedbackModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
         <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="font-size: 20px;">💡 Send Feedback</h2>
-                <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 style="font-size:16px;font-weight:700;">💡 Send Feedback</h2>
+                <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted);">&times;</button>
             </div>
             <form action="https://formsubmit.co/christiankholden@gmail.com" method="POST">
                 <input type="hidden" name="_subject" value="BendBSN Feedback">
                 <input type="hidden" name="_captcha" value="false">
                 <input type="hidden" name="_template" value="table">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Type</label>
+                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:700;color:var(--clx-text-secondary);">Type</label>
                 <select name="type" required>
                     <option value="bug">🐛 Bug Report</option>
                     <option value="feature">✨ Feature Request</option>
-                    <option value="phrase">💬 New Phrase Suggestion</option>
+                    <option value="phrase">💬 Phrase Suggestion</option>
                     <option value="feedback" selected>📝 General Feedback</option>
                 </select>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Your Name</label>
-                <input type="text" name="name" required placeholder="Enter your name">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Message</label>
-                <textarea name="message" required placeholder="Describe your feedback..."></textarea>
-                <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Send Feedback</button>
+                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:700;color:var(--clx-text-secondary);">Name</label>
+                <input type="text" name="name" required placeholder="Your name">
+                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:700;color:var(--clx-text-secondary);">Message</label>
+                <textarea name="message" required placeholder="Describe your feedback…"></textarea>
+                <button type="submit" style="width:100%;padding:10px;background:var(--clx-accent);color:white;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Send Feedback</button>
             </form>
         </div>
     </div>
 
-
     <script>
-        // ========== FULLSCREEN MODE ==========
+        // ========== FULLSCREEN ==========
         function toggleFullscreen() {
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                const elem = document.documentElement;
-                if (elem.requestFullscreen) elem.requestFullscreen();
-                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                const el = document.documentElement;
+                if (el.requestFullscreen) el.requestFullscreen();
+                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
                 updateFullscreenUI(true);
             } else {
                 if (document.exitFullscreen) document.exitFullscreen();
@@ -605,15 +868,14 @@
                 updateFullscreenUI(false);
             }
         }
-        function updateFullscreenUI(isFullscreen) {
-            const icon = document.getElementById('fullscreenIcon');
-            const text = document.getElementById('fullscreenText');
-            if (text) text.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+        function updateFullscreenUI(fs) {
+            const t = document.getElementById('fullscreenText');
+            if (t) t.textContent = fs ? 'Exit Full Screen' : 'Full Screen';
         }
         document.addEventListener('fullscreenchange', () => updateFullscreenUI(!!document.fullscreenElement));
         document.addEventListener('webkitfullscreenchange', () => updateFullscreenUI(!!document.webkitFullscreenElement));
 
-        // ========== TOAST NOTIFICATION SYSTEM ==========
+        // ========== TOAST ==========
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -622,14 +884,14 @@
             toast.className = `toast toast-${type}`;
             toast.innerHTML = `
                 <span class="toast-icon">${icons[type] || icons.info}</span>
-                <div class="toast-content"><div class="toast-message">${message.replace(/\n/g, '<br>')}</div></div>
+                <div class="toast-content"><div class="toast-message">${message.replace(/\n/g,'<br>')}</div></div>
                 <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
             `;
             container.appendChild(toast);
-            setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); }, duration);
+            if (duration > 0) setTimeout(() => toast.remove(), duration);
         }
 
-        // Firebase Configuration
+        // ========== FIREBASE ==========
         const firebaseConfig = {
             apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
             authDomain: "bendbsn-17377.firebaseapp.com",
@@ -649,32 +911,24 @@
         let sessionHeartbeatTimer = null;
         let sessionValidated = false;
 
-        // Presence/Activity timeout constants
-        const IDLE_TIMEOUT = 10 * 60 * 1000;   // 10 minutes -> Away
-        const LOGOUT_TIMEOUT = 30 * 60 * 1000; // 30 minutes -> Logout
-        const LOGOUT_WARNING_TIMEOUT = 25 * 60 * 1000; // 25 minutes -> Show warning
-        const ACTIVITY_DEBOUNCE = 30000;       // Debounce Firebase updates
-        let idleTimer = null;
-        let logoutTimer = null;
-        let logoutWarningTimer = null;
-        let activityDebounceTimer = null;
-        let lastActivityTime = Date.now();
+        const IDLE_TIMEOUT = 10 * 60 * 1000;
+        const LOGOUT_TIMEOUT = 30 * 60 * 1000;
+        const LOGOUT_WARNING_TIMEOUT = 25 * 60 * 1000;
+        const ACTIVITY_DEBOUNCE = 30000;
+        let idleTimer = null, logoutTimer = null, logoutWarningTimer = null, activityDebounceTimer = null;
         let currentPresenceStatus = 'online';
         let myPresenceRef = null;
 
         function updateSessionHeartbeat() {
-            const sessionKey = localStorage.getItem(SESSION_KEY);
-            if (!sessionKey || !sessionValidated) return;
-            database.ref('loginHistory/' + sessionKey).update({
-                lastSeen: Date.now()
-            }).catch(() => {});
+            const key = localStorage.getItem(SESSION_KEY);
+            if (!key || !sessionValidated) return;
+            database.ref('loginHistory/' + key).update({ lastSeen: Date.now() }).catch(() => {});
         }
-
         function startSessionHeartbeat() {
-            const sessionKey = localStorage.getItem(SESSION_KEY);
-            if (!sessionKey) return;
-            database.ref('loginHistory/' + sessionKey).once('value', (snapshot) => {
-                if (snapshot.exists() && snapshot.val().timestamp) {
+            const key = localStorage.getItem(SESSION_KEY);
+            if (!key) return;
+            database.ref('loginHistory/' + key).once('value', (snap) => {
+                if (snap.exists() && snap.val().timestamp) {
                     sessionValidated = true;
                     updateSessionHeartbeat();
                     if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
@@ -684,58 +938,47 @@
                 }
             }).catch(() => {});
         }
-
         function endSessionTracking(reason) {
-            const sessionKey = localStorage.getItem(SESSION_KEY);
-            if (!sessionKey || !sessionValidated) return;
+            const key = localStorage.getItem(SESSION_KEY);
+            if (!key || !sessionValidated) return;
             if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
             const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
             const end = Date.now();
             const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
-            const durationMinutes = durationSeconds !== null ? Math.round(durationSeconds / 60) : null;
             localStorage.setItem('bsn9b_session_end_sent', 'true');
-            database.ref('loginHistory/' + sessionKey).update({
+            database.ref('loginHistory/' + key).update({
                 sessionEnd: end,
-                durationSeconds: durationSeconds,
-                durationMinutes: durationMinutes,
+                durationSeconds,
+                durationMinutes: durationSeconds !== null ? Math.round(durationSeconds / 60) : null,
                 endReason: reason || 'logout'
             }).catch(() => {});
         }
-
         function clearSessionTracking() {
             localStorage.removeItem(SESSION_KEY);
             localStorage.removeItem(SESSION_START_KEY);
             localStorage.removeItem('bsn9b_session_end_sent');
         }
 
-        // ========== CORE FIREBASE REFS & SYSTEMS ==========
         const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
         const userProfilesRef = database.ref('userProfiles');
 
-        // Listen for announcements (alert/fyi banners - inside header)
         function setupAnnouncementListener() {
-            announcementsRef.on('value', (snapshot) => {
-                const data = snapshot.val() || {};
+            announcementsRef.on('value', (snap) => {
+                const data = snap.val() || {};
                 const alertBanner = document.getElementById('alertBanner');
                 const fyiBanner = document.getElementById('fyiBanner');
-                const alertText = document.getElementById('alertText');
-                const fyiText = document.getElementById('fyiText');
-
-                // Handle alert banner
                 if (data.alert && data.alert.message) {
-                    alertText.textContent = data.alert.message;
+                    document.getElementById('alertText').textContent = data.alert.message;
                     alertBanner.style.display = 'block';
                     document.body.classList.add('has-alert');
                 } else {
                     alertBanner.style.display = 'none';
                     document.body.classList.remove('has-alert');
                 }
-
-                // Handle FYI banner (offset if alert is showing)
                 if (data.fyi && data.fyi.message) {
-                    fyiText.textContent = data.fyi.message;
+                    document.getElementById('fyiText').textContent = data.fyi.message;
                     fyiBanner.style.display = 'block';
                     fyiBanner.style.top = (data.alert && data.alert.message) ? '50px' : '0';
                     document.body.classList.add('has-fyi');
@@ -747,49 +990,35 @@
         }
         setupAnnouncementListener();
 
-        // Get display name (first name) - stored when user logs in
         let currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
         let displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
         let currentUserUid = localStorage.getItem('bsn9b_uid') || '';
 
-        function getCurrentUserEmail() {
-            return currentUsername || auth.currentUser?.email || localStorage.getItem('bsn9b_user') || '';
-        }
-
-        function getCurrentUserUid() {
-            return currentUserUid || auth.currentUser?.uid || localStorage.getItem('bsn9b_uid') || '';
-        }
+        function getCurrentUserEmail() { return currentUsername || auth.currentUser?.email || ''; }
+        function getCurrentUserUid()   { return currentUserUid || auth.currentUser?.uid || ''; }
 
         function syncUserProfile(user) {
             if (!user) return;
             const email = user.email || getCurrentUserEmail();
             const name = displayName || user.displayName || (email ? email.split('@')[0] : 'User');
-            const firstName = name.split(' ')[0] || name;
             userProfilesRef.child(user.uid).update({
-                email: email,
-                displayName: name,
-                firstName: firstName,
-                updatedAt: Date.now()
+                email, displayName: name, firstName: name.split(' ')[0] || name, updatedAt: Date.now()
             });
         }
 
-        // Verify Firebase Auth state and re-authenticate if needed
         let firebaseAuthReady = false;
         auth.onAuthStateChanged((user) => {
             if (user) {
-                console.log('Firebase Auth: Logged in as', user.email);
                 firebaseAuthReady = true;
                 currentUserUid = user.uid;
                 currentUsername = user.email || currentUsername;
-                if (user.displayName) {
-                    displayName = user.displayName;
-                }
+                if (user.displayName) displayName = user.displayName;
                 localStorage.setItem('bsn9b_uid', currentUserUid);
                 localStorage.setItem('bsn9b_user', currentUsername);
                 localStorage.setItem('bsn9b_displayName', displayName);
                 syncUserProfile(user);
+                document.getElementById('ctxName').textContent = displayName;
 
-                // Check user role and hide APA link for instructors
                 userProfilesRef.child(user.uid).once('value').then((snap) => {
                     const profile = snap.val();
                     if (profile && profile.role === 'Instructor') {
@@ -797,320 +1026,364 @@
                         if (apaLink) apaLink.style.display = 'none';
                     }
                 });
-            } else {
-                console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
-                if (localStorage.getItem('bsn9b_auth') === 'true') {
-                    console.warn('Session exists but Firebase auth lost - may need to re-login');
-                }
+
+                // Load recent notes from Firebase
+                loadRecentNotes(user.email);
             }
         });
 
-        // Check if current user is banned
         function checkIfBanned() {
-            bannedRef.once('value', (snapshot) => {
-                snapshot.forEach((child) => {
-                    const banned = child.val();
-                    if (banned.username === currentUsername || banned.username === displayName) {
-                        showToast('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'), 'error', 5000);
-                        localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
+            bannedRef.once('value', (snap) => {
+                snap.forEach((child) => {
+                    const b = child.val();
+                    if (b.username === currentUsername || b.username === displayName) {
+                        showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
+                        ['bsn9b_auth','bsn9b_user','bsn9b_displayName','bsn9b_uid'].forEach(k => localStorage.removeItem(k));
                         setTimeout(() => { window.location.href = '/'; }, 2000);
                     }
                 });
             });
         }
         checkIfBanned();
-
-        // Listen for bans in real-time
-        bannedRef.on('child_added', (snapshot) => {
-            const banned = snapshot.val();
-            if (banned.username === currentUsername || banned.username === displayName) {
-                showToast('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'), 'error', 5000);
-                localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
+        bannedRef.on('child_added', (snap) => {
+            const b = snap.val();
+            if (b.username === currentUsername || b.username === displayName) {
+                showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
+                ['bsn9b_auth','bsn9b_user','bsn9b_displayName','bsn9b_uid'].forEach(k => localStorage.removeItem(k));
                 setTimeout(() => { window.location.href = '/'; }, 2000);
             }
         });
 
-        function isAdminUser() {
-            const adminEmails = ['christiankholden@gmail.com', 'holdenc'];
-            return adminEmails.includes((currentUsername || '').toLowerCase());
-        }
-
-        // Initialize session heartbeat on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             startSessionHeartbeat();
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') updateSessionHeartbeat();
             });
         });
 
-        // ========== PRESENCE SYSTEM ==========
-        // Set presence using UID as key (prevents duplicates across tabs)
+        // ========== PRESENCE ==========
         function setPresence(status = 'online') {
             const uid = getCurrentUserUid();
             if (!uid) return;
-
             myPresenceRef = presenceRef.child(uid);
-            myPresenceRef.set({
-                user: displayName,
-                username: currentUsername,
-                uid: uid,
-                status: status,
-                lastActive: firebase.database.ServerValue.TIMESTAMP
-            });
+            myPresenceRef.set({ user: displayName, username: currentUsername, uid, status, lastActive: firebase.database.ServerValue.TIMESTAMP });
             myPresenceRef.onDisconnect().remove();
             currentPresenceStatus = status;
         }
-
-        // Update status without full rewrite
         function updatePresenceStatus(status) {
             const uid = getCurrentUserUid();
             if (!uid) return;
-            presenceRef.child(uid).update({
-                status: status,
-                lastActive: firebase.database.ServerValue.TIMESTAMP
-            }).catch(() => {});
+            presenceRef.child(uid).update({ status, lastActive: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
             currentPresenceStatus = status;
         }
-
-        // Activity detection - reset idle timers (debounced)
         function recordActivity() {
-            lastActivityTime = Date.now();
-
-            // Reset idle/logout/warning timers immediately (local)
-            clearTimeout(idleTimer);
-            clearTimeout(logoutTimer);
-            clearTimeout(logoutWarningTimer);
-
-            // Set idle timer (10 min)
+            clearTimeout(idleTimer); clearTimeout(logoutTimer); clearTimeout(logoutWarningTimer);
             idleTimer = setTimeout(() => {
                 updatePresenceStatus('away');
-
-                // Set logout timer (additional 20 min = 30 min total)
-                logoutTimer = setTimeout(() => {
-                    logout(); // Full logout
-                }, LOGOUT_TIMEOUT - IDLE_TIMEOUT);
+                logoutTimer = setTimeout(() => logout(), LOGOUT_TIMEOUT - IDLE_TIMEOUT);
             }, IDLE_TIMEOUT);
-
-            // Set warning timer (25 min = 5 min before logout)
             logoutWarningTimer = setTimeout(() => {
-                showToast('You will be logged out in 5 minutes due to inactivity. Move your mouse or press a key to stay logged in.', 'warning', 10000);
+                showToast('You will be logged out in 5 minutes due to inactivity.', 'warning', 10000);
             }, LOGOUT_WARNING_TIMEOUT);
-
-            // Debounce Firebase updates (don't spam on every mouse move)
             if (activityDebounceTimer) return;
-
-            // If was away, go back online immediately
-            if (currentPresenceStatus === 'away') {
-                updatePresenceStatus('online');
-            }
-
+            if (currentPresenceStatus === 'away') updatePresenceStatus('online');
             activityDebounceTimer = setTimeout(() => {
                 activityDebounceTimer = null;
-                // Update lastActive timestamp periodically while active
                 const uid = getCurrentUserUid();
                 if (currentPresenceStatus === 'online' && uid) {
-                    presenceRef.child(uid).update({
-                        lastActive: firebase.database.ServerValue.TIMESTAMP
-                    }).catch(() => {});
+                    presenceRef.child(uid).update({ lastActive: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
                 }
             }, ACTIVITY_DEBOUNCE);
         }
-
-        // Initialize activity listeners
         function initActivityTracking() {
-            const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
-            events.forEach(event => {
-                document.addEventListener(event, recordActivity, { passive: true });
+            ['mousedown','keydown','scroll','touchstart','mousemove'].forEach(ev => {
+                document.addEventListener(ev, recordActivity, { passive: true });
             });
-
-            // Also track visibility
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') {
-                    recordActivity();
-                }
+                if (document.visibilityState === 'visible') recordActivity();
             });
-
-            // Start initial timer
             recordActivity();
         }
-
-        // Initialize presence (called after auth check)
         setPresence('online');
         initActivityTracking();
-
-        // Re-establish presence on reconnect (handles multi-tab onDisconnect conflicts)
         database.ref('.info/connected').on('value', (snap) => {
             if (snap.val() === true && currentUsername) setPresence(currentPresenceStatus || 'online');
         });
 
-        // Set welcome message
-        document.getElementById('welcomeMessage').textContent = 'Welcome back, ' + displayName;
+        // Online count display
+        let userListOpen = false;
+        presenceRef.on('value', (snap) => {
+            const data = snap.val() || {};
+            const users = Object.values(data);
+            const online = users.filter(u => u.status === 'online');
+            const away   = users.filter(u => u.status === 'away');
+            const countText = document.getElementById('onlineCountText');
+            if (countText) countText.textContent = `${online.length} online${away.length ? `, ${away.length} away` : ''}`;
+            renderUserList(online, away);
+        });
+        function toggleUserList() {
+            userListOpen = !userListOpen;
+            const d = document.getElementById('userListDropdown');
+            if (d) d.style.display = userListOpen ? 'block' : 'none';
+        }
+        function renderUserList(online, away) {
+            const el = document.getElementById('userListNames');
+            if (!el) return;
+            const rows = [
+                ...online.map(u => `<div style="padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>${u.user||'—'}</div>`),
+                ...away.map(u => `<div style="padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:8px;color:var(--clx-text-muted);"><span style="width:8px;height:8px;border-radius:50%;background:#eab308;display:inline-block;flex-shrink:0;"></span>${u.user||'—'}</div>`)
+            ];
+            el.innerHTML = rows.length ? rows.join('') : '<div style="padding:8px 14px;font-size:12px;color:var(--clx-text-muted);">Nobody online</div>';
+        }
+        document.addEventListener('click', (e) => {
+            if (userListOpen && !e.target.closest('#userListDropdown') && !e.target.closest('#onlineCount')) {
+                userListOpen = false;
+                const d = document.getElementById('userListDropdown');
+                if (d) d.style.display = 'none';
+            }
+        });
 
-        // Theme functions
+        // ========== THEME ==========
         function initTheme() {
             const saved = localStorage.getItem('bsn9b_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
-
         function toggleDarkMode() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const newTheme = isDark ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('bsn9b_theme', newTheme);
+            const t = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            localStorage.setItem('bsn9b_theme', t);
             updateThemeIcon();
         }
-
         function updateThemeIcon() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const themeMenuIcon = document.getElementById('themeMenuIcon');
-            const themeMenuText = document.getElementById('themeMenuText');
-            if (themeMenuIcon) {
-                themeMenuIcon.textContent = isDark ? '☀️' : '🌙';
-            }
-            if (themeMenuText) {
-                themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-            }
+            const icon = document.getElementById('themeMenuIcon');
+            const text = document.getElementById('themeMenuText');
+            if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+            if (text) text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
         }
+        initTheme();
 
-        // More menu toggle
+        // ========== MORE MENU ==========
         function toggleMoreMenu() {
             const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            const isExpanded = menu.classList.toggle('show');
-            if (moreBtn) {
-                moreBtn.setAttribute('aria-expanded', isExpanded);
-            }
+            const btn = document.querySelector('[aria-controls="moreMenu"]');
+            const open = menu.classList.toggle('show');
+            if (btn) btn.setAttribute('aria-expanded', open);
         }
-
-        // Close more menu when clicking outside
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', (e) => {
             const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            const moreBtnClicked = e.target.closest('.toolbar-item');
-            if (!menu.contains(e.target) && (!moreBtnClicked || !moreBtnClicked.onclick?.toString().includes('toggleMoreMenu'))) {
+            const btn = document.querySelector('[aria-controls="moreMenu"]');
+            if (!menu.contains(e.target) && !e.target.closest('[onclick*="toggleMoreMenu"]')) {
                 menu.classList.remove('show');
-                if (moreBtn) {
-                    moreBtn.setAttribute('aria-expanded', 'false');
-                }
+                if (btn) btn.setAttribute('aria-expanded', 'false');
             }
         });
 
-        // Lock/Unlock
-        function lockScreen() {
-            document.getElementById('lockScreenOverlay').style.display = 'flex';
-        }
+        // ========== LOCK ==========
+        function lockScreen() { document.getElementById('lockScreenOverlay').style.display = 'flex'; }
+        function unlockScreen() { document.getElementById('lockScreenOverlay').style.display = 'none'; }
 
-        function unlockScreen() {
-            document.getElementById('lockScreenOverlay').style.display = 'none';
-        }
-
-        // Logout
+        // ========== LOGOUT ==========
         function logout() {
             endSessionTracking('logout');
             cleanupFirebaseListeners();
-            // Clean presence before signing out
             const uid = getCurrentUserUid();
-            if (uid) {
-                presenceRef.child(uid).remove().catch(() => {});
-            }
-            // Clear idle/logout/warning timers
-            clearTimeout(idleTimer);
-            clearTimeout(logoutTimer);
-            clearTimeout(logoutWarningTimer);
-            clearTimeout(activityDebounceTimer);
-
+            if (uid) presenceRef.child(uid).remove().catch(() => {});
+            [idleTimer, logoutTimer, logoutWarningTimer, activityDebounceTimer].forEach(t => clearTimeout(t));
             auth.signOut().then(() => {
-                localStorage.removeItem('bsn9b_auth');
-                localStorage.removeItem('bsn9b_user');
-                localStorage.removeItem('bsn9b_displayName');
-                localStorage.removeItem('bsn9b_uid');
+                ['bsn9b_auth','bsn9b_user','bsn9b_displayName','bsn9b_uid'].forEach(k => localStorage.removeItem(k));
                 clearSessionTracking();
                 window.location.href = '/';
             });
         }
 
-        // Initialize
-        initTheme();
-
-        // ========== FIREBASE LISTENER CLEANUP ==========
-        // Clean up Firebase listeners on page unload to prevent memory leaks
         function cleanupFirebaseListeners() {
             try {
                 if (typeof announcementsRef !== 'undefined') announcementsRef.off();
                 if (typeof bannedRef !== 'undefined') bannedRef.off();
                 if (typeof presenceRef !== 'undefined') presenceRef.off();
-                console.log('Firebase listeners cleaned up');
-            } catch (e) {
-                console.log('Error cleaning up listeners:', e);
-            }
+            } catch(e) {}
         }
-
         window.addEventListener('beforeunload', cleanupFirebaseListeners);
         window.addEventListener('pagehide', cleanupFirebaseListeners);
 
-        // ========== KEYBOARD NAVIGATION ==========
-        document.addEventListener('keydown', function(e) {
+        // ========== KEYBOARD ==========
+        document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                // Close modals
                 document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
-                // Close more menu
-                const moreMenu = document.getElementById('moreMenu');
-                if (moreMenu) moreMenu.classList.remove('show');
+                document.getElementById('moreMenu')?.classList.remove('show');
+                closeLogHours();
+                if (userListOpen) { userListOpen = false; document.getElementById('userListDropdown').style.display = 'none'; }
             }
         });
 
-        // Register Service Worker for PWA
+        // ========== SERVICE WORKER ==========
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('SW registered:', registration.scope);
-
-                        // Check for updates every 5 minutes
-                        setInterval(() => {
-                            registration.update();
-                        }, 5 * 60 * 1000);
-
-                        // Listen for service worker updates
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            if (!newWorker) return;
-
-                            newWorker.addEventListener('statechange', () => {
-                                // If new SW is waiting and there's an active controller, show update prompt
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showToast(
-                                        'Update available! Click here to reload and get the latest version.',
-                                        0, // Don't auto-dismiss
-                                        () => {
-                                            // Tell the new SW to skip waiting
-                                            newWorker.postMessage({type: 'SKIP_WAITING'});
-                                        }
-                                    );
-                                }
-                            });
+                navigator.serviceWorker.register('/sw.js').then(reg => {
+                    setInterval(() => reg.update(), 5 * 60 * 1000);
+                    reg.addEventListener('updatefound', () => {
+                        const nw = reg.installing;
+                        if (!nw) return;
+                        nw.addEventListener('statechange', () => {
+                            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                showToast('Update available — click to reload.', 'info', 0);
+                            }
                         });
-                    })
-                    .catch(error => {
-                        console.log('SW registration failed:', error);
                     });
+                }).catch(() => {});
             });
+            navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+        }
 
-            // Listen for controller change (new SW activated)
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                // Reload the page to use the new service worker
-                window.location.reload();
+        // ========== CONTEXT BAR ==========
+        (function initContextBar() {
+            const term = localStorage.getItem('bsn9b_home_term');
+            const exam = localStorage.getItem('bsn9b_home_exam');
+            const hours = parseFloat(localStorage.getItem('bsn9b_home_hours') || '0');
+            if (term) document.getElementById('ctxTerm').textContent = term;
+            if (exam) document.getElementById('ctxExam').textContent = exam;
+            document.getElementById('ctxHours').textContent = hours + ' hrs';
+            document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bsn9b_displayName') || '—';
+        })();
+
+        function editCtx(field) {
+            const el = document.getElementById(field === 'term' ? 'ctxTerm' : 'ctxExam');
+            const current = el.textContent === '—' ? '' : el.textContent;
+            const label = field === 'term' ? 'Current term (e.g. Spring 2026)' : 'Next exam date (e.g. Mar 3 — NCLEX Review)';
+            showPromptModal('Edit ' + (field === 'term' ? 'Term' : 'Next Exam'), label, (val) => {
+                if (val && val.trim()) {
+                    el.textContent = val.trim();
+                    localStorage.setItem(field === 'term' ? 'bsn9b_home_term' : 'bsn9b_home_exam', val.trim());
+                }
+            }, { defaultValue: current, placeholder: label });
+        }
+
+        // ========== LOG HOURS ==========
+        function openLogHours() {
+            const current = parseFloat(localStorage.getItem('bsn9b_home_hours') || '0');
+            document.getElementById('hoursCurrentTotal').textContent = 'Total logged: ' + current + ' hrs';
+            document.getElementById('hoursInput').value = '';
+            document.getElementById('logHoursModal').classList.add('open');
+            document.getElementById('hoursInput').focus();
+        }
+        function closeLogHours() {
+            document.getElementById('logHoursModal').classList.remove('open');
+        }
+        function confirmLogHours() {
+            const val = parseFloat(document.getElementById('hoursInput').value);
+            if (isNaN(val) || val <= 0) { showToast('Enter a valid number of hours.', 'warning'); return; }
+            const current = parseFloat(localStorage.getItem('bsn9b_home_hours') || '0');
+            const newTotal = Math.round((current + val) * 10) / 10;
+            localStorage.setItem('bsn9b_home_hours', newTotal);
+            document.getElementById('ctxHours').textContent = newTotal + ' hrs';
+            closeLogHours();
+            showToast('Added ' + val + ' hrs — total: ' + newTotal + ' hrs', 'success');
+        }
+        document.getElementById('hoursInput')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') confirmLogHours();
+        });
+
+        // ========== RECENT NOTES ==========
+        function sanitizeEmail(email) {
+            return email.replace(/\./g, '_').replace(/@/g, '_at_');
+        }
+        function loadRecentNotes(email) {
+            if (!email) { renderRecentNotes([]); return; }
+            const ref = database.ref('userDocuments/' + sanitizeEmail(email));
+            ref.orderByChild('savedAt').limitToLast(5).once('value', (snap) => {
+                const docs = [];
+                snap.forEach((child) => {
+                    docs.unshift({ id: child.key, ...child.val() });
+                });
+                renderRecentNotes(docs);
+            }).catch(() => renderRecentNotes([]));
+        }
+        function renderRecentNotes(docs) {
+            const el = document.getElementById('recentNotesList');
+            if (!el) return;
+            if (!docs.length) {
+                el.innerHTML = '<div class="dash-empty">No saved notes yet.<br><a href="/app/" style="color:var(--clx-accent);font-weight:600;">Start your first note →</a></div>';
+                return;
+            }
+            el.innerHTML = docs.map(doc => {
+                const name = doc.patientName || doc.name || 'Unnamed Note';
+                const type = doc.noteType || doc.type || '—';
+                const date = doc.savedAt ? new Date(doc.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                return `<a class="dash-note-item" href="/app/" title="Open in Note Builder">
+                    <span class="dash-note-type">${escHtml(type)}</span>
+                    <span class="dash-note-name">${escHtml(name)}</span>
+                    <span class="dash-note-date">${escHtml(date)}</span>
+                </a>`;
+            }).join('');
+        }
+        function escHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ========== SKILL CHECKOFFS ==========
+        const SKILLS = [
+            'Vital signs assessment',
+            'Head-to-toe physical assessment',
+            'IV insertion / IV care',
+            'Foley catheter insertion',
+            'Nasogastric tube insertion',
+            'Wound care / dressing change',
+            'Medication administration (PO)',
+            'Medication administration (IV)',
+            'Blood glucose monitoring',
+            'Patient education documentation',
+            'SBAR handoff communication',
+            'Fall risk assessment (Morse)',
+        ];
+        const SKILLS_KEY = 'bsn9b_home_skills';
+
+        function loadSkillState() {
+            try { return JSON.parse(localStorage.getItem(SKILLS_KEY) || '{}'); } catch { return {}; }
+        }
+        function saveSkillState(state) {
+            localStorage.setItem(SKILLS_KEY, JSON.stringify(state));
+        }
+        function renderSkills() {
+            const el = document.getElementById('skillsList');
+            if (!el) return;
+            const state = loadSkillState();
+            el.innerHTML = SKILLS.map((skill, i) => {
+                const checked = !!state[i];
+                return `<div class="dash-skill-item${checked ? ' checked' : ''}" id="skill-row-${i}">
+                    <input type="checkbox" id="skill-${i}" ${checked ? 'checked' : ''} onchange="toggleSkill(${i}, this.checked)" aria-label="${escHtml(skill)}">
+                    <label class="dash-skill-label" for="skill-${i}">${escHtml(skill)}</label>
+                </div>`;
+            }).join('');
+        }
+        function toggleSkill(i, checked) {
+            const state = loadSkillState();
+            state[i] = checked;
+            saveSkillState(state);
+            const row = document.getElementById('skill-row-' + i);
+            if (row) row.classList.toggle('checked', checked);
+        }
+        function resetSkills() {
+            showConfirmModal('Reset Skill Checkoffs', 'Clear all checkmarks and start fresh?', () => {
+                saveSkillState({});
+                renderSkills();
             });
+        }
+        renderSkills();
+
+        // ========== REMINDERS ==========
+        const REMINDERS_KEY = 'bsn9b_home_reminders';
+        (function initReminders() {
+            const el = document.getElementById('remindersText');
+            if (el) el.value = localStorage.getItem(REMINDERS_KEY) || '';
+        })();
+        function saveReminders() {
+            const el = document.getElementById('remindersText');
+            if (el) localStorage.setItem(REMINDERS_KEY, el.value);
         }
     </script>
     <script src="/shared/header.js"></script>
-
 </body>
 </html>
-
-
-
-
-
-
