@@ -331,6 +331,9 @@
 /* =========================================================
    THEME SYSTEM (7 themes)
    ========================================================= */
+window._bsnDb  = null;
+window._bsnUid = null;
+
 window.getTheme = function() {
     return document.documentElement.getAttribute('data-theme') || 'light';
 };
@@ -338,33 +341,54 @@ window.getTheme = function() {
 window.setTheme = function(name) {
     document.documentElement.setAttribute('data-theme', name);
     localStorage.setItem('bsn9b_theme', name);
-    // Update button label
-    var labels = {
-        light: '☀️ Light', warm: '🌅 Warm', forest: '🌿 Forest',
-        ocean: '🌊 Ocean', sunset: '🌆 Sunset', rose: '🌸 Rose', dark: '🌙 Dark'
-    };
-    var btn = document.getElementById('bsnThemeBtn');
-    if (btn) {
-        var lbl = btn.querySelector('.bsn-theme-btn-label');
-        if (lbl) lbl.textContent = labels[name] || '🎨 Theme';
+    // Sync to Firebase if available
+    if (window._bsnDb && window._bsnUid) {
+        try { window._bsnDb.ref('userProfiles/' + window._bsnUid + '/theme').set(name); } catch(e) {}
     }
+    // Close picker + backdrop
+    var picker = document.getElementById('bsnThemePicker');
+    var backdrop = document.getElementById('bsnThemeBackdrop');
+    if (picker)   picker.style.display   = 'none';
+    if (backdrop) backdrop.style.display = 'none';
+    // Update sidebar icon (sidebar-style pages)
+    var sidebarIcon = document.getElementById('sidebarThemeIcon');
+    if (sidebarIcon) sidebarIcon.textContent = name === 'dark' ? '🌙' : '🎨';
+    // Update header icon (chat/ai-style pages)
+    var hIcon = document.getElementById('themeMenuIcon');
+    var hText = document.getElementById('themeMenuText');
+    if (hIcon) hIcon.textContent = name === 'dark' ? '🌙' : '🎨';
+    if (hText) hText.textContent = name === 'dark' ? 'Dark Mode' : 'Theme';
     // Sync active state in picker
     document.querySelectorAll('.bsn-theme-opt').forEach(function(opt) {
         opt.classList.toggle('active', opt.dataset.theme === name);
     });
-    // Keep per-page sidebar icons in sync
-    var isDark = name === 'dark';
-    var icon = document.getElementById('themeMenuIcon');
-    var text = document.getElementById('themeMenuText');
-    if (icon) icon.textContent = isDark ? '☀️' : '🎨';
-    if (text) text.textContent = isDark ? 'Light Mode' : 'Theme';
+};
+
+// Called by each page after Firebase auth resolves — syncs theme across devices
+window.initThemeSync = function(db, uid) {
+    if (!db || !uid) return;
+    window._bsnDb  = db;
+    window._bsnUid = uid;
+    db.ref('userProfiles/' + uid + '/theme').once('value', function(snap) {
+        var fbTheme = snap.val();
+        if (fbTheme) {
+            // Firebase wins — apply saved theme
+            window.setTheme(fbTheme);
+        } else {
+            // First time: push current local theme to Firebase (if non-default)
+            var cur = window.getTheme();
+            if (cur !== 'light') db.ref('userProfiles/' + uid + '/theme').set(cur);
+        }
+    });
 };
 
 window.toggleThemePicker = function() {
-    var picker = document.getElementById('bsnThemePicker');
+    var picker   = document.getElementById('bsnThemePicker');
+    var backdrop = document.getElementById('bsnThemeBackdrop');
     if (!picker) return;
     var open = picker.style.display === 'block';
-    picker.style.display = open ? 'none' : 'block';
+    picker.style.display   = open ? 'none' : 'block';
+    if (backdrop) backdrop.style.display = open ? 'none' : 'block';
     if (!open) {
         document.querySelectorAll('.bsn-theme-opt').forEach(function(opt) {
             opt.classList.toggle('active', opt.dataset.theme === window.getTheme());
@@ -372,30 +396,37 @@ window.toggleThemePicker = function() {
     }
 };
 
-// Override binary toggle — now opens picker
-window.toggleDarkMode = function() {
-    window.toggleThemePicker();
-};
+// Override per-page binary toggle — now opens picker
+window.toggleDarkMode = function() { window.toggleThemePicker(); };
 
 (function injectThemePicker() {
-    var themeBtn = document.querySelector('.header-actions button[onclick*="toggleDarkMode"]');
+    // Support both sidebar-style (.clx-sidebar-item) and header-style (.header-btn) pages
+    var themeBtn = document.querySelector('.clx-sidebar-item[onclick*="toggleDarkMode"]') ||
+                   document.querySelector('.header-actions button[onclick*="toggleDarkMode"]');
     if (!themeBtn) return;
+
     themeBtn.id = 'bsnThemeBtn';
-    // Wrap in position:relative container
-    var wrap = document.createElement('div');
-    wrap.className = 'bsn-theme-btn-wrap';
-    themeBtn.parentNode.insertBefore(wrap, themeBtn);
-    wrap.appendChild(themeBtn);
-    // Update button content to show current theme
-    themeBtn.innerHTML = '<span class="bsn-theme-btn-label">🎨 Theme</span>';
-    window.setTheme(window.getTheme());
-    // Build picker HTML
-    var pickerHTML = '<div id="bsnThemePicker">' +
+
+    // Sidebar pages: update the label text ("Dark Mode" → "Theme")
+    var sidebarLabel = themeBtn.querySelector('.clx-sidebar-label');
+    if (sidebarLabel) sidebarLabel.textContent = 'Theme';
+
+    // Backdrop (click-outside-to-close)
+    var backdrop = document.createElement('div');
+    backdrop.id = 'bsnThemeBackdrop';
+    backdrop.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:2400;background:rgba(0,0,0,0.3);';
+    backdrop.onclick = function() { window.toggleThemePicker(); };
+    document.body.appendChild(backdrop);
+
+    // Picker overlay
+    var picker = document.createElement('div');
+    picker.id = 'bsnThemePicker';
+    picker.innerHTML =
         '<div class="bsn-theme-picker-label">Neutral</div>' +
         '<div class="bsn-theme-grid bsn-theme-grid-3">' +
-        '<button class="bsn-theme-opt" data-theme="light" onclick="window.setTheme(\'light\')"><span class="bsn-swatch" style="background:#e8edf2;"></span>Light</button>' +
-        '<button class="bsn-theme-opt" data-theme="warm"  onclick="window.setTheme(\'warm\')"><span class="bsn-swatch" style="background:#f2ece0;"></span>Warm</button>' +
-        '<button class="bsn-theme-opt" data-theme="dark"  onclick="window.setTheme(\'dark\')"><span class="bsn-swatch" style="background:#161b22;border-color:rgba(255,255,255,0.2);"></span>Dark</button>' +
+        '<button class="bsn-theme-opt" data-theme="light"  onclick="window.setTheme(\'light\')"><span class="bsn-swatch" style="background:#e8edf2;"></span>Light</button>' +
+        '<button class="bsn-theme-opt" data-theme="warm"   onclick="window.setTheme(\'warm\')"><span class="bsn-swatch" style="background:#f2ece0;"></span>Warm</button>' +
+        '<button class="bsn-theme-opt" data-theme="dark"   onclick="window.setTheme(\'dark\')"><span class="bsn-swatch" style="background:#161b22;border-color:rgba(255,255,255,0.2);"></span>Dark</button>' +
         '</div>' +
         '<div class="bsn-theme-divider"></div>' +
         '<div class="bsn-theme-picker-label">Colored</div>' +
@@ -404,14 +435,9 @@ window.toggleDarkMode = function() {
         '<button class="bsn-theme-opt" data-theme="ocean"  onclick="window.setTheme(\'ocean\')"><span class="bsn-swatch" style="background:#e8f0f5;"></span>Ocean</button>' +
         '<button class="bsn-theme-opt" data-theme="sunset" onclick="window.setTheme(\'sunset\')"><span class="bsn-swatch" style="background:#ece8f5;"></span>Sunset</button>' +
         '<button class="bsn-theme-opt" data-theme="rose"   onclick="window.setTheme(\'rose\')"><span class="bsn-swatch" style="background:#f5e8eb;"></span>Rose</button>' +
-        '</div>' +
         '</div>';
-    wrap.insertAdjacentHTML('beforeend', pickerHTML);
-    // Outside click closes picker
-    document.addEventListener('click', function(e) {
-        var picker = document.getElementById('bsnThemePicker');
-        if (picker && picker.style.display === 'block') {
-            if (!wrap.contains(e.target)) picker.style.display = 'none';
-        }
-    });
+    document.body.appendChild(picker);
+
+    // Sync icon + active state to current theme
+    window.setTheme(window.getTheme());
 })();

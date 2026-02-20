@@ -833,6 +833,7 @@ Your content will be exported with:
         // Check user role - redirect instructors
         auth.onAuthStateChanged(async (user) => {
             if (user) {
+                if (window.initThemeSync) window.initThemeSync(database, user.uid);
                 try {
                     const snapshot = await userProfilesRef.child(user.uid).once('value');
                     const profile = snapshot.val();

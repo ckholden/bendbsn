@@ -1342,6 +1342,7 @@
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUid = user.uid;
+                if (window.initThemeSync) window.initThemeSync(database, user.uid);
                 try {
                     const snap = await userProfilesRef.child(user.uid).once('value');
                     const profile = snap.val();
