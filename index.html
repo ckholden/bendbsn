@@ -885,9 +885,11 @@
                 status: 'pending'
             };
 
-            try {
-                // Try EmailJS first (primary method)
-                if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
+            let emailSent = false;
+
+            // Try EmailJS first (primary method)
+            if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
+                try {
                     const templateParams = {
                         to_name: 'Admin',
                         to_email: _ae,
@@ -901,8 +903,17 @@
                     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
                     notificationLog.status = 'sent_emailjs';
                     notificationLog.method = 'EmailJS';
-                } else {
-                    // Fallback to FormSubmit if EmailJS not available
+                    emailSent = true;
+
+                    console.log('✅ Admin notification sent via EmailJS');
+                } catch (emailjsError) {
+                    console.warn('EmailJS failed, trying FormSubmit fallback...', emailjsError);
+                }
+            }
+
+            // Fallback to FormSubmit if EmailJS failed or not available
+            if (!emailSent) {
+                try {
                     const formData = new FormData();
                     formData.append('name', name);
                     formData.append('email', email);
@@ -917,31 +928,25 @@
 
                     if (response.ok) {
                         notificationLog.status = 'sent_formsubmit';
-                        notificationLog.method = 'FormSubmit';
+                        notificationLog.method = 'FormSubmit (fallback)';
+                        emailSent = true;
+
+                        console.log('✅ Admin notification sent via FormSubmit');
                     } else {
-                        throw new Error('FormSubmit returned non-OK status');
+                        throw new Error('FormSubmit returned non-OK status: ' + response.status);
                     }
+                } catch (formsubmitError) {
+                    console.error('FormSubmit also failed:', formsubmitError);
+                    notificationLog.status = 'failed';
+                    notificationLog.error = 'Both EmailJS and FormSubmit failed: ' + formsubmitError.message;
+                    notificationLog.method = 'All methods failed';
                 }
-
-                // Log successful send to Firebase
-                database.ref('notificationLog').push(notificationLog).catch(err =>
-                    console.error('Failed to log notification:', err)
-                );
-
-            } catch (error) {
-                console.error('Email notification failed:', error);
-
-                // Log failure to Firebase
-                notificationLog.status = 'failed';
-                notificationLog.error = error.message || 'Unknown error';
-                notificationLog.method = typeof emailjs !== 'undefined' ? 'EmailJS (failed)' : 'FormSubmit (failed)';
-
-                database.ref('notificationLog').push(notificationLog).catch(err =>
-                    console.error('Failed to log notification failure:', err)
-                );
-
-                // Don't throw - allow registration to continue even if email fails
             }
+
+            // Log notification attempt to Firebase (success or failure)
+            database.ref('notificationLog').push(notificationLog).catch(err =>
+                console.error('Failed to log notification:', err)
+            );
         }
 
         // Firebase Configuration
