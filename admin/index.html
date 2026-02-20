@@ -1248,6 +1248,37 @@
             }
         }
 
+        function normalizeRegisteredUser(user) {
+            const rawEmail = String(user?.email || '').trim();
+            const rawUsername = String(user?.username || user?.user || '').trim();
+            const fallbackFromEmail = rawEmail.includes('@') ? rawEmail.split('@')[0] : '';
+            const username = rawUsername || fallbackFromEmail || 'unknown';
+            const name = String(user?.name || user?.displayName || user?.fullName || username || 'Unknown').trim();
+            const email = rawEmail || (String(user?.username || '').includes('@') ? String(user.username).trim() : '');
+            const status = String(user?.status || 'approved').trim() || 'approved';
+            const role = String(user?.role || 'RN Student').trim() || 'RN Student';
+            return { name, email, username, status, role };
+        }
+
+        function usersFromProfilesFallback() {
+            const users = [];
+            Object.entries(userProfilesByUid || {}).forEach(([uid, profile]) => {
+                const email = String(profile?.email || '').trim();
+                const fallbackUsername = email.includes('@') ? email.split('@')[0] : uid;
+                const username = String(profile?.username || fallbackUsername || uid).trim();
+                const name = String(profile?.displayName || profile?.name || username || 'Unknown').trim();
+                const role = String(profile?.role || 'RN Student').trim() || 'RN Student';
+                users.push({
+                    name,
+                    email,
+                    username,
+                    status: 'approved',
+                    role
+                });
+            });
+            return users;
+        }
+
         // Load registered users from Google Sheets
         async function loadRegisteredUsers() {
             const container = document.getElementById('registeredUsersList');
@@ -1279,15 +1310,43 @@
                 const data = await response.json();
                 console.log('Users data:', data);
 
-                if (data.success && data.users) {
-                    registeredUsersCache = data.users;
-                    document.getElementById('statRegistered').textContent = registeredUsersCache.length;
-                    filterRegisteredUsers();
+                // Accept multiple response shapes from Apps Script
+                let rawUsers = [];
+                if (Array.isArray(data?.users)) rawUsers = data.users;
+                else if (Array.isArray(data?.data)) rawUsers = data.data;
+                else if (Array.isArray(data)) rawUsers = data;
+
+                const normalized = rawUsers
+                    .map(normalizeRegisteredUser)
+                    .filter(u => u.username || u.email || u.name);
+
+                if (normalized.length > 0) {
+                    registeredUsersCache = normalized;
                 } else {
-                    throw new Error('API returned success=false or no users array');
+                    // Fallback to Firebase profiles if sheet returns empty/unexpected response
+                    const fallback = usersFromProfilesFallback();
+                    if (fallback.length > 0) {
+                        registeredUsersCache = fallback;
+                        showToast('Using Firebase profile fallback for user list.', 'warning');
+                    } else {
+                        registeredUsersCache = [];
+                    }
                 }
+
+                document.getElementById('statRegistered').textContent = registeredUsersCache.length;
+                filterRegisteredUsers();
             } catch (e) {
                 console.error('Error loading users:', e);
+
+                // If Google Sheets fails, fallback to Firebase profiles instead of blank/error
+                const fallback = usersFromProfilesFallback();
+                if (fallback.length > 0) {
+                    registeredUsersCache = fallback;
+                    document.getElementById('statRegistered').textContent = registeredUsersCache.length;
+                    filterRegisteredUsers();
+                    showToast('Google Sheets unavailable. Showing Firebase profile users.', 'warning');
+                    return;
+                }
 
                 // Show detailed error message
                 let errorMsg = 'Unknown error';
