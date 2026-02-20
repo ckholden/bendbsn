@@ -666,7 +666,8 @@
                     displayName: name,
                     email: email,
                     role: role,
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    welcomeEmailSent: false
                 });
 
                 // Save user profile to Google Sheet (no password stored)
@@ -684,8 +685,9 @@
                 // Send email notification to admin
                 await sendEmailNotification(name, email, email, 'new_registration', role);
 
-                // Send welcome email to new user
-                await sendWelcomeEmail(name, email);
+                // Send welcome email to new user; track success in Firebase for admin follow-up
+                const welcomeSent = await sendWelcomeEmail(name, email);
+                database.ref('userProfiles/' + user.uid).update({ welcomeEmailSent: welcomeSent }).catch(() => {});
 
                 // Clear form and close modal
                 document.getElementById('regName').value = '';
@@ -992,9 +994,9 @@
             emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
         }
 
-        // Send welcome email to new user
+        // Send welcome email to new user — returns true if sent, false if all methods failed
         async function sendWelcomeEmail(name, email) {
-            if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') return;
+            if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') return false;
 
             try {
                 const templateParams = {
@@ -1006,6 +1008,7 @@
                 };
 
                 await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+                return true;
             } catch (error) {
                 console.error('Failed to send welcome email:', error);
                 // Fallback via FormSubmit if EmailJS is unavailable or blocked
@@ -1016,15 +1019,15 @@
                     formData.append('_subject', 'Welcome to BendBSN');
                     formData.append('message', `Hi ${name}, your BSN9B account is ready.\n\nLogin: https://bendbsn.com\nEmail: ${email}\n\nWelcome!`);
 
-                    await fetch('https://formsubmit.co/ajax/' + email, {
+                    const resp = await fetch('https://formsubmit.co/ajax/' + email, {
                         method: 'POST',
-                        headers: {
-                            'Accept': 'application/json'
-                        },
+                        headers: { 'Accept': 'application/json' },
                         body: formData
                     });
+                    return resp.ok;
                 } catch (fallbackError) {
                     console.error('Welcome email fallback failed:', fallbackError);
+                    return false;
                 }
             }
         }

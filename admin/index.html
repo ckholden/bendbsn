@@ -346,6 +346,7 @@
             <button class="btn btn-sm" style="background: #6c757d; color: white;" onclick="showLoginHistory()">Login History</button>
             <button class="btn btn-sm" style="background: #17a2b8; color: white;" onclick="showExportHistory()">Export History</button>
             <button class="btn btn-sm" style="background: #28a745; color: white;" onclick="showNotificationLog()">📧 Email Notifications</button>
+            <button class="btn btn-sm" style="background: #e53e3e; color: white;" onclick="showPendingWelcomeEmails()" id="pendingEmailsBtn">📬 Pending Welcome Emails</button>
             <button class="btn btn-sm" style="background: #ff9800; color: white;" onclick="showSmartPhrases()">Manage Smart Phrases</button>
             <button class="btn btn-sm" style="background: #9c27b0; color: white;" onclick="showCommunityStats()">Community Stats</button>
             <button class="btn btn-sm" style="background: #1f4e79; color: white;" onclick="normalizeUserRoles()">Normalize Roles</button>
@@ -437,6 +438,26 @@
                     </div>
                 </div>
                 <div id="notificationLogContent" style="padding: 20px; max-height: 65vh; overflow-y: auto;">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Welcome Emails Modal -->
+        <div id="pendingWelcomeModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 900px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
+                <div style="background: #e53e3e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px;">📬 Pending Welcome Emails</h2>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Users whose welcome email failed or was not yet sent</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="sendAllPendingWelcomeEmails()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">📤 Send All Now</button>
+                        <button onclick="refreshPendingWelcomeEmails()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Refresh</button>
+                        <button onclick="closePendingWelcomeEmails()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+                <div id="pendingWelcomeContent" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
                     <p>Loading...</p>
                 </div>
             </div>
@@ -953,6 +974,7 @@
             loadRegisteredUsers();
             loadMessages();
             loadCommunityPosts();
+            updatePendingEmailsBadge();
 
             // Real-time updates
             presenceRef.on('value', () => loadOnlineUsers());
@@ -2844,6 +2866,186 @@
                 // Reload the page to use the new service worker
                 window.location.reload();
             });
+        }
+
+        // ========== PENDING WELCOME EMAILS ==========
+        const userProfilesRef = database.ref('userProfiles');
+
+        async function updatePendingEmailsBadge() {
+            try {
+                const snapshot = await userProfilesRef.once('value');
+                const profiles = snapshot.val() || {};
+                const pendingCount = Object.values(profiles).filter(p => p && !p.welcomeEmailSent).length;
+                const btn = document.getElementById('pendingEmailsBtn');
+                if (btn) {
+                    btn.textContent = pendingCount > 0
+                        ? `📬 Pending Welcome Emails (${pendingCount})`
+                        : '📬 Pending Welcome Emails';
+                    btn.style.background = pendingCount > 0 ? '#e53e3e' : '#718096';
+                }
+            } catch (e) { /* silent */ }
+        }
+
+        function showPendingWelcomeEmails() {
+            document.getElementById('pendingWelcomeModal').style.display = 'block';
+            loadPendingWelcomeEmails();
+        }
+
+        function closePendingWelcomeEmails() {
+            document.getElementById('pendingWelcomeModal').style.display = 'none';
+        }
+
+        function refreshPendingWelcomeEmails() {
+            loadPendingWelcomeEmails();
+        }
+
+        function loadPendingWelcomeEmails() {
+            const container = document.getElementById('pendingWelcomeContent');
+            container.innerHTML = '<p style="color:#666;">Loading user profiles...</p>';
+
+            userProfilesRef.once('value').then((snapshot) => {
+                const profiles = snapshot.val() || {};
+                const pending = [];
+
+                Object.entries(profiles).forEach(([uid, p]) => {
+                    if (p && !p.welcomeEmailSent && p.email) {
+                        pending.push({ uid, ...p });
+                    }
+                });
+
+                if (pending.length === 0) {
+                    container.innerHTML = `<div style="text-align:center; padding:40px;">
+                        <div style="font-size:48px; margin-bottom:12px;">✅</div>
+                        <p style="font-size:16px; font-weight:bold; color:#28a745;">All welcome emails sent!</p>
+                        <p style="color:#666; margin-top:8px;">No pending emails found in Firebase.</p>
+                        <p style="color:#999; font-size:12px; margin-top:8px;">Note: Only users registered after this feature was deployed are tracked here.</p>
+                    </div>`;
+                    updatePendingEmailsBadge();
+                    return;
+                }
+
+                // Sort oldest first
+                pending.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+                let html = `<div style="margin-bottom:16px; padding:12px; background:#fff3cd; border-radius:8px; font-size:13px; color:#856404;">
+                    <strong>⚠️ ${pending.length} user${pending.length !== 1 ? 's' : ''} did not receive a welcome email.</strong>
+                    Use "Send All Now" to send to everyone, or send individually below.
+                </div>
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead>
+                        <tr style="background:#f8f9fa; text-align:left;">
+                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Name</th>
+                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Email</th>
+                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Role</th>
+                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Registered</th>
+                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingEmailsBody">`;
+
+                pending.forEach((p) => {
+                    const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—';
+                    html += `<tr style="border-bottom:1px solid #f0f0f0;">
+                        <td style="padding:10px 12px;">${escapeHtml(p.displayName || '—')}</td>
+                        <td style="padding:10px 12px;">${escapeHtml(p.email)}</td>
+                        <td style="padding:10px 12px;">${escapeHtml(p.role || '—')}</td>
+                        <td style="padding:10px 12px;">${date}</td>
+                        <td style="padding:10px 12px;">
+                            <button onclick="sendSingleWelcomeEmail('${p.uid}','${escapeHtml(p.displayName || '')}','${escapeHtml(p.email)}')"
+                                style="background:#1f4e79; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">
+                                📤 Send
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                updatePendingEmailsBadge();
+            }).catch((err) => {
+                container.innerHTML = `<p style="color:#dc3545;">Error loading profiles: ${err.message}</p>`;
+            });
+        }
+
+        async function sendSingleWelcomeEmail(uid, name, email) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                const templateParams = {
+                    to_name: name || email.split('@')[0],
+                    to_email: email,
+                    reply_to: email,
+                    login_link: 'https://bendbsn.com',
+                    message: `Your BSN9B account has been successfully created!\n\nPlease use your email address (${email}) and the password you created to login.\n\nClick the link below to login to your account.`
+                };
+                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+                await userProfilesRef.child(uid).update({ welcomeEmailSent: true });
+                btn.textContent = '✅ Sent';
+                btn.style.background = '#28a745';
+                showToast('Welcome email sent to ' + email, 'success');
+                setTimeout(() => loadPendingWelcomeEmails(), 1500);
+            } catch (e) {
+                console.error('Send failed:', e);
+                btn.disabled = false;
+                btn.textContent = '📤 Send';
+                showToast('Failed to send to ' + email + ': ' + e.message, 'error');
+            }
+        }
+
+        async function sendAllPendingWelcomeEmails() {
+            const snapshot = await userProfilesRef.once('value').catch(() => null);
+            if (!snapshot) { showToast('Could not load user profiles', 'error'); return; }
+
+            const profiles = snapshot.val() || {};
+            const pending = Object.entries(profiles).filter(([uid, p]) => p && !p.welcomeEmailSent && p.email);
+
+            if (pending.length === 0) {
+                showToast('No pending emails found', 'info');
+                return;
+            }
+
+            showConfirmModal(
+                'Send All Pending Welcome Emails',
+                `Send welcome emails to ${pending.length} user${pending.length !== 1 ? 's' : ''}?`,
+                async function() {
+                    const container = document.getElementById('pendingWelcomeContent');
+                    container.innerHTML = `<div style="text-align:center; padding:40px;">
+                        <div style="font-size:32px; margin-bottom:12px;">📤</div>
+                        <p id="sendAllProgress" style="font-size:16px; font-weight:bold;">Sending 0 / ${pending.length}...</p>
+                        <p style="color:#666; font-size:12px; margin-top:8px;">Rate-limited to avoid spam filters</p>
+                    </div>`;
+
+                    let sent = 0, failed = 0;
+
+                    for (let i = 0; i < pending.length; i++) {
+                        const [uid, p] = pending[i];
+                        document.getElementById('sendAllProgress').textContent = `Sending ${i + 1} / ${pending.length}...`;
+                        try {
+                            const templateParams = {
+                                to_name: p.displayName || p.email.split('@')[0],
+                                to_email: p.email,
+                                reply_to: p.email,
+                                login_link: 'https://bendbsn.com',
+                                message: `Your BSN9B account has been successfully created!\n\nPlease use your email address (${p.email}) and the password you created to login.\n\nClick the link below to login to your account.`
+                            };
+                            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+                            await userProfilesRef.child(uid).update({ welcomeEmailSent: true });
+                            sent++;
+                        } catch (e) {
+                            console.error('Failed for', p.email, e);
+                            failed++;
+                        }
+                        // Rate limit: 600ms between sends to avoid EmailJS throttle
+                        if (i < pending.length - 1) await new Promise(r => setTimeout(r, 600));
+                    }
+
+                    showToast(`Done! Sent: ${sent}, Failed: ${failed}`, sent > 0 ? 'success' : 'error');
+                    loadPendingWelcomeEmails();
+                },
+                { confirmText: 'Send All', danger: false }
+            );
         }
 
     </script>
