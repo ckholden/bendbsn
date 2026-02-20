@@ -889,6 +889,17 @@
         .status-option:hover { background: rgba(255,255,255,0.07); color: white; }
         .status-option.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: white; }
         .status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        /* Custom status input */
+        .status-custom-row { display: flex; gap: 4px; margin-bottom: 6px; }
+        .status-custom-input { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: white; font-size: 12px; padding: 5px 8px; outline: none; min-width: 0; }
+        .status-custom-input::placeholder { color: rgba(255,255,255,0.3); }
+        .status-custom-input:focus { border-color: rgba(99,102,241,0.7); background: rgba(255,255,255,0.12); }
+        .status-custom-set-btn { padding: 4px 10px; background: rgba(99,102,241,0.5); border: none; border-radius: 6px; color: white; font-size: 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+        .status-custom-set-btn:hover { background: rgba(99,102,241,0.8); }
+        .status-emoji-row { display: flex; gap: 3px; margin-bottom: 8px; flex-wrap: wrap; }
+        .status-emoji-btn { background: none; border: 1px solid transparent; border-radius: 4px; font-size: 14px; padding: 2px 4px; cursor: pointer; line-height: 1; transition: background 0.1s; }
+        .status-emoji-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
+        .status-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 6px 0; }
         /* Last seen */
         .last-seen-text { font-size: 10px; color: var(--text-secondary); }
     </style>
@@ -976,7 +987,26 @@
                 </div>
                 <div id="statusPickerPanel">
                     <div class="status-picker-label">Set Status</div>
-                    <button class="status-option active" data-status="" onclick="event.stopPropagation();selectStatusMsg('')"><span class="status-dot-sm" style="background:#22c55e;"></span> Online</button>
+                    <div class="status-custom-row">
+                        <input class="status-custom-input" id="customStatusInput" maxlength="40" placeholder="What's your status?"
+                            onclick="event.stopPropagation()"
+                            onkeydown="if(event.key==='Enter'){event.stopPropagation();submitCustomStatus();}">
+                        <button class="status-custom-set-btn" onclick="event.stopPropagation();submitCustomStatus()">Set</button>
+                    </div>
+                    <div class="status-emoji-row">
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('📚')" title="Studying">📚</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('☕')" title="Coffee break">☕</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🤒')" title="Sick">🤒</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('😴')" title="Tired">😴</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏥')" title="At hospital">🏥</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💊')" title="Medication">💊</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🧪')" title="Lab">🧪</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🎉')" title="Celebrating">🎉</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('🏃')" title="On the go">🏃</button>
+                        <button class="status-emoji-btn" onclick="event.stopPropagation();appendStatusEmoji('💤')" title="Away">💤</button>
+                    </div>
+                    <div class="status-divider"></div>
+                    <button class="status-option active" data-status="" onclick="event.stopPropagation();selectStatusMsg('')"><span class="status-dot-sm" style="background:#22c55e;"></span> Online (clear)</button>
                     <button class="status-option" data-status="In class" onclick="event.stopPropagation();selectStatusMsg('In class')"><span class="status-dot-sm" style="background:#f59e0b;"></span> In class</button>
                     <button class="status-option" data-status="Studying" onclick="event.stopPropagation();selectStatusMsg('Studying')"><span class="status-dot-sm" style="background:#3b82f6;"></span> Studying</button>
                     <button class="status-option" data-status="Do not disturb" onclick="event.stopPropagation();selectStatusMsg('Do not disturb')"><span class="status-dot-sm" style="background:#ef4444;"></span> Do not disturb</button>
@@ -1453,7 +1483,31 @@
             const panel = document.getElementById('statusPickerPanel');
             if (!panel) return;
             const isVisible = panel.style.display === 'block';
+            if (!isVisible) {
+                // Pre-fill input if currently a custom status
+                const input = document.getElementById('customStatusInput');
+                if (input) {
+                    input.value = (!STATUS_CONFIG.hasOwnProperty(myStatusMsg) && myStatusMsg) ? myStatusMsg : '';
+                }
+            }
             panel.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) {
+                const input = document.getElementById('customStatusInput');
+                if (input) setTimeout(() => input.focus(), 50);
+            }
+        }
+
+        function appendStatusEmoji(emoji) {
+            const input = document.getElementById('customStatusInput');
+            if (!input) return;
+            if (input.value.length < 38) input.value = (input.value + emoji).trim();
+            input.focus();
+        }
+
+        function submitCustomStatus() {
+            const input = document.getElementById('customStatusInput');
+            const val = input ? input.value.trim() : '';
+            selectStatusMsg(val);
         }
 
         const STATUS_CONFIG = {
@@ -1471,7 +1525,7 @@
             if (nameEl) nameEl.textContent = displayName || 'You';
             if (avatarEl) avatarEl.textContent = (displayName || '?')[0].toUpperCase();
             if (statusEl) {
-                const cfg = STATUS_CONFIG[myStatusMsg] || { dot: '#22c55e', label: myStatusMsg || 'Online' };
+                const cfg = STATUS_CONFIG[myStatusMsg] || { dot: '#94a3b8', label: myStatusMsg || 'Online' };
                 statusEl.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${cfg.dot};margin-right:4px;vertical-align:middle;"></span>${escapeHtml(cfg.label)}`;
             }
             document.querySelectorAll('#statusPickerPanel .status-option').forEach(btn => {
