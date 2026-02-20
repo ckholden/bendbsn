@@ -34,8 +34,8 @@
     },
     "directMessages": {
       "$convId": {
-        ".read": "auth != null && data.child('participants').child(auth.uid).exists()",
-        ".write": "auth != null && (!data.exists() ? newData.child('participants').child(auth.uid).exists() : data.child('participants').child(auth.uid).exists() || newData.child('participants').child(auth.uid).exists())"
+        ".read": "auth != null && (data.child('participants').child('user1_uid').val() === auth.uid || data.child('participants').child('user2_uid').val() === auth.uid)",
+        ".write": "auth != null && (!data.exists() ? (newData.child('participants').child('user1_uid').val() === auth.uid || newData.child('participants').child('user2_uid').val() === auth.uid) : (data.child('participants').child('user1_uid').val() === auth.uid || data.child('participants').child('user2_uid').val() === auth.uid || newData.child('participants').child('user1_uid').val() === auth.uid || newData.child('participants').child('user2_uid').val() === auth.uid))"
       }
     },
     "community": {
