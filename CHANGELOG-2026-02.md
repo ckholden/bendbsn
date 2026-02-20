@@ -7,6 +7,46 @@ This document tracks all changes and fixes made during the February 2026 debuggi
 
 ## 2026-02-20 Updates
 
+### Chat Connectivity + User Directory Reliability
+**Problem:** Chat could show "Disconnected..." and DM user list could stay stuck on "Loading users..." for non-admin users.
+
+**Root Cause:** Client logic depended on full `userProfiles` reads that are intentionally restricted by security rules.
+
+**Fix:**
+- Added graceful fallback when `userProfiles` read is denied.
+- Continue loading DM/mention user directory from cache/Google Sheet response.
+- Clear stale local session and redirect to login when Firebase auth is lost.
+
+---
+
+### Admin Registered Users Panel Empty
+**Problem:** Registered Users panel could render empty after API shape changes or temporary Google Sheet issues.
+
+**Fix:**
+- Admin loader now accepts multiple response formats (`data.users`, `data.data`, or root array).
+- Added normalization of returned user objects before rendering.
+- Added Firebase `userProfiles` fallback list when Google Sheets response is empty/unavailable.
+
+---
+
+### Registration Email Delivery Restored
+**Problem:** Admin new-user notifications and/or welcome emails stopped sending reliably in some flows.
+
+**Fix:**
+- Added `https://api.emailjs.com` to CSP `connect-src` for EmailJS requests.
+- Added FormSubmit `Accept: application/json` header for stronger fallback behavior.
+- Restored welcome-email send in the Create Account flow.
+- Added welcome-email FormSubmit fallback when EmailJS fails.
+
+---
+
+### Security Fixes
+**Fixes shipped:**
+- Hardened Realtime Database `directMessages` write rule to prevent participant-takeover of existing threads.
+- Escaped user-controlled chat name sinks to mitigate stored XSS vectors in chat UI/DM UI/typing/mentions/online list.
+
+---
+
 ### Admin Chat Permission Fix
 **Problem:** Admin page threw `permission_denied` when reading `/chat/messages`.
 

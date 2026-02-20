@@ -7,6 +7,11 @@ This document outlines security best practices for the BendBSN nursing documenta
 
 ## ✅ Current Security Status
 
+### 2026-02-20 Security Notes
+- ✅ Realtime Database DM rule hardened to block participant-overwrite takeover on existing conversations.
+- ✅ Chat rendering hardened against stored XSS in user name surfaces (message headers, typing, DM list/sidebar, mentions, online panel).
+- ✅ CSP updated to allow EmailJS API requests (`https://api.emailjs.com`) required for client-side registration notifications.
+
 ### What's Already Secure
 
 #### 1. **Firebase API Key Exposure (Public & Secure)**

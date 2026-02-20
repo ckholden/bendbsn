@@ -2,6 +2,22 @@
 
 ## 2026-02-20
 
+### Chat + Admin Reliability
+- Fixed chat "Disconnected..." / "Loading users..." behavior caused by restricted `userProfiles` reads for non-admin users.
+- Chat now degrades gracefully when full profile reads are denied, using cached/Sheet user data instead of blocking DM/mention user lists.
+- Stale local chat sessions now clear and redirect to login when Firebase Auth is no longer active.
+- Admin Registered Users loader now accepts multiple API response shapes and falls back to Firebase `userProfiles` if Google Sheets is empty/unavailable.
+
+### Registration Emails
+- Restored welcome email sending for the "Create Account" flow (it previously only sent admin notification on that path).
+- Added welcome-email fallback via FormSubmit when EmailJS fails.
+- Added JSON accept header on FormSubmit email fallback requests for more reliable responses.
+
+### Security Hardening
+- Locked `directMessages` rules to prevent participant-takeover on existing conversations.
+- Hardened chat rendering sinks against stored XSS by escaping user-controlled names in message headers, typing indicator, DM lists, mention dropdown, and online user list.
+- Added `https://api.emailjs.com` to CSP `connect-src` for login/registration email delivery.
+
 ### Admin + Rules
 - Admin now has explicit read access to `/chat/messages` at the root level (prevents permission_denied in admin chat view).
 - Published rules update includes admin role/claim checks for sensitive paths.
