@@ -242,6 +242,33 @@
             </div>
         </div>
 
+    <!-- Documented by bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--clx-bg-surface-2,#f5f8fa);border:1px solid var(--clx-border,#d1dce8);border-radius:6px;font-size:13px;color:var(--clx-text-secondary,#4a5568);margin-bottom:12px;">
+        <span id="documentedByText">Documented by: —</span>
+        <button onclick="openRoleChangeSection()" style="font-size:11px;color:var(--clx-accent,#0f7490);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">Change Role</button>
+    </div>
+
+    <!-- Role Change Modal -->
+    <div id="roleChangeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10002;align-items:center;justify-content:center;" onclick="if(event.target===this)closeRoleChangeModal()">
+        <div style="background:var(--clx-bg-surface,#fff);border:1px solid var(--clx-border,#e2e8f0);border-radius:10px;padding:22px 24px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:var(--clx-text-primary,#1a2532);">Update Profile Settings</h3>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;font-weight:600;color:#4a5568;display:block;margin-bottom:4px;">Role</label>
+                <select id="modalNoteRole" onchange="syncModalYearOptions()" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;">
+                    <option value="">Loading…</option>
+                </select>
+            </div>
+            <div id="modalNoteYearGroup" style="display:none;margin-bottom:12px;">
+                <label style="font-size:12px;font-weight:600;color:#4a5568;display:block;margin-bottom:4px;">Year Level</label>
+                <select id="modalNoteYear" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;"></select>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                <button onclick="closeRoleChangeModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:1px solid #d1d5db;border-radius:6px;background:#f5f8fa;cursor:pointer;font-family:inherit;">Cancel</button>
+                <button onclick="saveRoleFromModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;border-radius:6px;background:#0f7490;color:white;cursor:pointer;font-family:inherit;">Save</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="content">
             <div class="tabs-wrap">
@@ -1403,11 +1430,19 @@
         // ========== INIT ==========
         document.addEventListener('DOMContentLoaded', function() {
             initTheme();
+            // Quick-fill student name from localStorage (before Firebase profile loads)
+            const nameField = document.querySelector('[data-field="studentName"]');
+            if (nameField && !nameField.value) {
+                const savedName = localStorage.getItem('bsn9b_displayName');
+                if (savedName) nameField.value = savedName;
+            }
             // Set date to today
             const dateField = document.querySelector('[data-field="clinicalDate"]');
             if (dateField) dateField.valueAsDate = new Date();
             // Init 5 med rows
             for (let i = 0; i < 5; i++) addMedRow();
+            // Load role system
+            loadRolesConfig();
             // Attach auto-save listeners
             document.querySelectorAll('[data-field]').forEach(el => {
                 const evt = (el.type === 'checkbox') ? 'change' : 'input';
@@ -2136,6 +2171,94 @@
             const icon = document.getElementById('sidebarToggleIcon');
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
+
+        // ====== ROLE SYSTEM ======
+        let _rolesConfig = {};
+
+        async function loadRolesConfig() {
+            try {
+                const cached = sessionStorage.getItem('bsn9b_roles_config');
+                if (cached) { _rolesConfig = JSON.parse(cached); }
+                else {
+                    const snap = await database.ref('appConfig/roles').once('value');
+                    _rolesConfig = snap.val() || {};
+                    sessionStorage.setItem('bsn9b_roles_config', JSON.stringify(_rolesConfig));
+                }
+            } catch(e) {
+                _rolesConfig = {
+                    student_nurse: { label: 'Student Nurse', requires_year: true, year_options: ['Year 1','Year 2','Year 3','Year 4'], order: 1 },
+                    rn:            { label: 'RN',            requires_year: false, order: 2 },
+                    bsn_rn:        { label: 'BSN, RN',       requires_year: false, order: 3 },
+                    instructor:    { label: 'Instructor',    requires_year: false, order: 4 },
+                    lpn:           { label: 'LPN',           requires_year: false, order: 5 }
+                };
+            }
+            buildDocumentedBy();
+        }
+
+        function buildDocumentedBy() {
+            const el = document.getElementById('documentedByText');
+            if (!el) return;
+            const name = localStorage.getItem('bsn9b_displayName') || '—';
+            const cached = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
+            let cred = cached.label || '';
+            if (cached.requires_year && cached.year) cred += ' (' + cached.year + ')';
+            el.textContent = 'Documented by: ' + name + (cred ? ', ' + cred : '');
+        }
+
+        function openRoleChangeSection() {
+            const modal = document.getElementById('roleChangeModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const cached = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
+            const modalRole = document.getElementById('modalNoteRole');
+            if (!modalRole) return;
+            const sorted = Object.entries(_rolesConfig).sort((a,b) => (a[1].order||99)-(b[1].order||99));
+            modalRole.innerHTML = sorted.map(([id,r]) => `<option value="${id}">${r.label}</option>`).join('');
+            if (cached.id) modalRole.value = cached.id;
+            syncModalYearOptions();
+            const modalYear = document.getElementById('modalNoteYear');
+            if (cached.year && modalYear) modalYear.value = cached.year;
+        }
+        function closeRoleChangeModal() {
+            const modal = document.getElementById('roleChangeModal');
+            if (modal) modal.style.display = 'none';
+        }
+        function syncModalYearOptions() {
+            const roleId = document.getElementById('modalNoteRole')?.value || '';
+            const role = _rolesConfig[roleId] || {};
+            const yg = document.getElementById('modalNoteYearGroup');
+            const ys = document.getElementById('modalNoteYear');
+            if (yg && ys) {
+                if (role.requires_year && role.year_options) {
+                    yg.style.display = '';
+                    ys.innerHTML = role.year_options.map(y => `<option>${y}</option>`).join('');
+                } else {
+                    yg.style.display = 'none';
+                }
+            }
+        }
+        function saveRoleFromModal() {
+            const roleId = document.getElementById('modalNoteRole')?.value || '';
+            const role = _rolesConfig[roleId] || {};
+            const year = (role.requires_year && document.getElementById('modalNoteYear')) ? document.getElementById('modalNoteYear').value || null : null;
+            const data = { id: roleId, label: role.label || '', requires_year: !!role.requires_year, year };
+            try { localStorage.setItem('bsn9b_role_v2', JSON.stringify(data)); } catch(e) {}
+            const uid = localStorage.getItem('bsn9b_uid');
+            if (uid && typeof database !== 'undefined') {
+                database.ref('userProfiles/' + uid).update({ role_id: roleId, role_label: role.label || '', role_year: year || null }).catch(()=>{});
+            }
+            buildDocumentedBy();
+            closeRoleChangeModal();
+            showToast('Role updated to ' + (role.label || 'Unknown') + (year ? ' (' + year + ')' : ''), 'success');
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('roleChangeModal');
+                if (modal && modal.style.display !== 'none') closeRoleChangeModal();
+            }
+        });
+        // ====== END ROLE SYSTEM ======
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
