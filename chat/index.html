@@ -1136,6 +1136,19 @@
         </div>
     </div>
 
+    <!-- Channel Members Modal -->
+    <div id="channelMembersModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2100;align-items:center;justify-content:center;">
+        <div style="background:var(--bg-secondary);border-radius:14px;padding:24px;min-width:300px;max-width:440px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+            <h3 style="margin:0 0 4px;font-size:16px;font-weight:600;color:var(--text-primary);">#<span id="channelMembersTitle"></span></h3>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Check users to add · Uncheck to remove</div>
+            <div id="channelMembersList" style="flex:1;overflow-y:auto;max-height:320px;display:flex;flex-direction:column;gap:2px;"></div>
+            <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+                <button onclick="hideChannelMembersModal()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text-primary);cursor:pointer;font-size:13px;">Cancel</button>
+                <button onclick="saveChannelMembers()" style="padding:8px 16px;background:#3a74e8;border:none;border-radius:8px;color:white;cursor:pointer;font-size:13px;font-weight:600;">Save Members</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Create Channel Modal -->
     <div class="create-channel-modal" id="createChannelModal">
         <div>
@@ -1250,6 +1263,10 @@
         let displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
         let currentUserUid = localStorage.getItem('bsn9b_uid') || '';
 
+        function emailKey(email) {
+            return (email || '').toLowerCase().replace(/\./g, '_dot_').replace(/@/g, '_at_');
+        }
+
         function getCurrentUserEmail() {
             return currentUsername || auth.currentUser?.email || localStorage.getItem('bsn9b_user') || '';
         }
@@ -1322,14 +1339,16 @@
                 if (typeof loadGroupChats === 'function') loadGroupChats();
                 if (typeof loadChannelMembership === 'function') loadChannelMembership();
 
+                // Show create channel button for all users
+                const createChBtn = document.getElementById('createChannelBtn');
+                if (createChBtn) createChBtn.classList.add('visible');
+
                 // Load admin role from Firebase profile
                 userProfilesRef.child(user.uid).once('value').then(snap => {
                     const profile = snap.val();
                     const ownerEmails = ['christiankholden@gmail.com', 'holdenc'];
                     if (profile && (profile.role === 'admin' || ownerEmails.includes(user.email))) {
                         currentUserIsAdmin = true;
-                        const btn = document.getElementById('createChannelBtn');
-                        if (btn) btn.classList.add('visible');
                     }
                 }).catch(() => {});
             } else {
@@ -1691,6 +1710,7 @@
 
         // Channel membership (Feature 5)
         let myJoinedChannels = new Set(['general']);
+        let allChannelMembers = {}; // { channelId: Set<email> } — populated by loadChannelMembership
 
         // ========== NOTIFICATION SOUND ==========
         let soundTone = localStorage.getItem('chatSoundTone') || 'ding';
@@ -1946,17 +1966,25 @@
         // ========== CHANNEL MEMBERSHIP (Feature 5) ==========
         let _channelMembershipListenerActive = false;
         function loadChannelMembership() {
-            const uid = getCurrentUserUid();
-            if (!uid) { setTimeout(loadChannelMembership, 1500); return; }
-            if (_channelMembershipListenerActive) return; // avoid duplicate listeners
+            const email = currentUsername;
+            if (!email || email === 'Anonymous') { setTimeout(loadChannelMembership, 1500); return; }
+            if (_channelMembershipListenerActive) return;
             _channelMembershipListenerActive = true;
             channelMembersRef.on('value', (snap) => {
-                const activeUid = getCurrentUserUid();
+                const myEmail = (currentUsername || '').toLowerCase();
+                allChannelMembers = {};
                 myJoinedChannels = new Set(['general']);
                 snap.forEach(channelSnap => {
                     const id = channelSnap.key;
-                    const members = channelSnap.val() || {};
-                    if (members[activeUid]) myJoinedChannels.add(id);
+                    const raw = channelSnap.val() || {};
+                    // Values are emails (new format) or true (old UID format)
+                    const memberEmails = new Set(
+                        Object.values(raw)
+                            .filter(v => typeof v === 'string')
+                            .map(e => e.toLowerCase())
+                    );
+                    allChannelMembers[id] = memberEmails;
+                    if (memberEmails.has(myEmail)) myJoinedChannels.add(id);
                 });
                 renderChannelList();
             });
@@ -2023,20 +2051,23 @@
                 const safeId = escapeForSingleQuotedJs(id);
                 const safeName = escapeForSingleQuotedJs(ch.name || id);
                 const isJoined = myJoinedChannels.has(id);
-                const adminActions = currentUserIsAdmin ? `
+                const isCreator = ch.createdByEmail && ch.createdByEmail.toLowerCase() === currentUsername.toLowerCase();
+                const canManage = currentUserIsAdmin || isCreator;
+                const manageActions = canManage ? `
                     <span class="channel-actions">
+                        <button onclick="event.stopPropagation();manageChannelMembers('${safeId}')" title="Manage members">&#128101;</button>
                         <button onclick="event.stopPropagation();renameChannel('${safeId}','${safeName}')" title="Rename">&#9998;</button>
                         ${id !== 'general' ? `<button onclick="event.stopPropagation();deleteChannel('${safeId}','${safeName}')" title="Delete">&#128465;</button>` : ''}
                     </span>` : '';
                 const leaveAction = isJoined && id !== 'general' ? `<button class="channel-leave-btn" onclick="event.stopPropagation();leaveChannel('${safeId}')" title="Leave channel">&#10005;</button>` : '';
-                const joinAction = !isJoined ? `<button class="channel-join-btn" onclick="event.stopPropagation();joinChannel('${safeId}')" title="Join channel">Join</button>` : '';
-                const clickAction = isJoined ? `switchChannel('${safeId}')` : `joinChannel('${safeId}')`;
+                const lockIcon = !isJoined ? `<span style="font-size:10px;opacity:0.45;margin-left:4px;">🔒</span>` : '';
+                const clickAction = isJoined ? `switchChannel('${safeId}')` : '';
                 html += `
-                    <div class="channel-item ${isActive ? 'active' : ''} ${!isJoined ? 'not-joined' : ''}" onclick="${clickAction}" title="${escapeAttr(ch.description || '')}">
-                        <span class="channel-name"><span class="hash">#</span> ${escapeHtml(ch.name || id)}</span>
+                    <div class="channel-item ${isActive ? 'active' : ''} ${!isJoined ? 'not-joined' : ''}" ${clickAction ? `onclick="${clickAction}"` : ''} style="${!isJoined ? 'cursor:default;' : ''}" title="${escapeAttr(ch.description || '')}">
+                        <span class="channel-name"><span class="hash">#</span> ${escapeHtml(ch.name || id)}${lockIcon}</span>
                         <span class="channel-badge" id="channelBadge_${id}" style="${unread > 0 && isJoined ? 'display:flex' : 'display:none'}">${unread > 9 ? '9+' : unread}</span>
-                        ${isJoined ? leaveAction : joinAction}
-                        ${adminActions}
+                        ${isJoined ? leaveAction : ''}
+                        ${manageActions}
                     </div>
                 `;
             });
@@ -2052,6 +2083,75 @@
                     .then(() => showToast('Channel renamed to #' + newName, 'success'))
                     .catch(() => showToast('Failed to rename channel', 'error'));
             }, { defaultValue: currentName, placeholder: 'channel-name', submitText: 'Rename' });
+        }
+
+        // ========== CHANNEL MEMBER MANAGEMENT ==========
+        let _managingChannelId = null;
+        let _memberChanges = {};
+
+        function getAllKnownUsers() {
+            const map = new Map();
+            allRegisteredUsers.forEach(u => {
+                if (u.email) map.set(u.email.toLowerCase(), { name: u.name, email: u.email });
+            });
+            onlineUsersData.forEach(u => {
+                const email = (u.username || '').toLowerCase();
+                if (email && !map.has(email)) map.set(email, { name: u.user || email, email });
+            });
+            return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        function manageChannelMembers(channelId) {
+            _managingChannelId = channelId;
+            _memberChanges = {};
+            const ch = channels[channelId] || {};
+            document.getElementById('channelMembersTitle').textContent = ch.name || channelId;
+            const currentMembers = allChannelMembers[channelId] || new Set();
+            const allUsers = getAllKnownUsers();
+            const myEmail = currentUsername.toLowerCase();
+            let html = '';
+            allUsers.forEach(u => {
+                if (u.email.toLowerCase() === myEmail) return; // skip self
+                const isMember = currentMembers.has(u.email.toLowerCase());
+                const safeEmailJs = escapeForSingleQuotedJs(u.email);
+                html += `
+                    <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;background:${isMember ? 'var(--bg-tertiary)' : 'transparent'};">
+                        <input type="checkbox" ${isMember ? 'checked' : ''}
+                            onchange="_memberChanges['${safeEmailJs}'] = this.checked"
+                            style="width:14px;height:14px;cursor:pointer;accent-color:#3a74e8;">
+                        <span style="flex:1;font-size:13px;">${escapeHtml(u.name)}</span>
+                        <span style="font-size:11px;color:var(--text-muted);opacity:0.6;">${escapeHtml(u.email)}</span>
+                    </label>`;
+            });
+            document.getElementById('channelMembersList').innerHTML = html || '<div style="opacity:0.5;font-size:12px;padding:8px;">No other users found.</div>';
+            document.getElementById('channelMembersModal').style.display = 'flex';
+        }
+
+        function hideChannelMembersModal() {
+            document.getElementById('channelMembersModal').style.display = 'none';
+            _managingChannelId = null;
+            _memberChanges = {};
+        }
+
+        async function saveChannelMembers() {
+            if (!_managingChannelId) return;
+            const channelId = _managingChannelId;
+            const promises = [];
+            for (const [email, shouldAdd] of Object.entries(_memberChanges)) {
+                const key = emailKey(email);
+                if (shouldAdd) {
+                    promises.push(channelMembersRef.child(channelId + '/' + key).set(email));
+                } else {
+                    promises.push(channelMembersRef.child(channelId + '/' + key).remove());
+                }
+            }
+            try {
+                await Promise.all(promises);
+                showToast('Members updated for #' + (channels[channelId]?.name || channelId), 'success');
+                hideChannelMembersModal();
+            } catch (err) {
+                showToast('Failed to update members: ' + err.message, 'error');
+            }
         }
 
         function deleteChannel(id, name) {
@@ -2141,13 +2241,13 @@
                 name: name,
                 description: '',
                 createdBy: displayName,
+                createdByEmail: currentUsername,
                 createdAt: Date.now()
             }).then(() => {
                 hideCreateChannelModal();
                 showToast('Channel #' + name + ' created!', 'success');
-                // Auto-join the channel you just created
-                const uid = getCurrentUserUid();
-                if (uid) channelMembersRef.child(name + '/' + uid).set(true).catch(() => {});
+                // Auto-join as creator using email key
+                channelMembersRef.child(name + '/' + emailKey(currentUsername)).set(currentUsername).catch(() => {});
                 myJoinedChannels.add(name);
                 switchChannel(name);
             }).catch(err => {
@@ -2542,8 +2642,8 @@
                             </div>
                         `;
                     } else {
-                        // Normal mode: non-self, non-offline rows are clickable → open DM
-                        const canDM = !isMe && !isOffline;
+                        // Normal mode: non-self rows are clickable → open DM (even for offline users)
+                        const canDM = !isMe;
                         const safeNameJs = escapeForSingleQuotedJs(entry.name);
                         const clickAction = canDM ? `onclick="startDMConversation('${safeNameJs}');toggleUserList();"` : '';
                         const cursorStyle = canDM ? 'cursor:pointer;' : '';
@@ -3627,6 +3727,9 @@
                 }
                 // Clear typing on leave
                 clearTyping(currentChannel);
+                // Close any open modals
+                const memberModal = document.getElementById('channelMembersModal');
+                if (memberModal) memberModal.style.display = 'none';
                 console.log('Firebase listeners cleaned up');
             } catch (e) {
                 console.log('Error cleaning up listeners:', e);
@@ -3643,6 +3746,12 @@
                 const lockOverlay = document.getElementById('lockScreenOverlay');
                 if (lockOverlay && lockOverlay.style.display === 'flex') {
                     unlockScreen();
+                    return;
+                }
+                // Close channel members modal
+                const membersModal = document.getElementById('channelMembersModal');
+                if (membersModal && membersModal.style.display === 'flex') {
+                    hideChannelMembersModal();
                     return;
                 }
                 // Close create channel modal
