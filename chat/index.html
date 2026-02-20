@@ -1157,13 +1157,19 @@
             } else {
                 console.log('Firebase Auth: Not logged in');
                 if (localStorage.getItem('bsn9b_auth') === 'true') {
-                    console.warn('Session exists but Firebase auth lost');
-                    localStorage.removeItem('bsn9b_auth');
-                    localStorage.removeItem('bsn9b_user');
-                    localStorage.removeItem('bsn9b_displayName');
-                    localStorage.removeItem('bsn9b_uid');
-                    showToast('Session expired. Please sign in again.', 'warning', 4000);
-                    setTimeout(() => { window.location.href = '/'; }, 500);
+                    console.warn('Session exists but Firebase auth lost - waiting to confirm');
+                    // Give Firebase auth time to restore session before redirecting
+                    // Firebase may briefly report null during SDK initialization
+                    setTimeout(() => {
+                        if (!auth.currentUser) {
+                            localStorage.removeItem('bsn9b_auth');
+                            localStorage.removeItem('bsn9b_user');
+                            localStorage.removeItem('bsn9b_displayName');
+                            localStorage.removeItem('bsn9b_uid');
+                            showToast('Session expired. Please sign in again.', 'warning', 4000);
+                            setTimeout(() => { window.location.href = '/'; }, 500);
+                        }
+                    }, 3000);
                 } else {
                     window.location.href = '/';
                 }

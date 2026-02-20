@@ -20,8 +20,9 @@
       },
       "presence": {
         ".read": "auth != null",
+        ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
         "$uid": {
-          ".write": "auth != null && auth.uid === $uid"
+          ".write": "auth != null && (auth.uid === $uid || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
         }
       },
       "typing": {

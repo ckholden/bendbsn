@@ -859,10 +859,20 @@
         async function verifyAdminAccess() {
             const user = auth.currentUser;
             if (!user) return false;
+            // Email-based admin bypass (primary method - no custom claims needed)
+            const ADMIN_EMAILS = ['christiankholden@gmail.com'];
+            if (ADMIN_EMAILS.includes(user.email)) return true;
+            // Also check Firebase custom claims as secondary method
             try {
                 const token = await user.getIdTokenResult(true);
                 const claims = token.claims || {};
-                return claims.admin === true || claims.role === 'admin' || claims.role === 'instructor';
+                if (claims.admin === true || claims.role === 'admin' || claims.role === 'instructor') return true;
+            } catch (e) { /* ignore */ }
+            // Check Firebase profile role as tertiary method
+            try {
+                const snap = await userProfilesRef.child(user.uid).once('value');
+                const profile = snap.val() || {};
+                return profile.role === 'admin' || profile.role === 'instructor';
             } catch (e) {
                 return false;
             }
