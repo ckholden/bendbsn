@@ -290,9 +290,9 @@
         <span class="clx-sidebar-icon">&#128682;</span>
         <span class="clx-sidebar-label">Logout</span>
     </button>
-    <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
-        <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9664;</span>
-        <span class="clx-sidebar-toggle-label">Collapse</span>
+    <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9654;</span>
+        <span class="clx-sidebar-toggle-label">Expand</span>
     </button>
 </aside>
 
@@ -355,35 +355,6 @@
     </div>
 </main><!-- /clx-main -->
 </div><!-- /clx-shell -->
-
-    <!-- Bottom Toolbar -->
-    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
-        <a href="/home/" class="toolbar-item" aria-label="Home">
-            <span class="icon" aria-hidden="true">&#127968;</span>
-            <span class="label">Home</span>
-        </a>
-        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
-            <span class="icon" aria-hidden="true">&#128221;</span>
-            <span class="label">RN Notes</span>
-        </a>
-        <a href="/chat/" class="toolbar-item" aria-label="Chat" target="_blank" style="position:relative;">
-            <span class="icon" aria-hidden="true">💬</span>
-            <span class="label">Chat</span>
-            <span id="chatNavBadge" style="display:none;position:absolute;top:2px;right:2px;background:#e94560;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:bold;line-height:16px;text-align:center;">0</span>
-        </a>
-        <a href="/ai/" class="toolbar-item" aria-label="AI Assistant" target="_blank">
-            <span class="icon" aria-hidden="true">🩺</span>
-            <span class="label">AI</span>
-        </a>
-        <a href="/resources/" class="toolbar-item" aria-label="Resources">
-            <span class="icon" aria-hidden="true">&#128218;</span>
-            <span class="label">Resources</span>
-        </a>
-        <a href="/labsched/" class="toolbar-item active" aria-label="Lab Schedule">
-            <span class="icon" aria-hidden="true">&#128197;</span>
-            <span class="label">Lab Sched</span>
-        </a>
-    </nav>
 
     <script>
         // Toast notification
@@ -698,7 +669,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';

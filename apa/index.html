@@ -461,9 +461,9 @@
         <span class="clx-sidebar-icon">&#128682;</span>
         <span class="clx-sidebar-label">Logout</span>
     </button>
-    <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
-        <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9664;</span>
-        <span class="clx-sidebar-toggle-label">Collapse</span>
+    <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9654;</span>
+        <span class="clx-sidebar-toggle-label">Expand</span>
     </button>
 </aside>
 
@@ -801,59 +801,6 @@ Your content will be exported with:
 </main><!-- /clx-main -->
 </div><!-- /clx-shell -->
 
-    <!-- Bottom Toolbar -->
-    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
-        <a href="/home/" class="toolbar-item" aria-label="Home">
-            <span class="icon" aria-hidden="true">&#127968;</span>
-            <span class="label">Home</span>
-        </a>
-        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
-            <span class="icon" aria-hidden="true">&#128221;</span>
-            <span class="label">RN Notes</span>
-        </a>
-        <a href="/chat/" class="toolbar-item" aria-label="Chat" target="_blank" style="position:relative;">
-            <span class="icon" aria-hidden="true">💬</span>
-            <span class="label">Chat</span>
-            <span id="chatNavBadge" style="display:none;position:absolute;top:2px;right:2px;background:#e94560;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:bold;line-height:16px;text-align:center;">0</span>
-        </a>
-        <a href="/ai/" class="toolbar-item" aria-label="AI Assistant" target="_blank">
-            <span class="icon" aria-hidden="true">🩺</span>
-            <span class="label">AI</span>
-        </a>
-        <a href="/resources/" class="toolbar-item" aria-label="Resources">
-            <span class="icon" aria-hidden="true">&#128218;</span>
-            <span class="label">Resources</span>
-        </a>
-        <a href="/apa/" class="toolbar-item active" aria-label="APA Generator">
-            <span class="icon" aria-hidden="true">&#128196;</span>
-            <span class="label">APA Paper</span>
-        </a>
-        <button class="toolbar-item" onclick="toggleMoreMenu()" aria-label="More options" aria-expanded="false" aria-controls="moreMenu">
-            <span class="icon" aria-hidden="true">&#8943;</span>
-            <span class="label">More</span>
-        </button>
-    </nav>
-
-    <!-- More Menu -->
-    <div id="moreMenu" class="more-menu" role="menu" aria-label="More options menu">
-        <button class="more-menu-item" onclick="toggleDarkMode(); toggleMoreMenu();" role="menuitem" aria-label="Toggle dark mode">
-            <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">&#127769;</span>
-            <span id="themeMenuText">Dark Mode</span>
-        </button>
-        <a href="/labsched/" class="more-menu-item" role="menuitem" aria-label="Lab Schedule Generator" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128197;</span>
-            <span>Sched Generator</span>
-        </a>
-        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128196;</span>
-            <span>APA Generator</span>
-        </a>
-        <a href="/clinical/" class="more-menu-item" role="menuitem" aria-label="Clinical Packet Builder" id="clinicalMenuLink" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128203;</span>
-            <span>Clinical Packet</span>
-        </a>
-    </div>
-
     <!-- Load docx library for Word export -->
     <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -934,24 +881,6 @@ Your content will be exported with:
                     const sidebarIcon = document.getElementById('sidebarThemeIcon');
             if (sidebarIcon) sidebarIcon.textContent = isDark ? '☀️' : '🌙';
         }
-
-        // More Menu
-        function toggleMoreMenu() {
-            const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            const isExpanded = menu.classList.toggle('show');
-            if (moreBtn) moreBtn.setAttribute('aria-expanded', isExpanded);
-        }
-
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            if (!menu.contains(e.target) && !e.target.closest('[aria-controls="moreMenu"]')) {
-                menu.classList.remove('show');
-                if (moreBtn) moreBtn.setAttribute('aria-expanded', 'false');
-            }
-        });
-
 
         // Tab Navigation
         function switchTab(tabName) {
@@ -1741,7 +1670,7 @@ Your content will be exported with:
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';

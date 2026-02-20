@@ -195,9 +195,9 @@
             <span class="clx-sidebar-icon">🚪</span>
             <span class="clx-sidebar-label">Logout</span>
         </button>
-        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
-            <span class="clx-sidebar-icon" id="sidebarToggleIcon">◀</span>
-            <span class="clx-sidebar-toggle-label">Collapse</span>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
+            <span class="clx-sidebar-icon" id="sidebarToggleIcon">▶</span>
+            <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
 
@@ -1309,48 +1309,6 @@
         </div>
     </div>
 
-    <!-- Bottom Toolbar -->
-    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
-        <a href="/home/" class="toolbar-item" aria-label="Home">
-            <span class="icon" aria-hidden="true">&#127968;</span><span class="label">Home</span>
-        </a>
-        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
-            <span class="icon" aria-hidden="true">&#128221;</span><span class="label">RN Notes</span>
-        </a>
-        <a href="/chat/" class="toolbar-item" aria-label="Chat" target="_blank">
-            <span class="icon" aria-hidden="true">&#128172;</span><span class="label">Chat</span>
-        </a>
-        <a href="/ai/" class="toolbar-item" aria-label="AI Assistant" target="_blank">
-            <span class="icon" aria-hidden="true">&#129658;</span><span class="label">AI</span>
-        </a>
-        <a href="/resources/" class="toolbar-item" aria-label="Resources">
-            <span class="icon" aria-hidden="true">&#128218;</span><span class="label">Resources</span>
-        </a>
-        <a href="/clinical/" class="toolbar-item active" aria-label="Clinical Packet">
-            <span class="icon" aria-hidden="true">&#128203;</span><span class="label">Clinical</span>
-        </a>
-        <button class="toolbar-item" onclick="toggleMoreMenu()" aria-label="More options" aria-expanded="false" aria-controls="moreMenu">
-            <span class="icon" aria-hidden="true">&#8943;</span><span class="label">More</span>
-        </button>
-    </nav>
-
-    <!-- More Menu -->
-    <div id="moreMenu" class="more-menu" role="menu" aria-label="More options menu">
-        <button class="more-menu-item" onclick="toggleDarkMode(); toggleMoreMenu();" role="menuitem" aria-label="Toggle dark mode">
-            <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">&#127769;</span>
-            <span id="themeMenuText">Dark Mode</span>
-        </button>
-        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" id="apaMenuLink" style="text-decoration:none;color:inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128196;</span><span>APA Generator</span>
-        </a>
-        <a href="/labsched/" class="more-menu-item" role="menuitem" aria-label="Lab Schedule Generator" style="text-decoration:none;color:inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128197;</span><span>Sched Generator</span>
-        </a>
-        <button class="more-menu-item" onclick="logout();" role="menuitem" aria-label="Logout">
-            <span class="menu-icon" aria-hidden="true">&#128682;</span><span>Logout</span>
-        </button>
-    </div>
-
     <!-- Load docx library -->
     <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1455,22 +1413,6 @@
             if (t) t.textContent = isDark ? 'Light Mode' : 'Dark Mode';
             if (s) s.textContent = isDark ? '☀️' : '🌙';
         }
-
-        // ========== MORE MENU ==========
-        function toggleMoreMenu() {
-            const menu = document.getElementById('moreMenu');
-            const btn = document.querySelector('[aria-controls="moreMenu"]');
-            const expanded = menu.classList.toggle('show');
-            if (btn) btn.setAttribute('aria-expanded', expanded);
-        }
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('moreMenu');
-            const btn = document.querySelector('[aria-controls="moreMenu"]');
-            if (menu && !menu.contains(e.target) && !e.target.closest('[aria-controls="moreMenu"]')) {
-                menu.classList.remove('show');
-                if (btn) btn.setAttribute('aria-expanded', 'false');
-            }
-        });
 
         // ========== TOAST ==========
 
@@ -2138,7 +2080,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';

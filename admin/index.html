@@ -275,9 +275,9 @@
             <span class="clx-sidebar-icon">🚪</span>
             <span class="clx-sidebar-label">Logout</span>
         </button>
-        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
-            <span class="clx-sidebar-icon" id="sidebarToggleIcon">◀</span>
-            <span class="clx-sidebar-toggle-label">Collapse</span>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
+            <span class="clx-sidebar-icon" id="sidebarToggleIcon">▶</span>
+            <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
     <!-- Main content -->
@@ -3097,7 +3097,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';
@@ -3119,38 +3119,6 @@
 
     </script>
 
-    <!-- Bottom Toolbar -->
-    <nav class="bottom-toolbar">
-        <a href="/home/" class="toolbar-item">
-            <span class="icon">&#127968;</span>
-            <span class="label">Home</span>
-        </a>
-        <a href="/app/" class="toolbar-item">
-            <span class="icon">&#128221;</span>
-            <span class="label">RN Notes</span>
-        </a>
-        <a href="/chat/" class="toolbar-item" target="_blank" style="position:relative;">
-            <span class="icon">💬</span>
-            <span class="label">Chat</span>
-            <span id="chatNavBadge" style="display:none;position:absolute;top:2px;right:2px;background:#e94560;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:bold;line-height:16px;text-align:center;">0</span>
-        </a>
-        <a href="/ai/" class="toolbar-item" target="_blank">
-            <span class="icon">🩺</span>
-            <span class="label">AI</span>
-        </a>
-        <a href="/community/" class="toolbar-item">
-            <span class="icon">&#128172;</span>
-            <span class="label">Community</span>
-        </a>
-        <a href="/admin/" class="toolbar-item active">
-            <span class="icon">&#9881;&#65039;</span>
-            <span class="label">Admin</span>
-        </a>
-        <button class="toolbar-item" onclick="logout()">
-            <span class="icon">&#128682;</span>
-            <span class="label">Logout</span>
-        </button>
-    </nav>
     <script>
         // ====== ROLE CONFIGURATION ======
         const DEFAULT_ROLES = {

@@ -406,7 +406,7 @@
 
         /* Minimum touch target size (44px recommended by Apple/Google) */
         @media (pointer: coarse) {
-            button, .btn, .toolbar-item, .more-menu-item, .note-type-card {
+            button, .btn, .note-type-card {
                 min-height: 44px;
             }
             select, input[type="checkbox"], input[type="radio"] {
@@ -427,11 +427,6 @@
             .form-row, .form-row.three-col, .h2t-grid { grid-template-columns: 1fr; }
             .btn-container { flex-direction: column; }
 
-            /* Better spacing for toolbar */
-            .bottom-toolbar {
-                padding-bottom: env(safe-area-inset-bottom, 0px);
-            }
-
             .mobile-action-bar { display: flex; }
             .mobile-action-status { display: block; }
             .section-jump-btn { display: block; }
@@ -441,7 +436,6 @@
         @media (max-width: 640px) {
             body {
                 padding: 10px;
-                padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
             }
             .container { border-radius: 12px; }
             .header { padding: 20px; }
@@ -586,19 +580,6 @@
             .header { padding: 10px 20px; }
             .header h1 { font-size: 18px; }
             .header p { display: none; }
-            .bottom-toolbar { height: 50px; }
-            .toolbar-item .label { display: none; }
-        }
-
-        /* Safe area insets for bottom toolbar */
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .bottom-toolbar {
-                padding-bottom: env(safe-area-inset-bottom);
-                height: calc(60px + env(safe-area-inset-bottom));
-            }
-            body {
-                padding-bottom: calc(120px + env(safe-area-inset-bottom));
-            }
         }
 
         /* Drug Autocomplete */
@@ -669,7 +650,7 @@
 
         /* Print Stylesheet */
         @media print {
-            .bottom-toolbar, .site-header, .toast-container, .more-menu,
+            .site-header, .toast-container,
             .bsn-offline-banner, .bsn-modal-overlay,
             #chatWidget, #aiWidget, #alertBanner, #fyiBanner,
             button, .warning-box, .info-box, #autoSaveStatus,
@@ -788,9 +769,9 @@
             <span class="clx-sidebar-icon">🚪</span>
             <span class="clx-sidebar-label">Logout</span>
         </button>
-        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
-            <span class="clx-sidebar-icon" id="sidebarToggleIcon">◀</span>
-            <span class="clx-sidebar-toggle-label">Collapse</span>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
+            <span class="clx-sidebar-icon" id="sidebarToggleIcon">▶</span>
+            <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
 
@@ -2251,78 +2232,6 @@
     <button class="section-jump-btn" id="sectionJumpBtn" onclick="toggleSectionJump()">☰</button>
     <div class="section-jump-panel" id="sectionJumpPanel"></div>
 
-    <!-- Bottom Toolbar -->
-    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
-        <a href="/home/" class="toolbar-item" aria-label="Home">
-            <span class="icon" aria-hidden="true">🏠</span>
-            <span class="label">Home</span>
-        </a>
-        <a href="/app/" class="toolbar-item active" aria-label="RN Notes" aria-current="page">
-            <span class="icon" aria-hidden="true">📝</span>
-            <span class="label">RN Notes</span>
-        </a>
-        <a href="/chat/" class="toolbar-item" aria-label="Chat" target="_blank">
-            <span class="icon" aria-hidden="true">💬</span>
-            <span class="label">Chat</span>
-        </a>
-        <a href="/ai/" class="toolbar-item" aria-label="AI Assistant" target="_blank">
-            <span class="icon" aria-hidden="true">🩺</span>
-            <span class="label">AI</span>
-        </a>
-        <a href="/community/" class="toolbar-item" aria-label="Community">
-            <span class="icon" aria-hidden="true">👥</span>
-            <span class="label">Community</span>
-        </a>
-        <a href="/resources/" class="toolbar-item" aria-label="Resources">
-            <span class="icon" aria-hidden="true">📚</span>
-            <span class="label">Resources</span>
-        </a>
-        <button class="toolbar-item" onclick="toggleMoreMenu()" aria-label="More options" aria-expanded="false" aria-controls="moreMenu">
-            <span class="icon" aria-hidden="true">⋯</span>
-            <span class="label">More</span>
-        </button>
-    </nav>
-
-    <!-- More Menu -->
-    <div id="moreMenu" class="more-menu" role="menu" aria-label="Additional options">
-        <button class="more-menu-item" role="menuitem" onclick="toggleDarkMode(); toggleMoreMenu();">
-            <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">🌙</span>
-            <span id="themeMenuText">Dark Mode</span>
-        </button>
-        <button class="more-menu-item" role="menuitem" onclick="document.getElementById('phrasesModal').classList.remove('hidden'); toggleMoreMenu();">
-            <span class="menu-icon" aria-hidden="true">📝</span>
-            <span>Smart Phrases</span>
-        </button>
-        <button class="more-menu-item" role="menuitem" onclick="lockScreen(); toggleMoreMenu();">
-            <span class="menu-icon" aria-hidden="true">🔒</span>
-            <span>Lock Screen</span>
-        </button>
-        <button class="more-menu-item" role="menuitem" onclick="toggleFullscreen(); toggleMoreMenu();" id="fullscreenBtn">
-            <span class="menu-icon" aria-hidden="true" id="fullscreenIcon">⛶</span>
-            <span id="fullscreenText">Full Screen</span>
-        </button>
-        <a href="/labsched/" class="more-menu-item" role="menuitem" aria-label="Lab Schedule Generator" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">📅</span>
-            <span>Sched Generator</span>
-        </a>
-        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" id="apaMenuLink" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">📄</span>
-            <span>APA Generator</span>
-        </a>
-        <a href="/clinical/" class="more-menu-item" role="menuitem" aria-label="Clinical Packet Builder" id="clinicalMenuLink" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">📋</span>
-            <span>Clinical Packet</span>
-        </a>
-        <button class="more-menu-item" role="menuitem" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();">
-            <span class="menu-icon" aria-hidden="true">💡</span>
-            <span>Feedback</span>
-        </button>
-        <button class="more-menu-item" role="menuitem" onclick="logout();">
-            <span class="menu-icon" aria-hidden="true">🚪</span>
-            <span>Logout</span>
-        </button>
-    </div>
-
     <!-- Firebase SDK - must load before inline scripts that use Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -2400,29 +2309,6 @@
             if (themeMenuText) themeMenuText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
             if (sidebarThemeIcon) sidebarThemeIcon.textContent = isDark ? '☀️' : '🌙';
         }
-
-        // More menu toggle
-        function toggleMoreMenu() {
-            const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            const isExpanded = menu.classList.toggle('show');
-            if (moreBtn) {
-                moreBtn.setAttribute('aria-expanded', isExpanded);
-            }
-        }
-
-        // Close more menu when clicking outside
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            const moreBtnClicked = e.target.closest('.toolbar-item');
-            if (!menu.contains(e.target) && (!moreBtnClicked || !moreBtnClicked.onclick?.toString().includes('toggleMoreMenu'))) {
-                menu.classList.remove('show');
-                if (moreBtn) {
-                    moreBtn.setAttribute('aria-expanded', 'false');
-                }
-            }
-        });
 
         // Initialize theme immediately before page renders
         initTheme();
@@ -6108,9 +5994,6 @@
             if (e.key === 'Escape') {
                 // Close modals
                 document.querySelectorAll('.modal:not(.hidden)').forEach(m => m.classList.add('hidden'));
-                // Close more menu
-                const moreMenu = document.getElementById('moreMenu');
-                if (moreMenu) moreMenu.classList.remove('show');
                 // Close NANDA dropdown
                 const nandaDropdown = document.getElementById('nandaDropdown');
                 if (nandaDropdown) nandaDropdown.classList.remove('show');
@@ -6166,7 +6049,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';

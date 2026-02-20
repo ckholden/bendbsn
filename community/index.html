@@ -565,7 +565,7 @@
 
         /* Minimum touch target size */
         @media (pointer: coarse) {
-            button, .btn, .toolbar-item, .more-menu-item, .category-tab {
+            button, .btn, .category-tab {
                 min-height: 44px;
             }
         }
@@ -682,9 +682,9 @@
         <span class="clx-sidebar-icon">&#128682;</span>
         <span class="clx-sidebar-label">Logout</span>
     </button>
-    <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
-        <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9664;</span>
-        <span class="clx-sidebar-toggle-label">Collapse</span>
+    <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9654;</span>
+        <span class="clx-sidebar-toggle-label">Expand</span>
     </button>
 </aside>
 
@@ -867,77 +867,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Bottom Toolbar -->
-    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
-        <a href="/home/" class="toolbar-item" aria-label="Home">
-            <span class="icon" aria-hidden="true">&#127968;</span>
-            <span class="label">Home</span>
-        </a>
-        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
-            <span class="icon" aria-hidden="true">&#128221;</span>
-            <span class="label">RN Notes</span>
-        </a>
-        <a href="/chat/" class="toolbar-item" aria-label="Chat" target="_blank" style="position:relative;">
-            <span class="icon" aria-hidden="true">💬</span>
-            <span class="label">Chat</span>
-            <span id="chatNavBadge" style="display:none;position:absolute;top:2px;right:2px;background:#e94560;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:bold;line-height:16px;text-align:center;">0</span>
-        </a>
-        <a href="/ai/" class="toolbar-item" aria-label="AI Assistant" target="_blank">
-            <span class="icon" aria-hidden="true">🩺</span>
-            <span class="label">AI</span>
-        </a>
-        <a href="/community/" class="toolbar-item active" aria-label="Community" aria-current="page">
-            <span class="icon" aria-hidden="true">&#128101;</span>
-            <span class="label">Community</span>
-        </a>
-        <a href="/resources/" class="toolbar-item" aria-label="Resources">
-            <span class="icon" aria-hidden="true">&#128218;</span>
-            <span class="label">Resources</span>
-        </a>
-        <button class="toolbar-item" onclick="toggleMoreMenu()" aria-label="More options" aria-expanded="false" aria-controls="moreMenu">
-            <span class="icon" aria-hidden="true">&#8943;</span>
-            <span class="label">More</span>
-        </button>
-    </nav>
-
-    <!-- More Menu -->
-    <div id="moreMenu" class="more-menu" role="menu" aria-label="Additional options">
-        <button class="more-menu-item" role="menuitem" onclick="toggleDarkMode(); toggleMoreMenu();">
-            <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">&#127769;</span>
-            <span id="themeMenuText">Dark Mode</span>
-        </button>
-        <button class="more-menu-item" role="menuitem" onclick="lockScreen(); toggleMoreMenu();">
-            <span class="menu-icon" aria-hidden="true">&#128274;</span>
-            <span>Lock Screen</span>
-        </button>
-        <button class="more-menu-item" role="menuitem" onclick="toggleFullscreen(); toggleMoreMenu();" id="fullscreenBtn">
-            <span class="menu-icon" aria-hidden="true" id="fullscreenIcon">⛶</span>
-            <span id="fullscreenText">Full Screen</span>
-        </button>
-        <a href="/labsched/" class="more-menu-item" role="menuitem" aria-label="Lab Schedule Generator" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128197;</span>
-            <span>Sched Generator</span>
-        </a>
-        <a href="/apa/" class="more-menu-item" role="menuitem" aria-label="APA Paper Generator" id="apaMenuLink" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128196;</span>
-            <span>APA Generator</span>
-        </a>
-        <a href="/clinical/" class="more-menu-item" role="menuitem" aria-label="Clinical Packet Builder" id="clinicalMenuLink" style="text-decoration: none; color: inherit;">
-            <span class="menu-icon" aria-hidden="true">&#128203;</span>
-            <span>Clinical Packet</span>
-        </a>
-        <button class="more-menu-item" role="menuitem" onclick="document.getElementById('feedbackModal').classList.remove('hidden'); toggleMoreMenu();">
-            <span class="menu-icon" aria-hidden="true">&#128161;</span>
-            <span>Feedback</span>
-        </button>
-        <button class="more-menu-item" role="menuitem" onclick="logout();">
-            <span class="menu-icon" aria-hidden="true">&#128682;</span>
-            <span>Logout</span>
-        </button>
-    </div>
-
-
 
 
 
@@ -1298,29 +1227,6 @@
                     const sidebarIcon = document.getElementById('sidebarThemeIcon');
             if (sidebarIcon) sidebarIcon.textContent = isDark ? '☀️' : '🌙';
         }
-
-        // More menu toggle
-        function toggleMoreMenu() {
-            const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            const isExpanded = menu.classList.toggle('show');
-            if (moreBtn) {
-                moreBtn.setAttribute('aria-expanded', isExpanded);
-            }
-        }
-
-        // Close more menu when clicking outside
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('moreMenu');
-            const moreBtn = document.querySelector('[aria-controls="moreMenu"]');
-            const moreBtnClicked = e.target.closest('.toolbar-item');
-            if (!menu.contains(e.target) && (!moreBtnClicked || !moreBtnClicked.onclick?.toString().includes('toggleMoreMenu'))) {
-                menu.classList.remove('show');
-                if (moreBtn) {
-                    moreBtn.setAttribute('aria-expanded', 'false');
-                }
-            }
-        });
 
         // Lock/Unlock
         function lockScreen() {
@@ -1764,9 +1670,6 @@
             if (e.key === 'Escape') {
                 // Close modals
                 document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
-                // Close more menu
-                const moreMenu = document.getElementById('moreMenu');
-                if (moreMenu) moreMenu.classList.remove('show');
             }
         });
 
@@ -1819,7 +1722,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';

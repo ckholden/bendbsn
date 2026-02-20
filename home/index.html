@@ -496,68 +496,6 @@
         .panel-body-collapsed { display: none !important; }
 
         /* ================================================
-           BOTTOM TOOLBAR
-        ================================================ */
-        .bottom-toolbar {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            height: 60px;
-            background: var(--clx-bg-surface);
-            border-top: 1px solid var(--clx-border);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .toolbar-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 6px 8px;
-            color: var(--clx-text-secondary);
-            text-decoration: none;
-            font-size: 10px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .toolbar-item:hover, .toolbar-item.active { color: var(--clx-accent); }
-        .toolbar-item .icon { font-size: 22px; margin-bottom: 2px; }
-        .toolbar-item .label { font-weight: 600; }
-
-        .more-menu {
-            position: fixed;
-            bottom: 70px; right: 10px;
-            background: var(--clx-bg-surface);
-            border: 1px solid var(--clx-border);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            padding: 6px 0;
-            display: none;
-            z-index: 1001;
-            min-width: 160px;
-        }
-        .more-menu.show { display: block; }
-        .more-menu-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 16px;
-            color: var(--clx-text-primary);
-            text-decoration: none;
-            font-size: 13px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            width: 100%;
-            font-family: inherit;
-        }
-        .more-menu-item:hover { background: var(--clx-accent-subtle); color: var(--clx-accent); }
-        .more-menu-item .menu-icon { font-size: 16px; }
-
-        /* ================================================
            MODALS (feedback)
         ================================================ */
         .modal-overlay {
@@ -613,13 +551,7 @@
            TOASTS
         ================================================ */
         @media (pointer: coarse) {
-            .dash-btn, .toolbar-item, .more-menu-item { min-height: 44px; }
-        }
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .bottom-toolbar {
-                padding-bottom: env(safe-area-inset-bottom);
-                height: calc(60px + env(safe-area-inset-bottom));
-            }
+            .dash-btn { min-height: 44px; }
         }
     </style>
 </head>
@@ -693,9 +625,9 @@
             <span class="clx-sidebar-icon">🚪</span>
             <span class="clx-sidebar-label">Logout</span>
         </button>
-        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Collapse sidebar">
-            <span class="clx-sidebar-icon" id="sidebarToggleIcon">◀</span>
-            <span class="clx-sidebar-toggle-label">Collapse</span>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
+            <span class="clx-sidebar-icon" id="sidebarToggleIcon">▶</span>
+            <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
 
@@ -840,74 +772,6 @@
     <div id="userListDropdown" style="display:none;position:fixed;top:56px;right:10px;background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);padding:8px 0;min-width:180px;z-index:1001;max-height:300px;overflow-y:auto;">
         <div style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--clx-text-muted);border-bottom:1px solid var(--clx-border);margin-bottom:4px;">Online Now</div>
         <div id="userListNames"></div>
-    </div>
-
-    <!-- Bottom Toolbar -->
-    <nav class="bottom-toolbar" role="navigation" aria-label="Main navigation">
-        <a href="/home/" class="toolbar-item active" aria-label="Home" aria-current="page">
-            <span class="icon" aria-hidden="true">🏠</span>
-            <span class="label">Home</span>
-        </a>
-        <a href="/app/" class="toolbar-item" aria-label="RN Notes">
-            <span class="icon" aria-hidden="true">📝</span>
-            <span class="label">RN Notes</span>
-        </a>
-        <a href="/chat/" class="toolbar-item" aria-label="Chat">
-            <span class="icon" aria-hidden="true">💬</span>
-            <span class="label">Chat</span>
-        </a>
-        <a href="/ai/" class="toolbar-item" aria-label="AI Assistant">
-            <span class="icon" aria-hidden="true">🩺</span>
-            <span class="label">AI</span>
-        </a>
-        <a href="/community/" class="toolbar-item" aria-label="Community">
-            <span class="icon" aria-hidden="true">👥</span>
-            <span class="label">Community</span>
-        </a>
-        <a href="/resources/" class="toolbar-item" aria-label="Resources">
-            <span class="icon" aria-hidden="true">📚</span>
-            <span class="label">Resources</span>
-        </a>
-        <button class="toolbar-item" onclick="toggleMoreMenu()" aria-label="More options" aria-expanded="false" aria-controls="moreMenu">
-            <span class="icon" aria-hidden="true">⋯</span>
-            <span class="label">More</span>
-        </button>
-    </nav>
-
-    <!-- More Menu -->
-    <div id="moreMenu" class="more-menu" role="menu" aria-label="More options menu">
-        <button class="more-menu-item" onclick="toggleDarkMode();toggleMoreMenu();" role="menuitem">
-            <span class="menu-icon" id="themeMenuIcon" aria-hidden="true">🌙</span>
-            <span id="themeMenuText">Dark Mode</span>
-        </button>
-        <button class="more-menu-item" onclick="lockScreen();toggleMoreMenu();" role="menuitem">
-            <span class="menu-icon" aria-hidden="true">🔒</span>
-            <span>Lock Screen</span>
-        </button>
-        <button class="more-menu-item" onclick="toggleFullscreen();toggleMoreMenu();" role="menuitem" id="fullscreenBtn">
-            <span class="menu-icon" id="fullscreenIcon" aria-hidden="true">⛶</span>
-            <span id="fullscreenText">Full Screen</span>
-        </button>
-        <a href="/labsched/" class="more-menu-item" role="menuitem" style="text-decoration:none;color:inherit;">
-            <span class="menu-icon" aria-hidden="true">📅</span>
-            <span>Sched Generator</span>
-        </a>
-        <a href="/apa/" class="more-menu-item" role="menuitem" id="apaMenuLink" style="text-decoration:none;color:inherit;">
-            <span class="menu-icon" aria-hidden="true">📄</span>
-            <span>APA Generator</span>
-        </a>
-        <a href="/clinical/" class="more-menu-item" role="menuitem" id="clinicalMenuLink" style="text-decoration:none;color:inherit;">
-            <span class="menu-icon" aria-hidden="true">📋</span>
-            <span>Clinical Packet</span>
-        </a>
-        <button class="more-menu-item" onclick="document.getElementById('feedbackModal').classList.remove('hidden');toggleMoreMenu();" role="menuitem">
-            <span class="menu-icon" aria-hidden="true">💡</span>
-            <span>Feedback</span>
-        </button>
-        <button class="more-menu-item" onclick="logout();" role="menuitem">
-            <span class="menu-icon" aria-hidden="true">🚪</span>
-            <span>Logout</span>
-        </button>
     </div>
 
     <!-- Feedback Modal -->
@@ -1238,22 +1102,6 @@
         }
         initTheme();
 
-        // ========== MORE MENU ==========
-        function toggleMoreMenu() {
-            const menu = document.getElementById('moreMenu');
-            const btn = document.querySelector('[aria-controls="moreMenu"]');
-            const open = menu.classList.toggle('show');
-            if (btn) btn.setAttribute('aria-expanded', open);
-        }
-        document.addEventListener('click', (e) => {
-            const menu = document.getElementById('moreMenu');
-            const btn = document.querySelector('[aria-controls="moreMenu"]');
-            if (!menu.contains(e.target) && !e.target.closest('[onclick*="toggleMoreMenu"]')) {
-                menu.classList.remove('show');
-                if (btn) btn.setAttribute('aria-expanded', 'false');
-            }
-        });
-
         // ========== LOCK ==========
         function lockScreen() { document.getElementById('lockScreenOverlay').style.display = 'flex'; }
         function unlockScreen() { document.getElementById('lockScreenOverlay').style.display = 'none'; }
@@ -1286,7 +1134,6 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
-                document.getElementById('moreMenu')?.classList.remove('show');
                 if (userListOpen) { userListOpen = false; document.getElementById('userListDropdown').style.display = 'none'; }
             }
         });
@@ -1549,7 +1396,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') === 'true') {
+            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';
