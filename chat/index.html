@@ -1319,6 +1319,7 @@
 
         // ========== AUTH STATE ==========
         let firebaseAuthReady = false;
+        let _presenceInitialized = false;    // BUG-3: guard against double-init on token refresh
         auth.onAuthStateChanged((user) => {
             if (user) {
                 console.log('Firebase Auth: Logged in as', user.email);
@@ -1351,6 +1352,15 @@
                         currentUserIsAdmin = true;
                     }
                 }).catch(() => {});
+
+                // BUG-3: presence/activity must run after auth resolves so we use the
+                // confirmed UID, not a potentially stale localStorage fallback
+                if (!_presenceInitialized) {
+                    _presenceInitialized = true;
+                    setPresence('online');
+                    initActivityTracking();
+                    loadPartnerLastSeen();
+                }
             } else {
                 console.log('Firebase Auth: Not logged in');
                 if (localStorage.getItem('bendbsn_auth') === 'true') {
@@ -1597,9 +1607,9 @@
             updateMyStatusHeader();
         }
 
-        setPresence('online');
-        initActivityTracking();
-        loadPartnerLastSeen();
+        // BUG-3: setPresence/initActivityTracking/loadPartnerLastSeen moved inside
+        // auth.onAuthStateChanged so they run with the confirmed UID, not localStorage.
+        // updateSidebarUserBar is already called inside onAuthStateChanged (line above).
         updateSidebarUserBar();
 
         // ========== THEME FUNCTIONS ==========
@@ -1675,6 +1685,7 @@
         let dmConversations = [];
         let dmUnreadCount = 0;
         let dmLastReadTimestamps = JSON.parse(localStorage.getItem('dmLastRead') || '{}');
+        let currentDMMessagesQuery = null;   // BUG-2: track active DM listener for cleanup
 
         // Online users
         let onlineUsers = [];
@@ -1684,10 +1695,12 @@
         // Channel state
         let channels = {};
         let channelUnread = {};
+        let channelUnreadRefs = {};          // BUG-6: track per-channel unread query refs for cleanup
         let channelLastRead = JSON.parse(localStorage.getItem('chatChannelLastRead') || '{}');
         let currentChatListener = null;
         let currentChatRef = null;
         let currentTypingListener = null;
+        let currentTypingRef = null;         // BUG-1: store typing ref so we can detach it
 
         // Message retention (7 days)
         const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -1991,9 +2004,10 @@
         }
 
         function joinChannel(id) {
-            const uid = getCurrentUserUid();
-            if (!uid) return;
-            channelMembersRef.child(id + '/' + uid).set(true).then(() => {
+            // BUG-4: write email string (not true/uid) so loadChannelMembership's
+            // `typeof v === 'string'` filter correctly picks up the membership
+            if (!currentUsername) return;
+            channelMembersRef.child(id + '/' + emailKey(currentUsername)).set(currentUsername).then(() => {
                 myJoinedChannels.add(id);
                 showToast('Joined #' + (channels[id]?.name || id), 'success');
                 switchChannel(id);
@@ -2002,10 +2016,10 @@
 
         function leaveChannel(id) {
             if (id === 'general') { showToast('Cannot leave #general', 'warning'); return; }
-            const uid = getCurrentUserUid();
-            if (!uid) return;
+            if (!currentUsername) return;
             showConfirmModal('Leave Channel', `Leave #${channels[id]?.name || id}?`, () => {
-                channelMembersRef.child(id + '/' + uid).remove().then(() => {
+                // BUG-4: use same email-based key as join/saveChannelMembers/createChannel
+                channelMembersRef.child(id + '/' + emailKey(currentUsername)).remove().then(() => {
                     myJoinedChannels.delete(id);
                     showToast('Left #' + (channels[id]?.name || id), 'success');
                     if (currentChannel === id) switchChannel('general');
@@ -2030,6 +2044,8 @@
                     channels['general'] = { name: 'general', description: 'General chat for everyone' };
                 }
                 renderChannelList();
+                // BUG-5: attach unread listeners now that channels are known, not via setTimeout
+                setupChannelUnreadListeners();
             });
         }
 
@@ -2176,8 +2192,9 @@
                 currentChatListener = null;
                 currentChatRef = null;
             }
-            if (currentTypingListener) {
-                database.ref('chat/typing/' + currentChannel).off('value', currentTypingListener);
+            if (currentTypingRef && currentTypingListener) {
+                currentTypingRef.off('value', currentTypingListener);
+                currentTypingRef = null;
                 currentTypingListener = null;
             }
 
@@ -2207,6 +2224,8 @@
             // Setup listener for new channel
             setupChatListener();
             setupTypingListener(channelId);
+            // Re-run unread listeners: exclude new currentChannel, include old one
+            setupChannelUnreadListeners();
 
             // Clear unread badge sync
             syncUnreadToOtherTabs();
@@ -2401,15 +2420,24 @@
             });
         }
 
-        // Listen for unread in OTHER channels (not the current one)
+        // Listen for unread in OTHER channels (not the current one).
+        // BUG-5: called directly from loadChannels() after channels are known, not via setTimeout.
+        // BUG-6: use limitToLast(50) instead of reading full history on every update.
         function setupChannelUnreadListeners() {
-            // For each channel, listen for new messages and update badges
+            // Detach any existing per-channel unread listeners before re-attaching
+            Object.values(channelUnreadRefs).forEach(ref => { if (ref) ref.off(); });
+            channelUnreadRefs = {};
+
             Object.keys(channels).forEach(channelId => {
-                if (channelId === currentChannel) return;
-                database.ref('chat/messages/' + channelId).on('value', (snapshot) => {
+                if (channelId === currentChannel) return; // skip active channel
+                const lastRead = channelLastRead[channelId] || 0;
+                const query = database.ref('chat/messages/' + channelId)
+                    .orderByChild('timestamp')
+                    .limitToLast(50);
+                channelUnreadRefs[channelId] = query;
+                query.on('value', (snapshot) => {
                     if (!snapshot.exists()) return;
                     let unread = 0;
-                    const lastRead = channelLastRead[channelId] || 0;
                     snapshot.forEach((child) => {
                         const msg = child.val();
                         if (msg.timestamp > lastRead && msg.username !== currentUsername) {
@@ -2420,7 +2448,7 @@
                     const badge = document.getElementById('channelBadge_' + channelId);
                     if (badge) {
                         if (unread > 0) {
-                            badge.textContent = unread > 9 ? '9+' : unread;
+                            badge.textContent = unread > 9 ? '9+' : String(unread);
                             badge.style.display = 'flex';
                         } else {
                             badge.style.display = 'none';
@@ -2454,12 +2482,15 @@
         }
 
         function setupTypingListener(channelId) {
-            if (currentTypingListener) {
-                // Remove old listener - we can't easily remove since we don't track the ref
-                // Instead, just set up the new one (old one will be GC'd)
+            // BUG-1: properly detach previous listener using stored ref
+            if (currentTypingRef && currentTypingListener) {
+                currentTypingRef.off('value', currentTypingListener);
+                currentTypingListener = null;
+                currentTypingRef = null;
             }
 
             const typingRef = database.ref('chat/typing/' + channelId);
+            currentTypingRef = typingRef;
             currentTypingListener = typingRef.on('value', (snapshot) => {
                 const indicator = document.getElementById('typingIndicator');
                 if (!indicator) return;
@@ -3301,10 +3332,17 @@
             const container = document.getElementById('dmMessages');
             if (!container) return;
 
+            // BUG-2: detach previous DM messages listener before attaching a new one
+            if (currentDMMessagesQuery) {
+                currentDMMessagesQuery.off('value');
+                currentDMMessagesQuery = null;
+            }
+
             container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); font-size: 12px;">Loading messages...</p>';
 
             const messagesRef = directMessagesRef.child(conversationId + '/messages');
-            messagesRef.orderByChild('timestamp').on('value', (snapshot) => {
+            currentDMMessagesQuery = messagesRef.orderByChild('timestamp');
+            currentDMMessagesQuery.on('value', (snapshot) => {
                 if (!snapshot.exists()) {
                     container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); font-size: 13px; padding: 20px;">No messages yet. Say hello!</p>';
                     return;
@@ -3735,6 +3773,20 @@
                 if (currentChatRef && currentChatListener) {
                     currentChatRef.off('value', currentChatListener);
                 }
+                // BUG-1: detach typing listener using stored ref
+                if (currentTypingRef && currentTypingListener) {
+                    currentTypingRef.off('value', currentTypingListener);
+                    currentTypingRef = null;
+                    currentTypingListener = null;
+                }
+                // BUG-2: detach active DM messages listener
+                if (currentDMMessagesQuery) {
+                    currentDMMessagesQuery.off('value');
+                    currentDMMessagesQuery = null;
+                }
+                // BUG-6: detach all per-channel unread listeners
+                Object.values(channelUnreadRefs).forEach(ref => { if (ref) ref.off(); });
+                channelUnreadRefs = {};
                 // Clear typing on leave
                 clearTyping(currentChannel);
                 // Close any open modals
@@ -3838,10 +3890,8 @@
             renderDMSidebar();
         });
 
-        // Setup channel unread listeners once channels load
-        setTimeout(() => {
-            setupChannelUnreadListeners();
-        }, 2000);
+        // BUG-5: setupChannelUnreadListeners() is now called from inside loadChannels()
+        // after channels are confirmed loaded — no longer needs a guessed 2s setTimeout.
 
         // Sync unread on load (we're on the chat page, so clear unread)
         syncUnreadToOtherTabs();
