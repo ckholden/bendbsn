@@ -658,7 +658,106 @@
             outline-offset: 2px;
         }
 
-        
+        /* ========== LAB VALUES REFERENCE ========== */
+        .lab-ref-search input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            color: var(--clx-text-primary, #1a2532);
+            margin-bottom: 12px;
+        }
+        .lab-ref-search input:focus {
+            outline: none;
+            border-color: var(--clx-accent, #0f7490);
+            box-shadow: 0 0 0 2px var(--clx-accent-subtle, #e0f2f8);
+        }
+        .lab-panel-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 14px;
+        }
+        .lab-panel-chip {
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-secondary, #4a5568);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .lab-panel-chip:hover {
+            background: var(--clx-accent-subtle, #e0f2f8);
+            color: var(--clx-accent, #0f7490);
+            border-color: var(--clx-accent, #0f7490);
+        }
+        .lab-panel-chip.active {
+            background: var(--clx-accent, #0f7490);
+            color: #fff;
+            border-color: var(--clx-accent, #0f7490);
+        }
+        .lab-panel-section { margin-bottom: 14px; }
+        .lab-panel-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--clx-accent, #0f7490);
+            margin-bottom: 5px;
+            padding: 0 2px;
+        }
+        .lab-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .lab-table th {
+            background: var(--clx-accent, #0f7490);
+            color: #fff;
+            padding: 6px 8px;
+            font-weight: 600;
+            text-align: left;
+        }
+        .lab-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--clx-border, #e2e8f0);
+            color: var(--clx-text-primary, #1a2532);
+            vertical-align: middle;
+        }
+        .lab-table tr:hover td { background: var(--clx-accent-subtle, #e0f2f8); }
+        .lab-name { font-weight: 600; }
+        .lab-range { color: var(--clx-text-secondary, #4a5568); }
+        .lab-unit { color: var(--clx-text-muted, #94a3b8); font-style: italic; }
+        .lab-note-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        [data-theme="dark"] .lab-note-badge { background: #422006; color: #fbbf24; }
+        .lab-no-results {
+            text-align: center;
+            color: var(--clx-text-muted, #94a3b8);
+            padding: 24px;
+            font-size: 13px;
+        }
+        #labValuesCard.expanded .card-content { max-height: 5000px; }
+        [data-theme="dark"] .lab-ref-search input {
+            background: var(--clx-bg-surface-2);
+            color: var(--clx-text-primary);
+            border-color: var(--clx-border);
+        }
+
 
         /* ========== RESOURCES PAGE REDESIGN ========== */
 
@@ -1037,72 +1136,29 @@
                 </div>
 
                 <!-- Lab Values -->
-                <div class="card resource-card collapsible collapsed" data-tags="labs cbc bmp abg coagulation cardiac reference">
+                <div id="labValuesCard" class="card resource-card collapsible collapsed" data-tags="labs cbc bmp abg coagulation cardiac reference">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🔬 Lab Values Reference</h2>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
-                    <h3 class="collapsible" onclick="toggleCollapse(this)">Complete Blood Count (CBC)</h3>
-                    <div class="collapse-content">
-                        <table>
-                            <tr><th>Test</th><th>Normal Range</th></tr>
-                            <tr><td>WBC</td><td>4,500-11,000/mcL</td></tr>
-                            <tr><td>RBC (M)</td><td>4.5-5.5 million/mcL</td></tr>
-                            <tr><td>RBC (F)</td><td>4.0-5.0 million/mcL</td></tr>
-                            <tr><td>Hemoglobin (M)</td><td>14-18 g/dL</td></tr>
-                            <tr><td>Hemoglobin (F)</td><td>12-16 g/dL</td></tr>
-                            <tr><td>Hematocrit (M)</td><td>40-54%</td></tr>
-                            <tr><td>Hematocrit (F)</td><td>36-48%</td></tr>
-                            <tr><td>Platelets</td><td>150,000-400,000/mcL</td></tr>
-                        </table>
+                        <div class="lab-ref-search">
+                            <input type="search" id="labSearch" placeholder="Search labs (e.g. sodium, troponin, WBC)..." oninput="filterLabs()" aria-label="Search lab values">
+                        </div>
+                        <div class="lab-panel-filters" role="group" aria-label="Filter by panel">
+                            <button class="lab-panel-chip active" onclick="setLabPanel(this,'')">All</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'CBC')">CBC</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'CMP')">CMP</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'ABG')">ABG</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'Coag')">Coag</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'Cardiac')">Cardiac</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'Thyroid')">Thyroid</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'Lipids')">Lipids</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'UA')">U/A</button>
+                            <button class="lab-panel-chip" onclick="setLabPanel(this,'Iron')">Iron</button>
+                        </div>
+                        <div id="labTableContainer"></div>
                     </div>
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">Basic Metabolic Panel (BMP)</h3>
-                    <div class="collapse-content hidden">
-                        <table>
-                            <tr><th>Test</th><th>Normal Range</th></tr>
-                            <tr><td>Sodium (Na)</td><td>136-145 mEq/L</td></tr>
-                            <tr><td>Potassium (K)</td><td>3.5-5.0 mEq/L</td></tr>
-                            <tr><td>Chloride (Cl)</td><td>98-106 mEq/L</td></tr>
-                            <tr><td>CO2</td><td>23-29 mEq/L</td></tr>
-                            <tr><td>BUN</td><td>7-20 mg/dL</td></tr>
-                            <tr><td>Creatinine</td><td>0.6-1.2 mg/dL</td></tr>
-                            <tr><td>Glucose</td><td>70-100 mg/dL (fasting)</td></tr>
-                            <tr><td>Calcium</td><td>8.5-10.5 mg/dL</td></tr>
-                        </table>
-                    </div>
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">Coagulation</h3>
-                    <div class="collapse-content hidden">
-                        <table>
-                            <tr><th>Test</th><th>Normal Range</th></tr>
-                            <tr><td>PT</td><td>11-13.5 seconds</td></tr>
-                            <tr><td>INR</td><td>0.8-1.1 (2-3 on warfarin)</td></tr>
-                            <tr><td>PTT</td><td>25-35 seconds</td></tr>
-                            <tr><td>aPTT</td><td>30-40 seconds</td></tr>
-                        </table>
-                    </div>
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">Cardiac Markers</h3>
-                    <div class="collapse-content hidden">
-                        <table>
-                            <tr><th>Test</th><th>Normal Range</th></tr>
-                            <tr><td>Troponin I</td><td>&lt;0.04 ng/mL</td></tr>
-                            <tr><td>Troponin T</td><td>&lt;0.1 ng/mL</td></tr>
-                            <tr><td>BNP</td><td>&lt;100 pg/mL</td></tr>
-                            <tr><td>CK-MB</td><td>&lt;5 ng/mL</td></tr>
-                        </table>
-                    </div>
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">ABGs</h3>
-                    <div class="collapse-content hidden">
-                        <table>
-                            <tr><th>Test</th><th>Normal Range</th></tr>
-                            <tr><td>pH</td><td>7.35-7.45</td></tr>
-                            <tr><td>PaCO2</td><td>35-45 mmHg</td></tr>
-                            <tr><td>PaO2</td><td>80-100 mmHg</td></tr>
-                            <tr><td>HCO3</td><td>22-26 mEq/L</td></tr>
-                            <tr><td>O2 Sat</td><td>95-100%</td></tr>
-                        </table>
-                    </div>
-                </div>
 
                 <!-- Vital Signs -->
                 <div class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges">
@@ -3006,6 +3062,194 @@ Generated: ${new Date().toLocaleString()}`;
             localStorage.removeItem(SESSION_START_KEY);
             localStorage.removeItem('bendbsn_session_end_sent');
         }
+
+        // ========== LAB VALUES REFERENCE ==========
+        const LAB_PANELS = [
+            {
+                id: 'CBC', label: 'Complete Blood Count (CBC)',
+                values: [
+                    { name: 'WBC', range: '4,500–11,000', unit: '/mcL' },
+                    { name: 'RBC', range: '4.5–5.5 (M) / 4.0–5.0 (F)', unit: 'mil/mcL', note: 'M/F' },
+                    { name: 'Hemoglobin', range: '14–18 (M) / 12–16 (F)', unit: 'g/dL', note: 'M/F' },
+                    { name: 'Hematocrit', range: '40–54% (M) / 36–48% (F)', unit: '%', note: 'M/F' },
+                    { name: 'MCV', range: '80–100', unit: 'fL' },
+                    { name: 'MCH', range: '27–33', unit: 'pg' },
+                    { name: 'MCHC', range: '33–37', unit: 'g/dL' },
+                    { name: 'RDW', range: '11.5–14.5', unit: '%' },
+                    { name: 'Platelets', range: '150,000–400,000', unit: '/mcL' },
+                    { name: 'Neutrophils', range: '55–70', unit: '%' },
+                    { name: 'Lymphocytes', range: '20–40', unit: '%' },
+                    { name: 'Monocytes', range: '2–8', unit: '%' },
+                    { name: 'Eosinophils', range: '1–4', unit: '%' },
+                    { name: 'Basophils', range: '0.5–1', unit: '%' }
+                ]
+            },
+            {
+                id: 'CMP', label: 'Comprehensive Metabolic Panel (CMP)',
+                values: [
+                    { name: 'Sodium (Na)', range: '136–145', unit: 'mEq/L' },
+                    { name: 'Potassium (K)', range: '3.5–5.0', unit: 'mEq/L' },
+                    { name: 'Chloride (Cl)', range: '98–106', unit: 'mEq/L' },
+                    { name: 'CO2 / Bicarbonate', range: '23–29', unit: 'mEq/L' },
+                    { name: 'BUN', range: '7–20', unit: 'mg/dL' },
+                    { name: 'Creatinine', range: '0.7–1.3 (M) / 0.6–1.1 (F)', unit: 'mg/dL', note: 'M/F' },
+                    { name: 'eGFR', range: '≥60', unit: 'mL/min/1.73m²' },
+                    { name: 'Glucose (fasting)', range: '70–100', unit: 'mg/dL' },
+                    { name: 'Calcium (Ca)', range: '8.5–10.5', unit: 'mg/dL' },
+                    { name: 'Magnesium (Mg)', range: '1.5–2.5', unit: 'mEq/L' },
+                    { name: 'Phosphorus', range: '3.0–4.5', unit: 'mg/dL' },
+                    { name: 'ALT (SGPT)', range: '7–40', unit: 'U/L' },
+                    { name: 'AST (SGOT)', range: '10–40', unit: 'U/L' },
+                    { name: 'ALP', range: '44–147', unit: 'U/L' },
+                    { name: 'GGT', range: '8–61', unit: 'U/L' },
+                    { name: 'Total Bilirubin', range: '0.2–1.2', unit: 'mg/dL' },
+                    { name: 'Direct Bilirubin', range: '0–0.3', unit: 'mg/dL' },
+                    { name: 'Albumin', range: '3.5–5.0', unit: 'g/dL' },
+                    { name: 'Total Protein', range: '6.5–8.3', unit: 'g/dL' }
+                ]
+            },
+            {
+                id: 'ABG', label: 'Arterial Blood Gas (ABG)',
+                values: [
+                    { name: 'pH', range: '7.35–7.45', unit: '' },
+                    { name: 'PaCO2', range: '35–45', unit: 'mmHg' },
+                    { name: 'PaO2', range: '80–100', unit: 'mmHg' },
+                    { name: 'HCO3', range: '22–26', unit: 'mEq/L' },
+                    { name: 'O2 Saturation', range: '95–100', unit: '%' },
+                    { name: 'Base Excess', range: '-2 to +2', unit: 'mEq/L' },
+                    { name: 'FiO2 (room air)', range: '21', unit: '%' }
+                ]
+            },
+            {
+                id: 'Coag', label: 'Coagulation',
+                values: [
+                    { name: 'PT', range: '11–13.5', unit: 'seconds' },
+                    { name: 'INR', range: '0.8–1.1', unit: '', note: '2–3 warfarin goal' },
+                    { name: 'aPTT', range: '30–40', unit: 'seconds' },
+                    { name: 'PTT', range: '25–35', unit: 'seconds' },
+                    { name: 'Fibrinogen', range: '200–400', unit: 'mg/dL' },
+                    { name: 'D-Dimer', range: '<0.5', unit: 'mcg/mL FEU' },
+                    { name: 'Anti-Xa (heparin)', range: '0.3–0.7 (therapeutic)', unit: 'U/mL' }
+                ]
+            },
+            {
+                id: 'Cardiac', label: 'Cardiac Markers',
+                values: [
+                    { name: 'Troponin I', range: '<0.04', unit: 'ng/mL' },
+                    { name: 'Troponin T (hsTnT)', range: '<14', unit: 'ng/L' },
+                    { name: 'BNP', range: '<100', unit: 'pg/mL' },
+                    { name: 'NT-proBNP (<75 yr)', range: '<125', unit: 'pg/mL' },
+                    { name: 'NT-proBNP (>75 yr)', range: '<450', unit: 'pg/mL' },
+                    { name: 'CK (CPK)', range: '30–170 (F) / 55–170 (M)', unit: 'U/L', note: 'M/F' },
+                    { name: 'CK-MB', range: '<5 / <3% of total CK', unit: 'ng/mL' },
+                    { name: 'Myoglobin', range: '<90', unit: 'mcg/L' }
+                ]
+            },
+            {
+                id: 'Thyroid', label: 'Thyroid Function',
+                values: [
+                    { name: 'TSH', range: '0.4–4.0', unit: 'mIU/L' },
+                    { name: 'Free T4', range: '0.8–1.8', unit: 'ng/dL' },
+                    { name: 'Total T4', range: '5.0–12.0', unit: 'mcg/dL' },
+                    { name: 'Free T3', range: '2.3–4.2', unit: 'pg/mL' },
+                    { name: 'Total T3', range: '80–200', unit: 'ng/dL' },
+                    { name: 'T3 Uptake', range: '24–39', unit: '%' }
+                ]
+            },
+            {
+                id: 'Lipids', label: 'Lipid Panel',
+                values: [
+                    { name: 'Total Cholesterol', range: '<200 (desirable)', unit: 'mg/dL' },
+                    { name: 'LDL', range: '<100 (optimal) / <70 (high risk)', unit: 'mg/dL' },
+                    { name: 'HDL', range: '>60 (protective); >40 (M) / >50 (F)', unit: 'mg/dL', note: 'Higher better' },
+                    { name: 'Triglycerides', range: '<150', unit: 'mg/dL' },
+                    { name: 'VLDL', range: '2–30', unit: 'mg/dL' },
+                    { name: 'Non-HDL Cholesterol', range: '<130', unit: 'mg/dL' }
+                ]
+            },
+            {
+                id: 'UA', label: 'Urinalysis (U/A)',
+                values: [
+                    { name: 'pH', range: '4.5–8.0', unit: '' },
+                    { name: 'Specific Gravity', range: '1.005–1.030', unit: '' },
+                    { name: 'Protein', range: 'Negative / trace', unit: '' },
+                    { name: 'Glucose', range: 'Negative', unit: '' },
+                    { name: 'Ketones', range: 'Negative', unit: '' },
+                    { name: 'Blood/Hemoglobin', range: 'Negative', unit: '' },
+                    { name: 'Nitrites', range: 'Negative', unit: '' },
+                    { name: 'Leukocyte Esterase', range: 'Negative', unit: '' },
+                    { name: 'WBC (microscopic)', range: '0–5', unit: '/hpf' },
+                    { name: 'RBC (microscopic)', range: '0–3', unit: '/hpf' },
+                    { name: 'Bacteria', range: 'None', unit: '' },
+                    { name: 'Casts', range: 'Rare hyaline', unit: '/lpf' }
+                ]
+            },
+            {
+                id: 'Iron', label: 'Iron Studies',
+                values: [
+                    { name: 'Serum Iron', range: '60–170 (M) / 50–170 (F)', unit: 'mcg/dL', note: 'M/F' },
+                    { name: 'TIBC', range: '250–370', unit: 'mcg/dL' },
+                    { name: 'Transferrin Saturation', range: '20–50', unit: '%' },
+                    { name: 'Ferritin', range: '12–300 (M) / 12–150 (F)', unit: 'ng/mL', note: 'M/F' },
+                    { name: 'Reticulocyte Count', range: '0.5–1.5', unit: '%' },
+                    { name: 'Vitamin B12', range: '200–900', unit: 'pg/mL' },
+                    { name: 'Folate (serum)', range: '2.7–17', unit: 'ng/mL' }
+                ]
+            }
+        ];
+
+        let _labCurrentPanel = '';
+
+        function setLabPanel(btn, panelId) {
+            _labCurrentPanel = panelId;
+            document.querySelectorAll('.lab-panel-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderLabs();
+        }
+
+        function filterLabs() { renderLabs(); }
+
+        function renderLabs() {
+            const container = document.getElementById('labTableContainer');
+            if (!container) return;
+            const q = (document.getElementById('labSearch')?.value || '').toLowerCase().trim();
+            const panels = _labCurrentPanel
+                ? LAB_PANELS.filter(p => p.id === _labCurrentPanel)
+                : LAB_PANELS;
+
+            let html = '';
+            let total = 0;
+
+            for (const panel of panels) {
+                const filtered = q
+                    ? panel.values.filter(v => v.name.toLowerCase().includes(q))
+                    : panel.values;
+                if (!filtered.length) continue;
+                total += filtered.length;
+
+                const showTitle = !_labCurrentPanel || q;
+                html += `<div class="lab-panel-section">`;
+                if (showTitle) html += `<div class="lab-panel-title">${panel.label}</div>`;
+                html += `<table class="lab-table"><tr><th>Test</th><th>Normal Range</th><th>Unit</th></tr>`;
+                for (const v of filtered) {
+                    const noteHtml = v.note ? `<span class="lab-note-badge">${v.note}</span>` : '';
+                    html += `<tr>
+                        <td class="lab-name">${v.name}${noteHtml}</td>
+                        <td class="lab-range">${v.range}</td>
+                        <td class="lab-unit">${v.unit}</td>
+                    </tr>`;
+                }
+                html += `</table></div>`;
+            }
+
+            if (!total) {
+                html = `<div class="lab-no-results">No results for "<strong>${escapeHtml(q)}</strong>" — try a different term</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() { renderLabs(); });
 
         // ========== FIREBASE REFS & ESSENTIAL SERVICES ==========
         // (Chat/AI widgets removed - now at /chat/ and /ai/)
