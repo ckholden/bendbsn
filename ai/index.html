@@ -273,6 +273,20 @@
             }
         }
 
+        /* Message bubble tokens */
+        .ai-bubble-user {
+            background: var(--clx-accent, #0f7490);
+            color: #fff;
+        }
+        .ai-bubble-ai {
+            background: var(--clx-bg-surface-2, #e2e8f0);
+            color: var(--clx-text-primary, #1e293b);
+        }
+        [data-theme="dark"] .ai-bubble-ai {
+            background: var(--clx-bg-surface-2, #334155);
+            color: var(--clx-text-primary, #f1f5f9);
+        }
+
         /* Typing animation */
         .typing-dots span {
             animation: blink 1.4s infinite;
@@ -330,11 +344,11 @@
 
         <!-- Quick Actions -->
         <div class="ai-quick-actions">
-            <button class="ai-quick-btn" onclick="aiQuickAction('drug')">&#128138; Drug Info</button>
-            <button class="ai-quick-btn" onclick="aiQuickAction('careplan')">&#128203; Care Plan</button>
-            <button class="ai-quick-btn" onclick="aiQuickAction('nclex')">&#128221; NCLEX Q</button>
-            <button class="ai-quick-btn" onclick="aiQuickAction('labs')">&#128300; Labs</button>
-            <button class="ai-quick-btn" onclick="clearAIConversation()" style="margin-left:auto;color:var(--clx-text-muted,#94a3b8);">&#128465; Clear</button>
+            <button class="ai-quick-btn" onclick="aiQuickAction('drug')" aria-label="Ask about a drug">&#128138; Drug Info</button>
+            <button class="ai-quick-btn" onclick="aiQuickAction('careplan')" aria-label="Get help with a care plan">&#128203; Care Plan</button>
+            <button class="ai-quick-btn" onclick="aiQuickAction('nclex')" aria-label="Get an NCLEX practice question">&#128221; NCLEX Q</button>
+            <button class="ai-quick-btn" onclick="aiQuickAction('labs')" aria-label="Ask about a lab value">&#128300; Labs</button>
+            <button class="ai-quick-btn" onclick="clearAIConversation()" aria-label="Clear conversation history" style="margin-left:auto;color:var(--clx-text-muted,#94a3b8);">&#128465; Clear</button>
         </div>
 
         <!-- Messages Area -->
@@ -519,7 +533,7 @@ Important guidelines:
 
             msgDiv.innerHTML = `
                 <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isUser ? 'You' : '\uD83E\uDE7A AI Assistant'}</div>
-                <div style="background: ${isUser ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)'}; color: white; padding: 12px 16px; border-radius: ${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 90%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
+                <div class="${isUser ? 'ai-bubble-user' : 'ai-bubble-ai'}" style="padding: 12px 16px; border-radius: ${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 90%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
                     ${isUser ? text.replace(/</g, '&lt;').replace(/>/g, '&gt;') : formattedText}
                 </div>
             `;
