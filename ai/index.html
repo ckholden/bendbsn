@@ -334,6 +334,7 @@
             <button class="ai-quick-btn" onclick="aiQuickAction('careplan')">&#128203; Care Plan</button>
             <button class="ai-quick-btn" onclick="aiQuickAction('nclex')">&#128221; NCLEX Q</button>
             <button class="ai-quick-btn" onclick="aiQuickAction('labs')">&#128300; Labs</button>
+            <button class="ai-quick-btn" onclick="clearAIConversation()" style="margin-left:auto;color:var(--clx-text-muted,#94a3b8);">&#128465; Clear</button>
         </div>
 
         <!-- Messages Area -->
@@ -428,6 +429,34 @@
         const AI_API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?token=bsn_k7x9m2p4';
         var aiOpen = true;
         let aiConversation = [];
+
+        const AI_STORAGE_KEY = 'bendbsn_ai_conversation';
+
+        function saveAIConversation() {
+            try { localStorage.setItem(AI_STORAGE_KEY, JSON.stringify(aiConversation)); } catch(e) {}
+        }
+
+        function loadAIConversation() {
+            try {
+                const saved = localStorage.getItem(AI_STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        aiConversation = parsed;
+                        parsed.forEach(msg => addAIMessage(msg.content, msg.role === 'user'));
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function clearAIConversation() {
+            showConfirmModal('Clear Conversation', 'This will clear all messages from this session. Are you sure?', function() {
+                aiConversation = [];
+                localStorage.removeItem(AI_STORAGE_KEY);
+                const container = document.getElementById('aiMessages');
+                container.innerHTML = '<div style="background: var(--chat-msg-other-bg); padding: 12px 16px; border-radius: 16px; margin-bottom: 12px; font-size: 14px; color: var(--text-primary); line-height: 1.5;">Hi! I\'m your AI nursing assistant. Ask me about medications, care plans, NCLEX questions, or lab values. How can I help you today?</div>';
+            }, { danger: true, confirmText: 'Clear' });
+        }
 
         const AI_SYSTEM_PROMPT = `You are a helpful nursing education assistant for BSN nursing students. Your role is to:
 - Explain nursing concepts, procedures, and pathophysiology clearly
@@ -526,6 +555,11 @@ Important guidelines:
 
             if (!message) return;
 
+            if (!navigator.onLine) {
+                showToast('You\'re offline — please reconnect to use the AI assistant.', 'warning');
+                return;
+            }
+
             // Add user message to UI
             addAIMessage(message, true);
             input.value = '';
@@ -555,17 +589,20 @@ Important guidelines:
                     addAIMessage(data.response, false);
                     aiConversation.push({ role: 'assistant', content: data.response });
 
-                    // Keep conversation history manageable (last 10 exchanges)
+                    // Keep conversation history manageable (last 20 messages)
                     if (aiConversation.length > 20) {
                         aiConversation = aiConversation.slice(-20);
+                        showToast('Older messages were trimmed to keep the conversation focused.', 'info');
                     }
+
+                    saveAIConversation();
                 } else {
-                    addAIMessage('Sorry, I encountered an error. Please try again. ' + (data.error || ''), false);
+                    showToast('AI error: ' + (data.error || 'Unknown error. Please try again.'), 'error');
                 }
             } catch (error) {
                 hideAITyping();
                 console.error('AI API Error:', error);
-                addAIMessage('Sorry, I could not connect to the AI service. Please check your connection and try again.', false);
+                showToast('Could not connect to the AI service. Please check your connection.', 'error');
             }
 
             if (sendBtn) sendBtn.disabled = false;
@@ -585,6 +622,7 @@ Important guidelines:
 
         // ========== INITIALIZE ==========
         initTheme();
+        loadAIConversation();
 
         // Focus the input on page load
         window.addEventListener('load', function() {
