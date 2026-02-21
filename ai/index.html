@@ -16,6 +16,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BSN9B">
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -273,6 +274,156 @@
             }
         }
 
+        /* ========== AI MODE TABS ========== */
+        .ai-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-primary);
+            flex-shrink: 0;
+        }
+        .ai-tab {
+            flex: 1;
+            padding: 10px 6px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .ai-tab:hover { color: var(--clx-accent, #0f7490); }
+        .ai-tab.active {
+            color: var(--clx-accent, #0f7490);
+            border-bottom-color: var(--clx-accent, #0f7490);
+        }
+        .ai-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+        .ai-panel.active { display: flex; }
+
+        /* ========== NCLEX QUIZ ========== */
+        .quiz-score-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px; background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border); flex-shrink: 0; font-size: 13px;
+            color: var(--text-primary);
+        }
+        .quiz-score-pill {
+            background: var(--clx-accent, #0f7490); color: #fff;
+            font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 20px;
+        }
+        .quiz-controls {
+            padding: 10px 16px; border-bottom: 1px solid var(--border);
+            display: flex; gap: 8px; flex-shrink: 0;
+            background: var(--bg-primary); align-items: center;
+        }
+        .quiz-controls select {
+            flex: 1; padding: 8px 10px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 13px; background: var(--bg-input); color: var(--text-primary);
+        }
+        .quiz-gen-btn {
+            padding: 8px 14px; background: var(--clx-accent, #0f7490); color: #fff;
+            border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; white-space: nowrap; transition: opacity 0.15s;
+        }
+        .quiz-gen-btn:hover { opacity: 0.88; }
+        .quiz-gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .quiz-scroll { flex: 1; overflow-y: auto; padding: 18px; }
+        .quiz-idle-state {
+            text-align: center; color: var(--text-secondary);
+            padding: 32px 20px; font-size: 13px; line-height: 1.6;
+        }
+        .quiz-q-card {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px;
+        }
+        .quiz-q-text {
+            font-size: 14px; font-weight: 600; color: var(--text-primary);
+            line-height: 1.55; margin-bottom: 16px;
+        }
+        .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+        .quiz-opt {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 8px;
+            cursor: pointer; background: var(--bg-secondary); transition: border-color 0.1s, background 0.1s;
+        }
+        .quiz-opt:hover:not(.locked) { border-color: var(--clx-accent, #0f7490); background: var(--clx-accent-subtle, #e0f2f8); }
+        .quiz-opt.selected { border-color: var(--clx-accent, #0f7490); background: var(--clx-accent-subtle, #e0f2f8); }
+        .quiz-opt.correct-opt { border-color: #22c55e; background: #f0fdf4; }
+        .quiz-opt.wrong-opt { border-color: #ef4444; background: #fef2f2; }
+        [data-theme="dark"] .quiz-opt.correct-opt { background: #052e16; }
+        [data-theme="dark"] .quiz-opt.wrong-opt { background: #2d0707; }
+        .quiz-opt-badge {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--clx-accent, #0f7490); color: #fff;
+            font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .quiz-opt.correct-opt .quiz-opt-badge { background: #22c55e; }
+        .quiz-opt.wrong-opt .quiz-opt-badge { background: #ef4444; }
+        .quiz-opt-label { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+        .quiz-action-row { display: flex; gap: 8px; margin-top: 14px; }
+        .quiz-submit {
+            padding: 10px 20px; background: var(--clx-accent, #0f7490); color: #fff;
+            border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s;
+        }
+        .quiz-submit:hover { opacity: 0.88; }
+        .quiz-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+        .quiz-next {
+            padding: 10px 20px; background: var(--bg-secondary);
+            color: var(--text-primary); border: 1px solid var(--border);
+            border-radius: 8px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s;
+        }
+        .quiz-next:hover { opacity: 0.8; }
+        .quiz-rationale-box {
+            margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+            border-left: 4px solid; font-size: 13px; line-height: 1.6;
+        }
+        .quiz-rationale-box.correct { background: #f0fdf4; border-color: #22c55e; color: #166534; }
+        .quiz-rationale-box.incorrect { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+        [data-theme="dark"] .quiz-rationale-box.correct { background: #052e16; color: #86efac; }
+        [data-theme="dark"] .quiz-rationale-box.incorrect { background: #2d0707; color: #fca5a5; }
+        .quiz-rationale-title { font-weight: 700; margin-bottom: 4px; }
+
+        /* ========== CARE PLAN BUILDER ========== */
+        .cp-form {
+            padding: 14px 16px; border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary); flex-shrink: 0;
+            overflow-y: auto; max-height: 52%;
+        }
+        .cp-form label {
+            display: block; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.4px;
+            color: var(--text-secondary); margin-bottom: 4px; margin-top: 10px;
+        }
+        .cp-form label:first-child { margin-top: 0; }
+        .cp-form input, .cp-form select, .cp-form textarea {
+            width: 100%; padding: 8px 11px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 13px; background: var(--bg-input); color: var(--text-primary);
+        }
+        .cp-form textarea { min-height: 60px; resize: vertical; }
+        .cp-form input:focus, .cp-form select:focus, .cp-form textarea:focus {
+            outline: none; border-color: var(--clx-accent, #0f7490);
+        }
+        .cp-inline { display: flex; gap: 8px; }
+        .cp-generate {
+            width: 100%; margin-top: 12px; padding: 11px;
+            background: var(--clx-accent, #0f7490); color: #fff;
+            border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s;
+        }
+        .cp-generate:hover { opacity: 0.88; }
+        .cp-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cp-output { flex: 1; overflow-y: auto; padding: 16px; }
+        .cp-idle { text-align: center; color: var(--text-secondary); padding: 28px 20px; font-size: 13px; line-height: 1.6; }
+        .cp-result {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px; font-size: 13px;
+            line-height: 1.65; color: var(--text-primary); white-space: pre-wrap; word-wrap: break-word;
+        }
+
         /* Message bubble tokens */
         .ai-bubble-user {
             background: var(--clx-accent, #0f7490);
@@ -342,27 +493,101 @@
             &#9888;&#65039; <strong>Educational Only:</strong> This AI assistant is for educational purposes only. It does not provide medical advice. Always verify information with your instructors and official clinical resources.
         </div>
 
-        <!-- Quick Actions -->
-        <div class="ai-quick-actions">
-            <button class="ai-quick-btn" onclick="aiQuickAction('drug')" aria-label="Ask about a drug">&#128138; Drug Info</button>
-            <button class="ai-quick-btn" onclick="aiQuickAction('careplan')" aria-label="Get help with a care plan">&#128203; Care Plan</button>
-            <button class="ai-quick-btn" onclick="aiQuickAction('nclex')" aria-label="Get an NCLEX practice question">&#128221; NCLEX Q</button>
-            <button class="ai-quick-btn" onclick="aiQuickAction('labs')" aria-label="Ask about a lab value">&#128300; Labs</button>
-            <button class="ai-quick-btn" onclick="clearAIConversation()" aria-label="Clear conversation history" style="margin-left:auto;color:var(--clx-text-muted,#94a3b8);">&#128465; Clear</button>
+        <!-- Mode Tabs -->
+        <div class="ai-tabs">
+            <button class="ai-tab active" data-tab="chat" onclick="switchAITab('chat')">&#128172; Chat</button>
+            <button class="ai-tab" data-tab="quiz" onclick="switchAITab('quiz')">&#129534; NCLEX Quiz</button>
+            <button class="ai-tab" data-tab="careplan" onclick="switchAITab('careplan')">&#128203; Care Plan</button>
         </div>
 
-        <!-- Messages Area -->
-        <div class="ai-messages" id="aiMessages">
-            <div style="background: var(--chat-msg-other-bg); padding: 12px 16px; border-radius: 16px; margin-bottom: 12px; font-size: 14px; color: var(--text-primary); line-height: 1.5;">
-                Hi! I'm your AI nursing assistant. Ask me about medications, care plans, NCLEX questions, or lab values. How can I help you today?
+        <!-- Chat Panel -->
+        <div id="aiChatPanel" class="ai-panel active">
+            <div class="ai-quick-actions">
+                <button class="ai-quick-btn" onclick="aiQuickAction('drug')" aria-label="Ask about a drug">&#128138; Drug Info</button>
+                <button class="ai-quick-btn" onclick="aiQuickAction('labs')" aria-label="Ask about a lab value">&#128300; Labs</button>
+                <button class="ai-quick-btn" onclick="clearAIConversation()" aria-label="Clear conversation history" style="margin-left:auto;color:var(--clx-text-muted,#94a3b8);">&#128465; Clear</button>
+            </div>
+            <div class="ai-messages" id="aiMessages">
+                <div style="background: var(--chat-msg-other-bg); padding: 12px 16px; border-radius: 16px; margin-bottom: 12px; font-size: 14px; color: var(--text-primary); line-height: 1.5;">
+                    Hi! I'm your AI nursing assistant. Ask me about medications, lab values, pathophysiology, and more. Use the tabs above for NCLEX quiz practice and care plan building!
+                </div>
+            </div>
+            <form onsubmit="sendAIMessage(event)" class="ai-input-area">
+                <input type="text" id="aiInput" placeholder="Ask a nursing question..." autocomplete="off">
+                <button type="submit" class="ai-send-btn">Ask</button>
+            </form>
+        </div>
+
+        <!-- NCLEX Quiz Panel -->
+        <div id="aiQuizPanel" class="ai-panel">
+            <div class="quiz-score-bar">
+                <span>&#129534; NCLEX Practice Quiz</span>
+                <span class="quiz-score-pill" id="quizScoreDisplay">0 / 0</span>
+            </div>
+            <div class="quiz-controls">
+                <select id="quizTopic" aria-label="Quiz topic">
+                    <option value="">&#127922; Random Topic</option>
+                    <option value="cardiovascular">Cardiovascular</option>
+                    <option value="respiratory">Respiratory</option>
+                    <option value="neurological">Neurological</option>
+                    <option value="musculoskeletal">Musculoskeletal</option>
+                    <option value="gastrointestinal">Gastrointestinal</option>
+                    <option value="renal and urinary">Renal / Urinary</option>
+                    <option value="endocrine">Endocrine</option>
+                    <option value="hematology">Hematology</option>
+                    <option value="infection control">Infection Control</option>
+                    <option value="pharmacology">Pharmacology</option>
+                    <option value="mental health">Mental Health</option>
+                    <option value="maternal and obstetrics">Maternal / OB</option>
+                    <option value="pediatrics">Pediatrics</option>
+                    <option value="lab values">Lab Values</option>
+                    <option value="patient safety">Patient Safety</option>
+                    <option value="ethics and legal nursing">Ethics / Legal</option>
+                </select>
+                <button class="quiz-gen-btn" id="quizGenBtn" onclick="generateQuizQuestion()">New Question</button>
+            </div>
+            <div class="quiz-scroll" id="quizContent">
+                <div class="quiz-idle-state">
+                    <div style="font-size:48px;margin-bottom:12px">&#129534;</div>
+                    <div>Select a topic and tap <strong>New Question</strong> to start.<br>Your score is tracked for this session.</div>
+                </div>
             </div>
         </div>
 
-        <!-- Input Area -->
-        <form onsubmit="sendAIMessage(event)" class="ai-input-area">
-            <input type="text" id="aiInput" placeholder="Ask a nursing question..." autocomplete="off">
-            <button type="submit" class="ai-send-btn">Ask</button>
-        </form>
+        <!-- Care Plan Builder Panel -->
+        <div id="aiCarePlanPanel" class="ai-panel">
+            <div class="cp-form">
+                <label>Condition / Diagnosis *</label>
+                <input id="cpDiagnosis" type="text" placeholder="e.g. COPD exacerbation, CHF, Type 2 DM with neuropathy">
+                <label>Patient</label>
+                <div class="cp-inline">
+                    <input id="cpAge" type="number" min="1" max="120" placeholder="Age" style="max-width:80px">
+                    <select id="cpSex">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="unspecified">Unspecified</option>
+                    </select>
+                </div>
+                <label>Key Assessment Findings</label>
+                <textarea id="cpFindings" placeholder="e.g. SOB at rest, O2 sat 88% on 2L NC, bilateral crackles, 2+ pitting edema bilateral lower extremities, weight gain 4 lbs in 2 days"></textarea>
+                <label>Active Medications (optional)</label>
+                <input id="cpMeds" type="text" placeholder="e.g. furosemide 40mg PO BID, metoprolol 25mg, lisinopril 10mg">
+                <label>Focus Area</label>
+                <select id="cpFocus">
+                    <option value="">Full Care Plan (3&#8211;4 diagnoses)</option>
+                    <option value="airway and breathing">Airway &amp; Breathing</option>
+                    <option value="safety and fall prevention">Safety &amp; Fall Prevention</option>
+                    <option value="pain management">Pain Management</option>
+                    <option value="fluid and electrolyte balance">Fluid &amp; Electrolyte Balance</option>
+                    <option value="patient education and discharge planning">Patient Education &amp; Discharge</option>
+                    <option value="infection prevention">Infection Prevention</option>
+                </select>
+                <button class="cp-generate" id="cpGenBtn" onclick="generateCarePlan()">&#128203; Generate Care Plan</button>
+            </div>
+            <div class="cp-output" id="cpOutput">
+                <div class="cp-idle">Fill in the patient details above and tap <strong>Generate Care Plan</strong>.<br>The AI will create NANDA-I diagnoses, NOC outcomes, and NIC interventions.</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -488,6 +713,14 @@ Important guidelines:
 - When discussing medications, always mention common nursing considerations
 - For NCLEX questions, provide the answer AND detailed rationales for all options`;
 
+        // ========== TAB SWITCHING ==========
+        function switchAITab(tab) {
+            const panelMap = { chat: 'aiChatPanel', quiz: 'aiQuizPanel', careplan: 'aiCarePlanPanel' };
+            document.querySelectorAll('.ai-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.querySelectorAll('.ai-panel').forEach(p => p.classList.toggle('active', p.id === panelMap[tab]));
+            if (tab === 'chat') document.getElementById('aiInput')?.focus();
+        }
+
         function aiQuickAction(type) {
             const input = document.getElementById('aiInput');
             switch(type) {
@@ -496,18 +729,191 @@ Important guidelines:
                     input.focus();
                     break;
                 case 'careplan':
-                    input.value = 'Help me create a care plan for a patient with: ';
-                    input.focus();
+                    switchAITab('careplan');
                     break;
                 case 'nclex':
-                    input.value = 'Give me an NCLEX practice question about: ';
-                    input.focus();
+                    switchAITab('quiz');
                     break;
                 case 'labs':
-                    input.value = 'Explain the lab value and nursing implications: ';
+                    input.value = 'Explain this lab value and nursing implications: ';
                     input.focus();
                     break;
             }
+        }
+
+        // ========== NCLEX QUIZ MODE ==========
+        let quizState = { correct: 0, total: 0, selected: null, answered: false, correctLetter: '', rationale: '' };
+
+        function generateQuizQuestion() {
+            const topic = document.getElementById('quizTopic')?.value || 'any nursing topic';
+            const genBtn = document.getElementById('quizGenBtn');
+            if (genBtn) { genBtn.disabled = true; genBtn.textContent = 'Generating...'; }
+
+            document.getElementById('quizContent').innerHTML = '<div class="quiz-idle-state"><div style="font-size:32px;margin-bottom:8px">&#8987;</div><div>Generating question...</div></div>';
+            quizState.selected = null;
+            quizState.answered = false;
+
+            if (!navigator.onLine) {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = 'New Question'; }
+                document.getElementById('quizContent').innerHTML = '<div class="quiz-idle-state">You\'re offline. Please reconnect to generate questions.</div>';
+                return;
+            }
+
+            const prompt = `Generate one NCLEX-style multiple choice practice question about ${topic}.\n\nFormat your response EXACTLY like this:\nQUESTION: [question text here]\nA) [option text]\nB) [option text]\nC) [option text]\nD) [option text]\nCORRECT: [just the letter, A B C or D]\nRATIONALE: [explain why the correct answer is right and briefly why each wrong answer is incorrect]`;
+
+            fetch(AI_API_URL, {
+                method: 'POST', redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], systemPrompt: AI_SYSTEM_PROMPT })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = 'New Question'; }
+                if (data.success && data.response) {
+                    parseAndRenderQuizQuestion(data.response);
+                } else {
+                    document.getElementById('quizContent').innerHTML = '<div class="quiz-idle-state">Failed to generate question. Please try again.</div>';
+                }
+            })
+            .catch(() => {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = 'New Question'; }
+                document.getElementById('quizContent').innerHTML = '<div class="quiz-idle-state">Network error. Please check your connection and try again.</div>';
+            });
+        }
+
+        function parseAndRenderQuizQuestion(text) {
+            const qMatch = text.match(/QUESTION:\s*([\s\S]*?)(?=\nA\))/i);
+            const aMatch = text.match(/^A\)\s*(.+)/im);
+            const bMatch = text.match(/^B\)\s*(.+)/im);
+            const cMatch = text.match(/^C\)\s*(.+)/im);
+            const dMatch = text.match(/^D\)\s*(.+)/im);
+            const correctMatch = text.match(/CORRECT:\s*([ABCD])/i);
+            const rationaleMatch = text.match(/RATIONALE:\s*([\s\S]*?)$/i);
+
+            if (!qMatch || !correctMatch) {
+                document.getElementById('quizContent').innerHTML = '<div class="quiz-idle-state">Could not parse question. Please tap New Question to try again.</div>';
+                return;
+            }
+
+            quizState.correctLetter = (correctMatch[1] || '').toUpperCase().trim();
+            quizState.rationale = rationaleMatch ? rationaleMatch[1].trim() : 'See your textbook for rationale.';
+
+            const esc = s => (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const options = { A: esc((aMatch||[])[1]), B: esc((bMatch||[])[1]), C: esc((cMatch||[])[1]), D: esc((dMatch||[])[1]) };
+
+            let html = `<div class="quiz-q-card">
+                <div class="quiz-q-text">${esc(qMatch[1].trim())}</div>
+                <div class="quiz-options" id="quizOptions">`;
+
+            ['A','B','C','D'].forEach(letter => {
+                if (options[letter]) {
+                    html += `<div class="quiz-opt" id="quizOpt${letter}" onclick="selectQuizOpt('${letter}')">
+                        <div class="quiz-opt-badge">${letter}</div>
+                        <div class="quiz-opt-label">${options[letter]}</div>
+                    </div>`;
+                }
+            });
+
+            html += `</div>
+                <div class="quiz-action-row">
+                    <button class="quiz-submit" id="quizSubmitBtn" onclick="submitQuizAnswer()" disabled>Submit Answer</button>
+                </div>
+                <div id="quizRationale" style="display:none"></div>
+            </div>`;
+
+            document.getElementById('quizContent').innerHTML = html;
+        }
+
+        function selectQuizOpt(letter) {
+            if (quizState.answered) return;
+            quizState.selected = letter;
+            ['A','B','C','D'].forEach(l => {
+                const el = document.getElementById('quizOpt' + l);
+                if (el) el.classList.toggle('selected', l === letter);
+            });
+            const btn = document.getElementById('quizSubmitBtn');
+            if (btn) btn.disabled = false;
+        }
+
+        function submitQuizAnswer() {
+            if (!quizState.selected || quizState.answered) return;
+            quizState.answered = true;
+            quizState.total++;
+            const correct = quizState.selected === quizState.correctLetter;
+            if (correct) quizState.correct++;
+
+            document.getElementById('quizScoreDisplay').textContent = `${quizState.correct} / ${quizState.total}`;
+
+            ['A','B','C','D'].forEach(letter => {
+                const el = document.getElementById('quizOpt' + letter);
+                if (!el) return;
+                el.classList.add('locked');
+                if (letter === quizState.correctLetter) el.classList.add('correct-opt');
+                else if (letter === quizState.selected && !correct) el.classList.add('wrong-opt');
+            });
+
+            const rationaleEl = document.getElementById('quizRationale');
+            if (rationaleEl) {
+                rationaleEl.style.display = 'block';
+                rationaleEl.className = 'quiz-rationale-box ' + (correct ? 'correct' : 'incorrect');
+                const icon = correct ? '&#9989;' : '&#10060;';
+                const result = correct ? 'Correct!' : `Incorrect. The correct answer was <strong>${quizState.correctLetter}</strong>.`;
+                const rationaleHtml = quizState.rationale.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                rationaleEl.innerHTML = `<div class="quiz-rationale-title">${icon} ${result}</div><div>${rationaleHtml}</div>`;
+            }
+
+            const actionRow = document.querySelector('.quiz-action-row');
+            if (actionRow) {
+                actionRow.innerHTML = '<button class="quiz-next" onclick="generateQuizQuestion()">Next Question &#8594;</button>';
+            }
+        }
+
+        // ========== CARE PLAN BUILDER ==========
+        function generateCarePlan() {
+            const diagnosis = document.getElementById('cpDiagnosis')?.value?.trim();
+            if (!diagnosis) { showToast('Please enter a condition or diagnosis.', 'warning'); return; }
+
+            const age = document.getElementById('cpAge')?.value || '';
+            const sex = document.getElementById('cpSex')?.value || 'unspecified';
+            const findings = document.getElementById('cpFindings')?.value?.trim() || 'Not specified';
+            const meds = document.getElementById('cpMeds')?.value?.trim() || 'None documented';
+            const focus = document.getElementById('cpFocus')?.value || '';
+            const focusText = focus ? `Focus area: ${focus}` : 'Comprehensive care plan (3\u20134 priority diagnoses)';
+
+            const genBtn = document.getElementById('cpGenBtn');
+            if (genBtn) { genBtn.disabled = true; genBtn.textContent = 'Generating...'; }
+            document.getElementById('cpOutput').innerHTML = '<div class="cp-idle">&#8987; Generating care plan\u2026</div>';
+
+            if (!navigator.onLine) {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = '\uD83D\uDCCB Generate Care Plan'; }
+                document.getElementById('cpOutput').innerHTML = '<div class="cp-idle">You\'re offline. Please reconnect to generate a care plan.</div>';
+                return;
+            }
+
+            const patientDesc = [age ? `${age}-year-old` : '', sex !== 'unspecified' ? sex : ''].filter(Boolean).join(' ') || 'adult patient';
+            const prompt = `Generate a nursing care plan for:\n\nCondition/Diagnosis: ${diagnosis}\nPatient: ${patientDesc}\nKey Assessment Findings: ${findings}\nActive Medications: ${meds}\n${focusText}\n\nProvide:\n1. Priority NANDA-I nursing diagnoses (include defining characteristics and related factors)\n2. Patient-centered outcomes (SMART goals, short-term and long-term)\n3. Nursing interventions with rationale (5\u20136 per diagnosis, evidence-based)\n4. Evaluation criteria\n\nUse clear section headers. Nursing education only \u2014 not for actual patient care.`;
+
+            fetch(AI_API_URL, {
+                method: 'POST', redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], systemPrompt: AI_SYSTEM_PROMPT })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = '\uD83D\uDCCB Generate Care Plan'; }
+                if (data.success && data.response) {
+                    const formatted = data.response
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n/g, '<br>');
+                    document.getElementById('cpOutput').innerHTML = `<div class="cp-result">${formatted}</div>`;
+                } else {
+                    document.getElementById('cpOutput').innerHTML = '<div class="cp-idle">Error generating care plan. Please try again.</div>';
+                }
+            })
+            .catch(() => {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = '\uD83D\uDCCB Generate Care Plan'; }
+                document.getElementById('cpOutput').innerHTML = '<div class="cp-idle">Network error. Please check your connection.</div>';
+            });
         }
 
         function addAIMessage(text, isUser) {
