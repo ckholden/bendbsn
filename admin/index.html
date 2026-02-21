@@ -602,6 +602,20 @@
                 </div>
             </div>
 
+            <!-- Chat Channels -->
+            <div class="card">
+                <div class="card-header">
+                    <span>Chat Channels</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span class="updated-label" id="channelsUpdated">Updated —</span>
+                        <button class="refresh-btn" onclick="loadAdminChannels()">&#x21bb;</button>
+                    </div>
+                </div>
+                <div class="card-body tall" id="adminChannelsList">
+                    <div class="empty-state"><div class="icon">&#35;</div><p>Loading...</p></div>
+                </div>
+            </div>
+
             <!-- Community Posts -->
             <div class="card" style="grid-column: span 2;">
                 <div class="card-header">
@@ -714,6 +728,8 @@
         const database = firebase.database();
         const chatRef = database.ref('chat/messages');
         const presenceRef = database.ref('chat/presence');
+        const channelsRef = database.ref('chat/channels');
+        const channelMembersRef = database.ref('chat/channelMembers');
         const userProfilesRef = database.ref('userProfiles');
         const directMessagesRef = database.ref('directMessages');
         const userDocumentsRef = database.ref('userDocuments');
@@ -1010,6 +1026,7 @@
             loadRegisteredUsers();
             loadMessages();
             loadCommunityPosts();
+            loadAdminChannels();
             updatePendingEmailsBadge();
 
             // Real-time updates
@@ -1017,6 +1034,7 @@
             bannedRef.on('value', () => loadBannedUsers());
             chatRef.limitToLast(50).on('value', () => loadMessages());
             communityPostsRef.on('value', () => loadCommunityPosts());
+            channelsRef.on('value', () => loadAdminChannels());
         }
 
         function logout() {
@@ -1439,6 +1457,70 @@
         }
 
         // Load chat messages
+        // ========== CHAT CHANNELS ADMIN ==========
+        async function loadAdminChannels() {
+            const container = document.getElementById('adminChannelsList');
+            if (!container) return;
+            container.innerHTML = '<div class="empty-state"><div class="icon">&#9203;</div><p>Loading...</p></div>';
+            updateLastUpdated('channelsUpdated');
+            try {
+                const [channelsSnap, membersSnap] = await Promise.all([
+                    channelsRef.once('value'),
+                    channelMembersRef.once('value')
+                ]);
+
+                // Count members per channel
+                const memberCounts = {};
+                membersSnap.forEach(chSnap => {
+                    memberCounts[chSnap.key] = Object.keys(chSnap.val() || {}).length;
+                });
+
+                const allChannels = [{ key: 'general', val: { name: 'general', description: 'General chat for everyone', createdBy: 'System' } }];
+                channelsSnap.forEach(child => {
+                    if (child.key !== 'general') allChannels.push({ key: child.key, val: child.val() || {} });
+                });
+
+                if (allChannels.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#35;</div><p>No channels found.</p></div>';
+                    return;
+                }
+
+                let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+                html += '<thead><tr style="border-bottom:1px solid var(--clx-border);"><th style="text-align:left;padding:6px 8px;color:var(--clx-text-muted);font-weight:500;">Channel</th><th style="text-align:left;padding:6px 8px;color:var(--clx-text-muted);font-weight:500;">Created By</th><th style="text-align:center;padding:6px 8px;color:var(--clx-text-muted);font-weight:500;">Members</th><th style="padding:6px 8px;"></th></tr></thead><tbody>';
+
+                allChannels.forEach(({ key, val }) => {
+                    const isGeneral = key === 'general';
+                    const members = (memberCounts[key] || 0) + (isGeneral ? ' (all)' : '');
+                    const deleteBtn = isGeneral ? '<span style="color:var(--clx-text-muted);font-size:11px;">Protected</span>'
+                        : `<button onclick="deleteChannelAdmin('${key.replace(/'/g,"\\'")}','${(val.name||key).replace(/'/g,"\\'")}') " style="padding:3px 10px;background:#dc2626;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Delete</button>`;
+                    html += `<tr style="border-bottom:1px solid var(--clx-border);">
+                        <td style="padding:8px;"><span style="color:var(--clx-text-muted);">#</span> <strong>${escapeHtml(val.name || key)}</strong>${val.description ? `<br><span style="font-size:11px;color:var(--clx-text-muted);">${escapeHtml(val.description)}</span>` : ''}</td>
+                        <td style="padding:8px;color:var(--clx-text-secondary);">${escapeHtml(val.createdBy || '—')}</td>
+                        <td style="padding:8px;text-align:center;color:var(--clx-text-secondary);">${members}</td>
+                        <td style="padding:8px;text-align:right;">${deleteBtn}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = `<div class="empty-state"><div class="icon">&#9888;</div><p>Error: ${escapeHtml(err.message)}</p></div>`;
+            }
+        }
+
+        function deleteChannelAdmin(id, name) {
+            showConfirmModal('Delete Channel', `Delete #${name} and all its messages? This cannot be undone.`, () => {
+                Promise.all([
+                    channelsRef.child(id).remove(),
+                    chatRef.child(id).remove(),
+                    channelMembersRef.child(id).remove()
+                ]).then(() => {
+                    showToast('Channel #' + name + ' deleted', 'success');
+                    loadAdminChannels();
+                }).catch(err => showToast('Failed: ' + err.message, 'error'));
+            }, { danger: true, confirmText: 'Delete Channel' });
+        }
+
         function loadMessages() {
             chatRef.limitToLast(50).once('value', (snapshot) => {
                 const container = document.getElementById('messagesList');
