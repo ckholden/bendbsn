@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://api.emailjs.com https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com https://www.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://api.emailjs.com https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:; frame-src https://www.google.com https://www.gstatic.com;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <script>
         // Do not redirect here; wait for Firebase Auth state to avoid redirect loops
@@ -154,7 +154,37 @@
         .link-btn { background: none; border: none; color: var(--clx-accent, #0f7490); cursor: pointer; text-decoration: underline; font-size: 14px; }
         .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-google {
+            background: #fff;
+            color: #444;
+            border: 1px solid var(--clx-border, #d1dce8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+        .btn-google:hover { background: #f8f9fa; opacity: 1; }
+        .btn-google svg { flex-shrink: 0; }
+        .or-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+            color: var(--clx-text-muted, #888);
+            font-size: 13px;
+        }
+        .or-divider::before, .or-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--clx-border, #d1dce8);
+        }
     </style>
+    <!-- reCAPTCHA v2 - Replace sitekey with your key from https://www.google.com/recaptcha/admin -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
     <header class="site-header">
@@ -185,6 +215,13 @@
 
             <button type="submit" class="btn" id="loginBtn">Sign In</button>
 
+            <div class="or-divider">or</div>
+
+            <button type="button" class="btn btn-google" onclick="handleGoogleSignIn()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+                Continue with Google
+            </button>
+
             <p style="text-align: center; margin-top: 15px;">
                 <button type="button" class="link-btn" onclick="showRegisterModal()">Don't have an account? Register here</button>
             </p>
@@ -206,6 +243,12 @@
             <div class="modal-body">
                 <div class="error-message" id="regErrorMsg"></div>
                 <div class="success-message" id="regSuccessMsg"></div>
+
+                <button type="button" class="btn btn-google" onclick="handleGoogleSignIn()" style="margin-bottom: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+                    Register with Google
+                </button>
+                <div class="or-divider">or register with email</div>
 
                 <form onsubmit="return handleRegister(event)">
                     <div class="form-group">
@@ -241,6 +284,10 @@
                             <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to use this tool responsibly.</span>
                         </label>
                     </div>
+
+                    <!-- reCAPTCHA: Replace sitekey with your production key from https://www.google.com/recaptcha/admin -->
+                    <!-- Test key (always passes): 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI -->
+                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" style="margin-bottom: 16px;"></div>
 
                     <button type="submit" class="btn" id="regBtn">Create Account</button>
                     <button type="button" class="btn btn-secondary" onclick="hideRegisterModal()">Cancel</button>
@@ -350,6 +397,39 @@
         </div>
     </div>
 
+
+    <!-- Google Role Selection Modal (for first-time Google users) -->
+    <div class="modal" id="googleRoleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Almost there!</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: var(--clx-text-secondary); font-size: 14px;">Welcome! Please tell us a bit about yourself to complete your account setup.</p>
+                <div class="error-message" id="googleRoleErrorMsg"></div>
+
+                <div class="form-group">
+                    <label for="googleRRole">Role</label>
+                    <select id="googleRRole" required onchange="onRegRoleChange('googleR')">
+                        <option value="" disabled selected>Select your role</option>
+                    </select>
+                </div>
+                <div id="googleRYearRow" class="form-group" style="display:none;">
+                    <label for="googleRYear">Year Level</label>
+                    <select id="googleRYear"></select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: normal; font-size: 12px; color: var(--clx-text-secondary);">
+                        <input type="checkbox" id="googleTermsAgree" required style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+                        <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to use this tool responsibly.</span>
+                    </label>
+                </div>
+
+                <button type="button" class="btn" id="googleRoleBtn" onclick="submitGoogleRole()">Get Started</button>
+            </div>
+        </div>
+    </div>
 
     <script>
 
@@ -580,6 +660,15 @@
             successMsg.classList.remove('show');
 
             // Validate password length
+            // Validate reCAPTCHA (test key always passes; replace with real key in production)
+            if (typeof grecaptcha !== 'undefined' && !grecaptcha.getResponse()) {
+                errorMsg.textContent = "Please complete the \"I'm not a robot\" check.";
+                errorMsg.classList.add('show');
+                regBtn.disabled = false;
+                regBtn.innerHTML = 'Create Account';
+                return false;
+            }
+
             if (password.length < 6) {
                 errorMsg.textContent = 'Password must be at least 6 characters.';
                 errorMsg.classList.add('show');
@@ -905,6 +994,8 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const database = firebase.database();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+        let _preventAuthRedirect = false;
 
         // ====== DYNAMIC ROLE SYSTEM ======
         let _rolesConfig = {};
@@ -984,8 +1075,136 @@
         // Load roles config from Firebase on page load
         fetchRolesConfig();
 
+        // ====== GOOGLE SIGN-IN ======
+        async function handleGoogleSignIn() {
+            _preventAuthRedirect = true;
+            try {
+                const result = await auth.signInWithPopup(googleProvider);
+                const user = result.user;
+
+                const snap = await database.ref("userProfiles/" + user.uid).once("value");
+                const profile = snap.val();
+
+                if (profile && profile.role_id) {
+                    localStorage.setItem("bendbsn_auth", "true");
+                    localStorage.setItem("bendbsn_user", user.email || "");
+                    localStorage.setItem("bendbsn_displayName", user.displayName || user.email.split("@")[0]);
+                    localStorage.setItem("bendbsn_uid", user.uid);
+                    cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: \!\!profile.role_year, year: profile.role_year || null });
+                    await logLoginEvent(user.email, user.displayName, true);
+                    _preventAuthRedirect = false;
+                    window.location.href = "/home/";
+                } else if (profile) {
+                    localStorage.setItem("bendbsn_auth", "true");
+                    localStorage.setItem("bendbsn_user", user.email || "");
+                    localStorage.setItem("bendbsn_displayName", user.displayName || user.email.split("@")[0]);
+                    localStorage.setItem("bendbsn_uid", user.uid);
+                    await logLoginEvent(user.email, user.displayName, true);
+                    _preventAuthRedirect = false;
+                    window.location.href = "/home/";
+                } else {
+                    showGoogleRoleModal(user);
+                }
+            } catch (error) {
+                _preventAuthRedirect = false;
+                if (error.code === "auth/account-exists-with-different-credential") {
+                    showToast("An account already exists with this email. Please sign in with your email and password.", "warning", 6000);
+                } else if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
+                    // User closed the popup - no action needed
+                } else {
+                    showToast("Google sign-in failed. Please try again.", "error");
+                    console.error("Google sign-in error:", error);
+                }
+            }
+        }
+
+        function showGoogleRoleModal(user) {
+            const sorted = Object.entries(_rolesConfig).sort((a, b) => (a[1].order || 99) - (b[1].order || 99));
+            const optHtml = "<option value=\"\" disabled selected>Select your role</option>" +
+                sorted.map(([id, r]) => "<option value=\"" + id + "\">" + r.label + "</option>").join("");
+            const sel = document.getElementById("googleRRole");
+            if (sel) sel.innerHTML = optHtml;
+
+            document.getElementById("googleRoleModal")._googleUser = user;
+            document.getElementById("googleRoleModal").classList.add("show");
+        }
+
+        async function submitGoogleRole() {
+            const modal = document.getElementById("googleRoleModal");
+            const user = modal._googleUser;
+            if (\!user) return;
+
+            const roleData = getRoleDataFromForm("googleR");
+            if (\!roleData.id) {
+                document.getElementById("googleRoleErrorMsg").textContent = "Please select your role.";
+                document.getElementById("googleRoleErrorMsg").classList.add("show");
+                return;
+            }
+            if (\!document.getElementById("googleTermsAgree").checked) {
+                document.getElementById("googleRoleErrorMsg").textContent = "Please agree to the terms.";
+                document.getElementById("googleRoleErrorMsg").classList.add("show");
+                return;
+            }
+
+            const btn = document.getElementById("googleRoleBtn");
+            btn.disabled = true;
+            btn.innerHTML = "<span class=\"loading\"></span>Setting up...";
+            document.getElementById("googleRoleErrorMsg").classList.remove("show");
+
+            try {
+                cacheRoleLocally(roleData);
+                await database.ref("userProfiles/" + user.uid).set({
+                    displayName: user.displayName || user.email.split("@")[0],
+                    email: user.email,
+                    role: roleData.label,
+                    role_id: roleData.id,
+                    role_label: roleData.label,
+                    role_year: roleData.year || null,
+                    createdAt: Date.now(),
+                    welcomeEmailSent: false,
+                    provider: "google"
+                });
+
+                const params = new URLSearchParams({
+                    action: "addUser",
+                    username: user.email,
+                    password: "[Google Auth]",
+                    status: "approved",
+                    name: user.displayName || user.email.split("@")[0],
+                    email: user.email,
+                    role: roleData.label
+                });
+                fetch(API_URL + "&" + params.toString(), { mode: "no-cors" }).catch(() => {});
+
+                const name = user.displayName || user.email.split("@")[0];
+                sendWelcomeEmail(name, user.email).then(sent => {
+                    database.ref("userProfiles/" + user.uid).update({ welcomeEmailSent: sent }).catch(() => {});
+                });
+                sendEmailNotification(name, user.email, user.email, "new_registration", roleData.label).catch(() => {});
+
+                localStorage.setItem("bendbsn_auth", "true");
+                localStorage.setItem("bendbsn_user", user.email || "");
+                localStorage.setItem("bendbsn_displayName", name);
+                localStorage.setItem("bendbsn_uid", user.uid);
+
+                await logLoginEvent(user.email, name, true);
+
+                modal.classList.remove("show");
+                _preventAuthRedirect = false;
+                window.location.href = "/home/";
+            } catch(e) {
+                console.error("Google role setup error:", e);
+                document.getElementById("googleRoleErrorMsg").textContent = "Error setting up account. Please try again.";
+                document.getElementById("googleRoleErrorMsg").classList.add("show");
+                btn.disabled = false;
+                btn.innerHTML = "Get Started";
+            }
+        }
+        // ====== END GOOGLE SIGN-IN ======
+
         // Redirect only after Firebase confirms auth; clear stale local session if needed
         auth.onAuthStateChanged((user) => {
+            if (_preventAuthRedirect) return;
             if (user) {
                 localStorage.setItem('bendbsn_auth', 'true');
                 localStorage.setItem('bendbsn_user', user.email || '');

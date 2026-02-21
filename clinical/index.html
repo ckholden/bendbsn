@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#0f7490">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="BSN9B">
+    <meta name="apple-mobile-web-app-title" content="BendBSN">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico">
@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
-    <title>Clinical Assessment Packet - BSN9B</title>
+    <title>Clinical Assessment Packet - BendBSN</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -286,6 +286,7 @@
                     <button class="btn btn-primary" onclick="savePacket()">Save Progress</button>
                     <button class="btn btn-success" onclick="showLoadModal()">Load Packet</button>
                     <button class="btn btn-success" onclick="exportToWord()">Export to Word</button>
+                    <button class="btn btn-success" onclick="generatePDF()">Export to PDF</button>
                     <button class="btn btn-danger btn-sm" onclick="newPacket()">New Packet</button>
                 </div>
             </div>
@@ -2098,6 +2099,347 @@
                 console.error('Export failed:', e);
                 showToast('Export failed: ' + e.message, 'error');
             }
+        }
+
+        // ========== EXPORT TO PDF ==========
+        async function generatePDF() {
+            const pdfBtn = document.querySelector('[onclick="generatePDF()"]');
+            if (pdfBtn) { pdfBtn.disabled = true; pdfBtn.textContent = 'Generating PDF...'; }
+
+            if (typeof window.jspdf === 'undefined') {
+                try {
+                    await new Promise((res, rej) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                        s.onload = res; s.onerror = rej;
+                        document.head.appendChild(s);
+                    });
+                    await new Promise((res, rej) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+                        s.onload = res; s.onerror = rej;
+                        document.head.appendChild(s);
+                    });
+                } catch(e) {
+                    showToast('Failed to load PDF library. Check your connection.', 'error');
+                    if (pdfBtn) { pdfBtn.disabled = false; pdfBtn.textContent = 'Export to PDF'; }
+                    return;
+                }
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+                const data = collectAllData();
+
+                const PW = doc.internal.pageSize.getWidth();
+                const PH = doc.internal.pageSize.getHeight();
+                const ML = 20, MR = 20, MT = 20, MB = 20;
+                const CW = PW - ML - MR;
+                const ACCENT = [15, 116, 144];
+
+                let y = MT;
+
+                function checkPage(needed) {
+                    if (y + (needed || 10) > PH - MB) { doc.addPage(); y = MT; }
+                }
+
+                function sectionHeading(text) {
+                    checkPage(14);
+                    doc.setFillColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+                    doc.rect(ML, y, CW, 8, 'F');
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.setTextColor(255, 255, 255);
+                    doc.text(text, ML + 3, y + 5.5);
+                    doc.setTextColor(0, 0, 0);
+                    y += 12;
+                }
+
+                function subH(text) {
+                    checkPage(8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.text(text, ML, y + 4);
+                    y += 7;
+                }
+
+                function field(text) {
+                    if (\!text) return;
+                    checkPage(6);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    const lines = doc.splitTextToSize(String(text), CW);
+                    doc.text(lines, ML, y + 4);
+                    y += lines.length * 4.5 + 2;
+                }
+
+                function tbl(headers, rows) {
+                    doc.autoTable({
+                        head: [headers],
+                        body: rows,
+                        startY: y,
+                        margin: { left: ML, right: MR },
+                        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                        headStyles: { fillColor: ACCENT, textColor: 255, fontStyle: 'bold' },
+                        alternateRowStyles: { fillColor: [245, 248, 251] },
+                        theme: 'grid'
+                    });
+                    y = doc.lastAutoTable.finalY + 5;
+                }
+
+                function pageBreak() { doc.addPage(); y = MT; }
+
+                function gv(f) { return data[f] || ''; }
+                function gc(f) { return data[f] ? 'Yes' : 'No'; }
+
+                const _roleCache = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
+                const _docByName = localStorage.getItem('bendbsn_displayName') || gv('studentName') || '';
+                let _docByRole = _roleCache.label || '';
+                if (_roleCache.requires_year && _roleCache.year) _docByRole += ' (' + _roleCache.year + ')';
+                const _docByLine = _docByName + (_docByRole ? ', ' + _docByRole : '');
+
+                // === TITLE PAGE ===
+                doc.setFillColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+                doc.rect(0, 0, PW, 44, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(20);
+                doc.setTextColor(255, 255, 255);
+                doc.text('Clinical Assessment Packet', PW / 2, 24, { align: 'center' });
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'normal');
+                doc.text('BendBSN Nursing Documentation', PW / 2, 34, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+                y = 60;
+
+                const titleInfo = [
+                    ['Documented by', _docByLine],
+                    ['Student', gv('studentName')],
+                    ['Course', gv('course')],
+                    ['Instructor', gv('instructor')],
+                    ['Clinical Site', gv('clinicalSite')],
+                    ['Patient Initials', gv('patientInitials')],
+                    ['Date', gv('clinicalDate')],
+                    ['Term', gv('term')]
+                ];
+                doc.setFontSize(11);
+                titleInfo.forEach(([label, val]) => {
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(label + ':', ML, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(val || '', ML + 48, y);
+                    y += 9;
+                });
+
+                // === H2T ASSESSMENTS ===
+                for (let n = 1; n <= 2; n++) {
+                    pageBreak();
+                    sectionHeading('Head-to-Toe Assessment #' + n);
+                    const prefix = 'h2t' + n + '_';
+                    const locItems = ['alert','drowsy','lethargic','stuporous','coma'].filter(i => data[prefix+'loc_'+i]).join(', ') || 'N/A';
+                    const orientItems = ['person','place','time','situation'].filter(i => data[prefix+'orient_'+i]).join(', ') || 'N/A';
+
+                    subH('General');
+                    field('LOC: ' + locItems + '  |  Orientation: ' + orientItems);
+                    field('Vitals: Temp ' + gv(prefix+'temp') + ' | R ' + gv(prefix+'resp') + ' | P ' + gv(prefix+'pulse') + ' | SaO2 ' + gv(prefix+'sao2') + ' | BP ' + gv(prefix+'bp'));
+                    field('Last BM: ' + gv(prefix+'lastbm') + ' | Height: ' + gv(prefix+'height') + ' | Weight: ' + gv(prefix+'weight') + ' | Smoker: ' + gv(prefix+'smoker'));
+                    field('Memory: ' + gv(prefix+'memory'));
+
+                    subH('Head');
+                    field('Hair/Scalp: ' + gv(prefix+'hairscalp') + ' | Eyes: PERRLA(' + gc(prefix+'perrla') + ') EOM(' + gc(prefix+'eom') + ') Nystagmus(' + gc(prefix+'nystagmus') + ')');
+                    field('Ears: ' + gv(prefix+'ears') + ' | Nose: ' + gv(prefix+'nose') + ' | Sinuses: ' + gv(prefix+'sinuses'));
+                    field('Mouth: Smile(' + gc(prefix+'smile') + ') Tongue(' + gc(prefix+'tongue_out') + ') | Tongue/Membranes: ' + gv(prefix+'tongue') + ' | Dentation: ' + gv(prefix+'dentation'));
+
+                    subH('Neck');
+                    field('Lymph Nodes: ' + gv(prefix+'lymph') + ' | Thyroid: ' + gv(prefix+'thyroid') + ' | Carotid/JVD/Trachea: ' + gv(prefix+'neck_pulse'));
+
+                    subH('Chest');
+                    const hs = ['aorta','pulm','erbs','tri','mitral'].filter(i => data[prefix+'hs_'+i]).map(i => i.charAt(0).toUpperCase()+i.slice(1)).join(', ') || 'N/A';
+                    field('Heart Sounds: ' + hs + ' | Apical Pulse/Arrhythmia: ' + gv(prefix+'apical'));
+                    field('Breath Sounds Front: ' + gv(prefix+'breath_front') + ' | Back: ' + gv(prefix+'breath_back'));
+                    field('Cough/Sputum: ' + gv(prefix+'cough') + ' | Chest Symmetry: ' + gv(prefix+'chest_sym'));
+
+                    subH('Extremities');
+                    field('Upper - Brachial(' + gc(prefix+'ue_brachial') + ') Radial(' + gc(prefix+'ue_radial') + ') Equal(' + gc(prefix+'ue_equal') + ') | Cap Refill: ' + gv(prefix+'ue_caprefill') + ' | Grip: Equal(' + gc(prefix+'grip_equal') + ') Strong(' + gc(prefix+'grip_strong') + ')');
+                    field('Lower - Femoral(' + gc(prefix+'le_femoral') + ') Popliteal(' + gc(prefix+'le_popliteal') + ') Post.Tibial(' + gc(prefix+'le_postib') + ') Dorsalis(' + gc(prefix+'le_dorsalis') + ') | Edema: ' + gv(prefix+'le_edema'));
+
+                    subH('Pain');
+                    const painType = [data[prefix+'pain_acute']?'Acute':'', data[prefix+'pain_chronic']?'Chronic':''].filter(Boolean).join('/') || 'N/A';
+                    field('Type: ' + painType + ' | Intensity: ' + gv(prefix+'pain_intensity') + ' | Location: ' + gv(prefix+'pain_location'));
+
+                    subH('Skin & Abdomen');
+                    field('Skin: ' + gv(prefix+'skin_desc') + ' | Issues: ' + gv(prefix+'skin_issues') + ' | Turgor: ' + gv(prefix+'skin_turgor'));
+                    field('Abd: Inspect: ' + gv(prefix+'abd_inspect') + ' | LUQ: ' + gv(prefix+'abd_luq') + ' LLQ: ' + gv(prefix+'abd_llq') + ' RUQ: ' + gv(prefix+'abd_ruq') + ' RLQ: ' + gv(prefix+'abd_rlq'));
+                    field('Gait: ' + gv(prefix+'gait') + ' | Romberg: ' + gv(prefix+'romberg') + ' | Balance: ' + gv(prefix+'balance'));
+                }
+
+                // === OMEGA CHECKLISTS ===
+                for (let n = 1; n <= 2; n++) {
+                    pageBreak();
+                    sectionHeading('OMEGA Checklist #' + n);
+                    const oFields = ['orientation','medication','emergency','gait','allergies','air','food','water','safety','hygiene','pain','sleep'];
+                    const oLabels = ['O - Orientation','M - Medication','E - Emergency','G - Gait','A - Allergies','1 - Air','2 - Food','3 - Water','4 - Safety','5 - Hygiene','6 - Pain','7 - Sleep'];
+                    tbl(['Category', 'Notes'], oFields.map((f, i) => [oLabels[i], gv('omega' + n + '_' + f)]));
+                }
+
+                // === BRADEN SCALE ===
+                pageBreak();
+                sectionHeading('Braden Scale');
+                const bradenCats = ['sensory','moisture','activity','mobility','nutrition','friction'];
+                const bradenLabels = ['Sensory Perception','Moisture','Activity','Mobility','Nutrition','Friction & Shear'];
+                const bradenTotal = bradenCats.reduce((s, c) => s + (bradenScores[c] || 0), 0);
+                tbl(['Category', 'Score'], bradenCats.map((c, i) => [bradenLabels[i], String(bradenScores[c] || '-')]));
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('Total Score: ' + bradenTotal + '/23', ML, y);
+                y += 8;
+                doc.setFont('helvetica', 'normal');
+
+                if (gv('cognitiveAssessment')) {
+                    subH('Cognitive Assessment');
+                    field(gv('cognitiveAssessment'));
+                }
+
+                // === LABS ===
+                pageBreak();
+                sectionHeading('Lab Values');
+                const labRows = [];
+                document.querySelectorAll('#labTable tbody tr:not(.cat-header)').forEach(tr => {
+                    const cells = tr.querySelectorAll('td');
+                    const inputs = tr.querySelectorAll('input');
+                    if (inputs.length >= 3 && (inputs[1]?.value || inputs[0]?.value)) {
+                        const name = cells[0]?.textContent?.trim() || inputs[0]?.value || '';
+                        const normal = cells[1]?.textContent?.trim() || inputs[1]?.value || '';
+                        const dateVal = inputs.length > 2 ? (inputs[inputs.length-3]?.value || '') : '';
+                        const result = inputs.length > 1 ? (inputs[inputs.length-2]?.value || '') : '';
+                        const interp = inputs[inputs.length-1]?.value || '';
+                        if (result) labRows.push([name, normal, dateVal, result, interp]);
+                    }
+                });
+                if (labRows.length) tbl(['Lab', 'Normal', 'Date', 'Result', 'Interpretation'], labRows);
+                else field('No lab values recorded.');
+
+                // === MEDICATIONS ===
+                sectionHeading('Medications');
+                const medRows = [];
+                for (let i = 1; i <= medRowCount; i++) {
+                    const name = gv('med' + i + '_name');
+                    if (name) medRows.push([name, gv('med' + i + '_time'), gv('med' + i + '_class'), gv('med' + i + '_indication'), gv('med' + i + '_side'), gv('med' + i + '_nursing')]);
+                }
+                if (medRows.length) tbl(['Name','Time','Class','Indication','Side Effects','Nursing'], medRows);
+                else field('No medications recorded.');
+
+                // === DIAGNOSES ===
+                pageBreak();
+                sectionHeading('Primary Diagnosis');
+                subH(gv('dx1_name') || 'Not specified');
+                subH('Definition'); field(gv('dx1_definition'));
+                subH('Pathophysiology'); field(gv('dx1_pathophysiology'));
+                subH('Risk Factors'); field(gv('dx1_riskfactors'));
+                subH('Signs & Symptoms'); field(gv('dx1_signs'));
+
+                sectionHeading('Secondary Diagnosis');
+                subH(gv('dx2_name') || 'Not specified');
+                subH('Definition'); field(gv('dx2_definition'));
+                subH('Pathophysiology'); field(gv('dx2_pathophysiology'));
+                subH('Risk Factors'); field(gv('dx2_riskfactors'));
+                subH('Signs & Symptoms'); field(gv('dx2_signs'));
+
+                // === HPI ===
+                pageBreak();
+                sectionHeading('History of Present Illness');
+                subH('Patient Explanation / Chart Review'); field(gv('hpi_explanation'));
+                subH('Manifestations'); field(gv('hpi_manifestations'));
+                subH('Treatment'); field(gv('hpi_treatment'));
+                subH("Patient Impact - Maslow's Hierarchy"); field(gv('hpi_maslow'));
+
+                // === CARE PLAN ===
+                pageBreak();
+                sectionHeading('Nursing Care Plan');
+                subH('Assessment / OMEGA7 Finding'); field(gv('cp_assessment'));
+                subH('Nursing Diagnostic Statement (NANDA)'); field(gv('cp_nanda'));
+                subH('Short-Term Goal'); field(gv('cp_stgoal'));
+                tbl(['Type','Intervention','Rationale'], [
+                    ['Assess', gv('cp_st_assess'), gv('cp_st_assess_rat')],
+                    ['Do', gv('cp_st_do'), gv('cp_st_do_rat')],
+                    ['Teach', gv('cp_st_teach'), gv('cp_st_teach_rat')]
+                ]);
+                subH('Long-Term Goal'); field(gv('cp_ltgoal'));
+                tbl(['Type','Intervention','Rationale'], [
+                    ['Assess', gv('cp_lt_assess'), gv('cp_lt_assess_rat')],
+                    ['Do', gv('cp_lt_do'), gv('cp_lt_do_rat')],
+                    ['Teach', gv('cp_lt_teach'), gv('cp_lt_teach_rat')]
+                ]);
+
+                subH('NCSBN Clinical Judgement Model');
+                tbl(['Step','Response'], [
+                    ['Step 1: Recognize Cues', gv('ncsbn_step1')],
+                    ['Step 2: Analyze Cues', gv('ncsbn_step2')],
+                    ['Step 3: Prioritize Hypotheses', gv('ncsbn_step3')],
+                    ['Step 4/5: Generate Solutions & Take Action', gv('ncsbn_step45')],
+                    ['Step 6: Evaluate Outcomes', gv('ncsbn_step6')]
+                ]);
+
+                // === SBAR ===
+                for (let n = 1; n <= 2; n++) {
+                    pageBreak();
+                    sectionHeading('SBAR #' + n);
+                    subH('S - Situation'); field(gv('sbar' + n + '_situation'));
+                    subH('B - Background');
+                    field('Hx: ' + gv('sbar' + n + '_hx') + ' | Allergies: ' + gv('sbar' + n + '_allergies'));
+                    field('Vitals: BP ' + gv('sbar' + n + '_bp') + ' HR ' + gv('sbar' + n + '_hr') + ' RR ' + gv('sbar' + n + '_rr') + ' Temp ' + gv('sbar' + n + '_temp') + ' SaO2 ' + gv('sbar' + n + '_sao2'));
+                    field('O2: ' + gv('sbar' + n + '_o2') + ' | Nausea: ' + gv('sbar' + n + '_nausea') + ' | Pain: ' + gv('sbar' + n + '_pain_amt') + ' at ' + gv('sbar' + n + '_pain_where'));
+                    field('IV: ' + gv('sbar' + n + '_iv') + ' | Fluids: ' + gv('sbar' + n + '_fluids') + ' | Procedures: ' + gv('sbar' + n + '_procedures'));
+                    subH('A - Assessment');
+                    field('Labs: ' + gv('sbar' + n + '_labs'));
+                    field('Wounds: ' + gv('sbar' + n + '_wounds'));
+                    field('Fall Risk: ' + gv('sbar' + n + '_fallrisk') + ' | LOC: ' + gv('sbar' + n + '_loc'));
+                    field('Other: ' + gv('sbar' + n + '_other_assess'));
+                    field('Interventions: ' + gv('sbar' + n + '_interventions'));
+                    subH('R - Recommendation');
+                    field(gv('sbar' + n + '_recommendation'));
+                    field('Comments: ' + gv('sbar' + n + '_comments'));
+                    field('Orders: ' + gv('sbar' + n + '_orders'));
+                }
+
+                // === PROGRESS NOTES ===
+                pageBreak();
+                sectionHeading('Nurses Progress Notes');
+                for (let n = 1; n <= 3; n++) {
+                    if (gv('pn' + n + '_focus')) {
+                        subH('Progress Note #' + n);
+                        field('FOCUS: ' + gv('pn' + n + '_focus'));
+                        field('Data: ' + gv('pn' + n + '_data'));
+                        field('Action: ' + gv('pn' + n + '_action'));
+                        field('Response: ' + gv('pn' + n + '_response'));
+                    }
+                }
+
+                // === DISCHARGE ===
+                pageBreak();
+                sectionHeading('Discharge Plan');
+                subH('Summary of Care'); field(gv('discharge_summary'));
+                subH('Discharge Plan'); field(gv('discharge_plan'));
+
+                // === REFERENCES ===
+                sectionHeading('References');
+                for (let i = 1; i <= refCount; i++) {
+                    const ref = gv('reference_' + i);
+                    if (ref) field(ref);
+                }
+
+                // Save PDF
+                const initials = gv('patientInitials') || 'Patient';
+                const term = gv('term') || 'Clinical';
+                doc.save('Clinical_Packet_' + initials + '_' + term.replace(/\s/g, '_') + '.pdf');
+                showToast('PDF exported successfully!', 'success');
+
+            } catch(e) {
+                console.error('PDF export failed:', e);
+                showToast('PDF export failed: ' + e.message, 'error');
+            }
+
+            if (pdfBtn) { pdfBtn.disabled = false; pdfBtn.textContent = 'Export to PDF'; }
         }
 
         // ========== SIDEBAR ==========
