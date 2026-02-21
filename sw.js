@@ -4,7 +4,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-    apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
+    apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
     authDomain: "bendbsn-17377.firebaseapp.com",
     projectId: "bendbsn-17377",
     messagingSenderId: "762882187702",
@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v110';
+const CACHE_VERSION = 'v111';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
