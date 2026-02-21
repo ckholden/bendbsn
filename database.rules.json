@@ -44,6 +44,18 @@
       "channelMembers": {
         ".read": "auth != null",
         ".write": "auth != null"
+      },
+      "threads": {
+        "$channelId": {
+          "$msgKey": {
+            ".read": "auth != null",
+            "replies": {
+              "$replyKey": {
+                ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email)"
+              }
+            }
+          }
+        }
       }
     },
     "directMessages": {
@@ -140,6 +152,6 @@
     "groupChats": {
       ".read": "auth != null",
       ".write": "auth != null"
-    }
+    },
   }
 }

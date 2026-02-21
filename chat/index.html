@@ -611,6 +611,60 @@
             padding-bottom: 8px;
             border-bottom: 1px solid var(--border);
         }
+        /* Thread reply panel */
+        .thread-panel {
+            display: none;
+            position: absolute;
+            top: 0; right: 0; bottom: 0;
+            width: 300px;
+            background: var(--bg-primary);
+            border-left: 1px solid var(--border);
+            box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+            z-index: 6;
+            flex-direction: column;
+        }
+        .thread-panel.open { display: flex; }
+        .thread-panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .thread-panel-header h4 { margin: 0; font-size: 14px; color: var(--text-primary); font-weight: 700; }
+        .thread-panel-close { background:none; border:none; cursor:pointer; font-size:18px; color:var(--text-secondary); line-height:1; padding:0 2px; }
+        .thread-panel-close:hover { color:var(--text-primary); }
+        .thread-original {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            font-size: 13px; color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .thread-original-author { font-weight: 600; color: var(--text-primary); margin-bottom: 2px; font-size: 12px; }
+        .thread-original-text { line-height: 1.4; word-break: break-word; max-height: 60px; overflow: hidden; text-overflow: ellipsis; }
+        .thread-replies-area { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+        .thread-reply-bubble {
+            display: flex; gap: 8px; align-items: flex-start;
+        }
+        .thread-reply-body { flex: 1; min-width: 0; }
+        .thread-reply-author { font-size: 11px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+        .thread-reply-text { font-size: 13px; color: var(--text-primary); line-height: 1.5; word-break: break-word; background: var(--chat-msg-other-bg); padding: 7px 10px; border-radius: 10px 10px 10px 3px; }
+        .thread-reply-time { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+        .thread-reply-text.is-me { background: linear-gradient(135deg,#1f4e79 0%,#2d5a87 100%); color: white; border-radius: 10px 10px 3px 10px; }
+        .thread-input-area { padding: 10px 12px; border-top: 1px solid var(--border); flex-shrink: 0; }
+        .thread-input-form { display: flex; gap: 8px; }
+        .thread-input-form input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; background: var(--bg-secondary); color: var(--text-primary); outline: none; }
+        .thread-input-form input:focus { border-color: var(--clx-accent, #0f7490); }
+        .thread-send-btn { padding: 8px 14px; background: var(--clx-accent, #0f7490); color: #fff; border: none; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; }
+        /* Reply button on channel messages */
+        .msg-reply-btn { background:none; border:none; cursor:pointer; font-size:11px; color:var(--text-secondary,#718096); padding:2px 5px; border-radius:4px; opacity:0; transition:opacity 0.15s; line-height:1.4; }
+        .chat-msg-row:hover .msg-reply-btn,.msg-reply-btn:focus { opacity:1; }
+        .msg-reply-btn:hover { background:var(--bg-secondary,#f1f5f9); color:var(--text-primary,#1e293b); }
+        .msg-reply-count { font-size:11px; color:var(--clx-accent,#0f7490); cursor:pointer; padding:2px 5px; border-radius:4px; background:none; border:none; font-weight:600; }
+        .msg-reply-count:hover { text-decoration:underline; }
+        @media (max-width: 600px) {
+            .thread-panel { width: 100%; z-index: 50; }
+        }
         .user-list-panel .user-entry {
             display: flex;
             align-items: center;
@@ -845,6 +899,17 @@
         .reaction-pill:hover { background:rgba(99,102,241,0.08); }
         .add-reaction-btn { background:none; border:1px solid var(--clx-border,#e2e8f0); border-radius:12px; padding:2px 7px; font-size:11px; cursor:pointer; color:var(--text-secondary,#718096); line-height:1.4; opacity:0; transition:opacity 0.15s; }
         .add-reaction-btn:hover,.chat-msg-row:hover .add-reaction-btn,.add-reaction-btn:focus { background:rgba(99,102,241,0.08); opacity:1; }
+        /* Message edit button */
+        .msg-edit-btn { background:none; border:none; cursor:pointer; font-size:11px; color:var(--text-secondary,#718096); padding:2px 5px; border-radius:4px; opacity:0; transition:opacity 0.15s; line-height:1.4; }
+        .chat-msg-row:hover .msg-edit-btn,.msg-edit-btn:focus { opacity:1; }
+        .msg-edit-btn:hover { background:var(--bg-secondary,#f1f5f9); color:var(--text-primary,#1e293b); }
+        .msg-edited-label { font-size:10px; color:var(--text-secondary,#718096); margin-left:4px; font-style:italic; }
+        /* Inline edit textarea */
+        .msg-edit-textarea { width:100%; min-height:52px; padding:8px 10px; border:1px solid var(--clx-border,#e2e8f0); border-radius:8px; font-size:14px; line-height:1.5; resize:vertical; background:var(--bg-primary,#fff); color:var(--text-primary,#1e293b); box-sizing:border-box; font-family:inherit; }
+        [data-theme="dark"] .msg-edit-textarea { background:#1e293b; border-color:#334155; color:#f1f5f9; }
+        .msg-edit-actions { display:flex; gap:6px; margin-top:5px; }
+        .msg-edit-save { padding:4px 14px; background:var(--clx-accent,#0f7490); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; }
+        .msg-edit-cancel { padding:4px 14px; background:none; border:1px solid var(--clx-border,#e2e8f0); border-radius:6px; cursor:pointer; font-size:12px; color:var(--text-secondary,#718096); }
         #reactionPicker { display:none; position:fixed; z-index:9999; background:var(--bg-primary,#fff); border:1px solid var(--clx-border,#e2e8f0); border-radius:12px; padding:8px; gap:4px; flex-wrap:wrap; max-width:220px; box-shadow:0 4px 16px rgba(0,0,0,0.15); }
         #reactionPicker button { background:none; border:none; font-size:18px; cursor:pointer; border-radius:8px; padding:4px 6px; transition:background 0.1s; }
         #reactionPicker button:hover { background:rgba(99,102,241,0.12); }
@@ -1156,6 +1221,27 @@
                     <button id="createGroupBtn" class="create-group-btn" onclick="initiateGroupChatCreation()">Create Group (0 selected)</button>
                 </div>
             </div>
+
+            <!-- Thread panel -->
+            <div class="thread-panel" id="threadPanel">
+                <div class="thread-panel-header">
+                    <h4>&#128172; Thread</h4>
+                    <button class="thread-panel-close" onclick="closeThread()" title="Close thread">&times;</button>
+                </div>
+                <div class="thread-original" id="threadOriginalMsg">
+                    <div class="thread-original-author" id="threadOriginalAuthor"></div>
+                    <div class="thread-original-text" id="threadOriginalText"></div>
+                </div>
+                <div class="thread-replies-area" id="threadRepliesArea">
+                    <p style="text-align:center;color:var(--text-secondary);font-size:12px;margin-top:20px;">No replies yet. Start the thread!</p>
+                </div>
+                <div class="thread-input-area">
+                    <form class="thread-input-form" onsubmit="sendThreadReply(event)">
+                        <input type="text" id="threadInput" placeholder="Reply in thread..." autocomplete="off">
+                        <button type="submit" class="thread-send-btn">Reply</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1177,6 +1263,7 @@
         <div>
             <h3>Create a Channel</h3>
             <input type="text" id="newChannelName" placeholder="Channel name (e.g. study-group)" maxlength="30">
+            <input type="text" id="newChannelDesc" placeholder="Description (optional)" maxlength="120" style="margin-top:8px;">
             <div class="modal-actions">
                 <button onclick="hideCreateChannelModal()" style="background: var(--bg-secondary); color: var(--text-primary);">Cancel</button>
                 <button onclick="createChannel()" style="background: linear-gradient(135deg, #1f4e79 0%, #2d5a87 100%); color: white;">Create</button>
@@ -1629,6 +1716,120 @@
         // updateSidebarUserBar is already called inside onAuthStateChanged (line above).
         updateSidebarUserBar();
 
+        // ========== MESSAGE EDITING ==========
+        function startEditMsg(msgKey, channelOrConvId, isDM) {
+            const bubbleEl = document.getElementById('bubble-' + msgKey);
+            if (!bubbleEl) return;
+            const origText = bubbleEl.dataset.origText || bubbleEl.textContent;
+            bubbleEl.dataset.origText = origText;
+            const escaped = origText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            bubbleEl.innerHTML = `
+                <textarea class="msg-edit-textarea" id="editta-${msgKey}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveEditMsg('${msgKey}','${escapeForSingleQuotedJs(channelOrConvId)}',${isDM});}">${escaped}</textarea>
+                <div class="msg-edit-actions">
+                    <button class="msg-edit-save" onclick="saveEditMsg('${msgKey}','${escapeForSingleQuotedJs(channelOrConvId)}',${isDM})">Save</button>
+                    <button class="msg-edit-cancel" onclick="cancelEditMsg('${msgKey}')">Cancel</button>
+                </div>`;
+            const ta = document.getElementById('editta-' + msgKey);
+            if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+        }
+
+        function saveEditMsg(msgKey, channelOrConvId, isDM) {
+            const ta = document.getElementById('editta-' + msgKey);
+            if (!ta) return;
+            const newText = ta.value.trim();
+            if (!newText) { showToast('Message cannot be empty', 'warning'); return; }
+            const ref = isDM
+                ? directMessagesRef.child(channelOrConvId + '/messages/' + msgKey)
+                : database.ref('chat/messages/' + channelOrConvId + '/' + msgKey);
+            ref.update({ text: newText, editedAt: Date.now() })
+                .catch(err => showToast('Could not save edit: ' + err.message, 'error'));
+        }
+
+        function cancelEditMsg(msgKey) {
+            const bubbleEl = document.getElementById('bubble-' + msgKey);
+            if (!bubbleEl) return;
+            const origText = bubbleEl.dataset.origText || '';
+            // Re-render will happen on next Firebase snapshot; just restore the text
+            bubbleEl.innerHTML = escapeHtml(origText);
+        }
+
+        // ========== THREAD REPLIES ==========
+        function openThread(msgKey, channelId, msgText, msgUser) {
+            // Detach any existing thread listener
+            if (currentThreadRef) { currentThreadRef.off(); currentThreadRef = null; }
+
+            currentThreadMsgKey = msgKey;
+            currentThreadChannelId = channelId;
+
+            const panel = document.getElementById('threadPanel');
+            if (!panel) return;
+            panel.classList.add('open');
+
+            // Set original message context
+            const authorEl = document.getElementById('threadOriginalAuthor');
+            const textEl = document.getElementById('threadOriginalText');
+            if (authorEl) authorEl.textContent = msgUser || 'Unknown';
+            if (textEl) textEl.textContent = msgText || '';
+
+            const repliesArea = document.getElementById('threadRepliesArea');
+            if (repliesArea) repliesArea.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:12px;margin-top:20px;">Loading...</p>';
+
+            // Listen for replies
+            currentThreadRef = database.ref('chat/threads/' + channelId + '/' + msgKey + '/replies');
+            currentThreadRef.orderByChild('timestamp').on('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    if (repliesArea) repliesArea.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:12px;margin-top:20px;">No replies yet. Start the thread!</p>';
+                    return;
+                }
+                const replies = [];
+                snapshot.forEach(child => replies.push({ ...child.val(), _key: child.key }));
+                if (!repliesArea) return;
+                repliesArea.innerHTML = replies.map(r => {
+                    const isMe = r.user === displayName || r.username === currentUsername;
+                    return `
+                        <div class="thread-reply-bubble">
+                            ${buildAvatar(r.user || 'Unknown', 'sm')}
+                            <div class="thread-reply-body">
+                                <div class="thread-reply-author">${escapeHtml(r.user || 'Unknown')}</div>
+                                <div class="thread-reply-text${isMe ? ' is-me' : ''}">${escapeHtml(r.text || '')}</div>
+                                <div class="thread-reply-time">${formatTime(r.timestamp)}</div>
+                            </div>
+                        </div>`;
+                }).join('');
+                repliesArea.scrollTop = repliesArea.scrollHeight;
+            });
+
+            // Focus input
+            setTimeout(() => { const ti = document.getElementById('threadInput'); if (ti) ti.focus(); }, 50);
+        }
+
+        function closeThread() {
+            const panel = document.getElementById('threadPanel');
+            if (panel) panel.classList.remove('open');
+            if (currentThreadRef) { currentThreadRef.off(); currentThreadRef = null; }
+            currentThreadMsgKey = null;
+            currentThreadChannelId = null;
+        }
+
+        function sendThreadReply(event) {
+            event.preventDefault();
+            if (!currentThreadMsgKey || !currentThreadChannelId) return;
+            const input = document.getElementById('threadInput');
+            const text = input ? input.value.trim() : '';
+            if (!text) return;
+            database.ref('chat/threads/' + currentThreadChannelId + '/' + currentThreadMsgKey + '/replies').push({
+                text: text,
+                user: displayName,
+                username: currentUsername,
+                timestamp: Date.now()
+            }).then(() => {
+                if (input) input.value = '';
+                // Increment reply count on message
+                database.ref('chat/messages/' + currentThreadChannelId + '/' + currentThreadMsgKey + '/replyCount')
+                    .transaction(count => (count || 0) + 1);
+            }).catch(err => showToast('Could not send reply: ' + err.message, 'error'));
+        }
+
         // ========== THEME FUNCTIONS ==========
         function initTheme() {
             const saved = localStorage.getItem('bendbsn_theme') || 'light';
@@ -1718,6 +1919,9 @@
         let currentChatRef = null;
         let currentTypingListener = null;
         let currentTypingRef = null;         // BUG-1: store typing ref so we can detach it
+        let currentThreadMsgKey = null;      // Thread: active message key
+        let currentThreadChannelId = null;   // Thread: channel for the open thread
+        let currentThreadRef = null;         // Thread: Firebase ref for cleanup
 
         // Message retention (7 days)
         const MESSAGE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -2256,6 +2460,7 @@
         function showCreateChannelModal() {
             document.getElementById('createChannelModal').style.display = 'flex';
             document.getElementById('newChannelName').value = '';
+            document.getElementById('newChannelDesc').value = '';
             document.getElementById('newChannelName').focus();
         }
 
@@ -2275,9 +2480,12 @@
                 return;
             }
 
+            const descInput = document.getElementById('newChannelDesc');
+            const description = (descInput ? descInput.value.trim() : '') || '';
+
             channelsRef.child(name).set({
                 name: name,
-                description: '',
+                description: description,
                 createdBy: displayName,
                 createdByEmail: currentUsername,
                 createdAt: Date.now()
@@ -2402,12 +2610,13 @@
                             ${!isMe ? buildAvatar(msg.user || 'Anonymous', 'sm') : ''}
                             <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
                                 <div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">${displayUser}</div>
-                                <div style="background:${mentionsMe && !isMe ? 'linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg,#1f4e79 0%,#2d5a87 100%)' : 'var(--chat-msg-other-bg)')};color:${mentionsMe || isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
+                                <div id="bubble-${msg._key}" data-orig-text="${escapeAttr(msg.text||'')}" style="background:${mentionsMe && !isMe ? 'linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%)' : (isMe ? 'linear-gradient(135deg,#1f4e79 0%,#2d5a87 100%)' : 'var(--chat-msg-other-bg)')};color:${mentionsMe || isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
                                     ${formattedText}
                                 </div>
-                                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">
-                                    ${formatTime(msg.timestamp)}${isMe ? ' <span style="color:#4ade80;" title="Delivered">\u2713</span>' : ''}
+                                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;display:flex;align-items:center;gap:4px;">
+                                    ${formatTime(msg.timestamp)}${isMe ? ' <span style="color:#4ade80;" title="Delivered">\u2713</span>' : ''}${msg.editedAt ? '<span class="msg-edited-label">(edited)</span>' : ''}${isMe && msg._key ? `<button class="msg-edit-btn" onclick="startEditMsg('${escapeForSingleQuotedJs(msg._key)}','${escapeForSingleQuotedJs(currentChannel)}',false)" title="Edit message">&#9998;</button>` : ''}${msg._key ? `<button class="msg-reply-btn" onclick="openThread('${escapeForSingleQuotedJs(msg._key)}','${escapeForSingleQuotedJs(currentChannel)}','${escapeForSingleQuotedJs(msg.text||'')}','${escapeForSingleQuotedJs(msg.user||'')}')" title="Reply in thread">&#8629; Reply</button>` : ''}
                                 </div>
+                                ${msg.replyCount ? `<button class="msg-reply-count" onclick="openThread('${escapeForSingleQuotedJs(msg._key)}','${escapeForSingleQuotedJs(currentChannel)}','${escapeForSingleQuotedJs(msg.text||'')}','${escapeForSingleQuotedJs(msg.user||'')}')">&#128172; ${msg.replyCount} ${msg.replyCount === 1 ? 'reply' : 'replies'}</button>` : ''}
                                 ${msg._key ? `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${renderReactions(msg.reactions, msg._key, currentChannel, false)}<button class="add-reaction-btn" onclick="showReactionPicker(event,'${escapeForSingleQuotedJs(msg._key)}','${escapeForSingleQuotedJs(currentChannel)}',false)" title="Add reaction">+</button></div>` : ''}
                             </div>
                         </div>
@@ -3383,11 +3592,11 @@
                             ${!isMe ? buildAvatar(msg.senderName || 'Unknown', 'sm') : ''}
                             <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
                                 <div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">${safeSender}</div>
-                                <div style="background:${isMe ? 'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)' : 'var(--chat-msg-other-bg)'};color:${isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
+                                <div id="bubble-${msg._key}" data-orig-text="${escapeAttr(msg.text||'')}" style="background:${isMe ? 'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)' : 'var(--chat-msg-other-bg)'};color:${isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
                                     ${safeText}
                                 </div>
-                                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">
-                                    ${formatTime(msg.timestamp)}${isMe ? (msg.read ? ' <span style="color:#4ade80;" title="Seen">\u2713\u2713</span>' : ' <span style="color:var(--text-secondary);" title="Delivered">\u2713</span>') : ''}
+                                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;display:flex;align-items:center;gap:4px;">
+                                    ${formatTime(msg.timestamp)}${isMe ? (msg.read ? ' <span style="color:#4ade80;" title="Seen">\u2713\u2713</span>' : ' <span style="color:var(--text-secondary);" title="Delivered">\u2713</span>') : ''}${msg.editedAt ? '<span class="msg-edited-label">(edited)</span>' : ''}${isMe && msg._key ? `<button class="msg-edit-btn" onclick="startEditMsg('${escapeForSingleQuotedJs(msg._key)}','${escapeForSingleQuotedJs(conversationId)}',true)" title="Edit message">&#9998;</button>` : ''}
                                 </div>
                                 ${msg._key ? `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${renderReactions(msg.reactions, msg._key, conversationId, true)}<button class="add-reaction-btn" onclick="showReactionPicker(event,'${escapeForSingleQuotedJs(msg._key)}','${escapeForSingleQuotedJs(conversationId)}',true)" title="Add reaction">+</button></div>` : ''}
                             </div>
@@ -3806,6 +4015,8 @@
                 // BUG-6: detach all per-channel unread listeners
                 Object.values(channelUnreadRefs).forEach(ref => { if (ref) ref.off(); });
                 channelUnreadRefs = {};
+                // Thread listener cleanup
+                if (currentThreadRef) { currentThreadRef.off(); currentThreadRef = null; }
                 // Clear typing on leave
                 clearTyping(currentChannel);
                 // Close any open modals
@@ -3839,6 +4050,12 @@
                 const createModal = document.getElementById('createChannelModal');
                 if (createModal && createModal.style.display === 'flex') {
                     hideCreateChannelModal();
+                    return;
+                }
+                // Close thread panel
+                const threadPanel = document.getElementById('threadPanel');
+                if (threadPanel && threadPanel.classList.contains('open')) {
+                    closeThread();
                     return;
                 }
                 // Close user list panel
@@ -3928,8 +4145,16 @@
                 newChannelInput.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        createChannel();
+                        const descInput = document.getElementById('newChannelDesc');
+                        if (descInput) descInput.focus();
+                        else createChannel();
                     }
+                });
+            }
+            const newChannelDesc = document.getElementById('newChannelDesc');
+            if (newChannelDesc) {
+                newChannelDesc.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); createChannel(); }
                 });
             }
         });

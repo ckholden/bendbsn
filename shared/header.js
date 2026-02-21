@@ -264,7 +264,7 @@
     };
 
     // ── Versioned Onboarding Modal ────────────────────────
-    var CURRENT_ONBOARDING_VERSION = '2.0';
+    var CURRENT_ONBOARDING_VERSION = '2.1';
 
     function initOnboarding() {
         // Skip on login page
@@ -281,12 +281,14 @@
 
         overlay.innerHTML =
             '<div class="bsn-onboarding-modal">' +
-                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">BendBSN Has Been Updated</h2>' +
+                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">What\'s New in BendBSN</h2>' +
                 '<ul class="bsn-onboarding-list">' +
-                    '<li>Profile settings now apply across the site</li>' +
-                    '<li>Role &amp; Year must be saved from the Notes Generator</li>' +
-                    '<li>Instructor name is no longer required</li>' +
-                    '<li>Improved documentation flow</li>' +
+                    '<li>Chat now has emoji reactions on messages</li>' +
+                    '<li>Set a custom status (Studying, In class, Do not disturb\u2026)</li>' +
+                    '<li>Unread message badges on the chat sidebar link</li>' +
+                    '<li>Multiple color themes \u2014 try them from the sidebar</li>' +
+                    '<li>Direct message read receipts and last-seen times</li>' +
+                    '<li>Faster, more reliable chat with bug fixes throughout</li>' +
                 '</ul>' +
                 '<div class="bsn-onboarding-btns">' +
                     '<button class="bsn-onboarding-dismiss" id="bsnOnboardDismiss">Dismiss</button>' +
