@@ -187,7 +187,7 @@ exports.sendAdminNotification = functions.auth.user().onCreate((user) => {
 **Restrict Firebase API key usage:**
 
 1. Go to: https://console.cloud.google.com/apis/credentials
-2. Find your Firebase API key (`AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM`)
+2. Find your Firebase API key (`AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ`) — note: the original auto-created key was replaced Feb 2026 with an unrestricted key to fix Google Sign-In OAuth relay blocking
 3. Click "Edit"
 4. Set restrictions:
 
