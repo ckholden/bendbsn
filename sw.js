@@ -1,6 +1,44 @@
 // BSN9B Service Worker
+// FCM background message support
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+    apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
+    authDomain: "bendbsn-17377.firebaseapp.com",
+    projectId: "bendbsn-17377",
+    messagingSenderId: "762882187702",
+    appId: "1:762882187702:web:81c97c9eae005666796117"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+    const { title, body, icon } = payload.notification || {};
+    self.registration.showNotification(title || 'BendBSN', {
+        body: body || '',
+        icon: icon || '/android-chrome-192x192.png',
+        badge: '/favicon-32x32.png',
+        tag: payload.data?.tag || 'bendbsn',
+        data: payload.data
+    });
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const targetUrl = event.notification.data?.url || '/chat/';
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                if (client.url.includes('/chat/') && 'focus' in client) return client.focus();
+            }
+            if (clients.openWindow) return clients.openWindow(targetUrl);
+        })
+    );
+});
+
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v96';
+const CACHE_VERSION = 'v97';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching

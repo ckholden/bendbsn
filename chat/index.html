@@ -28,6 +28,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
     <style>
         /* CSS Variables — mapped to shared design tokens */
         :root {
@@ -1290,6 +1291,27 @@
         const auth = firebase.auth();
         const database = firebase.database();
 
+        // ========== PUSH NOTIFICATIONS ==========
+        // Paste your VAPID public key from Firebase Console → Project Settings → Cloud Messaging → Web push certificates
+        const VAPID_KEY = 'BH7SLbx5QvB804PJTMmH2wJheAgl1DGfXHfJi1lzZwPIp3Hqq2szp60mzKFoSsynqMPMwWH6azJgDveQo1C25BY';
+
+        async function initPushNotifications() {
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') return;
+                const fcmMessaging = firebase.messaging();
+                const token = await fcmMessaging.getToken({ vapidKey: VAPID_KEY });
+                if (!token || !currentUserUid) return;
+                // Sanitize token: replace dots with commas for RTDB key safety, cap length
+                const tokenKey = token.replace(/\./g, ',').substring(0, 768);
+                await database.ref(`userFCMTokens/${currentUserUid}/${tokenKey}`)
+                    .set({ token, createdAt: Date.now() });
+            } catch (err) {
+                console.warn('Push notification setup failed:', err);
+            }
+        }
+
         // ========== SESSION TRACKING ==========
         const SESSION_KEY = 'bendbsn_session_key';
         const SESSION_START_KEY = 'bendbsn_session_start';
@@ -1472,6 +1494,7 @@
                     setPresence('online');
                     initActivityTracking();
                     loadPartnerLastSeen();
+                    initPushNotifications();
                 }
             } else {
                 console.log('Firebase Auth: Not logged in');
@@ -2561,6 +2584,7 @@
             chatRef.push({
                 user: displayName,
                 username: currentUsername,
+                senderUid: getCurrentUserUid(),
                 text: message,
                 timestamp: Date.now(),
                 channel: currentChannel
@@ -3648,6 +3672,8 @@
             const messageData = {
                 sender: currentUsername,
                 senderName: displayName,
+                senderUid: getCurrentUserUid(),
+                recipientUid: userUidCache[partnerName] || null,
                 text: text,
                 timestamp: Date.now(),
                 read: false

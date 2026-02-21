@@ -1,6 +1,7 @@
 'use strict';
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onValueCreated } = require('firebase-functions/v2/database');
 const { logger } = require('firebase-functions');
 const admin = require('firebase-admin');
 
@@ -171,5 +172,113 @@ exports.sendDailyWelcomeEmails = onSchedule(
         logger.info(
             `sendDailyWelcomeEmails: complete — sent=${sent}, failed=${failed}`
         );
+    }
+);
+
+/**
+ * onDMSent
+ *
+ * Fires when a new direct message is written. Sends a push notification to the
+ * recipient using any FCM tokens stored under userFCMTokens/{recipientUid}.
+ * Invalid tokens are cleaned up automatically.
+ */
+exports.onDMSent = onValueCreated(
+    { ref: '/directMessages/{convId}/messages/{msgId}', region: 'us-central1' },
+    async (event) => {
+        const msg = event.data.val();
+        if (!msg || !msg.recipientUid || !msg.senderName) return;
+
+        const db = admin.database();
+        const tokensSnap = await db.ref(`userFCMTokens/${msg.recipientUid}`).get();
+        if (!tokensSnap.exists()) return;
+
+        const tokens = Object.values(tokensSnap.val())
+            .map(t => t.token)
+            .filter(Boolean);
+        if (!tokens.length) return;
+
+        const response = await admin.messaging().sendEachForMulticast({
+            tokens,
+            notification: {
+                title: `DM from ${msg.senderName}`,
+                body: (msg.text || 'New message').substring(0, 100)
+            },
+            data: { url: '/chat/', tag: `dm-${event.params.convId}` },
+            webpush: { fcmOptions: { link: 'https://bendbsn.com/chat/' } }
+        });
+
+        // Remove tokens that FCM reports as invalid or unregistered
+        const cleanupPromises = [];
+        response.responses.forEach((r, i) => {
+            const code = r.error?.code;
+            if (!r.success && (
+                code === 'messaging/invalid-registration-token' ||
+                code === 'messaging/registration-token-not-registered'
+            )) {
+                const badKey = tokens[i].replace(/\./g, ',').substring(0, 768);
+                cleanupPromises.push(
+                    db.ref(`userFCMTokens/${msg.recipientUid}/${badKey}`).remove()
+                );
+            }
+        });
+        await Promise.all(cleanupPromises);
+    }
+);
+
+/**
+ * onChatMention
+ *
+ * Fires when a new channel message is written. Scans the message text for
+ * @firstName mentions, resolves matching UIDs from userProfiles, and sends a
+ * push notification to each mentioned user (excluding the sender).
+ */
+exports.onChatMention = onValueCreated(
+    { ref: '/chat/messages/{channelId}/{msgId}', region: 'us-central1' },
+    async (event) => {
+        const msg = event.data.val();
+        if (!msg || !msg.text) return;
+
+        const mentionRegex = /@([\w.-]+)/g;
+        const mentions = [...msg.text.matchAll(mentionRegex)].map(m => m[1].toLowerCase());
+        if (!mentions.length) return;
+
+        const db = admin.database();
+        const profilesSnap = await db.ref('userProfiles').get();
+        if (!profilesSnap.exists()) return;
+
+        // Match first names to UIDs, skip the sender
+        const notifiedUids = new Set();
+        profilesSnap.forEach(child => {
+            const profile = child.val();
+            const uid = child.key;
+            if (!profile || !profile.displayName || uid === msg.senderUid) return;
+            const firstName = profile.displayName.split(' ')[0].toLowerCase();
+            if (mentions.includes(firstName)) {
+                notifiedUids.add(uid);
+            }
+        });
+
+        for (const uid of notifiedUids) {
+            const tokensSnap = await db.ref(`userFCMTokens/${uid}`).get();
+            if (!tokensSnap.exists()) continue;
+
+            const tokens = Object.values(tokensSnap.val())
+                .map(t => t.token)
+                .filter(Boolean);
+            if (!tokens.length) continue;
+
+            await admin.messaging().sendEachForMulticast({
+                tokens,
+                notification: {
+                    title: `${msg.user || 'Someone'} mentioned you`,
+                    body: (msg.text || '').substring(0, 100)
+                },
+                data: {
+                    url: '/chat/',
+                    tag: `mention-${event.params.channelId}`
+                },
+                webpush: { fcmOptions: { link: 'https://bendbsn.com/chat/' } }
+            });
+        }
     }
 );
