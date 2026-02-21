@@ -661,18 +661,6 @@
             <span class="ctx-label">Student</span>
             <span class="ctx-value" id="ctxName">—</span>
         </div>
-        <div class="ctx-item">
-            <span class="ctx-label">Term</span>
-            <span class="ctx-value editable" id="ctxTerm" onclick="editCtx('term')" title="Click to edit">Spring 2026</span>
-        </div>
-        <div class="ctx-item">
-            <span class="ctx-label">Next Exam</span>
-            <span class="ctx-value editable" id="ctxExam" onclick="editCtx('exam')" title="Click to edit">—</span>
-        </div>
-        <div class="ctx-item">
-            <span class="ctx-label">Graduation</span>
-            <span class="ctx-value editable" id="ctxGrad" onclick="editCtx('grad')" title="Click to set graduation month">—</span>
-        </div>
     </div>
 
     <!-- Dashboard -->
@@ -1152,55 +1140,7 @@
         }
 
         // ========== CONTEXT BAR ==========
-        (function initContextBar() {
-            const term = localStorage.getItem('bendbsn_home_term');
-            const exam = localStorage.getItem('bendbsn_home_exam');
-            if (term) document.getElementById('ctxTerm').textContent = term;
-            if (exam) document.getElementById('ctxExam').textContent = exam;
-            document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bendbsn_displayName') || '—';
-            // Graduation countdown
-            const grad = localStorage.getItem('bendbsn_home_grad');
-            if (grad) document.getElementById('ctxGrad').textContent = calcGradCountdown(grad);
-        })();
-
-        function calcGradCountdown(gradStr) {
-            // gradStr = "May 2027" format — parse as 1st of that month
-            const target = new Date(gradStr + ' 01');
-            if (isNaN(target.getTime())) return gradStr;
-            const now = new Date();
-            if (target <= now) return '🎓 Done!';
-            const diffMs = target - now;
-            const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-            if (days <= 30) return days + ' days';
-            const months = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30.44));
-            if (months < 24) return months + ' mo';
-            const years = Math.floor(months / 12);
-            const remMonths = months % 12;
-            return remMonths ? years + 'y ' + remMonths + 'mo' : years + 'y';
-        }
-
-        function editCtx(field) {
-            if (field === 'grad') {
-                const el = document.getElementById('ctxGrad');
-                const current = (el.textContent === '—' || el.textContent.includes('🎓') || el.textContent.includes('mo') || el.textContent.includes('y') || el.textContent.includes('days')) ? (localStorage.getItem('bendbsn_home_grad') || '') : el.textContent;
-                showPromptModal('Graduation Date', 'Enter your expected graduation (e.g. May 2027)', (val) => {
-                    if (val && val.trim()) {
-                        localStorage.setItem('bendbsn_home_grad', val.trim());
-                        el.textContent = calcGradCountdown(val.trim());
-                    }
-                }, { defaultValue: current, placeholder: 'May 2027' });
-                return;
-            }
-            const el = document.getElementById(field === 'term' ? 'ctxTerm' : 'ctxExam');
-            const current = el.textContent === '—' ? '' : el.textContent;
-            const label = field === 'term' ? 'Current term (e.g. Spring 2026)' : 'Next exam date (e.g. Mar 3 — NCLEX Review)';
-            showPromptModal('Edit ' + (field === 'term' ? 'Term' : 'Next Exam'), label, (val) => {
-                if (val && val.trim()) {
-                    el.textContent = val.trim();
-                    localStorage.setItem(field === 'term' ? 'bendbsn_home_term' : 'bendbsn_home_exam', val.trim());
-                }
-            }, { defaultValue: current, placeholder: label });
-        }
+        document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bendbsn_displayName') || '—';
 
 
         // ========== RECENT NOTES ==========
