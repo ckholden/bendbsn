@@ -526,13 +526,13 @@
             transition: border-color 0.2s;
         }
         .dm-input-form input:focus {
-            border-color: #8b5cf6;
+            border-color: var(--clx-accent, #0f7490);
         }
         .dm-input-form input::placeholder {
             color: var(--text-secondary);
         }
         .dm-send-btn {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            background: var(--clx-accent, #0f7490);
             color: white;
             border: none;
             padding: 12px 22px;
@@ -540,12 +540,14 @@
             cursor: pointer;
             font-size: 15px;
             font-weight: 600;
-            transition: transform 0.15s, box-shadow 0.15s;
+            transition: opacity 0.15s;
             flex-shrink: 0;
         }
         .dm-send-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+            opacity: 0.88;
+        }
+        .dm-send-btn:active {
+            opacity: 0.75;
         }
 
         /* New DM selector */
@@ -1918,6 +1920,7 @@
         let currentChatListener = null;
         let currentChatRef = null;
         let currentTypingListener = null;
+        let _audioCtx = null;   // PERF-3: single shared AudioContext
         let currentTypingRef = null;         // BUG-1: store typing ref so we can detach it
         let currentThreadMsgKey = null;      // Thread: active message key
         let currentThreadChannelId = null;   // Thread: channel for the open thread
@@ -1954,9 +1957,17 @@
             playTone(soundTone);
         }
 
+        function getAudioCtx() {
+            if (!_audioCtx || _audioCtx.state === 'closed') {
+                _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (_audioCtx.state === 'suspended') _audioCtx.resume();
+            return _audioCtx;
+        }
+
         function playTone(tone) {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = getAudioCtx();
                 switch (tone) {
                     case 'double': playDouble(ctx); break;
                     case 'chime':  playChime(ctx);  break;
@@ -3296,7 +3307,7 @@
             }
 
             container.innerHTML = users.map(u => `
-                <div onclick="startDMConversation('${escapeForSingleQuotedJs(u.name)}')" style="padding: 12px; background: var(--bg-primary); border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='var(--border)'">
+                <div onclick="startDMConversation('${escapeForSingleQuotedJs(u.name)}')" style="padding: 12px; background: var(--bg-primary); border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--clx-accent,#0f7490)'" onmouseout="this.style.borderColor='var(--border)'">
                     <div><div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(u.name)}${u.fullName && u.fullName !== u.name ? ' <span style="color:var(--text-secondary);font-weight:normal;font-size:12px;">(' + escapeHtml(u.fullName) + ')</span>' : ''}</div></div>
                     ${u.online ? '<span style="font-size: 10px; background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px;">online</span>' : '<span style="font-size: 10px; color: var(--text-secondary);">offline</span>'}
                 </div>
@@ -3487,7 +3498,7 @@
                 }
 
                 return `
-                    <div onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')" style="padding:12px 14px;background:${isUnread ? 'var(--bg-tertiary)' : 'var(--bg-primary)'};border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid ${isUnread ? '#8b5cf6' : 'var(--border)'};transition:all 0.2s;display:flex;align-items:center;gap:12px;" onmouseover="this.style.borderColor='#8b5cf6'" onmouseout="this.style.borderColor='${isUnread ? '#8b5cf6' : 'var(--border)'}' ">
+                    <div onclick="startDMConversation('${escapeForSingleQuotedJs(conv.partnerName)}')" style="padding:12px 14px;background:${isUnread ? 'var(--bg-tertiary)' : 'var(--bg-primary)'};border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid ${isUnread ? 'var(--clx-accent,#0f7490)' : 'var(--border)'};transition:border-color 0.2s,background 0.2s;display:flex;align-items:center;gap:12px;" onmouseover="this.style.borderColor='var(--clx-accent,#0f7490)'" onmouseout="this.style.borderColor='${isUnread ? 'var(--clx-accent,#0f7490)' : 'var(--border)'}' ">
                         <span style="position:relative;flex-shrink:0;">
                             ${buildAvatar(conv.partnerName, 'md')}
                             <span style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:${partnerData ? (partnerData.status === 'online' ? '#22c55e' : '#eab308') : '#6b7280'};border:2px solid var(--bg-primary);"></span>
@@ -3592,7 +3603,7 @@
                             ${!isMe ? buildAvatar(msg.senderName || 'Unknown', 'sm') : ''}
                             <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
                                 <div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">${safeSender}</div>
-                                <div id="bubble-${msg._key}" data-orig-text="${escapeAttr(msg.text||'')}" style="background:${isMe ? 'linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)' : 'var(--chat-msg-other-bg)'};color:${isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
+                                <div id="bubble-${msg._key}" data-orig-text="${escapeAttr(msg.text||'')}" style="background:${isMe ? 'var(--clx-accent,#0f7490)' : 'var(--chat-msg-other-bg)'};color:${isMe ? 'white' : 'var(--text-primary)'};padding:10px 14px;border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};word-wrap:break-word;font-size:14px;line-height:1.5;">
                                     ${safeText}
                                 </div>
                                 <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;display:flex;align-items:center;gap:4px;">
