@@ -152,7 +152,7 @@
         .empty-state {
             text-align: center;
             padding: 40px;
-            color: #888;
+            color: var(--clx-text-muted);
         }
         .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
         .updated-label {
@@ -298,10 +298,10 @@
         <!-- Admin Status -->
         <div class="action-bar" id="adminStatusPanel" style="justify-content: space-between;">
             <div style="display: flex; gap: 18px; flex-wrap: wrap; align-items: center;">
-                <div style="font-size: 12px; color: #334155;">
+                <div style="font-size: 12px; color: var(--clx-text-secondary);">
                     <strong>Admin UI:</strong> <span id="adminUiStatus">Unknown</span>
                 </div>
-                <div style="font-size: 12px; color: #334155;">
+                <div style="font-size: 12px; color: var(--clx-text-secondary);">
                     <strong>Firebase Auth:</strong> <span id="adminFirebaseStatus">Not signed in</span>
                 </div>
             </div>
@@ -354,41 +354,41 @@
                 <span id="dangerZoneChev" style="font-size:12px;">▶ Click to expand</span>
             </div>
             <div class="card-body" id="dangerZoneBody" style="display:none;">
-                <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">
+                <p style="font-size: 12px; color: var(--clx-text-muted); margin-bottom: 12px;">
                     High-impact actions. Use with care.
                 </p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
                     <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
                     <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
                     <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
-                    <button class="btn btn-sm" style="background: #dc3545; color: white;" onclick="clearAppCache()">🗑️ Clear Cache</button>
-                    <button class="btn btn-sm" style="background: #b91c1c; color: white;" onclick="clearChatPresence()">Clear Chat Presence</button>
+                    <button class="btn btn-danger btn-sm" onclick="clearAppCache()">🗑️ Clear Cache</button>
+                    <button class="btn btn-danger btn-sm" onclick="clearChatPresence()">Clear Chat Presence</button>
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <input id="purgeUserSearch" type="text" placeholder="Purge user everywhere (name/email/uid)" style="flex: 1; min-width: 180px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;">
+                        <input id="purgeUserSearch" type="text" placeholder="Purge user everywhere (name/email/uid)" style="flex: 1; min-width: 180px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         <button class="btn btn-danger btn-sm" onclick="purgeUserEverywhere()">Purge User</button>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <input id="dmPurgeSearch" type="text" placeholder="Purge DMs by name/email/uid" style="flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;">
+                        <input id="dmPurgeSearch" type="text" placeholder="Purge DMs by name/email/uid" style="flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         <button class="btn btn-danger btn-sm" onclick="purgeDMsBySearch()">Purge DMs</button>
                     </div>
-                    <button class="btn btn-sm" style="background: #7f1d1d; color: white;" onclick="purgeOrphanedDMs()">Purge Orphan DMs</button>
+                    <button class="btn btn-danger btn-sm" onclick="purgeOrphanedDMs()">Purge Orphan DMs</button>
                 </div>
             </div>
         </div>
 
         <!-- Login History Modal -->
         <div id="loginHistoryModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 900px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #1f4e79; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="max-width: 900px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin: 0; font-size: 18px;">Login History</h2>
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="exportLoginHistory()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Export CSV</button>
+                        <button onclick="exportLoginHistory()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Export CSV</button>
                         <button onclick="clearAllLoginHistory()" style="background: #ff9800; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Clear All</button>
                         <button onclick="closeLoginHistory()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
                     </div>
                 </div>
                 <!-- Bulk Actions Bar -->
-                <div id="loginHistoryBulkBar" style="display: none; padding: 10px 20px; background: #f0f7ff; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <div id="loginHistoryBulkBar" style="display: none; padding: 10px 20px; background: var(--clx-accent-subtle); border-bottom: 1px solid var(--clx-border); display: flex; justify-content: space-between; align-items: center;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <input type="checkbox" id="selectAllLoginHistory" onchange="toggleSelectAllLoginHistory()">
                         <span style="font-size: 13px; font-weight: 600;">Select All</span>
@@ -403,8 +403,8 @@
 
         <!-- Export History Modal -->
         <div id="exportHistoryModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 900px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #17a2b8; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="max-width: 900px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin: 0; font-size: 18px;">Document Export History</h2>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <select id="exportHistoryUserFilter" onchange="filterExportHistory()" style="padding: 6px 10px; border-radius: 6px; border: none;">
@@ -422,8 +422,8 @@
 
         <!-- Notification Log Modal -->
         <div id="notificationLogModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 1000px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #28a745; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="max-width: 1000px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h2 style="margin: 0; font-size: 18px;">📧 Email Notification Log</h2>
                         <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Track registration email notifications sent to admin</p>
@@ -441,8 +441,8 @@
 
         <!-- Pending Welcome Emails Modal -->
         <div id="pendingWelcomeModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 900px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #e53e3e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="max-width: 900px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h2 style="margin: 0; font-size: 18px;">📬 Pending Welcome Emails</h2>
                         <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Users whose welcome email failed or was not yet sent</p>
@@ -461,20 +461,20 @@
 
         <!-- Smart Phrases Modal -->
         <div id="smartPhrasesModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 700px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #ff9800; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="max-width: 700px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin: 0; font-size: 18px;">Manage Smart Phrases</h2>
                     <button onclick="closeSmartPhrases()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
                 </div>
                 <div style="padding: 20px;">
-                    <p style="color: #666; margin-bottom: 15px;">Add custom smart phrases that all users can use. Shortcuts start with a period (e.g., .custom)</p>
+                    <p style="color: var(--clx-text-secondary); margin-bottom: 15px;">Add custom smart phrases that all users can use. Shortcuts start with a period (e.g., .custom)</p>
                     <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; margin-bottom: 20px;">
-                        <input type="text" id="newPhraseShortcut" placeholder=".shortcut" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <input type="text" id="newPhraseText" placeholder="Expansion text..." style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <button onclick="addGlobalPhrase()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Add</button>
+                        <input type="text" id="newPhraseShortcut" placeholder=".shortcut" style="padding: 10px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                        <input type="text" id="newPhraseText" placeholder="Expansion text..." style="padding: 10px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                        <button onclick="addGlobalPhrase()" style="background: var(--clx-accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Add</button>
                     </div>
                     <div id="globalPhrasesList" style="max-height: 300px; overflow-y: auto;">
-                        <p style="color: #888;">Custom phrases will appear here.</p>
+                        <p style="color: var(--clx-text-muted);">Custom phrases will appear here.</p>
                     </div>
                 </div>
             </div>
@@ -482,8 +482,8 @@
 
         <!-- Post Detail Modal -->
         <div id="postDetailModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 700px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #9c27b0; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="max-width: 700px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin: 0; font-size: 18px;">Post Details</h2>
                     <button onclick="closePostDetail()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
                 </div>
@@ -491,13 +491,13 @@
                     <p>Loading...</p>
                 </div>
                 <div style="padding: 0 20px 20px; display: flex; gap: 10px;">
-                    <button id="pinPostBtn" onclick="togglePostPin()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Pin Post</button>
+                    <button id="pinPostBtn" onclick="togglePostPin()" style="background: var(--clx-accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Pin Post</button>
                     <button onclick="deletePostAdmin()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Delete Post</button>
                 </div>
                 <div style="padding: 0 20px 20px;">
-                    <h4 style="margin: 0 0 10px; color: #333;">Replies</h4>
-                    <div id="postRepliesList" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; border-radius: 8px; padding: 10px;">
-                        <p style="color: #888; margin: 0;">No replies</p>
+                    <h4 style="margin: 0 0 10px; color: var(--clx-text-primary);">Replies</h4>
+                    <div id="postRepliesList" style="max-height: 200px; overflow-y: auto; background: var(--clx-bg-surface-2); border-radius: 8px; padding: 10px;">
+                        <p style="color: var(--clx-text-muted); margin: 0;">No replies</p>
                     </div>
                 </div>
             </div>
@@ -505,8 +505,8 @@
 
         <!-- Community Stats Modal -->
         <div id="communityStatsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 500px; margin: 50px auto; background: white; border-radius: 12px; overflow: hidden;">
-                <div style="background: #9c27b0; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="max-width: 500px; margin: 50px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin: 0; font-size: 18px;">Community Statistics</h2>
                     <button onclick="closeCommunityStats()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
                 </div>
@@ -561,19 +561,19 @@
                         <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
                     </div>
                 </div>
-                <div style="padding: 8px 15px; background: #e3f2fd; font-size: 11px; color: #1565c0;">
-                    <strong>Note:</strong> Ban users here. To fully delete accounts, go to <a href="https://console.firebase.google.com/project/bendbsn-17377/authentication/users" target="_blank" style="color: #1565c0;">Firebase Console → Authentication</a>
+                <div style="padding: 8px 15px; background: var(--clx-accent-subtle); font-size: 11px; color: var(--clx-accent);">
+                    <strong>Note:</strong> Ban users here. To fully delete accounts, go to <a href="https://console.firebase.google.com/project/bendbsn-17377/authentication/users" target="_blank" style="color: var(--clx-accent);">Firebase Console → Authentication</a>
                 </div>
-                <div style="padding: 10px 15px; border-bottom: 1px solid #eef2f7; background: #f8fafc;">
+                <div style="padding: 10px 15px; border-bottom: 1px solid var(--clx-border); background: var(--clx-bg-surface-2);">
                     <input
                         type="text"
                         id="registeredUserSearch"
                         placeholder="Search users by name, email, or username..."
                         oninput="filterRegisteredUsers()"
-                        style="width: 100%; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 12px;"
+                        style="width: 100%; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);"
                     >
                     <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-sm" style="background: #64748b; color: white;" onclick="clearRegisteredUsersCache()">Clear Cache</button>
+                        <button class="btn btn-secondary btn-sm" onclick="clearRegisteredUsersCache()">Clear Cache</button>
                         <button class="btn btn-sm btn-danger" onclick="bulkDeleteFilteredUsers()">Delete Filtered</button>
                     </div>
                 </div>
@@ -651,19 +651,19 @@
                     </div>
                 </div>
                 <div class="card-body" style="max-height: none; overflow: visible;">
-                    <div id="roleEditForm" style="display:none; padding: 12px; background: #f0f4ff; border-radius: 8px; margin-bottom: 12px; border: 1px solid #bfdbfe;">
+                    <div id="roleEditForm" style="display:none; padding: 12px; background: var(--clx-accent-subtle); border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--clx-border);">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
                             <div style="flex: 1; min-width: 160px;">
                                 <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Label</label>
-                                <input type="text" id="roleFormLabel" placeholder="e.g., RN" style="width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                                <input type="text" id="roleFormLabel" placeholder="e.g., RN" style="width: 100%; padding: 7px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             </div>
                             <div style="flex: 1; min-width: 160px;">
                                 <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Role ID (auto if blank)</label>
-                                <input type="text" id="roleFormId" placeholder="e.g., rn" style="width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: monospace;">
+                                <input type="text" id="roleFormId" placeholder="e.g., rn" style="width: 100%; padding: 7px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; font-family: monospace; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Order</label>
-                                <input type="number" id="roleFormOrder" value="99" min="1" max="99" style="width: 70px; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                                <input type="number" id="roleFormOrder" value="99" min="1" max="99" style="width: 70px; padding: 7px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             </div>
                         </div>
                         <div style="margin-top: 10px;">
@@ -674,11 +674,11 @@
                         </div>
                         <div id="roleFormYearSection" style="display:none; margin-top: 10px;">
                             <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Year Options (comma-separated)</label>
-                            <input type="text" id="roleFormYearOptions" placeholder="Year 1, Year 2, Year 3, Year 4" style="width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                            <input type="text" id="roleFormYearOptions" placeholder="Year 1, Year 2, Year 3, Year 4" style="width: 100%; padding: 7px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         </div>
                         <div style="margin-top: 12px; display: flex; gap: 8px;">
                             <button class="btn btn-sm btn-primary" onclick="saveRoleForm()">Save</button>
-                            <button class="btn btn-sm" style="background: #e5e7eb; color: #374151;" onclick="hideRoleForm()">Cancel</button>
+                            <button class="btn btn-sm btn-secondary" onclick="hideRoleForm()">Cancel</button>
                         </div>
                         <input type="hidden" id="roleFormEditId" value="">
                     </div>
@@ -2023,7 +2023,7 @@
 
             if (!currentUser) {
                 bulkBar.style.display = 'none';
-                container.innerHTML = '<div style="text-align: center; padding: 20px;"><p style="color: #dc3545; font-weight: bold;">Firebase authentication required</p><p style="color: #666; margin: 10px 0;">Click the "Firebase Auth" button in the header to sign in with your admin credentials.</p><button onclick="closeLoginHistory(); openFirebaseAuthModal();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Sign in to Firebase</button></div>';
+                container.innerHTML = '<div style="text-align: center; padding: 20px;"><p style="color: #dc3545; font-weight: bold;">Firebase authentication required</p><p style="color: var(--clx-text-secondary); margin: 10px 0;">Click the "Firebase Auth" button in the header to sign in with your admin credentials.</p><button onclick="closeLoginHistory(); openFirebaseAuthModal();" class="btn btn-primary" style="margin-top: 10px;">Sign in to Firebase</button></div>';
                 return;
             }
 
@@ -2113,7 +2113,7 @@
                     <p style="color: #666; margin: 10px 0;">Error: ${error.message || error.code || 'Unknown error'}</p>
                     <p style="color: #666; margin: 10px 0;">Current Firebase user: <strong>${userEmail}</strong></p>
                     <p style="color: #666; margin: 10px 0;">Required: christiankholden@gmail.com</p>
-                    <button onclick="closeLoginHistory(); openFirebaseAuthModal();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Sign in to Firebase</button>
+                    <button onclick="closeLoginHistory(); openFirebaseAuthModal();" class="btn btn-primary" style="margin-top: 10px;">Sign in to Firebase</button>
                 </div>`;
             });
         }
@@ -2338,7 +2338,7 @@
 
                 let html = `<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                     <thead>
-                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <tr style="background: var(--clx-bg-surface-2); border-bottom: 2px solid var(--clx-border);">
                             <th style="padding: 10px; text-align: left;">Date/Time</th>
                             <th style="padding: 10px; text-align: left;">User</th>
                             <th style="padding: 10px; text-align: left;">Email</th>
@@ -2374,18 +2374,18 @@
                 const failCount = notificationLogData.filter(n => n.status === 'failed').length;
                 const successRate = notificationLogData.length > 0 ? Math.round((successCount / notificationLogData.length) * 100) : 0;
 
-                const stats = `<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; justify-content: center;">
+                const stats = `<div style="background: var(--clx-bg-surface-2); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; justify-content: center;">
                     <div style="text-align: center;">
                         <div style="font-size: 24px; font-weight: 600; color: #28a745;">${successCount}</div>
-                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Sent Successfully</div>
+                        <div style="font-size: 11px; color: var(--clx-text-secondary); text-transform: uppercase;">Sent Successfully</div>
                     </div>
                     <div style="text-align: center;">
                         <div style="font-size: 24px; font-weight: 600; color: #dc3545;">${failCount}</div>
-                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Failed</div>
+                        <div style="font-size: 11px; color: var(--clx-text-secondary); text-transform: uppercase;">Failed</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: 600; color: #007bff;">${successRate}%</div>
-                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Success Rate</div>
+                        <div style="font-size: 24px; font-weight: 600; color: var(--clx-accent);">${successRate}%</div>
+                        <div style="font-size: 11px; color: var(--clx-text-secondary); text-transform: uppercase;">Success Rate</div>
                     </div>
                 </div>`;
 
@@ -2420,7 +2420,7 @@
             container.innerHTML = '<p>Loading...</p>';
 
             if (!auth.currentUser) {
-                container.innerHTML = '<div style="text-align: center; padding: 20px;"><p style="color: #dc3545; font-weight: bold;">Firebase authentication required</p><button onclick="closeExportHistory(); openFirebaseAuthModal();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Sign in to Firebase</button></div>';
+                container.innerHTML = '<div style="text-align: center; padding: 20px;"><p style="color: #dc3545; font-weight: bold;">Firebase authentication required</p><button onclick="closeExportHistory(); openFirebaseAuthModal();" class="btn btn-primary" style="margin-top: 10px;">Sign in to Firebase</button></div>';
                 return;
             }
 
@@ -2494,7 +2494,7 @@
                 const date = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : entry.date || 'N/A';
                 const formatBadge = entry.exportFormat === 'PDF'
                     ? '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">PDF</span>'
-                    : '<span style="background: #007bff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Word</span>';
+                    : '<span style="background: var(--clx-accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Word</span>';
 
                 html += `<tr style="border-bottom: 1px solid #eee;">
                     <td style="padding: 8px 10px;">${date}</td>
@@ -2610,7 +2610,7 @@
                 }
 
                 let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
-                html += '<thead><tr style="background: #f8f9fa;">';
+                html += '<thead><tr style="background: var(--clx-bg-surface-2);">';
                 html += '<th style="padding: 8px; text-align: left;">Title</th>';
                 html += '<th style="padding: 8px; text-align: left;">Author</th>';
                 html += '<th style="padding: 8px; text-align: center;">Category</th>';
@@ -2624,12 +2624,12 @@
                     const likeCount = post.likes || 0;
                     const categoryColor = getCategoryColor(post.category);
 
-                    html += `<tr style="border-bottom: 1px solid #eee;">
+                    html += `<tr style="border-bottom: 1px solid var(--clx-border);">
                         <td style="padding: 8px;">
-                            <div style="font-weight: 600; color: #333;">${pinIcon}${escapeHtml(post.title || 'Untitled')}</div>
-                            <div style="font-size: 11px; color: #888;">${formatTimeAgo(post.timestamp)}</div>
+                            <div style="font-weight: 600; color: var(--clx-text-primary);">${pinIcon}${escapeHtml(post.title || 'Untitled')}</div>
+                            <div style="font-size: 11px; color: var(--clx-text-muted);">${formatTimeAgo(post.timestamp)}</div>
                         </td>
-                        <td style="padding: 8px; color: #666;">${escapeHtml(post.authorName || 'Unknown')}</td>
+                        <td style="padding: 8px; color: var(--clx-text-secondary);">${escapeHtml(post.authorName || 'Unknown')}</td>
                         <td style="padding: 8px; text-align: center;">
                             <span style="background: ${categoryColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">${getCategoryLabel(post.category)}</span>
                         </td>
@@ -2674,11 +2674,11 @@
                     <span style="background: ${categoryColor}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${getCategoryLabel(post.category)}</span>
                     ${post.pinned ? '<span style="background: #ff9800; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-left: 8px;">📌 Pinned</span>' : ''}
                 </div>
-                <h3 style="margin: 0 0 10px; color: #333;">${escapeHtml(post.title || 'Untitled')}</h3>
+                <h3 style="margin: 0 0 10px; color: var(--clx-text-primary);">${escapeHtml(post.title || 'Untitled')}</h3>
                 <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
                     By <strong>${escapeHtml(post.authorName || 'Unknown')}</strong> • ${new Date(post.timestamp).toLocaleString()}
                 </p>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-size: 14px; color: #333; max-height: 200px; overflow-y: auto;">${escapeHtml(post.content || 'No content')}</div>
+                <div style="background: var(--clx-bg-surface-2); padding: 15px; border-radius: 8px; white-space: pre-wrap; font-size: 14px; color: var(--clx-text-primary); max-height: 200px; overflow-y: auto;">${escapeHtml(post.content || 'No content')}</div>
                 <div style="margin-top: 15px; display: flex; gap: 20px; color: #666; font-size: 13px;">
                     <span>❤️ ${post.likes || 0} likes</span>
                     <span>💬 ${post.replies ? Object.keys(post.replies).length : 0} replies</span>
@@ -2704,9 +2704,9 @@
             replyArray.forEach((reply) => {
                 html += `<div style="padding: 10px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: flex-start;">
                     <div style="flex: 1;">
-                        <div style="font-weight: 600; font-size: 12px; color: #1f4e79;">${escapeHtml(reply.authorName || 'Unknown')}</div>
-                        <div style="font-size: 13px; color: #333; margin: 4px 0;">${escapeHtml(reply.content || '')}</div>
-                        <div style="font-size: 11px; color: #888;">${formatTimeAgo(reply.timestamp)}</div>
+                        <div style="font-weight: 600; font-size: 12px; color: var(--clx-accent);">${escapeHtml(reply.authorName || 'Unknown')}</div>
+                        <div style="font-size: 13px; color: var(--clx-text-primary); margin: 4px 0;">${escapeHtml(reply.content || '')}</div>
+                        <div style="font-size: 11px; color: var(--clx-text-muted);">${formatTimeAgo(reply.timestamp)}</div>
                     </div>
                     <button onclick="deleteReply('${postId}', '${reply.id}')" class="btn btn-danger btn-sm" style="flex-shrink: 0;">Delete</button>
                 </div>`;
@@ -2870,12 +2870,12 @@
                         <div class="stat-label">Pinned Posts</div>
                     </div>
                 </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <h4 style="margin: 0 0 10px; color: #1f4e79;">Top Contributor</h4>
-                    <p style="margin: 0; font-size: 16px; font-weight: 600;">${escapeHtml(topContributor)} <span style="color: #888; font-weight: normal;">(${maxPosts} posts)</span></p>
+                <div style="background: var(--clx-bg-surface-2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="margin: 0 0 10px; color: var(--clx-accent);">Top Contributor</h4>
+                    <p style="margin: 0; font-size: 16px; font-weight: 600;">${escapeHtml(topContributor)} <span style="color: var(--clx-text-muted); font-weight: normal;">(${maxPosts} posts)</span></p>
                 </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
-                    <h4 style="margin: 0 0 10px; color: #1f4e79;">Posts by Category</h4>
+                <div style="background: var(--clx-bg-surface-2); padding: 15px; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px; color: var(--clx-accent);">Posts by Category</h4>
             `;
 
             Object.entries(categoryCounts).forEach(([cat, count]) => {
@@ -3059,10 +3059,10 @@
                 </div>
                 <table style="width:100%; border-collapse:collapse; font-size:13px;">
                     <thead>
-                        <tr style="background:#f8f9fa; text-align:left;">
-                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Name</th>
-                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Email</th>
-                            <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Role</th>
+                        <tr style="background:var(--clx-bg-surface-2); text-align:left;">
+                            <th style="padding:10px 12px; border-bottom:2px solid var(--clx-border);">Name</th>
+                            <th style="padding:10px 12px; border-bottom:2px solid var(--clx-border);">Email</th>
+                            <th style="padding:10px 12px; border-bottom:2px solid var(--clx-border);">Role</th>
                             <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Registered</th>
                             <th style="padding:10px 12px; border-bottom:2px solid #dee2e6;">Action</th>
                         </tr>
@@ -3257,7 +3257,7 @@
                 html += '<td style="padding:8px;color:#64748b;font-size:12px;">' + escapeHtml(years) + '</td>';
                 html += '<td style="padding:8px;text-align:center;">' + (role.order || '\u2014') + '</td>';
                 html += '<td style="padding:8px;text-align:right;white-space:nowrap;">';
-                html += '<button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;margin-right:4px;" onclick="editRoleById(\'' + id.replace(/'/g,"\\'") + '\')">&#x270F;</button>';
+                html += '<button class="btn btn-sm" style="background:var(--clx-accent-subtle);color:var(--clx-accent);margin-right:4px;" onclick="editRoleById(\'' + id.replace(/'/g,"\\'") + '\')">&#x270F;</button>';
                 html += '<button class="btn btn-sm btn-danger" onclick="deleteRoleById(\'' + id.replace(/'/g,"\\'") + '\')">&#x1F5D1;</button>';
                 html += '</td></tr>';
             });
