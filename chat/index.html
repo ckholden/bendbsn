@@ -1301,7 +1301,8 @@
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') return;
                 const fcmMessaging = firebase.messaging();
-                const token = await fcmMessaging.getToken({ vapidKey: VAPID_KEY });
+                const swReg = await navigator.serviceWorker.getRegistration('/');
+                const token = await fcmMessaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
                 if (!token || !currentUserUid) return;
                 // Sanitize token: replace dots with commas for RTDB key safety, cap length
                 const tokenKey = token.replace(/\./g, ',').substring(0, 768);
