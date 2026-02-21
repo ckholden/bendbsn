@@ -278,18 +278,22 @@ exports.onChatMention = onValueCreated(
                 .filter(Boolean);
             if (!tokens.length) continue;
 
-            await admin.messaging().sendEachForMulticast({
-                tokens,
-                notification: {
-                    title: `${msg.user || 'Someone'} mentioned you`,
-                    body: (msg.text || '').substring(0, 100)
-                },
-                data: {
-                    url: '/chat/',
-                    tag: `mention-${event.params.channelId}`
-                },
-                webpush: { fcmOptions: { link: 'https://bendbsn.com/chat/' } }
-            });
+            try {
+                await admin.messaging().sendEachForMulticast({
+                    tokens,
+                    notification: {
+                        title: `${msg.user || 'Someone'} mentioned you`,
+                        body: (msg.text || '').substring(0, 100)
+                    },
+                    data: {
+                        url: '/chat/',
+                        tag: `mention-${event.params.channelId}`
+                    },
+                    webpush: { fcmOptions: { link: 'https://bendbsn.com/chat/' } }
+                });
+            } catch (err) {
+                logger.error(`onChatMention: FCM failed for uid=${uid}`, err);
+            }
         }
     }
 );
