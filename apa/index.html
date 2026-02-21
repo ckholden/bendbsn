@@ -32,20 +32,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* Map legacy vars to design system tokens */
-        :root {
-            --bg-primary: var(--clx-bg-surface);
-            --bg-secondary: var(--clx-bg-surface-2);
-            --bg-tertiary: var(--clx-bg-surface-2);
-            --bg-input: var(--clx-bg-surface);
-            --text-primary: var(--clx-text-primary);
-            --text-secondary: var(--clx-text-secondary);
-            --accent: var(--clx-accent);
-            --accent-light: var(--clx-accent);
-            --border: var(--clx-border);
-        }
-
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -65,7 +51,7 @@
             display: flex;
             gap: 5px;
             margin-bottom: 25px;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 2px solid var(--clx-border);
             padding-bottom: 0;
         }
 
@@ -75,7 +61,7 @@
             border: none;
             font-size: 14px;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--clx-text-secondary);
             cursor: pointer;
             border-bottom: 3px solid transparent;
             margin-bottom: -2px;
@@ -83,29 +69,29 @@
             font-family: inherit;
         }
 
-        .tab:hover { color: var(--accent); }
+        .tab:hover { color: var(--clx-accent); }
         .tab.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
+            color: var(--clx-accent);
+            border-bottom-color: var(--clx-accent);
         }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         .form-section {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            background: var(--clx-bg-surface-2);
+            border: 1px solid var(--clx-border);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
         }
 
         .form-section h3 {
-            color: var(--accent);
+            color: var(--clx-accent);
             font-size: 16px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid var(--accent);
+            border-bottom: 2px solid var(--clx-accent);
         }
 
         .form-row {
@@ -128,7 +114,7 @@
         .form-group label {
             display: block;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--clx-text-primary);
             margin-bottom: 6px;
             font-size: 13px;
         }
@@ -138,12 +124,12 @@
         .form-group textarea {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--clx-border);
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
-            background: var(--bg-input);
-            color: var(--text-primary);
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
         }
 
         .form-group textarea {
@@ -156,8 +142,8 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.1);
+            border-color: var(--clx-accent);
+            box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.12);
         }
 
         .btn {
@@ -172,7 +158,7 @@
         }
 
         .btn-primary {
-            background: var(--clx-accent, #0f7490);
+            background: var(--clx-accent);
             color: white;
         }
 
@@ -186,11 +172,12 @@
         .btn-success:hover { background: #15803d; }
 
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: var(--clx-bg-surface-2);
+            color: var(--clx-text-primary);
+            border: 1px solid var(--clx-border);
         }
 
-        .btn-secondary:hover { background: #5a6268; }
+        .btn-secondary:hover { opacity: 0.8; }
 
         .btn-danger {
             background: #dc3545;
@@ -211,7 +198,7 @@
             justify-content: center;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 2px solid var(--border);
+            border-top: 2px solid var(--clx-border);
             flex-wrap: wrap;
         }
 
@@ -225,23 +212,23 @@
 
         .ref-type-btn {
             padding: 15px 10px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border);
+            background: var(--clx-bg-surface-2);
+            border: 2px solid var(--clx-border);
             border-radius: 10px;
             cursor: pointer;
             text-align: center;
             transition: all 0.2s;
             font-family: inherit;
+            color: var(--clx-text-primary);
         }
 
         .ref-type-btn:hover {
-            border-color: var(--accent);
-            background: var(--bg-secondary);
+            border-color: var(--clx-accent);
         }
 
         .ref-type-btn.active {
-            border-color: var(--accent);
-            background: var(--accent);
+            border-color: var(--clx-accent);
+            background: var(--clx-accent);
             color: white;
         }
 
@@ -252,8 +239,8 @@
         .reference-form.active { display: block; }
 
         .reference-list {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
+            background: var(--clx-bg-surface-2);
+            border: 1px solid var(--clx-border);
             border-radius: 8px;
             padding: 15px;
             min-height: 100px;
@@ -263,14 +250,14 @@
 
         .reference-item {
             padding: 12px;
-            background: var(--bg-primary);
+            background: var(--clx-bg-surface);
             border-radius: 6px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             gap: 10px;
-            border-left: 3px solid var(--accent);
+            border-left: 3px solid var(--clx-accent);
         }
 
         .reference-item:last-child { margin-bottom: 0; }
@@ -280,6 +267,7 @@
             font-size: 13px;
             line-height: 1.5;
             word-break: break-word;
+            color: var(--clx-text-primary);
         }
 
         .reference-text .hanging {
@@ -300,7 +288,7 @@
 
         .delete-ref:hover { background: #c82333; }
 
-        /* Preview */
+        /* Preview — intentionally paper-white for accurate APA preview */
         .preview-container {
             background: white;
             border: 1px solid #ddd;
@@ -311,6 +299,10 @@
             font-size: 12pt;
             line-height: 2;
             color: #000;
+        }
+
+        [data-theme="dark"] .preview-container {
+            background: #f5f5f5;
         }
 
         .preview-title-page {
@@ -374,28 +366,18 @@
         /* Helper text */
         .helper-text {
             font-size: 11px;
-            color: var(--text-secondary);
+            color: var(--clx-text-secondary);
             margin-top: 4px;
         }
 
         .info-box {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
+            background: var(--clx-accent-subtle);
+            border: 1px solid var(--clx-border);
             border-radius: 8px;
             padding: 12px 15px;
             margin-bottom: 15px;
             font-size: 13px;
-            color: #1565c0;
-        }
-
-        [data-theme="dark"] .info-box {
-            background: var(--clx-accent-subtle, #1e3a5f);
-            border-color: var(--clx-border, #2d5a87);
-            color: var(--clx-text-primary, #e6e6e6);
-        }
-
-        [data-theme="dark"] .preview-container {
-            background: #f5f5f5;
+            color: var(--clx-accent);
         }
     </style>
 </head>
@@ -567,7 +549,7 @@ Your content will be exported with:
                 <!-- Quick Add from URL -->
                 <div class="form-section">
                     <h3>Quick Add from URL</h3>
-                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">Paste a link to an article, book, or webpage to automatically populate citation fields:</p>
+                    <p style="margin-bottom: 15px; color: var(--clx-text-secondary); font-size: 13px;">Paste a link to an article, book, or webpage to automatically populate citation fields:</p>
 
                     <div class="form-row" style="align-items: flex-end;">
                         <div class="form-group" style="flex: 3;">
@@ -585,7 +567,7 @@ Your content will be exported with:
 
                 <div class="form-section">
                     <h3>Reference Generator</h3>
-                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">Select a source type to generate a properly formatted APA reference:</p>
+                    <p style="margin-bottom: 15px; color: var(--clx-text-secondary); font-size: 13px;">Select a source type to generate a properly formatted APA reference:</p>
 
                     <div class="reference-type-grid">
                         <button class="ref-type-btn active" onclick="selectRefType('journal')" data-type="journal">
@@ -749,7 +731,7 @@ Your content will be exported with:
                 <div class="form-section">
                     <h3>Your References</h3>
                     <div class="reference-list" id="referenceList">
-                        <p style="color: var(--text-secondary); text-align: center; padding: 20px;">No references added yet. Use the form above to add references.</p>
+                        <p style="color: var(--clx-text-secondary); text-align: center; padding: 20px;">No references added yet. Use the form above to add references.</p>
                     </div>
                     <div style="margin-top: 15px; display: flex; gap: 10px;">
                         <button class="btn btn-secondary" onclick="sortReferences()">Sort Alphabetically</button>
@@ -762,7 +744,7 @@ Your content will be exported with:
             <div id="tab-preview" class="tab-content">
                 <div class="form-section">
                     <h3>Document Preview</h3>
-                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 13px;">This preview shows how your paper will look. The exported Word document will have proper APA formatting.</p>
+                    <p style="margin-bottom: 15px; color: var(--clx-text-secondary); font-size: 13px;">This preview shows how your paper will look. The exported Word document will have proper APA formatting.</p>
 
                     <div class="preview-container" id="previewContainer">
                         <div class="preview-title-page">
@@ -1014,7 +996,7 @@ Your content will be exported with:
         function renderReferences() {
             const list = document.getElementById('referenceList');
             if (references.length === 0) {
-                list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No references added yet.</p>';
+                list.innerHTML = '<p style="color: var(--clx-text-secondary); text-align: center; padding: 20px;">No references added yet.</p>';
                 return;
             }
 
