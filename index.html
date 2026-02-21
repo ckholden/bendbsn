@@ -95,7 +95,8 @@
         .btn:hover { opacity: 0.88; }
         .btn:active { opacity: 0.8; }
         .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .btn-secondary { background: #6c757d; margin-top: 8px; }
+        .btn-secondary { background: var(--clx-bg-surface-2); color: var(--clx-text-primary); border: 1px solid var(--clx-border); margin-top: 8px; }
+        .btn-secondary:hover { opacity: 0.8; }
         .error-message {
             background: #fee; border: 1px solid #fcc; color: #c00;
             padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;
@@ -113,7 +114,18 @@
             20%, 60% { transform: translateX(-5px); }
             40%, 80% { transform: translateX(5px); }
         }
-        .footer-text { text-align: center; color: #888; font-size: 12px; margin-top: 20px; }
+        .footer-text { text-align: center; color: var(--clx-text-muted); font-size: 12px; margin-top: 20px; }
+        .modal-body select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--clx-border);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            margin-bottom: 0;
+        }
         .class-badge {
             display: inline-block;
             background: rgba(255,255,255,0.2);
@@ -201,13 +213,13 @@
                     </div>
                     <div class="form-group">
                         <label for="regRole">Role</label>
-                        <select id="regRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;" onchange="onRegRoleChange('reg')">
+                        <select id="regRole" required onchange="onRegRoleChange('reg')">
                             <option value="" disabled selected>Select your role</option>
                         </select>
                     </div>
                     <div id="regYearRow" class="form-group" style="display:none;">
                         <label for="regYear">Year Level</label>
-                        <select id="regYear" style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;"></select>
+                        <select id="regYear"></select>
                     </div>
                     <div class="form-group">
                         <label for="regEmail">Email</label>
@@ -216,14 +228,14 @@
                     <div class="form-group">
                         <label for="regPassword">Password</label>
                         <input type="password" id="regPassword" placeholder="Choose a password (min 6 characters)" required minlength="6">
-                        <p style="font-size: 11px; color: #666; margin-top: 6px; display: flex; align-items: center; gap: 5px;">
+                        <p style="font-size: 11px; color: var(--clx-text-muted); margin-top: 6px; display: flex; align-items: center; gap: 5px;">
                             <span style="color: #28a745;">&#128274;</span>
                             Your password is securely encrypted and never stored in plain text.
                         </p>
                     </div>
 
                     <div style="margin-bottom: 20px;">
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: normal; font-size: 12px; color: #555;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: normal; font-size: 12px; color: var(--clx-text-secondary);">
                             <input type="checkbox" id="regTermsAgree" required style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
                             <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to use this tool responsibly.</span>
                         </label>
@@ -243,7 +255,7 @@
                 <h2>Create Your Personal Account</h2>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 20px; color: #555;">You're using a shared login. Create your own account for a personalized experience!</p>
+                <p style="margin-bottom: 20px; color: var(--clx-text-secondary);">You're using a shared login. Create your own account for a personalized experience!</p>
 
                 <div class="error-message" id="createErrorMsg"></div>
                 <div class="success-message" id="createSuccessMsg"></div>
@@ -255,13 +267,13 @@
                     </div>
                     <div class="form-group">
                         <label for="createRole">Role</label>
-                        <select id="createRole" required style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;" onchange="onRegRoleChange('create')">
+                        <select id="createRole" required onchange="onRegRoleChange('create')">
                             <option value="" disabled selected>Select your role</option>
                         </select>
                     </div>
                     <div id="createYearRow" class="form-group" style="display:none;">
                         <label for="createYear">Year Level</label>
-                        <select id="createYear" style="width: 100%; padding: 16px 20px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; background: white;"></select>
+                        <select id="createYear"></select>
                     </div>
                     <div class="form-group">
                         <label for="createEmail">Email</label>
@@ -290,21 +302,21 @@
             </div>
             <div class="modal-body" style="text-align: center;">
                 <div style="font-size: 60px; margin-bottom: 20px;">⏳</div>
-                <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+                <p style="font-size: 16px; color: var(--clx-text-primary); margin-bottom: 15px;">
                     Hello <strong id="pendingUserName"></strong>,
                 </p>
-                <p style="color: #555; margin-bottom: 20px; line-height: 1.6;">
+                <p style="color: var(--clx-text-secondary); margin-bottom: 20px; line-height: 1.6;">
                     You are not currently on our recognized users list. Your registration request has been submitted for <strong>approval and verification</strong>.
                 </p>
                 <div style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
                     <p style="color: #e65100; font-weight: 600; margin-bottom: 10px;">What happens next?</p>
-                    <ul style="text-align: left; color: #555; font-size: 14px; margin: 0; padding-left: 20px;">
+                    <ul style="text-align: left; color: var(--clx-text-secondary); font-size: 14px; margin: 0; padding-left: 20px;">
                         <li>The administrator has been notified</li>
                         <li>Your request will be reviewed shortly</li>
                         <li>You'll be able to log in once approved</li>
                     </ul>
                 </div>
-                <p style="color: #888; font-size: 13px;">
+                <p style="color: var(--clx-text-muted); font-size: 13px;">
                     If you believe this is an error, please contact your instructor or cohort administrator.
                 </p>
                 <button onclick="closePendingModal()" class="btn" style="margin-top: 20px;">OK, Got It</button>
@@ -319,7 +331,7 @@
                 <h2>Reset Password</h2>
             </div>
             <div class="modal-body">
-                <p style="color: #555; margin-bottom: 20px;">Enter your email address or username and we'll send a password reset request to the administrator.</p>
+                <p style="color: var(--clx-text-secondary); margin-bottom: 20px;">Enter your email address or username and we'll send a password reset request to the administrator.</p>
 
                 <div class="error-message" id="forgotErrorMsg"></div>
                 <div class="success-message" id="forgotSuccessMsg"></div>
