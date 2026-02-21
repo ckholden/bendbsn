@@ -441,3 +441,41 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     // Sync icon + active state to current theme
     window.setTheme(window.getTheme());
 })();
+
+// ── Chat Unread Badge (sidebar, all non-chat pages) ───────────────────────
+(function initChatUnreadBadge() {
+    // Don't show badge when the user is already on the chat page
+    if (location.pathname.startsWith('/chat')) return;
+
+    var chatLink = document.querySelector('a[data-page="chat"]');
+    if (!chatLink) return;
+
+    // Make the icon wrapper relative so we can position the badge dot
+    var iconEl = chatLink.querySelector('.clx-sidebar-icon');
+    if (!iconEl) return;
+    iconEl.style.position = 'relative';
+
+    // Create badge element
+    var badge = document.createElement('span');
+    badge.id = 'bsnChatSidebarBadge';
+    badge.className = 'bsn-chat-sidebar-badge';
+    iconEl.appendChild(badge);
+
+    function updateBadge() {
+        var val = parseInt(localStorage.getItem('bendbsn_chat_unread') || '0', 10);
+        if (val > 0) {
+            badge.textContent = val > 99 ? '99+' : String(val);
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    // Initial state
+    updateBadge();
+
+    // Real-time cross-tab updates
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'bendbsn_chat_unread') updateBadge();
+    });
+})();

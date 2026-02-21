@@ -2426,6 +2426,7 @@
                             badge.style.display = 'none';
                         }
                     }
+                    updateGlobalUnreadBadge();
                 });
             });
         }
@@ -3249,6 +3250,7 @@
             }).join('');
 
             dmUnreadCount = totalUnread;
+            updateGlobalUnreadBadge();
         }
 
         function renderDMSidebar() {
@@ -3702,6 +3704,14 @@
             localStorage.setItem('bendbsn_chat_unread_ts', Date.now().toString());
         }
 
+        // Write total unread (background channels + DMs) to localStorage so the
+        // sidebar badge on other pages can reflect it in real time via storage events.
+        function updateGlobalUnreadBadge() {
+            const chUnread = Object.values(channelUnread).reduce((s, n) => s + n, 0);
+            const total = chUnread + (dmUnreadCount || 0);
+            localStorage.setItem('bendbsn_chat_unread', total > 0 ? String(total) : '0');
+        }
+
         // Listen for storage events from other tabs
         window.addEventListener('storage', function(e) {
             if (e.key === 'bendbsn_chat_unread' && e.newValue === '0') {
@@ -3824,6 +3834,7 @@
                 }
             });
             dmUnreadCount = totalUnread;
+            updateGlobalUnreadBadge();
             renderDMSidebar();
         });
 
