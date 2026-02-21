@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v99';
+const CACHE_VERSION = 'v100';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -48,9 +48,14 @@ const DEV_MODE = false;
 const OFFLINE_URLS = [
     '/home/',
     '/app/',
+    '/chat/',
+    '/ai/',
+    '/admin/',
     '/resources/',
     '/community/',
     '/clinical/',
+    '/apa/',
+    '/labsched/',
     '/shared/toast.css',
     '/shared/toast.js',
     '/shared/header.css',
@@ -58,6 +63,7 @@ const OFFLINE_URLS = [
     '/shared/app-shell.css',
     '/shared/header.js',
     '/manifest.json',
+    '/logo.svg',
     '/logo-dark.svg',
     '/logo-mark.svg',
     '/favicon.ico',
