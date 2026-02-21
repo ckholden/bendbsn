@@ -547,29 +547,26 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 15px;
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            background: var(--clx-accent-subtle);
             border-radius: 10px;
             margin-bottom: 8px;
-            border-left: 4px solid #4caf50;
-        }
-        [data-theme="dark"] .active-timer {
-            background: linear-gradient(135deg, #1b3d1b 0%, #2d4a2d 100%);
+            border-left: 4px solid var(--clx-accent);
         }
         .timer-info { flex: 1; }
-        .timer-label { font-weight: 600; font-size: 14px; color: var(--text-primary); }
-        .timer-countdown { font-size: 20px; font-weight: 700; color: #2e7d32; font-family: monospace; }
-        [data-theme="dark"] .timer-countdown { color: #81c784; }
+        .timer-label { font-weight: 600; font-size: 14px; color: var(--clx-text-primary); }
+        .timer-countdown { font-size: 20px; font-weight: 700; color: var(--clx-accent); font-family: monospace; }
         .timer-cancel {
             padding: 6px 12px;
-            background: #ffebee;
-            color: #c62828;
-            border: none;
+            background: none;
+            color: var(--clx-text-muted);
+            border: 1px solid var(--clx-border);
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
+            transition: background .15s, color .15s, border-color .15s;
         }
-        .timer-cancel:hover { background: #c62828; color: white; }
+        .timer-cancel:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
 
         /* Banner close button */
         .banner-dismiss {
@@ -2424,8 +2421,8 @@
                 return;
             }
 
-            if (time <= 0) {
-                result.innerHTML = '<span style="color: #c00;">Time must be greater than 0</span>';
+            if (volume <= 0 || time <= 0 || dropFactor <= 0) {
+                result.innerHTML = '<span style="color: #c00;">All values must be greater than 0</span>';
                 result.style.display = 'block';
                 return;
             }
@@ -2455,8 +2452,8 @@
                 return;
             }
 
-            if (have <= 0) {
-                result.innerHTML = '<span style="color: #c00;">"Have on Hand" must be greater than 0</span>';
+            if (desired <= 0 || have <= 0 || qty <= 0) {
+                result.innerHTML = '<span style="color: #c00;">All values must be greater than 0</span>';
                 result.style.display = 'block';
                 return;
             }
@@ -2479,6 +2476,12 @@
 
             if (!mgPerKg || !weight) {
                 result.innerHTML = '<span style="color: #c00;">Please enter all values</span>';
+                result.style.display = 'block';
+                return;
+            }
+
+            if (mgPerKg <= 0 || weight <= 0) {
+                result.innerHTML = '<span style="color: #c00;">All values must be greater than 0</span>';
                 result.style.display = 'block';
                 return;
             }
@@ -2640,6 +2643,29 @@
         // ========== MED PASS TIMER ==========
         let activeTimers = [];
         let timerIdCounter = 0;
+        const TIMERS_STORAGE_KEY = 'bendbsn_med_timers';
+
+        function saveTimerState() {
+            try {
+                const saved = activeTimers.map(t => ({ id: t.id, label: t.label, endTime: t.endTime }));
+                localStorage.setItem(TIMERS_STORAGE_KEY, JSON.stringify(saved));
+            } catch(e) {}
+        }
+
+        function restoreTimerState() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(TIMERS_STORAGE_KEY) || '[]');
+                saved.forEach(s => {
+                    if (s.endTime > Date.now()) {
+                        timerIdCounter = Math.max(timerIdCounter, s.id);
+                        const timer = { id: s.id, label: s.label, endTime: s.endTime, interval: null };
+                        timer.interval = setInterval(() => updateTimer(s.id), 1000);
+                        activeTimers.push(timer);
+                    }
+                });
+                if (activeTimers.length > 0) renderTimers();
+            } catch(e) {}
+        }
 
         function requestNotificationPermission() {
             if ('Notification' in window) {
@@ -2674,6 +2700,7 @@
 
             timer.interval = setInterval(() => updateTimer(timerId), 1000);
             activeTimers.push(timer);
+            saveTimerState();
 
             document.getElementById('timerLabel').value = '';
             document.getElementById('customTimerMin').value = '';
@@ -2692,6 +2719,7 @@
                 // Timer complete
                 clearInterval(timer.interval);
                 activeTimers = activeTimers.filter(t => t.id !== timerId);
+                saveTimerState();
                 renderTimers();
 
                 // Show notification
@@ -2717,6 +2745,7 @@
             if (timer) {
                 clearInterval(timer.interval);
                 activeTimers = activeTimers.filter(t => t.id !== timerId);
+                saveTimerState();
                 renderTimers();
                 showToast('Timer cancelled', 'info');
             }
@@ -3148,6 +3177,7 @@ Generated: ${new Date().toLocaleString()}`;
         document.addEventListener('DOMContentLoaded', function() {
             loadShiftPlan();
             filterResources();
+            restoreTimerState();
             startSessionHeartbeat();
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') updateSessionHeartbeat();
