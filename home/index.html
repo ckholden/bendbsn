@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <script>
-        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+        if (localStorage.getItem('bendbsn_auth') !== 'true') {
             window.location.href = '/';
         }
     </script>
@@ -838,8 +838,8 @@
         const auth = firebase.auth();
         const database = firebase.database();
 
-        const SESSION_KEY = 'bsn9b_session_key';
-        const SESSION_START_KEY = 'bsn9b_session_start';
+        const SESSION_KEY = 'bendbsn_session_key';
+        const SESSION_START_KEY = 'bendbsn_session_start';
         const SESSION_HEARTBEAT_MS = 60000;
         let sessionHeartbeatTimer = null;
         let sessionValidated = false;
@@ -874,11 +874,11 @@
         function endSessionTracking(reason) {
             const key = localStorage.getItem(SESSION_KEY);
             if (!key || !sessionValidated) return;
-            if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            if (localStorage.getItem('bendbsn_session_end_sent') === 'true') return;
             const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
             const end = Date.now();
             const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
-            localStorage.setItem('bsn9b_session_end_sent', 'true');
+            localStorage.setItem('bendbsn_session_end_sent', 'true');
             database.ref('loginHistory/' + key).update({
                 sessionEnd: end,
                 durationSeconds,
@@ -889,7 +889,7 @@
         function clearSessionTracking() {
             localStorage.removeItem(SESSION_KEY);
             localStorage.removeItem(SESSION_START_KEY);
-            localStorage.removeItem('bsn9b_session_end_sent');
+            localStorage.removeItem('bendbsn_session_end_sent');
         }
 
         const presenceRef = database.ref('chat/presence');
@@ -923,9 +923,9 @@
         }
         setupAnnouncementListener();
 
-        let currentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
-        let displayName = localStorage.getItem('bsn9b_displayName') || currentUsername;
-        let currentUserUid = localStorage.getItem('bsn9b_uid') || '';
+        let currentUsername = localStorage.getItem('bendbsn_user') || 'Anonymous';
+        let displayName = localStorage.getItem('bendbsn_displayName') || currentUsername;
+        let currentUserUid = localStorage.getItem('bendbsn_uid') || '';
 
         function getCurrentUserEmail() { return currentUsername || auth.currentUser?.email || ''; }
         function getCurrentUserUid()   { return currentUserUid || auth.currentUser?.uid || ''; }
@@ -947,9 +947,9 @@
                 if (window.initThemeSync) window.initThemeSync(database, user.uid);
                 currentUsername = user.email || currentUsername;
                 if (user.displayName) displayName = user.displayName;
-                localStorage.setItem('bsn9b_uid', currentUserUid);
-                localStorage.setItem('bsn9b_user', currentUsername);
-                localStorage.setItem('bsn9b_displayName', displayName);
+                localStorage.setItem('bendbsn_uid', currentUserUid);
+                localStorage.setItem('bendbsn_user', currentUsername);
+                localStorage.setItem('bendbsn_displayName', displayName);
                 syncUserProfile(user);
                 document.getElementById('ctxName').textContent = displayName;
 
@@ -974,7 +974,7 @@
                     const b = child.val();
                     if (b.username === currentUsername || b.username === displayName) {
                         showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
-                        ['bsn9b_auth','bsn9b_user','bsn9b_displayName','bsn9b_uid'].forEach(k => localStorage.removeItem(k));
+                        ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
                         setTimeout(() => { window.location.href = '/'; }, 2000);
                     }
                 });
@@ -985,7 +985,7 @@
             const b = snap.val();
             if (b.username === currentUsername || b.username === displayName) {
                 showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
-                ['bsn9b_auth','bsn9b_user','bsn9b_displayName','bsn9b_uid'].forEach(k => localStorage.removeItem(k));
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
                 setTimeout(() => { window.location.href = '/'; }, 2000);
             }
         });
@@ -1085,7 +1085,7 @@
 
         // ========== THEME ==========
         function initTheme() {
-            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            const saved = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
@@ -1093,7 +1093,7 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const t = isDark ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', t);
-            localStorage.setItem('bsn9b_theme', t);
+            localStorage.setItem('bendbsn_theme', t);
             updateThemeIcon();
         }
         function updateThemeIcon() {
@@ -1119,7 +1119,7 @@
             if (uid) presenceRef.child(uid).remove().catch(() => {});
             [idleTimer, logoutTimer, logoutWarningTimer, activityDebounceTimer].forEach(t => clearTimeout(t));
             auth.signOut().then(() => {
-                ['bsn9b_auth','bsn9b_user','bsn9b_displayName','bsn9b_uid'].forEach(k => localStorage.removeItem(k));
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
                 clearSessionTracking();
                 window.location.href = '/';
             });
@@ -1164,13 +1164,13 @@
 
         // ========== CONTEXT BAR ==========
         (function initContextBar() {
-            const term = localStorage.getItem('bsn9b_home_term');
-            const exam = localStorage.getItem('bsn9b_home_exam');
+            const term = localStorage.getItem('bendbsn_home_term');
+            const exam = localStorage.getItem('bendbsn_home_exam');
             if (term) document.getElementById('ctxTerm').textContent = term;
             if (exam) document.getElementById('ctxExam').textContent = exam;
-            document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bsn9b_displayName') || '—';
+            document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bendbsn_displayName') || '—';
             // Graduation countdown
-            const grad = localStorage.getItem('bsn9b_home_grad');
+            const grad = localStorage.getItem('bendbsn_home_grad');
             if (grad) document.getElementById('ctxGrad').textContent = calcGradCountdown(grad);
         })();
 
@@ -1193,10 +1193,10 @@
         function editCtx(field) {
             if (field === 'grad') {
                 const el = document.getElementById('ctxGrad');
-                const current = (el.textContent === '—' || el.textContent.includes('🎓') || el.textContent.includes('mo') || el.textContent.includes('y') || el.textContent.includes('days')) ? (localStorage.getItem('bsn9b_home_grad') || '') : el.textContent;
+                const current = (el.textContent === '—' || el.textContent.includes('🎓') || el.textContent.includes('mo') || el.textContent.includes('y') || el.textContent.includes('days')) ? (localStorage.getItem('bendbsn_home_grad') || '') : el.textContent;
                 showPromptModal('Graduation Date', 'Enter your expected graduation (e.g. May 2027)', (val) => {
                     if (val && val.trim()) {
-                        localStorage.setItem('bsn9b_home_grad', val.trim());
+                        localStorage.setItem('bendbsn_home_grad', val.trim());
                         el.textContent = calcGradCountdown(val.trim());
                     }
                 }, { defaultValue: current, placeholder: 'May 2027' });
@@ -1208,7 +1208,7 @@
             showPromptModal('Edit ' + (field === 'term' ? 'Term' : 'Next Exam'), label, (val) => {
                 if (val && val.trim()) {
                     el.textContent = val.trim();
-                    localStorage.setItem(field === 'term' ? 'bsn9b_home_term' : 'bsn9b_home_exam', val.trim());
+                    localStorage.setItem(field === 'term' ? 'bendbsn_home_term' : 'bendbsn_home_exam', val.trim());
                 }
             }, { defaultValue: current, placeholder: label });
         }
@@ -1259,7 +1259,7 @@
 
 
         // ========== COLLAPSIBLE HOME PANELS ==========
-        const HOME_PANEL_KEY = 'bsn9b_home_panels';
+        const HOME_PANEL_KEY = 'bendbsn_home_panels';
         function loadPanelStates() {
             try { return JSON.parse(localStorage.getItem(HOME_PANEL_KEY) || '{}'); } catch { return {}; }
         }
@@ -1287,7 +1287,7 @@
         })();
 
         // ========== STRUCTURED REMINDERS ==========
-        const REMINDERS_V2_KEY = 'bsn9b_home_reminders_v2';
+        const REMINDERS_V2_KEY = 'bendbsn_home_reminders_v2';
 
         function loadRemindersData() {
             try { return JSON.parse(localStorage.getItem(REMINDERS_V2_KEY) || '[]'); }
@@ -1318,7 +1318,7 @@
         }
 
         function emailReminder(rem) {
-            const userEmail = localStorage.getItem('bsn9b_user') || '';
+            const userEmail = localStorage.getItem('bendbsn_user') || '';
             const subject = encodeURIComponent('Reminder: ' + rem.text);
             const body = encodeURIComponent('Due: ' + (rem.due ? formatRemDue(rem.due) : 'No due date') + '\n\nPriority: ' + rem.priority);
             window.open('mailto:' + userEmail + '?subject=' + subject + '&body=' + body);
@@ -1401,7 +1401,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
+            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';
@@ -1412,7 +1412,7 @@
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
             const collapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('bsn9b_sidebar_collapsed', String(collapsed));
+            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
             const icon = document.getElementById('sidebarToggleIcon');
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }

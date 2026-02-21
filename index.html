@@ -459,10 +459,10 @@
                 let displayName = user.displayName || email.split('@')[0];
 
                 // Store session info immediately (localStorage for persistence)
-                localStorage.setItem('bsn9b_auth', 'true');
-                localStorage.setItem('bsn9b_user', user.email);
-                localStorage.setItem('bsn9b_displayName', displayName);
-                localStorage.setItem('bsn9b_uid', user.uid);
+                localStorage.setItem('bendbsn_auth', 'true');
+                localStorage.setItem('bendbsn_user', user.email);
+                localStorage.setItem('bendbsn_displayName', displayName);
+                localStorage.setItem('bendbsn_uid', user.uid);
 
                 // Cache role from Firebase profile (fire-and-forget)
                 database.ref('userProfiles/' + user.uid).once('value').then(function(snap) {
@@ -716,8 +716,8 @@
 
         function showPendingModal(name) {
             // Clear session so they can't access app
-            localStorage.removeItem('bsn9b_auth');
-            localStorage.removeItem('bsn9b_user');
+            localStorage.removeItem('bendbsn_auth');
+            localStorage.removeItem('bendbsn_user');
 
             // Show pending approval modal
             document.getElementById('pendingModal').classList.add('show');
@@ -898,14 +898,14 @@
 
         async function fetchRolesConfig() {
             try {
-                const cached = sessionStorage.getItem('bsn9b_roles_config');
+                const cached = sessionStorage.getItem('bendbsn_roles_config');
                 if (cached) {
                     _rolesConfig = JSON.parse(cached);
                 } else {
                     const snap = await database.ref('appConfig/roles').once('value');
                     _rolesConfig = snap.val() || {};
                     if (Object.keys(_rolesConfig).length) {
-                        sessionStorage.setItem('bsn9b_roles_config', JSON.stringify(_rolesConfig));
+                        sessionStorage.setItem('bendbsn_roles_config', JSON.stringify(_rolesConfig));
                     } else {
                         _rolesConfig = {
                             student_nurse: { label: 'Student Nurse', requires_year: true, year_options: ['Year 1','Year 2','Year 3','Year 4'], order: 1 },
@@ -964,7 +964,7 @@
         }
 
         function cacheRoleLocally(roleData) {
-            localStorage.setItem('bsn9b_role_v2', JSON.stringify(roleData));
+            localStorage.setItem('bendbsn_role_v2', JSON.stringify(roleData));
         }
         // ====== END DYNAMIC ROLE SYSTEM ======
 
@@ -974,16 +974,16 @@
         // Redirect only after Firebase confirms auth; clear stale local session if needed
         auth.onAuthStateChanged((user) => {
             if (user) {
-                localStorage.setItem('bsn9b_auth', 'true');
-                localStorage.setItem('bsn9b_user', user.email || '');
-                localStorage.setItem('bsn9b_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
-                localStorage.setItem('bsn9b_uid', user.uid || '');
+                localStorage.setItem('bendbsn_auth', 'true');
+                localStorage.setItem('bendbsn_user', user.email || '');
+                localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
+                localStorage.setItem('bendbsn_uid', user.uid || '');
                 window.location.href = '/home/';
-            } else if (localStorage.getItem('bsn9b_auth') === 'true') {
-                localStorage.removeItem('bsn9b_auth');
-                localStorage.removeItem('bsn9b_user');
-                localStorage.removeItem('bsn9b_displayName');
-                localStorage.removeItem('bsn9b_uid');
+            } else if (localStorage.getItem('bendbsn_auth') === 'true') {
+                localStorage.removeItem('bendbsn_auth');
+                localStorage.removeItem('bendbsn_user');
+                localStorage.removeItem('bendbsn_displayName');
+                localStorage.removeItem('bendbsn_uid');
                 showToast('Session expired. Please sign in again.', 'warning', 5000);
             }
         });
@@ -1072,9 +1072,9 @@
                 try {
                     await sessionRef.set(payload);
                     console.log('Login history saved successfully');
-                    localStorage.setItem('bsn9b_session_key', sessionRef.key || '');
-                    localStorage.setItem('bsn9b_session_start', String(timestamp));
-                    localStorage.removeItem('bsn9b_session_end_sent');
+                    localStorage.setItem('bendbsn_session_key', sessionRef.key || '');
+                    localStorage.setItem('bendbsn_session_start', String(timestamp));
+                    localStorage.removeItem('bendbsn_session_end_sent');
                 } catch (err) {
                     console.error('Failed to save login history:', err);
                 }

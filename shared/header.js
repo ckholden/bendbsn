@@ -340,7 +340,7 @@ window.getTheme = function() {
 
 window.setTheme = function(name) {
     document.documentElement.setAttribute('data-theme', name);
-    localStorage.setItem('bsn9b_theme', name);
+    localStorage.setItem('bendbsn_theme', name);
     // Sync to Firebase if available
     if (window._bsnDb && window._bsnUid) {
         try { window._bsnDb.ref('userProfiles/' + window._bsnUid + '/theme').set(name); } catch(e) {}

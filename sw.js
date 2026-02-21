@@ -1,7 +1,7 @@
 // BSN9B Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v77';
-const CACHE_NAME = `bsn9b-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v78';
+const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
 const DEV_MODE = false;
@@ -63,7 +63,7 @@ self.addEventListener('activate', (event) => {
                 return Promise.all(
                     cacheNames.map((cacheName) => {
                         // Delete all caches that don't match current version
-                        if (cacheName.startsWith('bsn9b-') && cacheName !== CACHE_NAME) {
+                        if (cacheName.startsWith('bendbsn-') && cacheName !== CACHE_NAME) {
                             console.log(`🗑️ Deleting old cache: ${cacheName}`);
                             return caches.delete(cacheName);
                         }

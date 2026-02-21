@@ -728,8 +728,8 @@
         let adminInitialized = false;
         let isAdminVerified = false;
 
-        const SESSION_KEY = 'bsn9b_session_key';
-        const SESSION_START_KEY = 'bsn9b_session_start';
+        const SESSION_KEY = 'bendbsn_session_key';
+        const SESSION_START_KEY = 'bendbsn_session_start';
         const SESSION_HEARTBEAT_MS = 60000;
         let sessionHeartbeatTimer = null;
         let sessionValidated = false;
@@ -760,12 +760,12 @@
         function endSessionTracking(reason) {
             const sessionKey = localStorage.getItem(SESSION_KEY);
             if (!sessionKey || !sessionValidated) return;
-            if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            if (localStorage.getItem('bendbsn_session_end_sent') === 'true') return;
             const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
             const end = Date.now();
             const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
             const durationMinutes = durationSeconds !== null ? Math.round(durationSeconds / 60) : null;
-            localStorage.setItem('bsn9b_session_end_sent', 'true');
+            localStorage.setItem('bendbsn_session_end_sent', 'true');
             database.ref('loginHistory/' + sessionKey).update({
                 sessionEnd: end,
                 durationSeconds: durationSeconds,
@@ -777,7 +777,7 @@
         function clearSessionTracking() {
             localStorage.removeItem(SESSION_KEY);
             localStorage.removeItem(SESSION_START_KEY);
-            localStorage.removeItem('bsn9b_session_end_sent');
+            localStorage.removeItem('bendbsn_session_end_sent');
         }
 
         startSessionHeartbeat();
@@ -1022,10 +1022,10 @@
         function logout() {
             auth.signOut().catch(() => {});
             endSessionTracking('logout');
-            localStorage.removeItem('bsn9b_auth');
-            localStorage.removeItem('bsn9b_user');
-            localStorage.removeItem('bsn9b_displayName');
-            localStorage.removeItem('bsn9b_uid');
+            localStorage.removeItem('bendbsn_auth');
+            localStorage.removeItem('bendbsn_user');
+            localStorage.removeItem('bendbsn_displayName');
+            localStorage.removeItem('bendbsn_uid');
             clearSessionTracking();
             window.location.href = '/';
         }
@@ -1237,8 +1237,8 @@
         }
 
         function clearRegisteredUsersCache() {
-            localStorage.removeItem('bsn9b_userCache');
-            localStorage.removeItem('bsn9b_userCacheTime');
+            localStorage.removeItem('bendbsn_userCache');
+            localStorage.removeItem('bendbsn_userCacheTime');
             showToast('User cache cleared', 'success');
             loadRegisteredUsers();
         }
@@ -1565,8 +1565,8 @@
             }, { confirmText: 'Open Console' });
 
             // Refresh user list
-            localStorage.removeItem('bsn9b_userCache');
-            localStorage.removeItem('bsn9b_userCacheTime');
+            localStorage.removeItem('bendbsn_userCache');
+            localStorage.removeItem('bendbsn_userCacheTime');
             loadRegisteredUsers();
                 }, { confirmText: 'Yes, Delete', danger: true });
             }, { confirmText: 'Delete User', danger: true });
@@ -1888,8 +1888,8 @@
                     showToast('Error removing DMs: ' + e.message, 'warning');
                 }
 
-                localStorage.removeItem('bsn9b_userCache');
-                localStorage.removeItem('bsn9b_userCacheTime');
+                localStorage.removeItem('bendbsn_userCache');
+                localStorage.removeItem('bendbsn_userCacheTime');
                 loadRegisteredUsers();
                 showToast('Purge complete', 'success');
             }, { confirmText: 'Purge User', danger: true });
@@ -3097,7 +3097,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
+            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';
@@ -3112,7 +3112,7 @@
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
             const collapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('bsn9b_sidebar_collapsed', String(collapsed));
+            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
             const icon = document.getElementById('sidebarToggleIcon');
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
@@ -3205,7 +3205,7 @@
                     await database.ref('appConfig/roles/' + roleId).remove();
                     showToast('Deleted: ' + label, 'info');
                     loadRoles();
-                    sessionStorage.removeItem('bsn9b_roles_config');
+                    sessionStorage.removeItem('bendbsn_roles_config');
                 } catch(e) { showToast('Error: ' + e.message, 'error'); }
             }, { danger: true, confirmText: 'Delete' });
         }
@@ -3248,7 +3248,7 @@
                 showToast('Role saved: ' + label, 'success');
                 hideRoleForm();
                 loadRoles();
-                sessionStorage.removeItem('bsn9b_roles_config');
+                sessionStorage.removeItem('bendbsn_roles_config');
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
         // ====== END ROLE CONFIGURATION ======

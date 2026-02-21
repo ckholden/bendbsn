@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
-    <script>if(localStorage.getItem('bsn9b_auth')!=='true'){window.location.href='/';}</script>
+    <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0f7490">
@@ -1366,7 +1366,7 @@
             // Quick-fill student name from localStorage (before Firebase profile loads)
             const nameField = document.querySelector('[data-field="studentName"]');
             if (nameField && !nameField.value) {
-                const savedName = localStorage.getItem('bsn9b_displayName');
+                const savedName = localStorage.getItem('bendbsn_displayName');
                 if (savedName) nameField.value = savedName;
             }
             // Set date to today
@@ -1394,7 +1394,7 @@
 
         // ========== THEME ==========
         function initTheme() {
-            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            const saved = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
@@ -1402,7 +1402,7 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const t = isDark ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', t);
-            localStorage.setItem('bsn9b_theme', t);
+            localStorage.setItem('bendbsn_theme', t);
             updateThemeIcon();
         }
         function updateThemeIcon() {
@@ -1740,10 +1740,10 @@
         // ========== LOGOUT ==========
         function logout() {
             auth.signOut().then(() => {
-                localStorage.removeItem('bsn9b_auth');
-                localStorage.removeItem('bsn9b_user');
-                localStorage.removeItem('bsn9b_displayName');
-                localStorage.removeItem('bsn9b_uid');
+                localStorage.removeItem('bendbsn_auth');
+                localStorage.removeItem('bendbsn_user');
+                localStorage.removeItem('bendbsn_displayName');
+                localStorage.removeItem('bendbsn_uid');
                 window.location.href = '/';
             });
         }
@@ -1816,8 +1816,8 @@
             function gc(field) { return data[field] ? 'Yes' : 'No'; }
 
             // Documented by line (from role system)
-            const _roleCache = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
-            const _docByName = localStorage.getItem('bsn9b_displayName') || gv('studentName') || '';
+            const _roleCache = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
+            const _docByName = localStorage.getItem('bendbsn_displayName') || gv('studentName') || '';
             let _docByRole = _roleCache.label || '';
             if (_roleCache.requires_year && _roleCache.year) _docByRole += ' (' + _roleCache.year + ')';
             const _docByLine = _docByName + (_docByRole ? ', ' + _docByRole : '');
@@ -2081,7 +2081,7 @@
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
+            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';
@@ -2092,7 +2092,7 @@
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
             const collapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('bsn9b_sidebar_collapsed', String(collapsed));
+            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
             const icon = document.getElementById('sidebarToggleIcon');
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
@@ -2102,12 +2102,12 @@
 
         async function loadRolesConfig() {
             try {
-                const cached = sessionStorage.getItem('bsn9b_roles_config');
+                const cached = sessionStorage.getItem('bendbsn_roles_config');
                 if (cached) { _rolesConfig = JSON.parse(cached); }
                 else {
                     const snap = await database.ref('appConfig/roles').once('value');
                     _rolesConfig = snap.val() || {};
-                    sessionStorage.setItem('bsn9b_roles_config', JSON.stringify(_rolesConfig));
+                    sessionStorage.setItem('bendbsn_roles_config', JSON.stringify(_rolesConfig));
                 }
             } catch(e) {
                 _rolesConfig = {
@@ -2124,8 +2124,8 @@
         function buildDocumentedBy() {
             const el = document.getElementById('documentedByText');
             if (!el) return;
-            const name = localStorage.getItem('bsn9b_displayName') || '—';
-            const cached = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
+            const name = localStorage.getItem('bendbsn_displayName') || '—';
+            const cached = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
             let cred = cached.label || '';
             if (cached.requires_year && cached.year) cred += ' (' + cached.year + ')';
             el.textContent = 'Documented by: ' + name + (cred ? ', ' + cred : '');
@@ -2135,7 +2135,7 @@
             const modal = document.getElementById('roleChangeModal');
             if (!modal) return;
             modal.style.display = 'flex';
-            const cached = JSON.parse(localStorage.getItem('bsn9b_role_v2') || '{}');
+            const cached = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
             const modalRole = document.getElementById('modalNoteRole');
             if (!modalRole) return;
             const sorted = Object.entries(_rolesConfig).sort((a,b) => (a[1].order||99)-(b[1].order||99));
@@ -2168,8 +2168,8 @@
             const role = _rolesConfig[roleId] || {};
             const year = (role.requires_year && document.getElementById('modalNoteYear')) ? document.getElementById('modalNoteYear').value || null : null;
             const data = { id: roleId, label: role.label || '', requires_year: !!role.requires_year, year };
-            try { localStorage.setItem('bsn9b_role_v2', JSON.stringify(data)); } catch(e) {}
-            const uid = localStorage.getItem('bsn9b_uid');
+            try { localStorage.setItem('bendbsn_role_v2', JSON.stringify(data)); } catch(e) {}
+            const uid = localStorage.getItem('bendbsn_uid');
             if (uid && typeof database !== 'undefined') {
                 database.ref('userProfiles/' + uid).update({ role_id: roleId, role_label: role.label || '', role_year: year || null }).catch(()=>{});
             }

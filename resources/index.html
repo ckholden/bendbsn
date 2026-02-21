@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="/shared/app-shell.css">
     <title>RN Resources - BSN9B</title>
     <script>
-        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+        if (localStorage.getItem('bendbsn_auth') !== 'true') {
             window.location.href = '/';
         }
     </script>
@@ -2167,7 +2167,7 @@
 
     <script>
         // Display current user
-        const currentUsername = localStorage.getItem('bsn9b_user');
+        const currentUsername = localStorage.getItem('bendbsn_user');
         if (currentUsername) {
             document.getElementById('userDisplay').textContent = 'Logged in as: ' + currentUsername;
         }
@@ -2189,10 +2189,10 @@
             if (typeof logoutWarningTimer !== 'undefined') clearTimeout(logoutWarningTimer);
             if (typeof activityDebounceTimer !== 'undefined') clearTimeout(activityDebounceTimer);
 
-            localStorage.removeItem('bsn9b_auth');
-            localStorage.removeItem('bsn9b_user');
-            localStorage.removeItem('bsn9b_displayName');
-            localStorage.removeItem('bsn9b_uid');
+            localStorage.removeItem('bendbsn_auth');
+            localStorage.removeItem('bendbsn_user');
+            localStorage.removeItem('bendbsn_displayName');
+            localStorage.removeItem('bendbsn_uid');
             clearSessionTracking();
             window.location.href = '/';
         }
@@ -2202,17 +2202,17 @@
         // Educational banner dismiss
         function dismissEduBanner() {
             document.getElementById('eduBanner').classList.add('hidden');
-            localStorage.setItem('bsn9b_edu_banner_dismissed', 'true');
+            localStorage.setItem('bendbsn_edu_banner_dismissed', 'true');
         }
         (function() {
-            if (localStorage.getItem('bsn9b_edu_banner_dismissed') === 'true') {
+            if (localStorage.getItem('bendbsn_edu_banner_dismissed') === 'true') {
                 var b = document.getElementById('eduBanner');
                 if (b) b.classList.add('hidden');
             }
         })();
 
         function initTheme() {
-            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            const saved = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
@@ -2220,7 +2220,7 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const newTheme = isDark ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('bsn9b_theme', newTheme);
+            localStorage.setItem('bendbsn_theme', newTheme);
             updateThemeIcon();
         }
         function updateThemeIcon() {
@@ -2583,7 +2583,7 @@
             filterResources();
         }
 
-        const SHIFT_PLAN_KEY = 'bsn9b_shift_plan';
+        const SHIFT_PLAN_KEY = 'bendbsn_shift_plan';
 
         function saveShiftPlan() {
             try {
@@ -2927,8 +2927,8 @@ Generated: ${new Date().toLocaleString()}`;
         const auth = firebase.auth();
         const database = firebase.database();
 
-        const SESSION_KEY = 'bsn9b_session_key';
-        const SESSION_START_KEY = 'bsn9b_session_start';
+        const SESSION_KEY = 'bendbsn_session_key';
+        const SESSION_START_KEY = 'bendbsn_session_start';
         const SESSION_HEARTBEAT_MS = 60000;
         let sessionHeartbeatTimer = null;
         let sessionValidated = false;
@@ -2972,12 +2972,12 @@ Generated: ${new Date().toLocaleString()}`;
         function endSessionTracking(reason) {
             const sessionKey = localStorage.getItem(SESSION_KEY);
             if (!sessionKey || !sessionValidated) return;
-            if (localStorage.getItem('bsn9b_session_end_sent') === 'true') return;
+            if (localStorage.getItem('bendbsn_session_end_sent') === 'true') return;
             const start = parseInt(localStorage.getItem(SESSION_START_KEY) || '0', 10);
             const end = Date.now();
             const durationSeconds = start ? Math.max(0, Math.round((end - start) / 1000)) : null;
             const durationMinutes = durationSeconds !== null ? Math.round(durationSeconds / 60) : null;
-            localStorage.setItem('bsn9b_session_end_sent', 'true');
+            localStorage.setItem('bendbsn_session_end_sent', 'true');
             database.ref('loginHistory/' + sessionKey).update({
                 sessionEnd: end,
                 durationSeconds: durationSeconds,
@@ -2989,7 +2989,7 @@ Generated: ${new Date().toLocaleString()}`;
         function clearSessionTracking() {
             localStorage.removeItem(SESSION_KEY);
             localStorage.removeItem(SESSION_START_KEY);
-            localStorage.removeItem('bsn9b_session_end_sent');
+            localStorage.removeItem('bendbsn_session_end_sent');
         }
 
         // ========== FIREBASE REFS & ESSENTIAL SERVICES ==========
@@ -3019,7 +3019,7 @@ Generated: ${new Date().toLocaleString()}`;
             const messageHash = hashBannerMessage(message);
 
             // Save dismissal to localStorage
-            localStorage.setItem(`bsn9b_${type}_dismissed_${messageHash}`, 'true');
+            localStorage.setItem(`bendbsn_${type}_dismissed_${messageHash}`, 'true');
 
             // Hide banner
             banner.style.display = 'none';
@@ -3037,7 +3037,7 @@ Generated: ${new Date().toLocaleString()}`;
                 // Handle alert banner
                 if (data.alert && data.alert.message) {
                     const messageHash = hashBannerMessage(data.alert.message);
-                    const isDismissed = localStorage.getItem(`bsn9b_alert_dismissed_${messageHash}`) === 'true';
+                    const isDismissed = localStorage.getItem(`bendbsn_alert_dismissed_${messageHash}`) === 'true';
 
                     if (!isDismissed) {
                         alertText.textContent = data.alert.message;
@@ -3055,7 +3055,7 @@ Generated: ${new Date().toLocaleString()}`;
                 // Handle FYI banner (offset if alert is showing)
                 if (data.fyi && data.fyi.message) {
                     const messageHash = hashBannerMessage(data.fyi.message);
-                    const isDismissed = localStorage.getItem(`bsn9b_fyi_dismissed_${messageHash}`) === 'true';
+                    const isDismissed = localStorage.getItem(`bendbsn_fyi_dismissed_${messageHash}`) === 'true';
 
                     if (!isDismissed) {
                         fyiText.textContent = data.fyi.message;
@@ -3075,16 +3075,16 @@ Generated: ${new Date().toLocaleString()}`;
         setupAnnouncementListener();
 
         // User identity
-        let chatCurrentUsername = localStorage.getItem('bsn9b_user') || 'Anonymous';
-        let chatDisplayName = localStorage.getItem('bsn9b_displayName') || chatCurrentUsername;
-        let chatCurrentUserUid = localStorage.getItem('bsn9b_uid') || '';
+        let chatCurrentUsername = localStorage.getItem('bendbsn_user') || 'Anonymous';
+        let chatDisplayName = localStorage.getItem('bendbsn_displayName') || chatCurrentUsername;
+        let chatCurrentUserUid = localStorage.getItem('bendbsn_uid') || '';
 
         function getCurrentUserEmail() {
-            return chatCurrentUsername || auth.currentUser?.email || localStorage.getItem('bsn9b_user') || '';
+            return chatCurrentUsername || auth.currentUser?.email || localStorage.getItem('bendbsn_user') || '';
         }
 
         function getCurrentUserUid() {
-            return chatCurrentUserUid || auth.currentUser?.uid || localStorage.getItem('bsn9b_uid') || '';
+            return chatCurrentUserUid || auth.currentUser?.uid || localStorage.getItem('bendbsn_uid') || '';
         }
 
         function syncUserProfile(user) {
@@ -3112,9 +3112,9 @@ Generated: ${new Date().toLocaleString()}`;
                 if (user.displayName) {
                     chatDisplayName = user.displayName;
                 }
-                localStorage.setItem('bsn9b_uid', chatCurrentUserUid);
-                localStorage.setItem('bsn9b_user', chatCurrentUsername);
-                localStorage.setItem('bsn9b_displayName', chatDisplayName);
+                localStorage.setItem('bendbsn_uid', chatCurrentUserUid);
+                localStorage.setItem('bendbsn_user', chatCurrentUsername);
+                localStorage.setItem('bendbsn_displayName', chatDisplayName);
                 syncUserProfile(user);
 
                 // Check user role and hide APA link for instructors
@@ -3127,7 +3127,7 @@ Generated: ${new Date().toLocaleString()}`;
                 });
             } else {
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
-                if (localStorage.getItem('bsn9b_auth') === 'true') {
+                if (localStorage.getItem('bendbsn_auth') === 'true') {
                     console.warn('Session exists but Firebase auth lost - may need to re-login');
                 }
             }
@@ -3140,7 +3140,7 @@ Generated: ${new Date().toLocaleString()}`;
                     const banned = child.val();
                     if (banned.username === chatCurrentUsername || banned.username === chatDisplayName) {
                         showToast('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'), 'error', 5000);
-                        localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
+                        localStorage.removeItem('bendbsn_auth'); localStorage.removeItem('bendbsn_user'); localStorage.removeItem('bendbsn_displayName'); localStorage.removeItem('bendbsn_uid');
                         setTimeout(() => { window.location.href = '/'; }, 2000);
                     }
                 });
@@ -3153,7 +3153,7 @@ Generated: ${new Date().toLocaleString()}`;
             const banned = snapshot.val();
             if (banned.username === chatCurrentUsername || banned.username === chatDisplayName) {
                 showToast('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'), 'error', 5000);
-                localStorage.removeItem('bsn9b_auth'); localStorage.removeItem('bsn9b_user'); localStorage.removeItem('bsn9b_displayName'); localStorage.removeItem('bsn9b_uid');
+                localStorage.removeItem('bendbsn_auth'); localStorage.removeItem('bendbsn_user'); localStorage.removeItem('bendbsn_displayName'); localStorage.removeItem('bendbsn_uid');
                 setTimeout(() => { window.location.href = '/'; }, 2000);
             }
         });
@@ -3346,7 +3346,7 @@ Generated: ${new Date().toLocaleString()}`;
             document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
-            if (localStorage.getItem('bsn9b_sidebar_collapsed') !== 'false') {
+            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';
@@ -3357,7 +3357,7 @@ Generated: ${new Date().toLocaleString()}`;
             const sidebar = document.getElementById('appSidebar');
             if (!sidebar) return;
             const collapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('bsn9b_sidebar_collapsed', String(collapsed));
+            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
             const icon = document.getElementById('sidebarToggleIcon');
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }

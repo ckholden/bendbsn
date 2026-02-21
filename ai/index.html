@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <script>
-        if (localStorage.getItem('bsn9b_auth') !== 'true') {
+        if (localStorage.getItem('bendbsn_auth') !== 'true') {
             window.location.href = '/';
         }
     </script>
@@ -370,7 +370,7 @@
         // ========== AUTH STATE CHECK ==========
         auth.onAuthStateChanged(function(user) {
             if (!user) {
-                localStorage.removeItem('bsn9b_auth');
+                localStorage.removeItem('bendbsn_auth');
                 window.location.href = '/';
             } else if (window.initThemeSync) {
                 window.initThemeSync(database, user.uid);
@@ -379,7 +379,7 @@
 
         // ========== THEME FUNCTIONS ==========
         function initTheme() {
-            const saved = localStorage.getItem('bsn9b_theme') || 'light';
+            const saved = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
@@ -388,7 +388,7 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const newTheme = isDark ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('bsn9b_theme', newTheme);
+            localStorage.setItem('bendbsn_theme', newTheme);
             updateThemeIcon();
         }
 
@@ -416,10 +416,10 @@
         // ========== LOGOUT ==========
         function logout() {
             auth.signOut().then(() => {
-                localStorage.removeItem('bsn9b_auth');
-                localStorage.removeItem('bsn9b_user');
-                localStorage.removeItem('bsn9b_displayName');
-                localStorage.removeItem('bsn9b_uid');
+                localStorage.removeItem('bendbsn_auth');
+                localStorage.removeItem('bendbsn_user');
+                localStorage.removeItem('bendbsn_displayName');
+                localStorage.removeItem('bendbsn_uid');
                 window.location.href = '/';
             });
         }
