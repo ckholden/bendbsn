@@ -997,6 +997,57 @@
         const googleProvider = new firebase.auth.GoogleAuthProvider();
         let _preventAuthRedirect = false;
 
+        // ====== GOOGLE SIGN-IN REDIRECT HANDLER ======
+        // Must run synchronously before any Firebase auth callbacks fire.
+        // localStorage flag is set just before signInWithRedirect so we know
+        // when we're returning from Google OAuth (not a normal page load).
+        if (localStorage.getItem('bendbsn_google_redirect') === '1') {
+            localStorage.removeItem('bendbsn_google_redirect');
+            _preventAuthRedirect = true; // block onAuthStateChanged until we handle routing
+            auth.getRedirectResult().then(async function(result) {
+                if (!result || !result.user) {
+                    _preventAuthRedirect = false;
+                    return;
+                }
+                const user = result.user;
+                try {
+                    const snap = await database.ref('userProfiles/' + user.uid).once('value');
+                    const profile = snap.val();
+                    if (profile && profile.role_id) {
+                        localStorage.setItem('bendbsn_auth', 'true');
+                        localStorage.setItem('bendbsn_user', user.email || '');
+                        localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
+                        localStorage.setItem('bendbsn_uid', user.uid);
+                        cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: !!profile.role_year, year: profile.role_year || null });
+                        await logLoginEvent(user.email, user.displayName, true);
+                        window.location.href = '/home/';
+                    } else if (profile) {
+                        localStorage.setItem('bendbsn_auth', 'true');
+                        localStorage.setItem('bendbsn_user', user.email || '');
+                        localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
+                        localStorage.setItem('bendbsn_uid', user.uid);
+                        await logLoginEvent(user.email, user.displayName, true);
+                        window.location.href = '/home/';
+                    } else {
+                        // New Google user — show role modal (keep _preventAuthRedirect = true)
+                        showGoogleRoleModal(user);
+                    }
+                } catch (e) {
+                    _preventAuthRedirect = false;
+                    showToast('Error completing sign-in. Please try again.', 'error');
+                    console.error('Google redirect completion error:', e);
+                }
+            }).catch(function(error) {
+                _preventAuthRedirect = false;
+                if (error.code === 'auth/account-exists-with-different-credential') {
+                    showToast('An account already exists with this email. Please sign in with your email and password.', 'warning', 6000);
+                } else if (error.code && error.code !== 'auth/no-auth-event') {
+                    console.error('Google redirect result error:', error);
+                }
+            });
+        }
+        // ====== END GOOGLE SIGN-IN REDIRECT HANDLER ======
+
         // ====== DYNAMIC ROLE SYSTEM ======
         let _rolesConfig = {};
 
@@ -1076,47 +1127,15 @@
         fetchRolesConfig();
 
         // ====== GOOGLE SIGN-IN ======
-        async function handleGoogleSignIn() {
-            _preventAuthRedirect = true;
-            try {
-                const result = await auth.signInWithPopup(googleProvider);
-                const user = result.user;
-
-                const snap = await database.ref("userProfiles/" + user.uid).once("value");
-                const profile = snap.val();
-
-                if (profile && profile.role_id) {
-                    localStorage.setItem("bendbsn_auth", "true");
-                    localStorage.setItem("bendbsn_user", user.email || "");
-                    localStorage.setItem("bendbsn_displayName", user.displayName || user.email.split("@")[0]);
-                    localStorage.setItem("bendbsn_uid", user.uid);
-                    cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: !!profile.role_year, year: profile.role_year || null });
-                    await logLoginEvent(user.email, user.displayName, true);
-                    _preventAuthRedirect = false;
-                    window.location.href = "/home/";
-                } else if (profile) {
-                    localStorage.setItem("bendbsn_auth", "true");
-                    localStorage.setItem("bendbsn_user", user.email || "");
-                    localStorage.setItem("bendbsn_displayName", user.displayName || user.email.split("@")[0]);
-                    localStorage.setItem("bendbsn_uid", user.uid);
-                    await logLoginEvent(user.email, user.displayName, true);
-                    _preventAuthRedirect = false;
-                    window.location.href = "/home/";
-                } else {
-                    showGoogleRoleModal(user);
-                }
-            } catch (error) {
-                _preventAuthRedirect = false;
-                if (error.code === "auth/account-exists-with-different-credential") {
-                    showToast("An account already exists with this email. Please sign in with your email and password.", "warning", 6000);
-                } else if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
-                    // User closed the popup - no action needed
-                } else {
-                    showToast("Google sign-in failed. Please try again.", "error");
-                    console.error("Google sign-in error:", error);
-                }
-            }
+        function handleGoogleSignIn() {
+            localStorage.setItem('bendbsn_google_redirect', '1');
+            auth.signInWithRedirect(googleProvider).catch(function(error) {
+                localStorage.removeItem('bendbsn_google_redirect');
+                showToast('Google sign-in failed. Please try again.', 'error');
+                console.error('Google sign-in error:', error);
+            });
         }
+        // ====== END GOOGLE SIGN-IN ======
 
         function showGoogleRoleModal(user) {
             const sorted = Object.entries(_rolesConfig).sort((a, b) => (a[1].order || 99) - (b[1].order || 99));
