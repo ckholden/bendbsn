@@ -109,10 +109,11 @@
         }
         .btn-danger:hover { background: #c82333; }
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: var(--clx-bg-surface-2);
+            color: var(--clx-text-primary);
+            border: 1px solid var(--clx-border);
         }
-        .btn-secondary:hover { background: #5a6268; }
+        .btn-secondary:hover { opacity: 0.8; }
         .room-card {
             background: var(--clx-bg-surface, #fff);
             border: 1px solid var(--clx-border, #e2e8f0);
@@ -348,7 +349,7 @@
             <div class="preview-section">
                 <h3>Schedule Preview</h3>
                 <div id="schedulePreview">
-                    <p style="color: #666; text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>
+                    <p style="color: var(--clx-text-muted); text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>
                 </div>
             </div>
         </div>
@@ -399,32 +400,32 @@
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                             <input type="text" placeholder="Room # (e.g., 101b)" value="${room.roomNumber || ''}"
                                 onchange="updateRoomNumber(${index}, this.value)"
-                                style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; width: 120px;">
+                                style="padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; width: 120px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             <input type="text" placeholder="Instructor Name" value="${room.instructor}"
                                 onchange="updateInstructor(${index}, this.value)"
-                                style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; width: 180px;">
+                                style="padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; width: 180px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <input type="text" id="studentName-${index}" placeholder="Student Name"
-                            style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                            style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         <input type="text" id="studentTime-${index}" placeholder="Time (e.g., 0900)"
-                            style="width: 100px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                            style="width: 100px; padding: 8px 12px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         <button class="btn btn-primary" onclick="addStudent(${index})">Add Student</button>
                     </div>
                     <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
-                        <span style="font-size: 13px; color: #666; font-weight: 600;">Break:</span>
+                        <span style="font-size: 13px; color: var(--clx-text-secondary); font-weight: 600;">Break:</span>
                         <input type="text" id="breakStart-${index}" placeholder="Start (e.g., 1000)"
-                            style="width: 100px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
-                        <span style="color: #666;">-</span>
+                            style="width: 100px; padding: 8px 12px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                        <span style="color: var(--clx-text-muted);">-</span>
                         <input type="text" id="breakEnd-${index}" placeholder="End (e.g., 1015)"
-                            style="width: 100px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                            style="width: 100px; padding: 8px 12px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         <button class="btn btn-secondary" onclick="addBreak(${index})" style="background: #ff9800;">Add Break</button>
                     </div>
 
                     <div class="entries-list" id="entries-${index}">
-                        ${room.entries.length === 0 ? '<p style="color: #888; text-align: center; padding: 20px;">No entries yet. Add students or breaks above.</p>' :
+                        ${room.entries.length === 0 ? '<p style="color: var(--clx-text-muted); text-align: center; padding: 20px;">No entries yet. Add students or breaks above.</p>' :
                         room.entries.map((entry, entryIndex) => `
                             <div class="entry-item ${entry.type === 'break' ? 'break' : ''}">
                                 <div>
@@ -501,14 +502,14 @@
             const preview = document.getElementById('schedulePreview');
 
             if (rooms.every(r => r.entries.length === 0)) {
-                preview.innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">Add students to rooms to see the preview.</p>';
+                preview.innerHTML = '<p style="color: var(--clx-text-muted); text-align: center; padding: 40px;">Add students to rooms to see the preview.</p>';
                 return;
             }
 
             let html = `
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: #1f4e79; margin-bottom: 5px;">${title}</h2>
-                    <p style="color: #666;">${formattedDate}</p>
+                    <h2 style="color: var(--clx-accent); margin-bottom: 5px;">${title}</h2>
+                    <p style="color: var(--clx-text-muted);">${formattedDate}</p>
                 </div>
             `;
 
@@ -648,7 +649,7 @@
                 document.getElementById('roomCount').textContent = '1';
                 document.getElementById('scheduleTitle').value = '';
                 document.getElementById('scheduleDate').valueAsDate = new Date();
-                document.getElementById('schedulePreview').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>';
+                document.getElementById('schedulePreview').innerHTML = '<p style="color: var(--clx-text-muted); text-align: center; padding: 40px;">Add rooms and entries, then click "Preview Schedule" to see your schedule here.</p>';
                 renderRooms();
             }, { danger: true });
         }
