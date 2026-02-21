@@ -186,15 +186,24 @@ exports.onDMSent = onValueCreated(
     { ref: '/directMessages/{convId}/messages/{msgId}', region: 'us-central1' },
     async (event) => {
         const msg = event.data.val();
-        if (!msg || !msg.recipientUid || !msg.senderName) return;
+        logger.info(`onDMSent fired: convId=${event.params.convId} recipientUid=${msg?.recipientUid} senderName=${msg?.senderName}`);
+
+        if (!msg || !msg.recipientUid || !msg.senderName) {
+            logger.info('onDMSent: missing recipientUid or senderName — skipping');
+            return;
+        }
 
         const db = admin.database();
         const tokensSnap = await db.ref(`userFCMTokens/${msg.recipientUid}`).get();
-        if (!tokensSnap.exists()) return;
+        if (!tokensSnap.exists()) {
+            logger.info(`onDMSent: no FCM tokens for uid=${msg.recipientUid}`);
+            return;
+        }
 
         const tokens = Object.values(tokensSnap.val())
             .map(t => t.token)
             .filter(Boolean);
+        logger.info(`onDMSent: sending to ${tokens.length} token(s)`);
         if (!tokens.length) return;
 
         const response = await admin.messaging().sendEachForMulticast({
@@ -206,6 +215,8 @@ exports.onDMSent = onValueCreated(
             data: { url: '/chat/', tag: `dm-${event.params.convId}` },
             webpush: { fcmOptions: { link: 'https://bendbsn.com/chat/' } }
         });
+
+        logger.info(`onDMSent: FCM response — success=${response.successCount} failure=${response.failureCount}`);
 
         // Remove tokens that FCM reports as invalid or unregistered
         const cleanupPromises = [];
