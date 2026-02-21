@@ -40,6 +40,10 @@
             ".write": "auth != null && auth.uid === $uid"
           }
         }
+      },
+      "channelMembers": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     },
     "directMessages": {
@@ -72,6 +76,11 @@
             }
           },
           "likes": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid"
+            }
+          },
+          "likedBy": {
             "$uid": {
               ".write": "auth != null && auth.uid === $uid"
             }
@@ -127,6 +136,10 @@
     "appConfig": {
       ".read": "auth != null",
       ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.email == \"christiankholden@gmail.com\")"
+    },
+    "groupChats": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }
