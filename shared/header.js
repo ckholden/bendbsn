@@ -216,9 +216,9 @@
     }
 
     // ========== ONLINE USER COUNT ==========
-    // Reuse existing #onlineCount element (home page) or inject a new chip
+    // Reuse existing #onlineCount element (home/chat pages) or inject a new chip
     var siteHeader = document.querySelector('.site-header');
-    var targetCountEl = siteHeader ? siteHeader.querySelector('#onlineCount') : null;
+    var targetCountEl = document.getElementById('onlineCount');
 
     if (siteHeader && !targetCountEl && !isLoginPage) {
         targetCountEl = document.createElement('div');
