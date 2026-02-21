@@ -933,23 +933,28 @@
         async function verifyAdminAccess() {
             const user = auth.currentUser;
             if (!user) return false;
-            // Email-based admin bypass (primary method - no custom claims needed)
+
             const ADMIN_EMAILS = ['christiankholden@gmail.com'];
-            if (ADMIN_EMAILS.includes(user.email)) return true;
-            // Also check Firebase custom claims as secondary method
-            try {
-                const token = await user.getIdTokenResult(true);
-                const claims = token.claims || {};
-                if (claims.admin === true || claims.role === 'admin' || claims.role === 'instructor') return true;
-            } catch (e) { /* ignore */ }
-            // Check Firebase profile role as tertiary method
+            const isAdminEmail = ADMIN_EMAILS.includes(user.email);
+
+            // Check Firebase profile for isAdmin flag or instructor role (primary method)
             try {
                 const snap = await userProfilesRef.child(user.uid).once('value');
                 const profile = snap.val() || {};
-                return profile.role === 'admin' || profile.role === 'instructor';
+                const hasAccess = profile.isAdmin === true || profile.role_id === 'instructor' || profile.role === 'Instructor';
+
+                // Bootstrap: if email-based admin doesn't have the isAdmin flag yet, set it now
+                if (isAdminEmail && !profile.isAdmin) {
+                    userProfilesRef.child(user.uid).update({ isAdmin: true }).catch(() => {});
+                }
+
+                if (hasAccess || isAdminEmail) return true;
             } catch (e) {
-                return false;
+                // If profile read fails (e.g. first-time before rules propagate), fall back to email
+                if (isAdminEmail) return true;
             }
+
+            return false;
         }
 
         async function requireAdminAccess() {

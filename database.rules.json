@@ -2,18 +2,19 @@
   "rules": {
     ".read": false,
     ".write": false,
+
     "chat": {
       "channels": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\" || auth.token.email == \"holdenc\")"
+        ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
       },
       "messages": {
-        ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+        ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
         "$channelId": {
           ".read": "auth != null",
-          ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+          ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
           "$messageId": {
-            ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+            ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
             ".validate": "!newData.exists() || (newData.hasChildren(['user', 'username', 'text', 'timestamp']) && newData.child('username').val() === auth.token.email)",
             "reactions": {
               "$emoji": {
@@ -28,9 +29,9 @@
       },
       "presence": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+        ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
         "$uid": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
+          ".write": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
         }
       },
       "typing": {
@@ -58,6 +59,7 @@
         }
       }
     },
+
     "directMessages": {
       "$convId": {
         ".read": "auth != null && (data.child('participants').child('user1_uid').val() === auth.uid || data.child('participants').child('user2_uid').val() === auth.uid)",
@@ -75,16 +77,17 @@
         }
       }
     },
+
     "community": {
       "posts": {
         ".read": "auth != null",
-        ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+        ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
         "$postId": {
-          ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+          ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
           ".validate": "!newData.exists() || newData.hasChild('author')",
           "replies": {
             "$replyId": {
-              ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
+              ".write": "auth != null && (!data.exists() || data.child('authorEmail').val() === auth.token.email || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
             }
           },
           "likes": {
@@ -100,44 +103,56 @@
         }
       }
     },
+
     "userDocuments": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
       }
     },
+
     "userProfiles": {
-      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
-      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+      ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
-        ".write": "auth != null && (auth.uid === $uid || auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
+        ".read": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+        "isAdmin": {
+          ".validate": "(root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || auth.token.email === 'christiankholden@gmail.com') && (newData.isBoolean() || !newData.exists())"
+        }
       }
     },
+
     "announcements": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
     },
+
     "banned": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
     },
+
     "globalPhrases": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")"
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
     },
+
     "loginHistory": {
-      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+      ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
       ".write": "auth != null"
     },
+
     "userExportHistory": {
-      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+      ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
       ".write": "auth != null"
     },
+
     "notificationLog": {
-      ".read": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.role == \"instructor\" || auth.token.email == \"christiankholden@gmail.com\")",
+      ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
       ".write": "auth != null"
     },
+
     "userLastSeen": {
       ".read": "auth != null",
       "$uid": {
@@ -145,14 +160,17 @@
         ".validate": "newData.isNumber()"
       }
     },
+
     "appConfig": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.token.admin == true || auth.token.role == \"admin\" || auth.token.email == \"christiankholden@gmail.com\")"
+      ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true"
     },
+
     "groupChats": {
       ".read": "auth != null",
       ".write": "auth != null"
     },
+
     "userFCMTokens": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
