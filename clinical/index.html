@@ -42,10 +42,6 @@
         body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;min-height:100vh;min-height:100dvh;}
         .container{max-width:1000px;margin:0 auto;padding:10px 16px;}
         /* Header bar */
-        .page-header{background:var(--clx-accent,#0f7490);color:#fff;padding:18px 24px;border-radius:16px 16px 0 0;text-align:center;position:relative;}
-        .page-header h1{font-size:22px;margin-bottom:4px;}
-        .page-header p{opacity:.9;font-size:12px;}
-        .save-status{position:absolute;top:12px;right:16px;font-size:11px;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,.15);color:#fff;}
         .save-status.unsaved{background:rgba(255,152,0,.3);}
         .progress-bar-wrap{height:6px;background:rgba(255,255,255,.15);border-radius:3px;margin-top:10px;overflow:hidden;}
         .progress-bar-fill{height:100%;background:#4caf50;border-radius:3px;transition:width .4s;}
@@ -89,6 +85,7 @@
         .btn-danger:hover{background:#c82333;}
         .btn-sm{padding:6px 12px;font-size:11px;}
         .btn:disabled{opacity:.6;cursor:not-allowed;transform:none!important;}
+        .btn:focus-visible{outline:2px solid var(--clx-accent,#0f7490);outline-offset:2px;}
         .action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
         /* Tables */
         .data-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;}
@@ -187,7 +184,7 @@
             <span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span>
             <span class="clx-sidebar-label">Theme</span>
         </button>
-        <button class="clx-sidebar-item" onclick="lockScreen ? lockScreen() : logout()">
+        <button class="clx-sidebar-item" onclick="lockScreen()">
             <span class="clx-sidebar-icon">🔒</span>
             <span class="clx-sidebar-label">Lock</span>
         </button>
@@ -227,18 +224,18 @@
         <div style="background:var(--clx-bg-surface,#fff);border:1px solid var(--clx-border,#e2e8f0);border-radius:10px;padding:22px 24px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
             <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;color:var(--clx-text-primary,#1a2532);">Update Profile Settings</h3>
             <div style="margin-bottom:12px;">
-                <label style="font-size:12px;font-weight:600;color:#4a5568;display:block;margin-bottom:4px;">Role</label>
-                <select id="modalNoteRole" onchange="syncModalYearOptions()" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;">
+                <label style="font-size:12px;font-weight:600;color:var(--clx-text-secondary);display:block;margin-bottom:4px;">Role</label>
+                <select id="modalNoteRole" onchange="syncModalYearOptions()" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid var(--clx-border);border-radius:6px;font-family:inherit;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
                     <option value="">Loading…</option>
                 </select>
             </div>
             <div id="modalNoteYearGroup" style="display:none;margin-bottom:12px;">
-                <label style="font-size:12px;font-weight:600;color:#4a5568;display:block;margin-bottom:4px;">Year Level</label>
-                <select id="modalNoteYear" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;"></select>
+                <label style="font-size:12px;font-weight:600;color:var(--clx-text-secondary);display:block;margin-bottom:4px;">Year Level</label>
+                <select id="modalNoteYear" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid var(--clx-border);border-radius:6px;font-family:inherit;background:var(--clx-bg-surface);color:var(--clx-text-primary);"></select>
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
-                <button onclick="closeRoleChangeModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:1px solid #d1d5db;border-radius:6px;background:#f5f8fa;cursor:pointer;font-family:inherit;">Cancel</button>
-                <button onclick="saveRoleFromModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;border-radius:6px;background:#0f7490;color:white;cursor:pointer;font-family:inherit;">Save</button>
+                <button onclick="closeRoleChangeModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:1px solid var(--clx-border);border-radius:6px;background:var(--clx-bg-surface-2);color:var(--clx-text-primary);cursor:pointer;font-family:inherit;">Cancel</button>
+                <button onclick="saveRoleFromModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;border-radius:6px;background:var(--clx-accent);color:white;cursor:pointer;font-family:inherit;">Save</button>
             </div>
         </div>
     </div>
@@ -316,16 +313,16 @@
                         </div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label>Temp</label><input type="text" data-field="h2t1_temp"></div>
-                        <div class="form-group"><label>R (Resp)</label><input type="text" data-field="h2t1_resp"></div>
-                        <div class="form-group"><label>P (Pulse)</label><input type="text" data-field="h2t1_pulse"></div>
-                        <div class="form-group"><label>SaO2</label><input type="text" data-field="h2t1_sao2"></div>
+                        <div class="form-group"><label>Temp (°F)</label><input type="number" min="85" max="115" step="0.1" inputmode="decimal" data-field="h2t1_temp"></div>
+                        <div class="form-group"><label>R (Resp)</label><input type="number" min="4" max="60" step="1" inputmode="numeric" data-field="h2t1_resp"></div>
+                        <div class="form-group"><label>P (Pulse)</label><input type="number" min="20" max="250" step="1" inputmode="numeric" data-field="h2t1_pulse"></div>
+                        <div class="form-group"><label>SaO2 (%)</label><input type="number" min="50" max="100" step="1" inputmode="numeric" data-field="h2t1_sao2"></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label>BP</label><input type="text" data-field="h2t1_bp" placeholder="120/80"></div>
                         <div class="form-group"><label>Last BM</label><input type="text" data-field="h2t1_lastbm"></div>
-                        <div class="form-group"><label>Height</label><input type="text" data-field="h2t1_height"></div>
-                        <div class="form-group"><label>Weight</label><input type="text" data-field="h2t1_weight"></div>
+                        <div class="form-group"><label>Height (in)</label><input type="number" min="12" max="108" step="0.5" inputmode="decimal" data-field="h2t1_height"></div>
+                        <div class="form-group"><label>Weight (lbs)</label><input type="number" min="1" max="1500" step="0.5" inputmode="decimal" data-field="h2t1_weight"></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label>Smoker</label><input type="text" data-field="h2t1_smoker"></div>
@@ -1309,6 +1306,16 @@
         </div>
     </div>
 
+    <!-- Lock Screen Overlay -->
+    <div id="lockScreenOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;align-items:center;justify-content:center;flex-direction:column;">
+        <div style="text-align:center;color:white;">
+            <div style="font-size:72px;margin-bottom:16px;">&#128274;</div>
+            <h1 style="font-size:32px;font-weight:700;margin-bottom:8px;">Clinical Packet Locked</h1>
+            <p style="font-size:15px;opacity:0.7;margin-bottom:32px;">Your progress is saved. Click to resume.</p>
+            <button onclick="unlockScreen()" style="background:var(--clx-accent,#0f7490);color:white;border:none;padding:14px 40px;border-radius:24px;font-size:16px;font-weight:600;cursor:pointer;">&#128275; Unlock</button>
+        </div>
+    </div>
+
     <!-- Load docx library -->
     <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1371,7 +1378,7 @@
             }
             // Set date to today
             const dateField = document.querySelector('[data-field="clinicalDate"]');
-            if (dateField) dateField.valueAsDate = new Date();
+            if (dateField) { const t = new Date(); dateField.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0'); }
             // Init 5 med rows
             for (let i = 0; i < 5; i++) addMedRow();
             // Load role system
@@ -1625,15 +1632,15 @@
                 document.querySelectorAll('.braden-opt').forEach(o => o.classList.remove('selected'));
                 document.getElementById('bradenTotal').textContent = '0';
                 document.getElementById('bradenRisk').textContent = 'Select all categories';
-                document.getElementById('bradenRisk').style.background = '#e0e0e0';
-                document.getElementById('bradenRisk').style.color = '#333';
+                document.getElementById('bradenRisk').style.background = 'var(--clx-bg-surface-2)';
+                document.getElementById('bradenRisk').style.color = 'var(--clx-text-muted)';
                 hasUnsavedChanges = false;
                 updateSaveStatus('none');
                 updateProgress();
                 updateTabChecks();
                 // Set date to today
                 const dateField = document.querySelector('[data-field="clinicalDate"]');
-                if (dateField) dateField.valueAsDate = new Date();
+                if (dateField) { const t = new Date(); dateField.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0'); }
                 switchTab('patient');
                 showToast('New packet started', 'info');
             }
@@ -1748,8 +1755,22 @@
             });
         }
 
+        // ========== LOCK SCREEN ==========
+        function lockScreen() {
+            const overlay = document.getElementById('lockScreenOverlay');
+            if (overlay) { overlay.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+        }
+        function unlockScreen() {
+            const overlay = document.getElementById('lockScreenOverlay');
+            if (overlay) { overlay.style.display = 'none'; document.body.style.overflow = ''; }
+        }
+
         // ========== EXPORT TO WORD ==========
         async function exportToWord() {
+            if (typeof docx === 'undefined' || typeof saveAs === 'undefined') {
+                showToast('Export libraries not loaded. Please refresh and try again.', 'error');
+                return;
+            }
             const data = collectAllData();
             const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
                     AlignmentType, WidthType, BorderStyle, HeadingLevel,
@@ -2179,8 +2200,17 @@
         }
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                const lockOverlay = document.getElementById('lockScreenOverlay');
+                if (lockOverlay && lockOverlay.style.display !== 'none') { unlockScreen(); return; }
                 const modal = document.getElementById('roleChangeModal');
                 if (modal && modal.style.display !== 'none') closeRoleChangeModal();
+            }
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
             }
         });
         // ====== END ROLE SYSTEM ======
