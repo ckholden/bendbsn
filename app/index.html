@@ -599,8 +599,8 @@
             right: 0;
             max-height: 200px;
             overflow-y: auto;
-            background: white;
-            border: 2px solid #1976d2;
+            background: var(--clx-bg-surface, #ffffff);
+            border: 2px solid var(--clx-border, #d1dce8);
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             z-index: 200;
@@ -610,23 +610,23 @@
         .drug-item {
             padding: 10px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
             font-size: 13px;
-            color: #333;
+            color: var(--clx-text-primary, #1a2532);
         }
-        .drug-item:hover { background: #e3f2fd; }
+        .drug-item:hover { background: var(--clx-accent-subtle, #e0f2f8); }
         .drug-item:last-child { border-bottom: none; }
         .drug-loading {
             padding: 10px 12px;
-            color: #666;
+            color: var(--clx-text-muted, #718096);
             font-style: italic;
             font-size: 12px;
         }
         /* Common Medication Buttons */
         .common-med-btn {
-            background: white;
-            border: 1px solid #1976d2;
-            color: #1565c0;
+            background: var(--clx-bg-surface, #ffffff);
+            border: 1px solid var(--clx-accent, #0f7490);
+            color: var(--clx-accent, #0f7490);
             padding: 5px 10px;
             border-radius: 16px;
             font-size: 11px;
@@ -635,7 +635,7 @@
             font-weight: 500;
         }
         .common-med-btn:hover {
-            background: #1976d2;
+            background: var(--clx-accent, #0f7490);
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
@@ -769,6 +769,56 @@
                 border-radius: 0 !important;
             }
         }
+
+        /* Form progress bar */
+        .form-progress-bar-wrap {
+            height: 3px;
+            background: var(--clx-border, #e2e8f0);
+            border-radius: 0;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .form-progress-bar {
+            height: 100%;
+            background: var(--clx-accent, #0f7490);
+            border-radius: 0;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        /* First-note wizard */
+        .first-note-wizard {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #e2e8f0);
+            border-left: 4px solid var(--clx-accent, #0f7490);
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .first-note-wizard.visible { display: block; }
+        .first-note-wizard h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--clx-text-primary, #1a2532);
+            margin: 0 0 8px;
+        }
+        .first-note-wizard ol {
+            margin: 0 0 12px;
+            padding-left: 18px;
+            font-size: 13px;
+            color: var(--clx-text-secondary, #4a5568);
+            line-height: 1.65;
+        }
+        .first-note-wizard-dismiss {
+            font-size: 12px;
+            color: var(--clx-text-muted, #718096);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -901,7 +951,7 @@
                     50% { box-shadow: -4px 4px 25px rgba(255,152,0,0.6); }
                 }
                 .phrase-item { position: relative; cursor: help; padding: 4px 6px; border-radius: 4px; transition: background 0.2s; }
-                .phrase-item:hover { background: #e3f2fd; }
+                .phrase-item:hover { background: var(--clx-accent-subtle, #e0f2f8); }
                 .phrase-item .tooltip {
                     display: none; position: absolute; top: 100%; left: 0;
                     background: #333; color: #fff; padding: 10px 12px; border-radius: 6px;
@@ -1059,6 +1109,19 @@
             </div>
 
             <h2 class="section-title" id="section-format">Documentation Format</h2>
+            <div class="form-progress-bar-wrap" id="formProgressWrap" title="Note completion">
+                <div class="form-progress-bar" id="formProgressBar"></div>
+            </div>
+            <div class="first-note-wizard" id="firstNoteWizard">
+                <h4>👋 Welcome — let's write your first note</h4>
+                <ol>
+                    <li>Pick a note type below (start with <strong>DAR</strong> for most clinical situations)</li>
+                    <li>Fill in patient info at the top — date, time, unit, patient ID</li>
+                    <li>Use the <strong>quick-fill buttons</strong> in each section to insert standard phrases</li>
+                    <li>When done, click <strong>Copy to Clipboard</strong> or export to PDF</li>
+                </ol>
+                <button class="first-note-wizard-dismiss" onclick="dismissFirstNoteWizard()">Got it, don't show again</button>
+            </div>
             <div class="note-type-grid">
                 <div class="note-type-card active" data-note-type="dar">
                     <h3>DAR</h3>
@@ -2140,6 +2203,30 @@
         </div>
     </div><!-- /container -->
     </main><!-- /clx-main -->
+
+    <!-- Mobile bottom nav — visible only on small screens via app-shell.css -->
+    <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+        <a href="/home/" class="clx-mobile-nav-item" aria-label="Home">
+            <span class="clx-mobile-nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="/app/" class="clx-mobile-nav-item active" aria-label="RN Notes">
+            <span class="clx-mobile-nav-icon">📝</span>
+            <span>Notes</span>
+        </a>
+        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat">
+            <span class="clx-mobile-nav-icon">💬</span>
+            <span>Chat</span>
+        </a>
+        <a href="/ai/" class="clx-mobile-nav-item" target="_blank" aria-label="AI Assistant">
+            <span class="clx-mobile-nav-icon">🤖</span>
+            <span>AI</span>
+        </a>
+        <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources">
+            <span class="clx-mobile-nav-icon">📚</span>
+            <span>More</span>
+        </a>
+    </nav>
     </div><!-- /clx-shell -->
 
     <!-- Lock Screen Overlay -->
@@ -6203,6 +6290,48 @@
             const icon = document.getElementById('sidebarToggleIcon');
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
         }
+
+        // ========== FORM COMPLETION PROGRESS BAR ==========
+        function updateFormProgress() {
+            const bar = document.getElementById('formProgressBar');
+            if (!bar) return;
+            const allFields = document.querySelectorAll(
+                '.note-fields.active textarea, .note-fields.active input[type="text"], .note-fields.active input[type="date"], .note-fields.active input[type="time"]'
+            );
+            if (allFields.length === 0) { bar.style.width = '0%'; return; }
+            const filled = Array.from(allFields).filter(f => f.value && f.value.trim().length > 0).length;
+            const pct = Math.round((filled / allFields.length) * 100);
+            bar.style.width = pct + '%';
+        }
+
+        // Attach input listener at document level for note fields
+        document.addEventListener('input', function(e) {
+            if (e.target.closest('.note-fields')) updateFormProgress();
+        });
+        // Initial call
+        updateFormProgress();
+
+        // ========== FIRST-NOTE WIZARD ==========
+        function dismissFirstNoteWizard() {
+            const el = document.getElementById('firstNoteWizard');
+            if (el) el.classList.remove('visible');
+            try { localStorage.setItem('bendbsn_first_note_done', '1'); } catch(e) {}
+        }
+
+        function maybeShowFirstNoteWizard() {
+            if (localStorage.getItem('bendbsn_first_note_done') === '1') return;
+            const roleData = localStorage.getItem('bsn9b_role_v2');
+            let isYear1 = false;
+            try {
+                const r = JSON.parse(roleData || '{}');
+                isYear1 = r.year === '1' || r.year === 1;
+            } catch(e) {}
+            if (isYear1) {
+                const el = document.getElementById('firstNoteWizard');
+                if (el) el.classList.add('visible');
+            }
+        }
+        maybeShowFirstNoteWizard();
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>

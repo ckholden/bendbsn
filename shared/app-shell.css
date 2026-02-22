@@ -138,7 +138,7 @@
     border-left: none;
     border-right: none;
     border-bottom: none;
-    font-size: 12px;
+    font-size: var(--clx-type-sm);
     font-family: inherit;
     background: none;
     width: 100%;
@@ -245,5 +245,69 @@
     }
     body.has-sidebar .bottom-toolbar {
         display: none !important;
+    }
+}
+
+/* =========================================================
+   MOBILE BOTTOM NAV — shown only on small screens
+   Used by pages that include a .clx-mobile-nav element
+   ========================================================= */
+.clx-mobile-nav {
+    display: none; /* hidden by default (desktop) */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--clx-bg-surface, #fff);
+    border-top: 1px solid var(--clx-border, #d1dce8);
+    z-index: 200;
+    align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -1px 0 rgba(0,0,0,0.06);
+}
+.clx-mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--clx-text-muted, #718096);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 6px 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: color 0.15s;
+    font-family: inherit;
+}
+.clx-mobile-nav-item:hover,
+.clx-mobile-nav-item.active {
+    color: var(--clx-accent, #0f7490);
+}
+.clx-mobile-nav-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+[data-theme="dark"] .clx-mobile-nav {
+    background: var(--clx-bg-surface);
+    border-top-color: var(--clx-border);
+}
+
+@media (max-width: 480px) {
+    .clx-sidebar {
+        display: none !important;
+    }
+    .clx-mobile-nav {
+        display: flex !important;
+    }
+    .clx-shell {
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    }
+    .clx-main {
+        padding: 10px;
     }
 }
