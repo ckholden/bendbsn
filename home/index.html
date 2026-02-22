@@ -9,7 +9,7 @@
             window.location.href = '/';
         }
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0d1f2d">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,6 +22,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js">
+    <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js">
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
@@ -459,7 +462,14 @@
         }
         @media (max-width: 600px) {
             .doc-hero { flex-direction: column; align-items: flex-start; }
-            .doc-hero-stat { display: none; }
+            .doc-hero-stat {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .doc-hero-num { font-size: 24px; }
+            .doc-hero-lbl { font-size: 12px; opacity: 0.8; }
         }
 
         /* ================================================
@@ -622,6 +632,10 @@
             <span class="clx-sidebar-icon">🔒</span>
             <span class="clx-sidebar-label">Lock</span>
         </button>
+        <button class="clx-sidebar-item" id="installPwaBtn" onclick="showInstallPrompt()" style="display:none" aria-label="Install app">
+            <span class="clx-sidebar-icon">📲</span>
+            <span class="clx-sidebar-label">Install App</span>
+        </button>
         <button class="clx-sidebar-item" onclick="logout()">
             <span class="clx-sidebar-icon">🚪</span>
             <span class="clx-sidebar-label">Logout</span>
@@ -704,14 +718,14 @@
                     <span id="quickRefChev" style="font-size:11px;margin-left:auto;opacity:0.6;">▲</span>
                 </div>
                 <div class="dash-panel-bd" id="quickRefBody">
-                    <a class="dash-ref-link" href="/resources/">Vital Signs Reference</a>
-                    <a class="dash-ref-link" href="/resources/">Lab Values</a>
-                    <a class="dash-ref-link" href="/resources/">Dosage Calculator</a>
-                    <a class="dash-ref-link" href="/resources/">IV Drip Rate</a>
-                    <a class="dash-ref-link" href="/resources/">Glasgow Coma Scale</a>
-                    <a class="dash-ref-link" href="/resources/">APGAR Score</a>
-                    <a class="dash-ref-link" href="/resources/">SBAR Template</a>
-                    <a class="dash-ref-link" href="/resources/">Drug Lookup (RxNav)</a>
+                    <a class="dash-ref-link" href="/resources/#section-vital-signs">Vital Signs Reference</a>
+                    <a class="dash-ref-link" href="/resources/#labValuesCard">Lab Values</a>
+                    <a class="dash-ref-link" href="/resources/#section-dosage-calculator">Dosage Calculator</a>
+                    <a class="dash-ref-link" href="/resources/#section-iv-drip">IV Drip Rate</a>
+                    <a class="dash-ref-link" href="/resources/#section-clinical-toolkit">Glasgow Coma Scale</a>
+                    <a class="dash-ref-link" href="/resources/#section-clinical-toolkit">APGAR Score</a>
+                    <a class="dash-ref-link" href="/resources/#section-clinical-toolkit">SBAR Template</a>
+                    <a class="dash-ref-link" href="/resources/#section-drug-lookup">Drug Lookup (RxNav)</a>
                     <a class="dash-ref-link" href="/ai/">Ask AI Nursing Assistant</a>
                 </div>
             </div>
@@ -1349,5 +1363,27 @@
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
+    <script>
+        // PWA Install Prompt
+        var _deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            _deferredInstallPrompt = e;
+            var btn = document.getElementById('installPwaBtn');
+            if (btn) btn.style.display = '';
+        });
+        function showInstallPrompt() {
+            if (_deferredInstallPrompt) {
+                _deferredInstallPrompt.prompt();
+                _deferredInstallPrompt.userChoice.then(function() {
+                    _deferredInstallPrompt = null;
+                });
+            }
+        }
+        window.addEventListener('appinstalled', function() {
+            var btn = document.getElementById('installPwaBtn');
+            if (btn) btn.style.display = 'none';
+        });
+    </script>
 </body>
 </html>

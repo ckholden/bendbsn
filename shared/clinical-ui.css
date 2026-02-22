@@ -18,6 +18,7 @@
     --clx-text-secondary: #4a5568;
     --clx-text-muted:     #718096;
     --clx-accent:         #0f7490;
+    --clx-accent-rgb:     15, 116, 144;
     --clx-accent-hover:   #0c6478;
     --clx-accent-subtle:  #e0f2f8;
     --clx-accent-text:    #ffffff;
@@ -35,6 +36,26 @@
     --clx-info:           #0284c7;
     --clx-info-bg:        #e0f2fe;
     --clx-info-text:      #0c4a6e;
+    /* Typography scale */
+    --clx-type-xs:        10px;
+    --clx-type-sm:        12px;
+    --clx-type-base:      14px;
+    --clx-type-lg:        16px;
+    --clx-type-xl:        18px;
+    --clx-type-2xl:       24px;
+    /* Animation tokens */
+    --clx-transition-fast: 0.10s ease;
+    --clx-transition-base: 0.15s ease;
+    --clx-transition-slow: 0.25s ease;
+    /* Shadow hierarchy */
+    --clx-shadow-sm:  0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08);
+    --clx-shadow-md:  0 2px 4px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.08);
+    --clx-shadow-lg:  0 4px 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.10);
+    --clx-shadow-xl:  0 8px 16px rgba(0,0,0,0.12), 0 16px 48px rgba(0,0,0,0.12);
+    --clx-radius-sm:  4px;
+    --clx-radius-md:  8px;
+    --clx-radius-lg:  12px;
+    --clx-radius-xl:  16px;
 }
 
 /* =========================================================
@@ -51,6 +72,7 @@
     --clx-text-secondary: #94a3b8;
     --clx-text-muted:     #64748b;
     --clx-accent:         #22a8c4;
+    --clx-accent-rgb:     34, 168, 196;
     --clx-accent-hover:   #2bbad8;
     --clx-accent-subtle:  #0f2d36;
     --clx-focus:          #22d3ee;
@@ -67,6 +89,10 @@
     --clx-info:           #38bdf8;
     --clx-info-bg:        #0c2a3d;
     --clx-info-text:      #7dd3fc;
+    --clx-shadow-sm:  0 1px 2px rgba(0,0,0,0.20), 0 1px 3px rgba(0,0,0,0.24);
+    --clx-shadow-md:  0 2px 4px rgba(0,0,0,0.24), 0 4px 8px rgba(0,0,0,0.24);
+    --clx-shadow-lg:  0 4px 8px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.28);
+    --clx-shadow-xl:  0 8px 16px rgba(0,0,0,0.32), 0 16px 48px rgba(0,0,0,0.32);
 }
 
 /* =========================================================
@@ -83,6 +109,7 @@
     --clx-text-secondary: #5d4a38;
     --clx-text-muted:     #8b7265;
     --clx-accent:         #0f7490;
+    --clx-accent-rgb:     15, 116, 144;
     --clx-accent-hover:   #0c6478;
     --clx-accent-subtle:  #e2f0ee;
     --clx-accent-text:    #ffffff;
@@ -104,6 +131,7 @@
     --clx-text-secondary: #3d5a3d;
     --clx-text-muted:     #6b896b;
     --clx-accent:         #2a7d46;
+    --clx-accent-rgb:     42, 125, 70;
     --clx-accent-hover:   #1e6638;
     --clx-accent-subtle:  #d4e8d8;
     --clx-accent-text:    #ffffff;
@@ -136,6 +164,7 @@
     --clx-text-secondary: #2a4a6e;
     --clx-text-muted:     #5578a0;
     --clx-accent:         #0369a1;
+    --clx-accent-rgb:     3, 105, 161;
     --clx-accent-hover:   #025d8e;
     --clx-accent-subtle:  #dbeeff;
     --clx-accent-text:    #ffffff;
@@ -168,6 +197,7 @@
     --clx-text-secondary: #4a356a;
     --clx-text-muted:     #7a5e96;
     --clx-accent:         #7c3aed;
+    --clx-accent-rgb:     124, 58, 237;
     --clx-accent-hover:   #6d28d9;
     --clx-accent-subtle:  #ede9fe;
     --clx-accent-text:    #ffffff;
@@ -200,6 +230,7 @@
     --clx-text-secondary: #7a3450;
     --clx-text-muted:     #a86278;
     --clx-accent:         #be123c;
+    --clx-accent-rgb:     190, 18, 60;
     --clx-accent-hover:   #9f1239;
     --clx-accent-subtle:  #ffe4e6;
     --clx-accent-text:    #ffffff;
@@ -262,6 +293,20 @@ body {
     /* height: 60px and z-index: 1000 preserved via existing CSS */
 }
 
+/* Safe area insets for notched phones (iPhone X+, Dynamic Island) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .bottom-toolbar {
+        padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+        height: calc(60px + env(safe-area-inset-bottom)) !important;
+    }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    body {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+    }
+}
+
 .toolbar-item {
     color: var(--clx-text-secondary) !important;
     transition: color 0.15s !important;
@@ -302,8 +347,8 @@ body {
 .clx-panel {
     background: var(--clx-bg-surface);
     border: 1px solid var(--clx-border);
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-radius: var(--clx-radius-md);
+    box-shadow: var(--clx-shadow-md);
     background-image: none;
 }
 
@@ -398,6 +443,16 @@ button.btn-sm {
     font-size: 12px !important;
 }
 
+/* Minimum 44px touch target on touch devices */
+@media (pointer: coarse) {
+    .btn-sm,
+    button.btn-sm {
+        padding: 10px 14px !important;
+        min-height: 44px !important;
+        font-size: 13px !important;
+    }
+}
+
 /* Focus visible — all interactive elements */
 button:focus-visible,
 a:focus-visible,
@@ -406,6 +461,33 @@ select:focus-visible,
 textarea:focus-visible {
     outline: 2px solid var(--clx-focus) !important;
     outline-offset: 2px !important;
+}
+
+/* Disabled state for all interactive elements */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Base link styles */
+a {
+    color: var(--clx-accent);
+    text-decoration: none;
+    transition: opacity var(--clx-transition-base, 0.15s ease);
+}
+a:hover {
+    text-decoration: underline;
+    opacity: 0.82;
+}
+a:focus-visible {
+    outline: 2px solid var(--clx-focus);
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
 /* =========================================================
@@ -445,7 +527,7 @@ select:focus,
 textarea:focus {
     border-color: var(--clx-accent) !important;
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(15,116,144,0.12) !important;
+    box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.12) !important;
 }
 
 input::placeholder,
@@ -472,7 +554,24 @@ textarea::placeholder {
 [data-theme="dark"] input:focus,
 [data-theme="dark"] select:focus,
 [data-theme="dark"] textarea:focus {
-    box-shadow: 0 0 0 3px rgba(34,168,196,0.15) !important;
+    box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.15) !important;
+}
+
+/* iOS auto-zoom prevention — inputs must be ≥16px on touch devices */
+@media (pointer: coarse) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"],
+    input[type="url"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
 }
 
 /* =========================================================
@@ -713,8 +812,8 @@ h3.section-title,
 .bsn-confirm-modal {
     background: var(--clx-bg-surface) !important;
     border: 1px solid var(--clx-border) !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
-    border-radius: 10px !important;
+    box-shadow: var(--clx-shadow-xl) !important;
+    border-radius: var(--clx-radius-md) !important;
 }
 
 .bsn-confirm-modal h3 {
@@ -734,7 +833,7 @@ h3.section-title,
 
 .bsn-confirm-modal .bsn-modal-input:focus {
     border-color: var(--clx-accent) !important;
-    box-shadow: 0 0 0 3px rgba(15,116,144,0.12) !important;
+    box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.12) !important;
     outline: none !important;
 }
 
@@ -824,6 +923,18 @@ label {
     opacity: 0.7 !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
+}
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* =========================================================

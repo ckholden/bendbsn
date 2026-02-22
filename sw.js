@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v113';
+const CACHE_VERSION = 'v115';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -46,6 +46,7 @@ const DEV_MODE = false;
 
 // Resources to cache for offline use
 const OFFLINE_URLS = [
+    '/offline/',
     '/home/',
     '/app/',
     '/chat/',
@@ -73,7 +74,8 @@ const OFFLINE_URLS = [
     '/android-chrome-192x192.png'
 ];
 
-// URLs to always fetch fresh (stale-while-revalidate pattern)
+// Network-first strategy: fetch from network, fall back to cache on failure.
+// Named STALE_WHILE_REVALIDATE historically but behaves as network-first.
 const STALE_WHILE_REVALIDATE = [
     '/index.html',
     '/home/index.html',
@@ -94,7 +96,9 @@ self.addEventListener('install', (event) => {
         caches.open(CACHE_NAME)
             .then((cache) => cache.addAll(OFFLINE_URLS))
             .then(() => self.skipWaiting())
-            .catch(() => { /* Install failed */ })
+            .catch((err) => {
+                console.error('[SW] Install cache failed:', err);
+            })
     );
 });
 
@@ -170,7 +174,7 @@ self.addEventListener('fetch', (event) => {
                 .catch(() => {
                     // Offline fallback - return cached version
                     return caches.match(event.request).then(cachedResponse => {
-                        return cachedResponse || caches.match('/home/');
+                        return cachedResponse || caches.match('/offline/');
                     });
                 })
         );

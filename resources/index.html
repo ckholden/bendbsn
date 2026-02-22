@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -19,6 +19,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js" as="script">
     <!-- Preconnect hints for faster external resource loading -->
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
@@ -1107,7 +1110,7 @@
 
             <div class="grid" id="resourceGrid">
                 <!-- Drug Information -->
-                <div class="card resource-card collapsible collapsed" data-tags="drugs medication pharma reference">
+                <div id="section-drug-lookup" class="card resource-card collapsible collapsed" data-tags="drugs medication pharma reference">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>💊 Drug Information</h2>
                         <span class="expand-icon">▼</span>
@@ -1162,7 +1165,7 @@
                     </div>
 
                 <!-- Vital Signs -->
-                <div class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges">
+                <div id="section-vital-signs" class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>❤️ Vital Signs Normal Ranges</h2>
                         <span class="expand-icon">▼</span>
@@ -1189,7 +1192,7 @@
                 </div>
 
                 <!-- IV Calculations -->
-                <div class="card resource-card collapsible collapsed" data-tags="calculations iv drip math clinical">
+                <div id="section-iv-drip" class="card resource-card collapsible collapsed" data-tags="calculations iv drip math clinical">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>💉 IV Drip Rate Calculator</h2>
                         <span class="expand-icon">▼</span>
@@ -1231,7 +1234,7 @@
                 </div>
 
                 <!-- Dosage Calculator -->
-                <div class="card resource-card collapsible collapsed" data-tags="calculations dosage math meds">
+                <div id="section-dosage-calculator" class="card resource-card collapsible collapsed" data-tags="calculations dosage math meds">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>💊 Dosage Calculator</h2>
                         <span class="expand-icon">▼</span>
@@ -1282,7 +1285,7 @@
                 </div>
 
                 <!-- Common Abbreviations -->
-                <div class="card resource-card collapsible collapsed" data-tags="study abbreviations documentation">
+                <div id="section-abbreviations" class="card resource-card collapsible collapsed" data-tags="study abbreviations documentation">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>📝 Common Abbreviations</h2>
                         <span class="expand-icon">▼</span>
@@ -1318,7 +1321,7 @@
                 </div>
 
                 <!-- Clinical Prep -->
-                <div class="card resource-card collapsible collapsed" data-tags="clinical study sim prep planner">
+                <div id="section-clinical-prep" class="card resource-card collapsible collapsed" data-tags="clinical study sim prep planner">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🗂️ Clinical Prep & Sim Lab</h2>
                         <span class="expand-icon">▼</span>
@@ -1346,7 +1349,7 @@
                 </div>
 
                 <!-- Clinical Toolkit -->
-                <div class="card resource-card collapsible collapsed" data-tags="clinical toolkit vitals pain apgar sbar handoff">
+                <div id="section-clinical-toolkit" class="card resource-card collapsible collapsed" data-tags="clinical toolkit vitals pain apgar sbar handoff">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🩺 Clinical Toolkit</h2>
                         <span class="expand-icon">▼</span>
@@ -1534,7 +1537,7 @@
                 </div>
 
                 <!-- NANDA Diagnoses Quick Reference -->
-                <div class="card resource-card collapsible collapsed" data-tags="nanda diagnoses study care plan">
+                <div id="section-nanda" class="card resource-card collapsible collapsed" data-tags="nanda diagnoses study care plan">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🩺 NANDA Nursing Diagnoses</h2>
                         <span class="expand-icon">▼</span>
@@ -1578,7 +1581,7 @@
                 </div>
 
                 <!-- Procedure Checklists -->
-                <div class="card resource-card collapsible collapsed" data-tags="checklists clinical skills procedures">
+                <div id="section-procedures" class="card resource-card collapsible collapsed" data-tags="checklists clinical skills procedures">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>📋 Procedure Checklists</h2>
                         <span class="expand-icon">▼</span>
@@ -1696,7 +1699,7 @@
                 </div>
 
                 <!-- Medication Timer -->
-                <div class="card resource-card collapsible collapsed" data-tags="timers clinical meds reminders">
+                <div id="section-med-timer" class="card resource-card collapsible collapsed" data-tags="timers clinical meds reminders">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>⏱️ Med Pass Timer</h2>
                         <span class="expand-icon">▼</span>
@@ -1735,7 +1738,7 @@
                 </div>
 
                 <!-- EKG Reference Guide -->
-                <div class="card resource-card collapsible collapsed" data-tags="ekg ecg cardiac arrhythmia rhythm strips">
+                <div id="section-ekg" class="card resource-card collapsible collapsed" data-tags="ekg ecg cardiac arrhythmia rhythm strips">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>💓 EKG/ECG Reference Guide</h2>
                         <span class="expand-icon">▼</span>
@@ -2050,7 +2053,7 @@
                 </div>
 
                 <!-- Additional Resources -->
-                <div class="card resource-card collapsible collapsed" data-tags="study links reference safety">
+                <div id="section-additional-resources" class="card resource-card collapsible collapsed" data-tags="study links reference safety">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🔗 Additional Resources</h2>
                         <span class="expand-icon">▼</span>

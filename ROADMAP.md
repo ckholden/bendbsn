@@ -1,9 +1,10 @@
 # BENDBSN Development Roadmap
 
 ## Current Status
-- **Version:** 1.1
-- **Last Updated:** January 2026
-- **Live URL:** https://bendbsn.com
+- **Version:** 1.1 (SaaS transformation in planning — Feb 2026)
+- **Last Updated:** February 2026
+- **Live URL:** https://bendbsn.com (COCC cohort 9B)
+- **New Platform Domain:** rnotes.app (pending registration) — multi-tenant SaaS for nursing programs
 
 ## Recent Updates
 - See `UPDATES.md` for the detailed change log.
@@ -86,42 +87,66 @@
 
 ## Future Phases (Backlog)
 
-### Phase 3: Multi-Cohort Support (Priority: FUTURE)
-**Goal:** Support multiple nursing cohorts with separate chat channels
+### Phase 3: SaaS Multi-Tenant Platform — ClinicalNotes (Priority: ACTIVE)
+**Goal:** Transform BendBSN into a sellable multi-tenant SaaS platform for nursing programs nationally under the brand "ClinicalNotes" at rnotes.app.
 
-**Database Structure:**
+**Approved Architecture:**
 ```
-/cohorts/
-  /bend-bsn-9b/
-    - name: "Bend BSN Cohort 9B"
-    - startDate: "2024-01"
-    - status: "active" | "graduated"
-  /bend-bsn-10a/
-    - name: "Bend BSN Cohort 10A"
-    ...
+HOSTING: GitHub Actions → Firebase Hosting (replaces GitHub Pages)
+DOMAIN:  rnotes.app (marketing) + {school}.rnotes.app per tenant
 
-/users/{userId}/
-  - cohort: "bend-bsn-9b"
-  - role: "student" | "instructor" | "alumni"
+FIREBASE RTDB (new structure):
+/tenants/{tenantId}/
+  chat/messages, presence, typing, threads
+  community/posts
+  announcements, banned, globalPhrases, loginHistory
 
-/chat/
-  /cohort-{cohortId}/messages/...
-  /global/messages/...  (cross-cohort announcements)
+/userProfiles/{uid}           ← stays at root (rules lookups)
+  tenantId: "cocc-9b"        ← NEW
+  isSchoolAdmin: false        ← NEW
+
+/tenantRegistry/{tenantId}    ← school metadata, plan, Stripe ID
+/tenantConfig/{tenantId}      ← branding: logo, accent color, feature flags
+/appConfig/roles/             ← stays global
 ```
 
-**Features:**
-- [ ] Cohort selection on registration
-- [ ] Cohort-specific group chat
-- [ ] Cross-cohort DMs for networking
-- [ ] Admin: create/manage cohorts
-- [ ] Admin: graduate cohorts to alumni
-- [ ] Cohort-specific announcements
-- [ ] Analytics per cohort
+**Pricing:**
+- Pilot: $0 (free semester, get testimonial)
+- Small (<40 students): $1,200/year
+- Standard (40–100): $2,400/year
+- Large (100+): $4,800/year
+- Individual student: $7.99/month or $59/year
 
-**Naming Convention Options:**
-- "Bend BSN 9B" (current)
-- "Bend-2024-Fall"
-- User-defined by admin
+**Phase 1 — Foundation (before any paid school):**
+- [ ] Register rnotes.app domain + Google Workspace (christian@rnotes.app)
+- [ ] Add firebase.json hosting config + GitHub Actions deploy workflow
+- [ ] Remove hardcoded admin email from database.rules.json → isAdmin flag only
+- [ ] Add tenantId: "cocc-9b" to all existing userProfiles
+- [ ] Rewrite database.rules.json with /tenants/{tenantId}/ isolation
+- [ ] Add getTenantId() + loadTenantConfig() + applyTenantBranding() to shared/header.js
+- [ ] Migrate storage keys: bsn9b_ → cnotes_ (with backwards-compat fallback)
+- [ ] Update all Firebase DB refs in HTML files to use tenant path prefix
+- [ ] ToS + Privacy Policy pages live on new domain
+- [ ] Educational disclaimer on all PDF/Word exports
+- [ ] Create Stripe Payment Links (3 tiers)
+
+**Phase 2 — First Pilot School:**
+- [ ] Provision first non-COCC school manually (~80 min)
+- [ ] School admin panel (scoped to tenant)
+- [ ] Subdomain DNS + Firebase Hosting per school
+- [ ] Get testimonial → add to landing page
+
+**Phase 3 — Self-Serve (at ~5 schools):**
+- [ ] Stripe webhook → Cloud Function → auto-provision tenant
+- [ ] Bulk student invite via CSV
+- [ ] Self-serve signup at rnotes.app
+
+**Agent Squad (in .claude/agents/):**
+- `saas-director.md` — supervisor, invoke for any SaaS decisions
+- `saas-tenant-architect.md` — Firebase rules/code implementation
+- `saas-sales-growth.md` — outreach, Stripe, pricing, demo scripts
+- `saas-onboarding.md` — new school provisioning
+- `saas-marketing.md` — landing page, email sequences, positioning
 
 ### Phase 7: Study Tools
 - [ ] Flashcard system (spaced repetition)
@@ -183,11 +208,12 @@ Replace crowded side buttons with a clean bottom bar:
 - [x] Service worker cache versioning (implemented)
 - [x] Firebase listener cleanup (implemented)
 - [x] Error handling with toasts (implemented)
+- [ ] **Remove hardcoded admin email from database.rules.json** (SaaS Phase 1 blocker)
+- [ ] **Migrate GitHub Pages → Firebase Hosting** (SaaS Phase 1 blocker)
+- [ ] **Rename bsn9b_ storage keys → cnotes_** (SaaS Phase 1)
 - [ ] Extract shared components to separate JS file (deferred - inline JS preferred for reliability)
 - [ ] Minify CSS/JS for production
-- [ ] Improve Firebase security rules
 - [ ] Add automated testing
-- [ ] Set up CI/CD pipeline
 
 ---
 
@@ -208,11 +234,15 @@ Replace crowded side buttons with a clean bottom bar:
 ---
 
 ## Notes
-- Firebase project: bendbsn-17377
-- Domain: bendbsn.com (GitHub Pages)
-- EmailJS configured for welcome emails
-- AI powered by Google Apps Script proxy
+- Firebase project: bendbsn-17377 (Blaze plan)
+- Current domain: bendbsn.com (GitHub Pages) — COCC cohort 9B stays here
+- New product domain: rnotes.app (pending registration) → Firebase Hosting
+- Google Workspace: christian@rnotes.app (pending setup)
+- EmailJS configured for welcome emails (needs tenant-aware update)
+- AI powered by Google Apps Script proxy (Groq / Llama 3.3 70B)
+- Stripe: Payment Links for school licensing (not yet set up)
+- FERPA: DPA template needed before first paid school (EDUCAUSE template)
 
 ---
 
-*Last updated by development session - January 2026*
+*Last updated: February 2026 — SaaS transformation planning session*
