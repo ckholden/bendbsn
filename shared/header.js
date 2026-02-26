@@ -326,7 +326,7 @@
         document.getElementById('bsnOnboardExplore').focus();
     }
 
-    initOnboarding();
+    // initOnboarding(); // Removed — no popup
 
 })();
 

@@ -3686,33 +3686,28 @@
             };
 
             try {
-                // Push message
-                directMessagesRef.child(conversationId + '/messages').push(messageData);
-
-                // Store participants with both UIDs and names for robust lookups
                 const currentUid = getCurrentUserUid();
                 const partnerUid = userUidCache[partnerName] || null;
 
-                const participantsData = {
-                    user1: displayName,
-                    user2: partnerName
-                };
+                // Generate a message key without writing yet
+                const msgKey = directMessagesRef.child(conversationId + '/messages').push().key;
 
-                // Add UIDs if available (improves privacy and prevents name collision)
-                if (currentUid) {
-                    participantsData.user1_uid = currentUid;
-                }
-                if (partnerUid) {
-                    participantsData.user2_uid = partnerUid;
-                }
-
-                directMessagesRef.child(conversationId + '/participants').update(participantsData);
-
-                // Update last message for conversation list
-                directMessagesRef.child(conversationId + '/lastMessage').set({
+                // Atomic multi-path write: participants + message + lastMessage all at once
+                const updates = {};
+                updates[conversationId + '/participants/user1'] = displayName;
+                updates[conversationId + '/participants/user2'] = partnerName;
+                if (currentUid) updates[conversationId + '/participants/user1_uid'] = currentUid;
+                if (partnerUid) updates[conversationId + '/participants/user2_uid'] = partnerUid;
+                updates[conversationId + '/messages/' + msgKey] = messageData;
+                updates[conversationId + '/lastMessage'] = {
                     text: text,
                     timestamp: Date.now(),
                     sender: displayName
+                };
+
+                directMessagesRef.update(updates).catch((error) => {
+                    console.error('Chat: Error sending DM:', error);
+                    showToast('Failed to send message: ' + error.message, 'error');
                 });
 
                 input.value = '';

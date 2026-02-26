@@ -1072,7 +1072,7 @@
                 <div class="form-group" style="min-width:160px;flex:1.2;">
                     <label>Time</label>
                     <div style="display:flex;gap:4px;align-items:center;">
-                        <input type="time" id="noteTime" step="60" style="font-family:monospace;flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+                        <input type="text" id="noteTime" placeholder="HHMM" maxlength="5" style="font-family:monospace;flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
                         <button type="button" onclick="setNoteTimeNow()" title="Set to now" style="padding:6px 8px;background:#e0f2fe;border:1px solid #bae6fd;border-radius:5px;color:#0369a1;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">Now</button>
                         <button type="button" onclick="adjustNoteTime(-30)" title="-30 min" style="padding:6px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:5px;color:#475569;font-size:11px;font-weight:600;cursor:pointer;">-30</button>
                         <button type="button" onclick="adjustNoteTime(15)" title="+15 min" style="padding:6px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:5px;color:#475569;font-size:11px;font-weight:600;cursor:pointer;">+15</button>
@@ -1382,8 +1382,7 @@
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Time Given</label>
-                        <input type="text" id="medTimeText" placeholder="N=now" style="display:none; width: 100%; padding: 8px; font-size: 13px;">
-                        <input type="time" id="medTime" style="width: 100%; padding: 8px; font-size: 13px;" onfocus="showMedTimeShortcut()" onblur="hideMedTimeShortcut()">
+                        <input type="text" id="medTime" placeholder="HHMM or N=now" maxlength="5" style="font-family:monospace;width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Indication</label>
@@ -4791,7 +4790,21 @@
 
         function setupDateTimeShortcuts() {
             const dateInput = document.getElementById('noteDate');
-            // noteTime is now <input type="time"> — handled by initNoteTime() and quick buttons
+
+            // noteTime is a text input — parse shortcuts (N=now, N-30, HHMM, HH:MM) on blur/Enter
+            const timeInput = document.getElementById('noteTime');
+            if (timeInput) {
+                timeInput.addEventListener('blur', function() {
+                    if (this.value.trim()) this.value = parseTimeInput(this.value);
+                });
+                timeInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (this.value.trim()) this.value = parseTimeInput(this.value);
+                        this.blur();
+                    }
+                });
+            }
 
             if (dateInput) {
                 // Set initial value to today
@@ -4958,7 +4971,7 @@
         const AUTOSAVE_DELAY = 800;
         let autosaveTimer = null;
 
-        const DRAFT_EXCLUDE = new Set(['medName','medDose','medFreq','medRoute','medSite','medTime','medTimeText','medIndication','medPrnParams','medEffect','drugDropdown','lineType','lineLocation','lineSize','lineStatus','lineOutput','lineDressing','lineNotes']);
+        const DRAFT_EXCLUDE = new Set(['medName','medDose','medFreq','medRoute','medSite','medTime','medIndication','medPrnParams','medEffect','drugDropdown','lineType','lineLocation','lineSize','lineStatus','lineOutput','lineDressing','lineNotes']);
         function collectDraftFields() {
             const container = document.querySelector('.form-container');
             if (!container) return {};
@@ -5217,17 +5230,17 @@
         function setNoteTimeNow() {
             const el = document.getElementById('noteTime');
             if (!el) return;
-            const now = new Date();
-            el.value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+            el.value = formatTimeDisplay(new Date());
         }
 
         function adjustNoteTime(deltaMins) {
             const el = document.getElementById('noteTime');
             if (!el) return;
-            const parts = (el.value || '00:00').split(':').map(Number);
-            const h = parts[0] || 0, m = parts[1] || 0;
+            const val = el.value.replace(':', '') || '0000';
+            const h = parseInt(val.slice(0,2)) || 0;
+            const m = parseInt(val.slice(2,4)) || 0;
             const total = ((h * 60 + m + deltaMins) % 1440 + 1440) % 1440;
-            el.value = String(Math.floor(total/60)).padStart(2,'0') + ':' + String(total%60).padStart(2,'0');
+            el.value = String(Math.floor(total/60)).padStart(2,'0') + String(total%60).padStart(2,'0');
         }
 
         function initNoteTime() {
