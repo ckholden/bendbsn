@@ -3448,20 +3448,34 @@
 
                 let remaining = convIds.length;
 
+                const finalize = () => {
+                    remaining--;
+                    if (remaining === 0) {
+                        dmConversations.sort((a, b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
+                        dmUnreadCount = dmConversations.filter(c => c.unread && c.lastMessage?.sender !== displayName).length;
+                        updateGlobalUnreadBadge();
+                        renderDMConversationList();
+                        renderDMSidebar();
+                    }
+                };
+
                 convIds.forEach(convId => {
                     directMessagesRef.child(convId).once('value', (convSnap) => {
                         if (convSnap.exists()) {
                             const data = convSnap.val();
                             const participants = data.participants || {};
+                            const myLower = (displayName || '').toLowerCase();
+                            const myUserLower = (currentUsername || '').toLowerCase();
 
-                            // Find partner name
+                            // Find partner name with null guard
                             let partnerName = '';
                             Object.keys(participants).forEach(key => {
                                 if (key.endsWith('_uid')) return;
                                 const p = participants[key];
-                                if (p && p.toLowerCase() !== displayName.toLowerCase() && p.toLowerCase() !== currentUsername.toLowerCase()) {
-                                    partnerName = p;
-                                }
+                                if (!p) return;
+                                const pLower = p.toLowerCase();
+                                if ((myLower && pLower === myLower) || (myUserLower && pLower === myUserLower)) return;
+                                partnerName = p;
                             });
 
                             // Find partner UID
@@ -3480,13 +3494,10 @@
                                 });
                             }
                         }
-
-                        remaining--;
-                        if (remaining === 0) {
-                            dmConversations.sort((a, b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
-                            renderDMConversationList();
-                            renderDMSidebar();
-                        }
+                        finalize();
+                    }, (error) => {
+                        console.error('Chat: Could not load conversation', convId, error);
+                        finalize();
                     });
                 });
             });
@@ -3686,24 +3697,33 @@
                 const currentUid = getCurrentUserUid();
                 const partnerUid = userUidCache[partnerName] || null;
 
+                // Capture timestamp once for consistency between message and lastMessage
+                const nowTs = Date.now();
+                messageData.timestamp = nowTs;
+
                 // Generate a message key without writing yet
                 const msgKey = directMessagesRef.child(conversationId + '/messages').push().key;
 
-                // Atomic root-level multi-path write: participants + message + lastMessage + userDMs index
+                // Atomic root-level multi-path write: message + lastMessage + userDMs index
                 const updates = {};
-                updates['directMessages/' + conversationId + '/participants/user1'] = displayName;
-                updates['directMessages/' + conversationId + '/participants/user2'] = partnerName;
-                if (currentUid) updates['directMessages/' + conversationId + '/participants/user1_uid'] = currentUid;
-                if (partnerUid) updates['directMessages/' + conversationId + '/participants/user2_uid'] = partnerUid;
+
+                // Only write participants if this is a new conversation (no UID data yet)
+                if (!currentDMConversation.partnerUid) {
+                    updates['directMessages/' + conversationId + '/participants/user1'] = displayName;
+                    updates['directMessages/' + conversationId + '/participants/user2'] = partnerName;
+                    if (currentUid) updates['directMessages/' + conversationId + '/participants/user1_uid'] = currentUid;
+                    if (partnerUid) updates['directMessages/' + conversationId + '/participants/user2_uid'] = partnerUid;
+                    // Index conversation under each participant's UID
+                    if (currentUid) updates['userDMs/' + currentUid + '/' + conversationId] = true;
+                    if (partnerUid) updates['userDMs/' + partnerUid + '/' + conversationId] = true;
+                }
+
                 updates['directMessages/' + conversationId + '/messages/' + msgKey] = messageData;
                 updates['directMessages/' + conversationId + '/lastMessage'] = {
                     text: text,
-                    timestamp: Date.now(),
+                    timestamp: nowTs,
                     sender: displayName
                 };
-                // Index conversation under each participant's UID so they can list their convs
-                if (currentUid) updates['userDMs/' + currentUid + '/' + conversationId] = true;
-                if (partnerUid) updates['userDMs/' + partnerUid + '/' + conversationId] = true;
 
                 database.ref().update(updates).catch((error) => {
                     console.error('Chat: Error sending DM:', error);
@@ -3768,8 +3788,9 @@
                             if (chatMode !== 'dm' || currentDMConversation?.conversationId !== convId) {
                                 playNotificationSound();
                             }
-                            // Refresh DM list
-                            loadDMConversations();
+                            // Refresh DM list (debounced to avoid cascading reloads on bursts)
+                            clearTimeout(window._dmReloadTimer);
+                            window._dmReloadTimer = setTimeout(loadDMConversations, 500);
                         }
                     }
                 } catch (e) {
@@ -4125,44 +4146,7 @@
         loadGroupChats();
         loadChannelMembership();
 
-        // Set up initial DM unread
-        directMessagesRef.once('value', (snapshot) => {
-            if (!snapshot.exists()) return;
-            let totalUnread = 0;
-            const currentUid = getCurrentUserUid();
-
-            snapshot.forEach((child) => {
-                const data = child.val();
-                const participants = data.participants || {};
-
-                // Check if current user is participant (by UID or name)
-                const isParticipantByUid = currentUid && (
-                    participants.user1_uid === currentUid ||
-                    participants.user2_uid === currentUid
-                );
-
-                const isParticipantByName = Object.keys(participants).some(key => {
-                    if (key.endsWith('_uid')) return false; // Skip UID keys
-                    const p = participants[key];
-                    return p && (
-                        p.toLowerCase() === displayName.toLowerCase() ||
-                        p.toLowerCase() === currentUsername.toLowerCase()
-                    );
-                });
-
-                const isParticipant = isParticipantByUid || isParticipantByName;
-
-                if (isParticipant && data.lastMessage && data.lastMessage.sender !== displayName) {
-                    const lastRead = dmLastReadTimestamps[child.key] || 0;
-                    if (data.lastMessage.timestamp > lastRead) {
-                        totalUnread++;
-                    }
-                }
-            });
-            dmUnreadCount = totalUnread;
-            updateGlobalUnreadBadge();
-            renderDMSidebar();
-        });
+        // DM unread count is now computed inside loadDMConversations() — no separate scan needed
 
         // BUG-5: setupChannelUnreadListeners() is now called from inside loadChannels()
         // after channels are confirmed loaded — no longer needs a guessed 2s setTimeout.

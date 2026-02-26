@@ -4831,12 +4831,12 @@
             const medTimeInput = document.getElementById('medTime');
             if (medTimeInput) {
                 medTimeInput.addEventListener('blur', function() {
-                    this.value = parseTimeInput(this.value);
+                    if (this.value.trim()) this.value = parseTimeInput(this.value);
                 });
                 medTimeInput.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        this.value = parseTimeInput(this.value);
+                        if (this.value.trim()) this.value = parseTimeInput(this.value);
                         this.blur();
                     }
                 });
@@ -5574,7 +5574,7 @@
 
         function clearForm() {
             showConfirmModal('Clear Form', 'Clear all fields?', function() {
-                document.querySelectorAll('input:not([type="date"]):not([type="time"]), textarea').forEach(el => el.value = '');
+                document.querySelectorAll('input:not([type="date"]), textarea').forEach(el => el.value = '');
                 // Reset select elements to first option
                 document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
                 document.getElementById('noteDate').value = formatDateDisplay(new Date());
@@ -5628,9 +5628,9 @@
             const roleObj = (_rolesConfig || {})[roleId] || {};
             const roleYear = (roleObj.requires_year && document.getElementById('noteYear')) ? document.getElementById('noteYear').value : null;
             const credentials = roleYear ? (roleObj.label + ' (' + roleYear + ')') : (roleObj.label || roleId || '');
-            // noteTime is now HH:MM from <input type="time">; convert to HHMM for filename/exports
+            // noteTime is HHMM (text input); strip colon defensively for values entered as HH:MM
             const rawTime = (document.getElementById('noteTime') || {}).value || '';
-            const noteTimeDisplay = rawTime || new Date().toTimeString().slice(0, 5);
+            const noteTimeDisplay = rawTime || formatTimeDisplay(new Date());
             const noteTime = noteTimeDisplay.replace(':', '');
             return {
                 nurseName: nurseName,

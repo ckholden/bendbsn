@@ -186,7 +186,9 @@
     "userDMs": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null"
+        "$convId": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('directMessages').child($convId).child('participants').child('user1_uid').val() === auth.uid || root.child('directMessages').child($convId).child('participants').child('user2_uid').val() === auth.uid)"
+        }
       }
     }
   }
