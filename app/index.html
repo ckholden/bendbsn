@@ -1180,42 +1180,49 @@
                     </div>
                 </div>
                 <div id="vitalsContent" style="display: none;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
-                    <div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                    <!-- BP: two 3-digit inputs -->
+                    <div style="flex: 0 0 auto;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">BP (sys/dia)</label>
-                        <div style="display: flex; gap: 4px;">
-                            <input type="number" id="vsBpSys" placeholder="120" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="40" max="300" step="1" inputmode="numeric" maxlength="3">
-                            <span style="line-height: 36px;">/</span>
-                            <input type="number" id="vsBpDia" placeholder="80" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="20" max="200" step="1" inputmode="numeric" maxlength="3">
+                        <div style="display: flex; gap: 3px; align-items: center;">
+                            <input type="number" id="vsBpSys" placeholder="120" style="width: 52px; padding: 8px 4px; font-size: 14px; text-align: center;" min="40" max="300" step="1" inputmode="numeric">
+                            <span style="font-weight: 700; color: #555;">/</span>
+                            <input type="number" id="vsBpDia" placeholder="80" style="width: 52px; padding: 8px 4px; font-size: 14px; text-align: center;" min="20" max="200" step="1" inputmode="numeric">
                         </div>
                     </div>
-                    <div>
+                    <!-- HR: 3-digit -->
+                    <div style="flex: 0 0 56px;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">HR</label>
-                        <input type="number" id="vsHr" placeholder="72" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="20" max="250" step="1" inputmode="numeric" maxlength="3">
+                        <input type="number" id="vsHr" placeholder="72" style="width: 100%; padding: 8px 4px; font-size: 14px; text-align: center;" min="20" max="250" step="1" inputmode="numeric">
                     </div>
-                    <div>
+                    <!-- RR: 2-digit -->
+                    <div style="flex: 0 0 50px;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">RR</label>
-                        <input type="number" id="vsRr" placeholder="16" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="4" max="60" step="1" inputmode="numeric" maxlength="2">
+                        <input type="number" id="vsRr" placeholder="16" style="width: 100%; padding: 8px 4px; font-size: 14px; text-align: center;" min="4" max="60" step="1" inputmode="numeric">
                     </div>
-                    <div>
+                    <!-- Temp: decimal + toggle -->
+                    <div style="flex: 0 0 auto;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Temp <span id="vsTempUnitLabel">°F</span></label>
                         <div style="display: flex; gap: 4px; align-items: center;">
-                            <input type="number" id="vsTemp" placeholder="98.6" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="90" max="110" step="0.1" inputmode="decimal" maxlength="5">
+                            <input type="number" id="vsTemp" placeholder="98.6" style="width: 62px; padding: 8px 4px; font-size: 14px; text-align: center;" min="90" max="110" step="0.1" inputmode="decimal">
                             <button id="vsTempToggle" onclick="toggleTempUnit()" style="background: #2e7d32; color: white; border: none; padding: 6px 6px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 700; white-space: nowrap; line-height: 1;" title="Switch between °F and °C">→°C</button>
                         </div>
                     </div>
-                    <div>
+                    <!-- Wt: decimal + toggle -->
+                    <div style="flex: 0 0 auto;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Wt <span id="vsWeightUnitLabel">lbs</span></label>
                         <div style="display: flex; gap: 4px; align-items: center;">
-                            <input type="number" id="vsWeight" placeholder="150" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="1" max="1500" step="0.1" inputmode="decimal">
+                            <input type="number" id="vsWeight" placeholder="150" style="width: 62px; padding: 8px 4px; font-size: 14px; text-align: center;" min="1" max="1500" step="0.1" inputmode="decimal">
                             <button id="vsWeightToggle" onclick="toggleWeightUnit()" style="background: #2e7d32; color: white; border: none; padding: 6px 6px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 700; white-space: nowrap; line-height: 1;" title="Switch between lbs and kg">→kg</button>
                         </div>
                     </div>
-                    <div>
+                    <!-- O2%: 2-3 digit -->
+                    <div style="flex: 0 0 54px;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">O2%</label>
-                        <input type="number" id="vsO2" placeholder="98" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="50" max="100" step="1" inputmode="numeric" maxlength="3">
+                        <input type="number" id="vsO2" placeholder="98" style="width: 100%; padding: 8px 4px; font-size: 14px; text-align: center;" min="50" max="100" step="1" inputmode="numeric">
                     </div>
-                    <div>
+                    <!-- O2 Delivery: wide select, fills remaining space -->
+                    <div style="flex: 1 1 140px; min-width: 140px;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">O2 Delivery</label>
                         <select id="vsO2Source" style="width: 100%; padding: 8px; font-size: 11px;">
                             <option value="RA">RA (Room Air)</option>
@@ -1243,13 +1250,15 @@
                             </optgroup>
                         </select>
                     </div>
-                    <div>
+                    <!-- Pain: 2-digit -->
+                    <div style="flex: 0 0 54px;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Pain (0-10)</label>
-                        <input type="number" id="vsPain" placeholder="0" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="0" max="10" step="1" inputmode="numeric" maxlength="2">
+                        <input type="number" id="vsPain" placeholder="0" style="width: 100%; padding: 8px 4px; font-size: 14px; text-align: center;" min="0" max="10" step="1" inputmode="numeric">
                     </div>
-                    <div>
+                    <!-- Ht: 2-3 digit -->
+                    <div style="flex: 0 0 56px;">
                         <label style="font-size: 11px; color: #2e7d32; font-weight: 600;">Ht (in)</label>
-                        <input type="number" id="vsHeight" placeholder="66" style="width: 100%; padding: 8px; font-size: 14px; text-align: center;" min="20" max="100" step="0.5" inputmode="decimal">
+                        <input type="number" id="vsHeight" placeholder="66" style="width: 100%; padding: 8px 4px; font-size: 14px; text-align: center;" min="20" max="100" step="0.5" inputmode="decimal">
                     </div>
                 </div>
                 <p style="margin-top: 8px; font-size: 11px; color: #558b2f;">Click "Save for Export" to save vitals to include in PDF/Word export, or "Insert Now" to add directly to your current text field.</p>
@@ -5581,6 +5590,9 @@
                 document.getElementById('noteTime').value = formatTimeDisplay(new Date());
                 selectedDiagnoses = [];
                 renderDiagnoses();
+                // Clear saved vitals
+                savedVitals = [];
+                renderSavedVitals();
                 // Clear saved medications display
                 savedMedications = [];
                 renderSavedMedications();
@@ -5718,6 +5730,12 @@
             if (d.patientDemo) out.push(`Demographics: ${d.patientDemo}`);
             if (d.focus && ['dar','darp'].includes(currentNoteType)) out.push(`Focus: ${d.focus}`);
             out.push('');
+            const vitalsText = getVitalsText();
+            if (vitalsText) {
+                out.push('Vital Signs:');
+                out.push(vitalsText);
+                out.push('');
+            }
             nc.forEach(item => {
                 const label = item.l ? `${item.l} - ${item.t}` : item.t;
                 out.push(label + ':');
