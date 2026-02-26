@@ -679,6 +679,9 @@
             }
 
             try {
+                // Prevent onAuthStateChanged from redirecting mid-registration
+                _preventAuthRedirect = true;
+
                 // Create user with Firebase Auth
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
@@ -718,19 +721,16 @@
                 const welcomeSent = await sendWelcomeEmail(name, email);
                 database.ref('userProfiles/' + user.uid).update({ welcomeEmailSent: welcomeSent }).catch(() => {});
 
-                // Clear form and close modal
-                document.getElementById('regName').value = '';
-                document.getElementById('regRole').value = '';
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regPassword').value = '';
-                regBtn.disabled = false;
-                regBtn.innerHTML = 'Submit Registration';
-                hideRegisterModal();
-
-                // Show success message
-                showToast('Registration Successful! Your account has been created. You can now log in with your email and password.', 'success', 5000);
+                // Registration complete — navigate now that profile is written
+                _preventAuthRedirect = false;
+                localStorage.setItem('bendbsn_auth', 'true');
+                localStorage.setItem('bendbsn_user', user.email || '');
+                localStorage.setItem('bendbsn_displayName', name);
+                localStorage.setItem('bendbsn_uid', user.uid || '');
+                window.location.href = '/home/';
 
             } catch (error) {
+                _preventAuthRedirect = false;
                 console.error('Registration error:', error.code, error.message);
                 let message = 'Error creating account. Please try again.';
                 if (error.code === 'auth/email-already-in-use') {
@@ -1299,7 +1299,9 @@
 
             // Log to Firebase
             const loginRef = database.ref('loginHistory');
+            const currentUid = (auth.currentUser && auth.currentUser.uid) || '';
             const payload = {
+                uid: currentUid,
                 username: safeUsername,
                 displayName: safeDisplayName,
                 timestamp: timestamp,
