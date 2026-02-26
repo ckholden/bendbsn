@@ -3422,76 +3422,73 @@
 
             container.innerHTML = '<p style="color: var(--text-secondary); font-size: 12px; text-align: center;">Loading...</p>';
 
-            directMessagesRef.once('value', (snapshot) => {
+            const currentUid = getCurrentUserUid();
+            if (!currentUid) {
+                // UID not ready yet — retry after short delay
+                setTimeout(loadDMConversations, 500);
+                return;
+            }
+
+            // Use userDMs index: only read this user's conversation IDs
+            database.ref('userDMs/' + currentUid).once('value', (indexSnap) => {
                 dmConversations = [];
 
-                if (snapshot.exists()) {
-                    const currentUid = getCurrentUserUid();
+                if (!indexSnap.exists()) {
+                    renderDMConversationList();
+                    renderDMSidebar();
+                    return;
+                }
 
-                    snapshot.forEach((child) => {
-                        const convId = child.key;
-                        const data = child.val();
-                        if (!data) return;
+                const convIds = Object.keys(indexSnap.val() || {});
+                if (convIds.length === 0) {
+                    renderDMConversationList();
+                    renderDMSidebar();
+                    return;
+                }
 
-                        const participants = data.participants || {};
+                let remaining = convIds.length;
 
-                        // Check if current user is participant (by UID or name)
-                        const isParticipantByUid = currentUid && (
-                            participants.user1_uid === currentUid ||
-                            participants.user2_uid === currentUid
-                        );
+                convIds.forEach(convId => {
+                    directMessagesRef.child(convId).once('value', (convSnap) => {
+                        if (convSnap.exists()) {
+                            const data = convSnap.val();
+                            const participants = data.participants || {};
 
-                        const isParticipantByName = Object.keys(participants).some(key => {
-                            if (key.endsWith('_uid')) return false; // Skip UID keys
-                            const p = participants[key];
-                            return p && (
-                                p.toLowerCase() === displayName.toLowerCase() ||
-                                p.toLowerCase() === currentUsername.toLowerCase()
-                            );
-                        });
-
-                        const isParticipant = isParticipantByUid || isParticipantByName;
-
-                        if (isParticipant && data.lastMessage) {
-                            // Find partner name (the other participant)
+                            // Find partner name
                             let partnerName = '';
-
                             Object.keys(participants).forEach(key => {
-                                if (key.endsWith('_uid')) return; // Skip UID keys
+                                if (key.endsWith('_uid')) return;
                                 const p = participants[key];
                                 if (p && p.toLowerCase() !== displayName.toLowerCase() && p.toLowerCase() !== currentUsername.toLowerCase()) {
                                     partnerName = p;
                                 }
                             });
 
-                            // Fallback: If no partner name found, try to extract from conversation ID
-                            if (!partnerName) {
-                                partnerName = 'Unknown User';
-                            }
-
-                            // Extract partner UID from participants
-                            const myUid = getCurrentUserUid();
+                            // Find partner UID
                             let partnerUid = null;
-                            if (myUid) {
-                                if (participants.user1_uid && participants.user2_uid) {
-                                    partnerUid = participants.user1_uid === myUid ? participants.user2_uid : participants.user1_uid;
-                                }
+                            if (participants.user1_uid && participants.user2_uid) {
+                                partnerUid = participants.user1_uid === currentUid ? participants.user2_uid : participants.user1_uid;
                             }
 
-                            dmConversations.push({
-                                conversationId: convId,
-                                partnerName: partnerName,
-                                partnerUid: partnerUid,
-                                lastMessage: data.lastMessage,
-                                unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
-                            });
+                            if (partnerName && data.lastMessage) {
+                                dmConversations.push({
+                                    conversationId: convId,
+                                    partnerName: partnerName,
+                                    partnerUid: partnerUid,
+                                    lastMessage: data.lastMessage,
+                                    unread: !dmLastReadTimestamps[convId] || data.lastMessage.timestamp > dmLastReadTimestamps[convId]
+                                });
+                            }
+                        }
+
+                        remaining--;
+                        if (remaining === 0) {
+                            dmConversations.sort((a, b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
+                            renderDMConversationList();
+                            renderDMSidebar();
                         }
                     });
-                }
-
-                dmConversations.sort((a, b) => (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0));
-                renderDMConversationList();
-                renderDMSidebar();
+                });
             });
         }
 
@@ -3692,20 +3689,23 @@
                 // Generate a message key without writing yet
                 const msgKey = directMessagesRef.child(conversationId + '/messages').push().key;
 
-                // Atomic multi-path write: participants + message + lastMessage all at once
+                // Atomic root-level multi-path write: participants + message + lastMessage + userDMs index
                 const updates = {};
-                updates[conversationId + '/participants/user1'] = displayName;
-                updates[conversationId + '/participants/user2'] = partnerName;
-                if (currentUid) updates[conversationId + '/participants/user1_uid'] = currentUid;
-                if (partnerUid) updates[conversationId + '/participants/user2_uid'] = partnerUid;
-                updates[conversationId + '/messages/' + msgKey] = messageData;
-                updates[conversationId + '/lastMessage'] = {
+                updates['directMessages/' + conversationId + '/participants/user1'] = displayName;
+                updates['directMessages/' + conversationId + '/participants/user2'] = partnerName;
+                if (currentUid) updates['directMessages/' + conversationId + '/participants/user1_uid'] = currentUid;
+                if (partnerUid) updates['directMessages/' + conversationId + '/participants/user2_uid'] = partnerUid;
+                updates['directMessages/' + conversationId + '/messages/' + msgKey] = messageData;
+                updates['directMessages/' + conversationId + '/lastMessage'] = {
                     text: text,
                     timestamp: Date.now(),
                     sender: displayName
                 };
+                // Index conversation under each participant's UID so they can list their convs
+                if (currentUid) updates['userDMs/' + currentUid + '/' + conversationId] = true;
+                if (partnerUid) updates['userDMs/' + partnerUid + '/' + conversationId] = true;
 
-                directMessagesRef.update(updates).catch((error) => {
+                database.ref().update(updates).catch((error) => {
                     console.error('Chat: Error sending DM:', error);
                     showToast('Failed to send message: ' + error.message, 'error');
                 });
