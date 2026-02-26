@@ -1580,6 +1580,7 @@
             loadPacketList();
         }
         function closeLoadModal() { document.getElementById('loadModal').classList.remove('show'); }
+        function escapeHtml(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
 
         async function loadPacketList() {
             const list = document.getElementById('packetList');
@@ -1595,7 +1596,7 @@
                     const date = data._timestamp ? new Date(data._timestamp).toLocaleDateString() : 'Unknown date';
                     const initials = data._patientInitials || 'N/A';
                     const term = data._term || '';
-                    li.innerHTML = `<div onclick="loadPacket('${id}')" style="flex:1;cursor:pointer"><div class="pkt-info">${initials} - ${term}</div><div class="pkt-date">${date}</div></div><button class="pkt-delete" onclick="event.stopPropagation();deletePacket('${id}')" title="Delete">&#128465;</button>`;
+                    li.innerHTML = `<div onclick="loadPacket('${id}')" style="flex:1;cursor:pointer"><div class="pkt-info">${escapeHtml(initials)} - ${escapeHtml(term)}</div><div class="pkt-date">${escapeHtml(date)}</div></div><button class="pkt-delete" onclick="event.stopPropagation();deletePacket('${id}')" title="Delete">&#128465;</button>`;
                     list.appendChild(li);
                 });
             } catch (e) {

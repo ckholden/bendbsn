@@ -140,17 +140,22 @@
 
     "loginHistory": {
       ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
-      ".write": "auth != null"
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+      "$entry": {
+        ".write": "auth != null && (!newData.exists() || newData.child('uid').val() === auth.uid)"
+      }
     },
 
     "userExportHistory": {
       ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
-      ".write": "auth != null"
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid"
+      }
     },
 
     "notificationLog": {
       ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
-      ".write": "auth != null"
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
     },
 
     "userLastSeen": {
