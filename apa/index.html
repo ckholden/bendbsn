@@ -823,10 +823,10 @@ Your content will be exported with:
                 try {
                     const snapshot = await userProfilesRef.child(user.uid).once('value');
                     const profile = snapshot.val();
-                    userRole = profile?.role || 'RN Student';
+                    userRole = profile?.role_id || profile?.role || 'student_nurse';
 
                     // Redirect instructors away from this page
-                    if (userRole === 'Instructor') {
+                    if (userRole === 'instructor' || userRole === 'Instructor') {
                         showToast('This tool is only available for students.', 'warning');
                         window.location.href = '/home/';
                         return;
@@ -910,11 +910,11 @@ Your content will be exported with:
                 }
 
                 sortKey = authors.split(',')[0].toLowerCase();
-                refText = `${authors} (${year}). ${title}. <i>${journal}</i>`;
-                if (volume) refText += `, <i>${volume}</i>`;
-                if (pages) refText += `, ${pages}`;
+                refText = `${escapeHtml(authors)} (${escapeHtml(year)}). ${escapeHtml(title)}. <i>${escapeHtml(journal)}</i>`;
+                if (volume) refText += `, <i>${escapeHtml(volume)}</i>`;
+                if (pages) refText += `, ${escapeHtml(pages)}`;
                 refText += '.';
-                if (doi) refText += ` ${doi}`;
+                if (doi) refText += ` ${escapeHtml(doi)}`;
 
                 // Clear form
                 ['journalAuthors', 'journalYear', 'journalTitle', 'journalName', 'journalVolume', 'journalPages', 'journalDoi'].forEach(id => {
@@ -935,10 +935,10 @@ Your content will be exported with:
                 }
 
                 sortKey = authors.split(',')[0].toLowerCase();
-                refText = `${authors} (${year}). <i>${title}</i>`;
-                if (edition) refText += ` (${edition})`;
-                refText += `. ${publisher}.`;
-                if (doi) refText += ` ${doi}`;
+                refText = `${escapeHtml(authors)} (${escapeHtml(year)}). <i>${escapeHtml(title)}</i>`;
+                if (edition) refText += ` (${escapeHtml(edition)})`;
+                refText += `. ${escapeHtml(publisher)}.`;
+                if (doi) refText += ` ${escapeHtml(doi)}`;
 
                 ['bookAuthors', 'bookYear', 'bookTitle', 'bookEdition', 'bookPublisher', 'bookDoi'].forEach(id => {
                     document.getElementById(id).value = '';
@@ -957,9 +957,9 @@ Your content will be exported with:
                 }
 
                 sortKey = authors.split(',')[0].toLowerCase();
-                refText = `${authors} (${date || 'n.d.'}). ${title}`;
-                if (siteName && siteName !== authors) refText += `. <i>${siteName}</i>`;
-                refText += `. ${url}`;
+                refText = `${escapeHtml(authors)} (${escapeHtml(date || 'n.d.')}). ${escapeHtml(title)}`;
+                if (siteName && siteName !== authors) refText += `. <i>${escapeHtml(siteName)}</i>`;
+                refText += `. ${escapeHtml(url)}`;
 
                 ['websiteAuthors', 'websiteDate', 'websiteTitle', 'websiteName', 'websiteUrl'].forEach(id => {
                     document.getElementById(id).value = '';
@@ -980,11 +980,11 @@ Your content will be exported with:
                 }
 
                 sortKey = authors.split(',')[0].toLowerCase();
-                refText = `${authors} (${year}). ${title}. In `;
-                if (editors) refText += `${editors}, `;
-                refText += `<i>${bookTitle}</i>`;
-                if (pages) refText += ` (${pages})`;
-                refText += `. ${publisher}.`;
+                refText = `${escapeHtml(authors)} (${escapeHtml(year)}). ${escapeHtml(title)}. In `;
+                if (editors) refText += `${escapeHtml(editors)}, `;
+                refText += `<i>${escapeHtml(bookTitle)}</i>`;
+                if (pages) refText += ` (${escapeHtml(pages)})`;
+                refText += `. ${escapeHtml(publisher)}.`;
 
                 ['chapterAuthors', 'chapterYear', 'chapterTitle', 'chapterEditors', 'chapterBookTitle', 'chapterPages', 'chapterPublisher'].forEach(id => {
                     document.getElementById(id).value = '';

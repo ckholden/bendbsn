@@ -396,6 +396,8 @@
             renderRooms();
         }
 
+        function escapeHtml(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
         function renderRooms() {
             const container = document.getElementById('roomsContainer');
             container.innerHTML = rooms.map((room, index) => `
@@ -403,10 +405,10 @@
                     <div class="room-header">
                         <h4>Room ${index + 1}</h4>
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <input type="text" placeholder="Room # (e.g., 101b)" value="${room.roomNumber || ''}"
+                            <input type="text" placeholder="Room # (e.g., 101b)" value="${escapeHtml(room.roomNumber || '')}"
                                 onchange="updateRoomNumber(${index}, this.value)"
                                 style="padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; width: 120px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
-                            <input type="text" placeholder="Instructor Name" value="${room.instructor}"
+                            <input type="text" placeholder="Instructor Name" value="${escapeHtml(room.instructor)}"
                                 onchange="updateInstructor(${index}, this.value)"
                                 style="padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; width: 180px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         </div>
@@ -434,8 +436,8 @@
                         room.entries.map((entry, entryIndex) => `
                             <div class="entry-item ${entry.type === 'break' ? 'break' : ''}">
                                 <div>
-                                    <span class="name">${entry.type === 'break' ? '--- BREAK ---' : entry.name}</span>
-                                    <span class="time">${entry.time}</span>
+                                    <span class="name">${entry.type === 'break' ? '--- BREAK ---' : escapeHtml(entry.name)}</span>
+                                    <span class="time">${escapeHtml(entry.time)}</span>
                                 </div>
                                 <button class="btn btn-danger" onclick="removeEntry(${index}, ${entryIndex})">Remove</button>
                             </div>
@@ -513,8 +515,8 @@
 
             let html = `
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: var(--clx-accent); margin-bottom: 5px;">${title}</h2>
-                    <p style="color: var(--clx-text-muted);">${formattedDate}</p>
+                    <h2 style="color: var(--clx-accent); margin-bottom: 5px;">${escapeHtml(title)}</h2>
+                    <p style="color: var(--clx-text-muted);">${escapeHtml(formattedDate)}</p>
                 </div>
             `;
 
@@ -527,7 +529,7 @@
 
                 html += `
                     <div class="preview-room">
-                        <h4>${roomTitle}</h4>
+                        <h4>${escapeHtml(roomTitle)}</h4>
                         <table class="preview-table">
                             <thead>
                                 <tr>
@@ -538,8 +540,8 @@
                             <tbody>
                                 ${room.entries.map(entry => `
                                     <tr class="${entry.type === 'break' ? 'break-row' : ''}">
-                                        <td>${entry.time || '-'}</td>
-                                        <td>${entry.type === 'break' ? 'BREAK' : entry.name}</td>
+                                        <td>${escapeHtml(entry.time || '-')}</td>
+                                        <td>${entry.type === 'break' ? 'BREAK' : escapeHtml(entry.name)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>

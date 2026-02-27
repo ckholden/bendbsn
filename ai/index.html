@@ -861,7 +861,9 @@ Important guidelines:
                 rationaleEl.className = 'quiz-rationale-box ' + (correct ? 'correct' : 'incorrect');
                 const icon = correct ? '&#9989;' : '&#10060;';
                 const result = correct ? 'Correct!' : `Incorrect. The correct answer was <strong>${quizState.correctLetter}</strong>.`;
-                const rationaleHtml = quizState.rationale.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                const rationaleHtml = quizState.rationale
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 rationaleEl.innerHTML = `<div class="quiz-rationale-title">${icon} ${result}</div><div>${rationaleHtml}</div>`;
             }
 
@@ -906,6 +908,7 @@ Important guidelines:
                 if (genBtn) { genBtn.disabled = false; genBtn.textContent = '\uD83D\uDCCB Generate Care Plan'; }
                 if (data.success && data.response) {
                     const formatted = data.response
+                        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\n/g, '<br>');
                     document.getElementById('cpOutput').innerHTML = `<div class="cp-result">${formatted}</div>`;
@@ -943,7 +946,7 @@ Important guidelines:
             msgDiv.innerHTML = `
                 <div style="font-size: 10px; color: #888; margin-bottom: 3px;">${isUser ? 'You' : '\uD83E\uDE7A AI Assistant'}</div>
                 <div class="${isUser ? 'ai-bubble-user' : 'ai-bubble-ai'}" style="padding: 12px 16px; border-radius: ${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'}; max-width: 90%; word-wrap: break-word; font-size: 14px; line-height: 1.5;">
-                    ${isUser ? text.replace(/</g, '&lt;').replace(/>/g, '&gt;') : formattedText}
+                    ${isUser ? text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : formattedText}
                 </div>
             `;
             container.appendChild(msgDiv);
