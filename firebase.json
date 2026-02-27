@@ -13,5 +13,56 @@
         "firebase-debug.*.log"
       ]
     }
-  ]
+  ],
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "database.rules.json",
+      "functions/**",
+      "node_modules/**",
+      ".git/**",
+      "secrets/**",
+      "scripts/**",
+      "_agents/**",
+      "site/**",
+      "README.md",
+      "ROADMAP.md",
+      "CHANGELOG*.md",
+      "UPDATES.md",
+      "SECURITY*.md",
+      "SELLING-IDEAS.md",
+      "CLAUDE.md",
+      "package.json",
+      "package-lock.json",
+      "CNAME",
+      ".gitignore"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        ]
+      },
+      {
+        "source": "sw.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Pragma", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "/shared/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400" }
+        ]
+      }
+    ]
+  }
 }
