@@ -2695,6 +2695,16 @@
             }
         }
 
+        // Escape helper for safe innerHTML rendering
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // Render the history list
         function renderHistoryList(docs) {
             const historyList = document.getElementById('historyList');
@@ -2716,13 +2726,13 @@
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                             <div style="flex: 1; min-width: 200px;">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                    <span style="background: var(--accent); color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${noteTypeNames[doc.noteType] || doc.noteType}</span>
+                                    <span style="background: var(--accent); color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${escapeHtml(noteTypeNames[doc.noteType] || doc.noteType || '')}</span>
                                     <span style="color: var(--text-secondary); font-size: 12px;">${dateStr} at ${timeStr}</span>
                                 </div>
                                 <div style="color: var(--text-primary); font-weight: 600; font-size: 14px; margin-bottom: 4px;">
-                                    ${doc.patientName || 'Unknown Patient'}
+                                    ${escapeHtml(doc.patientName || 'Unknown Patient')}
                                 </div>
-                                ${doc.content && doc.content.unit ? `<div style="color: var(--text-secondary); font-size: 12px;">Unit: ${doc.content.unit}</div>` : ''}
+                                ${doc.content && doc.content.unit ? `<div style="color: var(--text-secondary); font-size: 12px;">Unit: ${escapeHtml(doc.content.unit)}</div>` : ''}
                             </div>
                             <div style="display: flex; gap: 8px;">
                                 <button onclick="loadDocument('${doc.id}')" style="background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
@@ -6205,6 +6215,7 @@
                 if (typeof announcementsRef !== 'undefined') announcementsRef.off();
                 if (typeof bannedRef !== 'undefined') bannedRef.off();
                 if (typeof presenceRef !== 'undefined') presenceRef.off();
+                database.ref('.info/connected').off();
                 console.log('Firebase listeners cleaned up');
             } catch (e) {
                 console.log('Error cleaning up listeners:', e);

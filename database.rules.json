@@ -119,7 +119,7 @@
         ".read": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
         ".write": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
         "isAdmin": {
-          ".validate": "(root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || auth.token.email === 'christiankholden@gmail.com') && (newData.isBoolean() || !newData.exists())"
+          ".validate": "root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true && (newData.isBoolean() || !newData.exists())"
         }
       }
     },

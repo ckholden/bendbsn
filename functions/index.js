@@ -2,6 +2,7 @@
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onValueCreated } = require('firebase-functions/v2/database');
+const { onCall } = require('firebase-functions/v2/https');
 const { logger } = require('firebase-functions');
 const admin = require('firebase-admin');
 
@@ -297,3 +298,95 @@ exports.onChatMention = onValueCreated(
         }
     }
 );
+
+/**
+ * setAdminClaim
+ *
+ * Callable function that sets or revokes the isAdmin custom claim on a user.
+ * Caller must already have isAdmin: true in their custom claims OR in their
+ * userProfiles RTDB node (bootstrap path for the very first admin).
+ *
+ * Usage from admin panel:
+ *   const fn = firebase.functions().httpsCallable('setAdminClaim');
+ *   await fn({ uid: targetUid, revoke: false });
+ */
+exports.setAdminClaim = onCall({ region: 'us-central1' }, async (request) => {
+    const auth = request.auth;
+    if (!auth) {
+        throw new Error('unauthenticated');
+    }
+
+    // Allow if custom claim already set OR if RTDB isAdmin flag is true (bootstrap)
+    const callerSnap = await admin.database()
+        .ref('userProfiles/' + auth.uid + '/isAdmin').once('value');
+    const callerIsAdmin = auth.token?.isAdmin === true || callerSnap.val() === true;
+
+    if (!callerIsAdmin) {
+        throw new Error('permission-denied: admins only');
+    }
+
+    const { uid, revoke } = request.data;
+    if (!uid) throw new Error('invalid-argument: uid required');
+
+    await admin.auth().setCustomUserClaims(uid, revoke ? {} : { isAdmin: true });
+    logger.info(`setAdminClaim: ${revoke ? 'revoked' : 'granted'} isAdmin for uid=${uid} by caller=${auth.uid}`);
+    return { success: true };
+});
+
+/**
+ * bootstrapAdminClaims
+ *
+ * Scheduled function that runs daily and ensures every userProfile with
+ * isAdmin: true in the RTDB also has the isAdmin custom claim set.
+ * Idempotent — safe to run repeatedly.
+ */
+exports.bootstrapAdminClaims = onSchedule(
+    { schedule: 'every 24 hours', region: 'us-central1' },
+    async () => {
+        const snap = await admin.database().ref('userProfiles')
+            .orderByChild('isAdmin').equalTo(true).once('value');
+
+        if (!snap.exists()) {
+            logger.info('bootstrapAdminClaims: no admin profiles found');
+            return;
+        }
+
+        const promises = [];
+        snap.forEach(child => {
+            promises.push(
+                admin.auth().setCustomUserClaims(child.key, { isAdmin: true })
+                    .then(() => logger.info(`bootstrapAdminClaims: set claim for uid=${child.key}`))
+                    .catch(err => logger.error(`bootstrapAdminClaims: failed for uid=${child.key}`, err))
+            );
+        });
+        await Promise.all(promises);
+        logger.info(`bootstrapAdminClaims: processed ${promises.length} admin user(s)`);
+    }
+);
+
+/**
+ * backfillTenantId
+ *
+ * One-time callable that writes tenantId: 'bendbsn' to every userProfile
+ * that is missing it. Call once from the admin panel after deploy.
+ */
+exports.backfillTenantId = onCall({ region: 'us-central1' }, async (request) => {
+    const auth = request.auth;
+    if (!auth || auth.token?.isAdmin !== true) {
+        throw new Error('permission-denied: admins only');
+    }
+
+    const snap = await admin.database().ref('userProfiles').once('value');
+    const updates = {};
+    snap.forEach(child => {
+        if (!child.val()?.tenantId) {
+            updates[child.key + '/tenantId'] = 'bendbsn';
+        }
+    });
+
+    if (Object.keys(updates).length > 0) {
+        await admin.database().ref('userProfiles').update(updates);
+    }
+    logger.info(`backfillTenantId: updated ${Object.keys(updates).length} profile(s)`);
+    return { updated: Object.keys(updates).length };
+});

@@ -3804,6 +3804,19 @@
         // ========== @MENTION AUTOCOMPLETE ==========
         let mentionDropdownIndex = -1;
 
+        // Build @mention list from already-loaded presence data (no extra RTDB read)
+        function buildMentionListFromPresence() {
+            if (!onlineUsersData.length) return;
+            const seen = new Set();
+            allRegisteredUsers = onlineUsersData
+                .filter(u => u.user && !seen.has((u.username || u.user).toLowerCase()) && seen.add((u.username || u.user).toLowerCase()))
+                .map(u => ({
+                    name: u.user,
+                    firstName: u.user.split(' ')[0],
+                    email: u.username || ''
+                }));
+        }
+
         async function fetchAllUsers() {
             let activeEmails = new Set();
             try {
@@ -3811,6 +3824,13 @@
                 try {
                     const profilesSnapshot = await userProfilesRef.once('value');
                     if (profilesSnapshot.exists()) {
+                        // Circuit breaker: fall back to presence-only for large user bases
+                        const profileCount = profilesSnapshot.numChildren();
+                        if (profileCount > 400) {
+                            showToast('Large user list — showing online users for @mentions', 'info', 3000);
+                            buildMentionListFromPresence();
+                            return;
+                        }
                         profilesSnapshot.forEach(child => {
                             const profile = child.val();
                             if (profile && profile.email) {
