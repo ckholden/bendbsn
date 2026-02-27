@@ -2,7 +2,7 @@
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onValueCreated } = require('firebase-functions/v2/database');
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { logger } = require('firebase-functions');
 const admin = require('firebase-admin');
 
@@ -313,7 +313,7 @@ exports.onChatMention = onValueCreated(
 exports.setAdminClaim = onCall({ region: 'us-central1' }, async (request) => {
     const auth = request.auth;
     if (!auth) {
-        throw new Error('unauthenticated');
+        throw new HttpsError('unauthenticated', 'Authentication required.');
     }
 
     // Allow if custom claim already set OR if RTDB isAdmin flag is true (bootstrap)
@@ -322,11 +322,11 @@ exports.setAdminClaim = onCall({ region: 'us-central1' }, async (request) => {
     const callerIsAdmin = auth.token?.isAdmin === true || callerSnap.val() === true;
 
     if (!callerIsAdmin) {
-        throw new Error('permission-denied: admins only');
+        throw new HttpsError('permission-denied', 'Admins only.');
     }
 
     const { uid, revoke } = request.data;
-    if (!uid) throw new Error('invalid-argument: uid required');
+    if (!uid) throw new HttpsError('invalid-argument', 'uid is required.');
 
     await admin.auth().setCustomUserClaims(uid, revoke ? {} : { isAdmin: true });
     logger.info(`setAdminClaim: ${revoke ? 'revoked' : 'granted'} isAdmin for uid=${uid} by caller=${auth.uid}`);
@@ -373,7 +373,7 @@ exports.bootstrapAdminClaims = onSchedule(
 exports.backfillTenantId = onCall({ region: 'us-central1' }, async (request) => {
     const auth = request.auth;
     if (!auth || auth.token?.isAdmin !== true) {
-        throw new Error('permission-denied: admins only');
+        throw new HttpsError('permission-denied', 'Admins only.');
     }
 
     const snap = await admin.database().ref('userProfiles').once('value');

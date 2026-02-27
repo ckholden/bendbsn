@@ -3875,8 +3875,10 @@
                 }
             } catch (e) {
                 console.warn('Chat: Failed to fetch users for DM/mentions', e);
-                // Keep the UI usable with online users even if the directory fails
-                allRegisteredUsers = allRegisteredUsers || [];
+                // Fall back to presence data if both profile read and sheet fetch failed
+                if (!allRegisteredUsers || allRegisteredUsers.length === 0) {
+                    buildMentionListFromPresence();
+                }
             }
         }
 
