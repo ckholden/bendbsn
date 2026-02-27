@@ -185,8 +185,6 @@
             background: var(--clx-border, #d1dce8);
         }
     </style>
-    <!-- reCAPTCHA v2 - Replace sitekey with your key from https://www.google.com/recaptcha/admin -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
     <header class="site-header">
@@ -286,9 +284,6 @@
                             <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to use this tool responsibly.</span>
                         </label>
                     </div>
-
-                    <!-- reCAPTCHA: Replace sitekey with your production key from https://www.google.com/recaptcha/admin -->
-                    <div class="g-recaptcha" data-sitekey="6LcqpXMsAAAAAOe9exAi88EODXpdhmYpvkV_ZvBM" style="margin-bottom: 16px;"></div>
 
                     <button type="submit" class="btn" id="regBtn">Create Account</button>
                     <button type="button" class="btn btn-secondary" onclick="hideRegisterModal()">Cancel</button>
@@ -659,16 +654,6 @@
             regBtn.innerHTML = '<span class="loading"></span>Creating account...';
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
-
-            // Validate password length
-            // Validate reCAPTCHA (test key always passes; replace with real key in production)
-            if (typeof grecaptcha !== 'undefined' && !grecaptcha.getResponse()) {
-                errorMsg.textContent = "Please complete the \"I'm not a robot\" check.";
-                errorMsg.classList.add('show');
-                regBtn.disabled = false;
-                regBtn.innerHTML = 'Create Account';
-                return false;
-            }
 
             if (password.length < 6) {
                 errorMsg.textContent = 'Password must be at least 6 characters.';
