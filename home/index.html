@@ -871,7 +871,7 @@
         function updateSessionHeartbeat() {
             const key = localStorage.getItem(SESSION_KEY);
             if (!key || !sessionValidated) return;
-            database.ref('loginHistory/' + key).update({ lastSeen: Date.now() }).catch(() => {});
+            database.ref('loginHistory/' + key).update({ lastSeen: Date.now(), uid: (auth.currentUser && auth.currentUser.uid) || '' }).catch(() => {});
         }
         function startSessionHeartbeat() {
             const key = localStorage.getItem(SESSION_KEY);
@@ -899,7 +899,8 @@
                 sessionEnd: end,
                 durationSeconds,
                 durationMinutes: durationSeconds !== null ? Math.round(durationSeconds / 60) : null,
-                endReason: reason || 'logout'
+                endReason: reason || 'logout',
+                uid: (auth.currentUser && auth.currentUser.uid) || ''
             }).catch(() => {});
         }
         function clearSessionTracking() {

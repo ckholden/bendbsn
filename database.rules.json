@@ -50,6 +50,7 @@
         "$channelId": {
           "$msgKey": {
             ".read": "auth != null",
+            ".write": "auth != null",
             "replies": {
               "$replyKey": {
                 ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email)"
@@ -178,7 +179,10 @@
 
     "groupChats": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null",
+      "$groupId": {
+        ".validate": "!newData.exists() || newData.hasChild('name')"
+      }
     },
 
     "userFCMTokens": {

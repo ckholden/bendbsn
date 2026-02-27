@@ -1138,8 +1138,8 @@
                     html += `
                         <div class="user-item">
                             <div class="user-info">
-                                <span class="user-name">${data.username}</span>
-                                <div class="user-status status-banned">Banned: ${data.reason || 'No reason given'}</div>
+                                <span class="user-name">${escapeHtml(data.username)}</span>
+                                <div class="user-status status-banned">Banned: ${escapeHtml(data.reason || 'No reason given')}</div>
                                 <div class="user-email">Banned on: ${new Date(data.timestamp).toLocaleString()}</div>
                             </div>
                             <div class="user-actions">
@@ -1791,17 +1791,11 @@
             showConfirmModal('Purge Orphan DMs', 'Delete DM threads where both participants no longer exist?', async function() {
                 try {
                     const profileSnap = await userProfilesRef.once('value');
-                    const validNames = new Set();
+                    const validUids = new Set();
                     if (profileSnap.exists()) {
                         profileSnap.forEach((child) => {
-                            const p = child.val() || {};
-                            if (p.displayName) validNames.add(String(p.displayName).toLowerCase());
-                            if (p.firstName) validNames.add(String(p.firstName).toLowerCase());
-                            if (p.email) {
-                                validNames.add(String(p.email).toLowerCase());
-                                const local = String(p.email).split('@')[0];
-                                if (local) validNames.add(local.toLowerCase());
-                            }
+                            // child.key IS the uid in userProfiles/{uid}
+                            validUids.add(child.key);
                         });
                     }
 
@@ -1815,10 +1809,10 @@
                     snapshot.forEach((child) => {
                         const data = child.val() || {};
                         const p = data.participants || {};
-                        const name1 = (p.user1 || '').toLowerCase();
-                        const name2 = (p.user2 || '').toLowerCase();
-                        const keep1 = name1 && validNames.has(name1);
-                        const keep2 = name2 && validNames.has(name2);
+                        const uid1 = p.user1_uid || '';
+                        const uid2 = p.user2_uid || '';
+                        const keep1 = uid1 && validUids.has(uid1);
+                        const keep2 = uid2 && validUids.has(uid2);
 
                         if (!keep1 && !keep2) {
                             child.ref.remove();
@@ -2398,15 +2392,15 @@
                     const statusIcon = notif.status === 'sent_emailjs' || notif.status === 'sent_formsubmit' ? '✓' : '✕';
                     const statusText = notif.status === 'sent_emailjs' ? 'Sent' : notif.status === 'sent_formsubmit' ? 'Sent' : 'Failed';
                     const method = notif.method || 'Unknown';
-                    const errorMsg = notif.error ? `<br><span style="font-size: 11px; color: #dc3545;">${notif.error}</span>` : '';
+                    const errorMsg = notif.error ? `<br><span style="font-size: 11px; color: #dc3545;">${escapeHtml(String(notif.error))}</span>` : '';
 
                     html += `<tr style="border-bottom: 1px solid #e9ecef;">
                         <td style="padding: 10px;">${notif.date || new Date(notif.timestamp).toLocaleString()}</td>
-                        <td style="padding: 10px; font-weight: 600;">${notif.name || 'Unknown'}</td>
-                        <td style="padding: 10px; font-family: monospace; font-size: 12px;">${notif.email || notif.username || 'N/A'}</td>
-                        <td style="padding: 10px;">${notif.role || 'N/A'}</td>
+                        <td style="padding: 10px; font-weight: 600;">${escapeHtml(notif.name || 'Unknown')}</td>
+                        <td style="padding: 10px; font-family: monospace; font-size: 12px;">${escapeHtml(notif.email || notif.username || 'N/A')}</td>
+                        <td style="padding: 10px;">${escapeHtml(notif.role || 'N/A')}</td>
                         <td style="padding: 10px; text-align: center;"><span style="color: ${statusColor}; font-weight: 600;">${statusIcon} ${statusText}</span>${errorMsg}</td>
-                        <td style="padding: 10px; text-align: center; font-size: 11px; color: #666;">${method}</td>
+                        <td style="padding: 10px; text-align: center; font-size: 11px; color: #666;">${escapeHtml(method)}</td>
                     </tr>`;
                 });
 

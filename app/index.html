@@ -2976,7 +2976,8 @@
             if (!sessionValidated) return;
 
             database.ref('loginHistory/' + sessionKey).update({
-                lastSeen: Date.now()
+                lastSeen: Date.now(),
+                uid: (auth.currentUser && auth.currentUser.uid) || ''
             }).catch(() => {});
         }
 
@@ -3016,7 +3017,8 @@
                 sessionEnd: end,
                 durationSeconds: durationSeconds,
                 durationMinutes: durationMinutes,
-                endReason: reason || 'logout'
+                endReason: reason || 'logout',
+                uid: (auth.currentUser && auth.currentUser.uid) || ''
             }).catch(() => {});
         }
 
