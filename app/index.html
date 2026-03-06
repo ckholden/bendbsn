@@ -10,7 +10,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="theme-color" content="#1f4e79">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
     <link rel="manifest" href="/manifest.json">
@@ -912,8 +912,8 @@
             <select id="quickJumpSelect" onchange="jumpToSection(this.value)">
                 <option value="">Select section...</option>
                 <option value="section-patient">Patient & Nurse Info</option>
-                <option value="section-format">Documentation Format</option>
                 <option value="section-quick-entry">Quick Entry Tools</option>
+                <option value="section-format">Documentation Format</option>
                 <option value="section-docs">Documentation</option>
                 <option value="section-h2t">Head-to-Toe Assessment</option>
                 <option value="section-history">Document History</option>
@@ -1108,65 +1108,6 @@
                 </div>
             </div>
 
-            <h2 class="section-title" id="section-format">Documentation Format</h2>
-            <div class="form-progress-bar-wrap" id="formProgressWrap" title="Note completion">
-                <div class="form-progress-bar" id="formProgressBar"></div>
-            </div>
-            <div class="first-note-wizard" id="firstNoteWizard">
-                <h4>👋 Welcome — let's write your first note</h4>
-                <ol>
-                    <li>Pick a note type below (start with <strong>DAR</strong> for most clinical situations)</li>
-                    <li>Fill in patient info at the top — date, time, unit, patient ID</li>
-                    <li>Use the <strong>quick-fill buttons</strong> in each section to insert standard phrases</li>
-                    <li>When done, click <strong>Copy to Clipboard</strong> or export to PDF</li>
-                </ol>
-                <button class="first-note-wizard-dismiss" onclick="dismissFirstNoteWizard()">Got it, don't show again</button>
-            </div>
-            <div class="note-type-grid">
-                <div class="note-type-card active" data-note-type="dar">
-                    <h3>DAR</h3>
-                    <p>Data, Action, Response</p>
-                </div>
-                <div class="note-type-card" data-note-type="darp">
-                    <h3>DARP</h3>
-                    <p>DAR + Plan</p>
-                </div>
-                <div class="note-type-card" data-note-type="soap">
-                    <h3>SOAP</h3>
-                    <p>Subj, Obj, Assess, Plan</p>
-                </div>
-                <div class="note-type-card" data-note-type="sbar">
-                    <h3>SBAR</h3>
-                    <p>Situation, Background</p>
-                </div>
-                <div class="note-type-card" data-note-type="pie">
-                    <h3>PIE</h3>
-                    <p>Problem, Intervention</p>
-                </div>
-                <div class="note-type-card" data-note-type="h2t">
-                    <h3>H2T</h3>
-                    <p>Head-to-Toe Assessment</p>
-                </div>
-                <div class="note-type-card" data-note-type="soapie">
-                    <h3>SOAPIE</h3>
-                    <p>SOAP + I, E</p>
-                </div>
-                <div class="note-type-card" data-note-type="narrative">
-                    <h3>Narrative</h3>
-                    <p>Free-form Note</p>
-                </div>
-            </div>
-
-            <!-- NANDA Diagnosis Section -->
-            <div class="nanda-section">
-                <label>NANDA Nursing Diagnoses (optional - search to add)</label>
-                <div class="nanda-search">
-                    <input type="text" id="nandaSearch" placeholder="Search diagnoses... (e.g., pain, anxiety, mobility)" oninput="searchNanda()" onfocus="searchNanda()">
-                    <div class="nanda-dropdown" id="nandaDropdown"></div>
-                </div>
-                <div class="selected-diagnoses" id="selectedDiagnoses"></div>
-            </div>
-
             <!-- Quick Entry Panels -->
             <h2 class="section-title" id="section-quick-entry">Quick Entry Tools</h2>
 
@@ -1286,30 +1227,54 @@
                     </div>
                 </div>
                 <div id="medContent" style="display: none;">
-                <!-- Common Medications Quick-Pick -->
+                <!-- Common Medications Quick-Pick (categorized) -->
                 <div style="background: rgba(255,255,255,0.5); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
-                    <label style="font-size: 11px; color: #1565c0; font-weight: 600; display: block; margin-bottom: 6px;">⚡ Common Medications (Click to select):</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="commonMedsList">
-                        <button onclick="selectDrug('Acetaminophen')" class="common-med-btn">Acetaminophen</button>
-                        <button onclick="selectDrug('Ibuprofen')" class="common-med-btn">Ibuprofen</button>
-                        <button onclick="selectDrug('Aspirin')" class="common-med-btn">Aspirin</button>
-                        <button onclick="selectDrug('Morphine')" class="common-med-btn">Morphine</button>
-                        <button onclick="selectDrug('Hydrocodone')" class="common-med-btn">Hydrocodone</button>
-                        <button onclick="selectDrug('Oxycodone')" class="common-med-btn">Oxycodone</button>
-                        <button onclick="selectDrug('Lisinopril')" class="common-med-btn">Lisinopril</button>
-                        <button onclick="selectDrug('Metoprolol')" class="common-med-btn">Metoprolol</button>
-                        <button onclick="selectDrug('Amlodipine')" class="common-med-btn">Amlodipine</button>
-                        <button onclick="selectDrug('Atorvastatin')" class="common-med-btn">Atorvastatin</button>
-                        <button onclick="selectDrug('Metformin')" class="common-med-btn">Metformin</button>
-                        <button onclick="selectDrug('Levothyroxine')" class="common-med-btn">Levothyroxine</button>
-                        <button onclick="selectDrug('Albuterol')" class="common-med-btn">Albuterol</button>
-                        <button onclick="selectDrug('Furosemide')" class="common-med-btn">Furosemide</button>
-                        <button onclick="selectDrug('Warfarin')" class="common-med-btn">Warfarin</button>
-                        <button onclick="selectDrug('Heparin')" class="common-med-btn">Heparin</button>
-                        <button onclick="selectDrug('Insulin')" class="common-med-btn">Insulin</button>
-                        <button onclick="selectDrug('Ondansetron')" class="common-med-btn">Ondansetron</button>
-                        <button onclick="selectDrug('Diphenhydramine')" class="common-med-btn">Diphenhydramine</button>
-                        <button onclick="selectDrug('Lorazepam')" class="common-med-btn">Lorazepam</button>
+                    <label style="font-size: 11px; color: #1565c0; font-weight: 600; display: block; margin-bottom: 6px;">Common Medications (click to select):</label>
+                    <div id="commonMedsList" style="display: flex; flex-direction: column; gap: 6px;">
+                        <div><span style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;">Pain / Fever</span>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                                <button onclick="selectDrug('Acetaminophen')" class="common-med-btn">Acetaminophen</button>
+                                <button onclick="selectDrug('Ibuprofen')" class="common-med-btn">Ibuprofen</button>
+                                <button onclick="selectDrug('Morphine')" class="common-med-btn">Morphine</button>
+                                <button onclick="selectDrug('Hydromorphone')" class="common-med-btn">Hydromorphone</button>
+                                <button onclick="selectDrug('Oxycodone')" class="common-med-btn">Oxycodone</button>
+                                <button onclick="selectDrug('Ketorolac')" class="common-med-btn">Ketorolac</button>
+                            </div>
+                        </div>
+                        <div><span style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;">Cardiac / BP</span>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                                <button onclick="selectDrug('Lisinopril')" class="common-med-btn">Lisinopril</button>
+                                <button onclick="selectDrug('Metoprolol')" class="common-med-btn">Metoprolol</button>
+                                <button onclick="selectDrug('Amlodipine')" class="common-med-btn">Amlodipine</button>
+                                <button onclick="selectDrug('Losartan')" class="common-med-btn">Losartan</button>
+                                <button onclick="selectDrug('Furosemide')" class="common-med-btn">Furosemide</button>
+                                <button onclick="selectDrug('Carvedilol')" class="common-med-btn">Carvedilol</button>
+                            </div>
+                        </div>
+                        <div><span style="font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;">IV Drips / High-Alert</span>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                                <button onclick="selectDrug('Heparin')" class="common-med-btn" style="border-color:#ef9a9a;">Heparin</button>
+                                <button onclick="selectDrug('Insulin (Regular)')" class="common-med-btn" style="border-color:#ef9a9a;">Insulin (Regular)</button>
+                                <button onclick="selectDrug('Insulin (Lispro)')" class="common-med-btn" style="border-color:#ef9a9a;">Insulin (Lispro)</button>
+                                <button onclick="selectDrug('Nicardipine')" class="common-med-btn" style="border-color:#ef9a9a;">Nicardipine</button>
+                                <button onclick="selectDrug('Nitroglycerin')" class="common-med-btn" style="border-color:#ef9a9a;">Nitroglycerin</button>
+                                <button onclick="selectDrug('Norepinephrine')" class="common-med-btn" style="border-color:#ef9a9a;">Norepinephrine</button>
+                                <button onclick="selectDrug('Amiodarone')" class="common-med-btn" style="border-color:#ef9a9a;">Amiodarone</button>
+                            </div>
+                        </div>
+                        <div><span style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;">GI / Nausea / Resp / Other</span>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                                <button onclick="selectDrug('Ondansetron')" class="common-med-btn">Ondansetron</button>
+                                <button onclick="selectDrug('Pantoprazole')" class="common-med-btn">Pantoprazole</button>
+                                <button onclick="selectDrug('Albuterol')" class="common-med-btn">Albuterol</button>
+                                <button onclick="selectDrug('Enoxaparin')" class="common-med-btn" style="border-color:#ef9a9a;">Enoxaparin</button>
+                                <button onclick="selectDrug('Warfarin')" class="common-med-btn" style="border-color:#ef9a9a;">Warfarin</button>
+                                <button onclick="selectDrug('Metformin')" class="common-med-btn">Metformin</button>
+                                <button onclick="selectDrug('Levothyroxine')" class="common-med-btn">Levothyroxine</button>
+                                <button onclick="selectDrug('Diphenhydramine')" class="common-med-btn">Diphenhydramine</button>
+                                <button onclick="selectDrug('Lorazepam')" class="common-med-btn">Lorazepam</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
@@ -1324,27 +1289,11 @@
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Dose</label>
-                        <input type="text" id="medDose" placeholder="e.g., 4mg" style="width: 100%; padding: 8px; font-size: 13px;">
-                    </div>
-                    <div>
-                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Frequency</label>
-                        <select id="medFreq" style="width: 100%; padding: 8px; font-size: 12px;">
-                            <option value="">—</option>
-                            <option value="Once">Once</option>
-                            <option value="Daily">Daily</option>
-                            <option value="BID">BID</option>
-                            <option value="TID">TID</option>
-                            <option value="QID">QID</option>
-                            <option value="q4h">q4h</option>
-                            <option value="q6h">q6h</option>
-                            <option value="q8h">q8h</option>
-                            <option value="q12h">q12h</option>
-                            <option value="PRN">PRN</option>
-                        </select>
+                        <input type="text" id="medDose" placeholder="e.g., 10 mg" style="width: 100%; padding: 8px; font-size: 13px;">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Route</label>
-                        <select id="medRoute" style="width: 100%; padding: 8px; font-size: 12px;">
+                        <select id="medRoute" style="width: 100%; padding: 8px; font-size: 12px;" onchange="onMedRouteChange()">
                             <option value="PO">PO (by mouth)</option>
                             <option value="IV">IV (intravenous)</option>
                             <option value="IV Push">IV Push</option>
@@ -1364,10 +1313,27 @@
                         </select>
                     </div>
                     <div>
-                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Site (if applicable)</label>
+                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Frequency</label>
+                        <select id="medFreq" style="width: 100%; padding: 8px; font-size: 12px;">
+                            <option value="">—</option>
+                            <option value="Once">Once</option>
+                            <option value="Daily">Daily</option>
+                            <option value="BID">BID</option>
+                            <option value="TID">TID</option>
+                            <option value="QID">QID</option>
+                            <option value="q4h">q4h</option>
+                            <option value="q6h">q6h</option>
+                            <option value="q8h">q8h</option>
+                            <option value="q12h">q12h</option>
+                            <option value="PRN">PRN</option>
+                            <option value="Continuous">Continuous</option>
+                        </select>
+                    </div>
+                    <div id="medSiteGroup">
+                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Site</label>
                         <select id="medSite" style="width: 100%; padding: 8px; font-size: 12px;">
                             <option value="">N/A</option>
-                            <optgroup label="IV Sites">
+                            <optgroup label="IV Sites" class="site-iv">
                                 <option value="R hand">R hand</option>
                                 <option value="L hand">L hand</option>
                                 <option value="R forearm">R forearm</option>
@@ -1378,7 +1344,7 @@
                                 <option value="Central line">Central line</option>
                                 <option value="Port">Port</option>
                             </optgroup>
-                            <optgroup label="IM/SubQ Sites">
+                            <optgroup label="IM/SubQ Sites" class="site-im_subq">
                                 <option value="R deltoid">R deltoid</option>
                                 <option value="L deltoid">L deltoid</option>
                                 <option value="R vastus lateralis">R vastus lateralis</option>
@@ -1387,11 +1353,36 @@
                                 <option value="L ventrogluteal">L ventrogluteal</option>
                                 <option value="Abdomen">Abdomen</option>
                             </optgroup>
+                            <optgroup label="Topical Sites" class="site-topical">
+                                <option value="Chest">Chest</option>
+                                <option value="Back">Back</option>
+                                <option value="Upper arm">Upper arm</option>
+                                <option value="Affected area">Affected area</option>
+                            </optgroup>
+                            <optgroup label="Ophthalmic" class="site-eye">
+                                <option value="OD (right eye)">OD (right eye)</option>
+                                <option value="OS (left eye)">OS (left eye)</option>
+                                <option value="OU (both eyes)">OU (both eyes)</option>
+                            </optgroup>
+                            <optgroup label="Otic" class="site-ear">
+                                <option value="AD (right ear)">AD (right ear)</option>
+                                <option value="AS (left ear)">AS (left ear)</option>
+                                <option value="AU (both ears)">AU (both ears)</option>
+                            </optgroup>
                         </select>
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Time Given</label>
                         <input type="text" id="medTime" placeholder="HHMM or N=now" maxlength="5" style="font-family:monospace;width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Status</label>
+                        <select id="medAdminStatus" style="width: 100%; padding: 8px; font-size: 12px;" onchange="onMedStatusChange()">
+                            <option value="Given">Given</option>
+                            <option value="Held">Held</option>
+                            <option value="Refused">Refused by patient</option>
+                            <option value="Not Available">Not available</option>
+                        </select>
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Indication</label>
@@ -1406,6 +1397,117 @@
                         <input type="text" id="medEffect" placeholder="e.g., pain improved to 3/10" style="width: 100%; padding: 8px; font-size: 13px;">
                     </div>
                 </div>
+
+                <!-- Reason Not Given (shown when Held/Refused) -->
+                <div id="medNotGivenReason" style="display: none; margin-top: 10px;">
+                    <label style="font-size: 11px; color: #c62828; font-weight: 600;">Reason Not Given</label>
+                    <select id="medHoldReason" style="width:100%; padding:8px; font-size:12px; border:1px solid #ef9a9a; border-radius:6px;">
+                        <option value="">Select reason...</option>
+                        <optgroup label="Clinical Hold">
+                            <option value="BP below parameters">BP below parameters</option>
+                            <option value="HR below parameters">HR below parameters</option>
+                            <option value="Blood glucose below threshold">Blood glucose below threshold</option>
+                            <option value="NPO status">NPO status</option>
+                            <option value="Lab values out of range">Lab values out of range</option>
+                        </optgroup>
+                        <optgroup label="Patient">
+                            <option value="Patient refused">Patient refused</option>
+                            <option value="Patient unable to swallow">Patient unable to swallow</option>
+                            <option value="Patient sleeping">Patient sleeping - will reassess</option>
+                            <option value="Patient off unit">Patient off unit</option>
+                        </optgroup>
+                        <optgroup label="System">
+                            <option value="Medication not available">Medication not available from pharmacy</option>
+                            <option value="Order discontinued">Order discontinued</option>
+                            <option value="Awaiting provider clarification">Awaiting provider clarification</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- IV Infusion Parameters (shown only for IV/IVPB routes) -->
+                <div id="medInfusionFields" style="display: none; background: rgba(25,118,210,0.06); border: 1px solid #bbdefb; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #1565c0; display: block; margin-bottom: 8px;">IV Infusion Parameters</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Fluid / Solution</label>
+                            <select id="medIVFluid" style="width:100%; padding:8px; font-size:12px;">
+                                <option value="">N/A</option>
+                                <option value="NS">NS (0.9% NaCl)</option>
+                                <option value="1/2 NS">1/2 NS (0.45% NaCl)</option>
+                                <option value="D5W">D5W</option>
+                                <option value="D5NS">D5NS</option>
+                                <option value="D5 1/2NS">D5 1/2NS</option>
+                                <option value="LR">LR (Lactated Ringers)</option>
+                                <option value="D10W">D10W</option>
+                                <option value="3% NaCl">3% NaCl (hypertonic)</option>
+                                <option value="Albumin 5%">Albumin 5%</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Concentration</label>
+                            <input type="text" id="medConcentration" placeholder="e.g., 400mg/250mL" style="width:100%; padding:8px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Rate</label>
+                            <input type="text" id="medRate" placeholder="e.g., 125 mL/hr" style="width:100%; padding:8px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Volume to Infuse</label>
+                            <input type="text" id="medVolume" placeholder="e.g., 1000 mL" style="width:100%; padding:8px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Duration</label>
+                            <input type="text" id="medDuration" placeholder="e.g., 30 min, continuous" style="width:100%; padding:8px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Pump Channel</label>
+                            <select id="medPumpChannel" style="width:100%; padding:8px; font-size:12px;">
+                                <option value="">N/A</option>
+                                <option value="Channel A">Channel A (primary)</option>
+                                <option value="Channel B">Channel B (secondary)</option>
+                                <option value="Syringe pump">Syringe pump</option>
+                                <option value="Gravity">Gravity (no pump)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Titration row -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Previous Rate</label>
+                            <input type="text" id="medPrevRate" placeholder="e.g., 3 mg/hr" style="width:100%; padding:8px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Titration Reason</label>
+                            <input type="text" id="medTitrationReason" placeholder="e.g., SBP 185, goal <140" style="width:100%; padding:8px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Titration Direction</label>
+                            <select id="medTitrationDir" style="width:100%; padding:8px; font-size:12px;">
+                                <option value="">N/A (not titrating)</option>
+                                <option value="Increased">Increased</option>
+                                <option value="Decreased">Decreased</option>
+                                <option value="Maintained">Maintained (no change)</option>
+                                <option value="Initiated">Initiated (new start)</option>
+                                <option value="Discontinued">Discontinued</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two-Nurse Verification (shown for IV/high-alert) -->
+                <div id="medVerifyRow" style="display: none; background: rgba(211,47,47,0.06); border: 1px solid #ef9a9a; border-radius: 8px; padding: 10px 12px; margin-top: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <label style="font-size: 12px; font-weight: 700; color: #c62828; margin: 0;">
+                            <input type="checkbox" id="medDualVerify" style="width:16px; height:16px; accent-color: #c62828; vertical-align: middle;"> Two-Nurse Verification Completed
+                        </label>
+                        <div style="flex: 1; min-width: 150px;">
+                            <input type="text" id="medVerifyNurse" placeholder="Verifying nurse initials" style="width:100%; padding:6px 8px; font-size:12px; border: 1px solid #ef9a9a; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <p style="margin: 6px 0 0; font-size: 10px; color: #c62828;">Required for: insulin, heparin, IV push opioids, blood products, high-alert medications.</p>
+                </div>
+
                 <p style="margin-top: 8px; font-size: 11px; color: #1565c0;">Click "Save for Export" to save medications to include in PDF/Word export, or "Insert Now" to add directly to your current text field.</p>
                 </div>
                 <!-- Saved Medications List -->
@@ -1422,7 +1524,8 @@
             <div class="lines-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #ff9800; border-radius: 10px; padding: 15px 20px; margin-top: 15px; margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('linesContent', this)">
                     <h3 style="color: #e65100; margin: 0;">🔗 Lines / Drains / Airways <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                    <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button onclick="event.stopPropagation(); generateLineNarrative()" style="background: #4caf50; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Generate a narrative sentence from current fields">Generate Narrative</button>
                         <button onclick="event.stopPropagation(); saveLine()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
                         <button onclick="event.stopPropagation(); insertLine()" style="background: #ff9800; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
                     </div>
@@ -1431,13 +1534,14 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
                         <div>
                             <label style="font-size: 12px; font-weight: 600; color: #e65100;">Type</label>
-                            <select id="lineType" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
+                            <select id="lineType" style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;" onchange="onLineTypeChange()">
                                 <optgroup label="IV Access">
                                     <option value="PIV">PIV (Peripheral IV)</option>
                                     <option value="PICC">PICC Line</option>
                                     <option value="Central Line">Central Line</option>
                                     <option value="Midline">Midline</option>
                                     <option value="Port">Port-a-Cath</option>
+                                    <option value="Arterial Line">Arterial Line</option>
                                 </optgroup>
                                 <optgroup label="Drains">
                                     <option value="Foley">Foley Catheter</option>
@@ -1446,21 +1550,27 @@
                                     <option value="Chest Tube">Chest Tube</option>
                                     <option value="NG Tube">NG Tube</option>
                                     <option value="Wound Vac">Wound Vac</option>
+                                    <option value="Penrose Drain">Penrose Drain</option>
+                                    <option value="External Catheter">External Catheter</option>
                                 </optgroup>
                                 <optgroup label="GI Tubes">
                                     <option value="G-Tube">G-Tube</option>
                                     <option value="PEG Tube">PEG Tube</option>
                                     <option value="Dobhoff">Dobhoff</option>
+                                    <option value="OG Tube">OG Tube</option>
+                                    <option value="Jejunostomy">J-Tube</option>
                                 </optgroup>
                                 <optgroup label="Airway">
                                     <option value="NC">Nasal Cannula</option>
                                     <option value="Simple Mask">Simple Mask</option>
+                                    <option value="Venturi Mask">Venturi Mask</option>
                                     <option value="Non-Rebreather">Non-Rebreather</option>
                                     <option value="Trach">Tracheostomy</option>
                                     <option value="ETT">ETT (Intubated)</option>
                                     <option value="CPAP/BiPAP">CPAP/BiPAP</option>
                                     <option value="High-Flow NC">High-Flow NC</option>
                                 </optgroup>
+                                <option value="Ostomy">Ostomy</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
@@ -1497,6 +1607,82 @@
                         <label style="font-size: 12px; font-weight: 600; color: #e65100;">Notes</label>
                         <input type="text" id="lineNotes" placeholder="Additional details..." style="width:100%; padding:8px; border:1px solid #ffcc80; border-radius:6px; font-size:13px;">
                     </div>
+
+                    <!-- IV Site Assessment (shown only for IV access types) -->
+                    <div id="lineIVAssessment" style="display: none; background: rgba(255,152,0,0.06); border: 1px solid #ffe0b2; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #e65100; display: block; margin-bottom: 8px;">IV Site Assessment</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 11px; color: #e65100; font-weight: 600;">Blood Return</label>
+                                <select id="lineBloodReturn" style="width:100%; padding:8px; font-size:12px; border:1px solid #ffcc80; border-radius:6px;">
+                                    <option value="present">Present</option>
+                                    <option value="absent">Absent</option>
+                                    <option value="sluggish">Sluggish</option>
+                                    <option value="not assessed">Not assessed</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #e65100; font-weight: 600;">Flush</label>
+                                <select id="lineFlush" style="width:100%; padding:8px; font-size:12px; border:1px solid #ffcc80; border-radius:6px;">
+                                    <option value="flushes without resistance">Flushes without resistance</option>
+                                    <option value="flushes with resistance">Flushes with resistance</option>
+                                    <option value="unable to flush">Unable to flush</option>
+                                    <option value="not flushed">Not flushed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label style="font-size: 11px; color: #e65100; font-weight: 600; display: block; margin-bottom: 6px;">Site Condition (check all that apply):</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="lineSiteClean" checked style="accent-color:#4caf50;"> Clean/Dry/Intact</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;color:#c62828;"><input type="checkbox" id="lineSiteErythema" style="accent-color:#c62828;"> Erythema</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;color:#c62828;"><input type="checkbox" id="lineSiteEdema" style="accent-color:#c62828;"> Edema</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;color:#c62828;"><input type="checkbox" id="lineSiteInfiltration" style="accent-color:#c62828;"> Infiltration</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;color:#c62828;"><input type="checkbox" id="lineSitePhlebitis" style="accent-color:#c62828;"> Phlebitis</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;color:#c62828;"><input type="checkbox" id="lineSiteDrainage" style="accent-color:#c62828;"> Drainage</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;color:#c62828;"><input type="checkbox" id="lineSiteTender" style="accent-color:#c62828;"> Tenderness</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:4px;color:#c62828;"><input type="checkbox" id="lineSiteWarmth" style="accent-color:#c62828;"> Warmth</label>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <div>
+                                <label style="font-size: 11px; color: #e65100; font-weight: 600;">Dressing Type</label>
+                                <select id="lineDressingType" style="width:100%; padding:8px; font-size:12px; border:1px solid #ffcc80; border-radius:6px;">
+                                    <option value="Transparent (Tegaderm)">Transparent (Tegaderm)</option>
+                                    <option value="Gauze and tape">Gauze and tape</option>
+                                    <option value="StatLock">StatLock</option>
+                                    <option value="CHG dressing (BioPatch)">CHG dressing (BioPatch)</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #e65100; font-weight: 600;">Dressing Condition</label>
+                                <select id="lineDressingCondition" style="width:100%; padding:8px; font-size:12px; border:1px solid #ffcc80; border-radius:6px;">
+                                    <option value="CDI">CDI (clean, dry, intact)</option>
+                                    <option value="Soiled">Soiled - needs change</option>
+                                    <option value="Loose">Loose/lifting - needs change</option>
+                                    <option value="Changed this shift">Changed this shift</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #e65100; font-weight: 600;">Date on Dressing</label>
+                                <input type="text" id="lineDressingDate" placeholder="e.g., 03/06" style="width:100%; padding:8px; font-size:13px; border:1px solid #ffcc80; border-radius:6px;">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <div>
+                                <label style="font-size: 11px; color: #e65100; font-weight: 600;">Insertion Date (if known)</label>
+                                <input type="text" id="lineInsertDate" placeholder="e.g., 03/04" style="width:100%; padding:8px; font-size:13px; border:1px solid #ffcc80; border-radius:6px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #e65100; font-weight: 600;">Tubing Change Due</label>
+                                <input type="text" id="lineTubingDate" placeholder="e.g., 03/08 (q96h)" style="width:100%; padding:8px; font-size:13px; border:1px solid #ffcc80; border-radius:6px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Line Narrative Preview -->
+                    <div id="lineNarrativePreview" style="display:none;"></div>
                 </div>
                 <div id="savedLinesList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ff9800;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1507,6 +1693,65 @@
                 </div>
             </div>
 
+
+            <h2 class="section-title" id="section-format">Documentation Format</h2>
+            <div class="form-progress-bar-wrap" id="formProgressWrap" title="Note completion">
+                <div class="form-progress-bar" id="formProgressBar"></div>
+            </div>
+            <div class="first-note-wizard" id="firstNoteWizard">
+                <h4>Welcome — let's write your first note</h4>
+                <ol>
+                    <li>Pick a note type below (start with <strong>DAR</strong> for most clinical situations)</li>
+                    <li>Fill in patient info at the top — date, time, unit, patient ID</li>
+                    <li>Use the <strong>quick-fill buttons</strong> in each section to insert standard phrases</li>
+                    <li>When done, click <strong>Copy to Clipboard</strong> or export to PDF</li>
+                </ol>
+                <button class="first-note-wizard-dismiss" onclick="dismissFirstNoteWizard()">Got it, don't show again</button>
+            </div>
+            <div class="note-type-grid">
+                <div class="note-type-card active" data-note-type="dar">
+                    <h3>DAR</h3>
+                    <p>Data, Action, Response</p>
+                </div>
+                <div class="note-type-card" data-note-type="darp">
+                    <h3>DARP</h3>
+                    <p>DAR + Plan</p>
+                </div>
+                <div class="note-type-card" data-note-type="soap">
+                    <h3>SOAP</h3>
+                    <p>Subj, Obj, Assess, Plan</p>
+                </div>
+                <div class="note-type-card" data-note-type="sbar">
+                    <h3>SBAR</h3>
+                    <p>Situation, Background</p>
+                </div>
+                <div class="note-type-card" data-note-type="pie">
+                    <h3>PIE</h3>
+                    <p>Problem, Intervention</p>
+                </div>
+                <div class="note-type-card" data-note-type="h2t">
+                    <h3>H2T</h3>
+                    <p>Head-to-Toe Assessment</p>
+                </div>
+                <div class="note-type-card" data-note-type="soapie">
+                    <h3>SOAPIE</h3>
+                    <p>SOAP + I, E</p>
+                </div>
+                <div class="note-type-card" data-note-type="narrative">
+                    <h3>Narrative</h3>
+                    <p>Free-form Note</p>
+                </div>
+            </div>
+
+            <!-- NANDA Diagnosis Section -->
+            <div class="nanda-section">
+                <label>NANDA Nursing Diagnoses (optional - search to add)</label>
+                <div class="nanda-search">
+                    <input type="text" id="nandaSearch" placeholder="Search diagnoses... (e.g., pain, anxiety, mobility)" oninput="searchNanda()" onfocus="searchNanda()">
+                    <div class="nanda-dropdown" id="nandaDropdown"></div>
+                </div>
+                <div class="selected-diagnoses" id="selectedDiagnoses"></div>
+            </div>
 
             <h2 class="section-title" id="section-docs">Documentation</h2>
 
@@ -3770,71 +4015,142 @@
         }
 
         // Insert formatted medication into the last active textarea
-        function insertMedication() {
-            if (!lastActiveTextarea) {
-                showToast('Please click in a text field first, then click "Insert Med".', 'warning');
-                return;
-            }
-
+        function buildMedNarrative() {
             const name = document.getElementById('medName').value.trim();
             const dose = document.getElementById('medDose').value.trim();
             const freq = document.getElementById('medFreq').value;
             const route = document.getElementById('medRoute').value;
             const site = document.getElementById('medSite').value;
-            const time = document.getElementById('medTime').value;
+            const time = (document.getElementById('medTime').value || '').replace(':', '');
             const indication = document.getElementById('medIndication').value.trim();
             const prnParams = document.getElementById('medPrnParams').value.trim();
             const effect = document.getElementById('medEffect').value.trim();
+            const adminStatus = document.getElementById('medAdminStatus').value;
+            const holdReason = document.getElementById('medHoldReason') ? document.getElementById('medHoldReason').value : '';
+            const config = ROUTE_CONFIG[route] || {};
+            if (!name) return null;
 
-            if (!name) {
-                showToast('Please enter at least a medication name.', 'warning');
+            let parts = [];
+
+            // Held / Refused
+            if (adminStatus !== 'Given') {
+                parts.push(name + (dose ? ' ' + dose : '') + ' ' + route + ' — ' + adminStatus + '.');
+                if (holdReason) parts.push('Reason: ' + holdReason + '.');
+                return parts.join(' ');
+            }
+
+            // IV infusion narrative
+            if (config.showInfusion) {
+                const fluid = (document.getElementById('medIVFluid') || {}).value || '';
+                const concentration = (document.getElementById('medConcentration') || {}).value || '';
+                const rate = (document.getElementById('medRate') || {}).value || '';
+                const volume = (document.getElementById('medVolume') || {}).value || '';
+                const duration = (document.getElementById('medDuration') || {}).value || '';
+                const channel = (document.getElementById('medPumpChannel') || {}).value || '';
+                const prevRate = (document.getElementById('medPrevRate') || {}).value || '';
+                const titrationReason = (document.getElementById('medTitrationReason') || {}).value || '';
+                const titrationDir = (document.getElementById('medTitrationDir') || {}).value || '';
+
+                let s = name;
+                if (concentration) s += ' ' + concentration;
+                if (fluid) s += ' in ' + fluid;
+                if (rate) s += ' infusing at ' + rate;
+                if (channel) s += ' via pump (' + channel + ')';
+                if (site) s += ' to ' + site;
+                parts.push(s + '.');
+
+                if (titrationDir && titrationDir !== 'Maintained' && titrationDir !== '') {
+                    let t = titrationDir;
+                    if (prevRate) t += ' from ' + prevRate;
+                    if (rate) t += ' to ' + rate;
+                    if (titrationReason) t += ' for ' + titrationReason;
+                    parts.push(t + '.');
+                }
+                if (volume || duration) {
+                    let v = '';
+                    if (volume) v += volume + ' total volume';
+                    if (duration) v += (v ? ' over ' : '') + duration;
+                    parts.push(v + '.');
+                }
+            } else {
+                // Standard med narrative
+                let s = name;
+                if (dose) s += ' ' + dose;
+                s += ' ' + route;
+                if (site) s += ' to ' + site;
+                s += ' administered';
+                if (time) s += ' at ' + time;
+                parts.push(s + '.');
+            }
+
+            if (indication) parts.push('Indication: ' + indication + '.');
+            if (freq === 'PRN' && prnParams) parts.push('PRN parameters met: ' + prnParams + '.');
+            else if (freq && freq !== 'Once' && freq !== 'PRN' && freq !== 'Continuous') parts.push('Scheduled ' + freq + '.');
+
+            // Two-nurse verification
+            const dualVerify = document.getElementById('medDualVerify');
+            const verifyNurse = document.getElementById('medVerifyNurse');
+            if (dualVerify && dualVerify.checked) {
+                const initials = verifyNurse ? verifyNurse.value.trim() : '';
+                parts.push('Two-nurse verification completed' + (initials ? ' with ' + initials : '') + '.');
+            }
+
+            if (effect) parts.push('Patient response: ' + effect + '.');
+
+            return parts.join(' ');
+        }
+
+        function clearMedFields() {
+            ['medName','medDose','medFreq','medSite','medTime','medIndication','medPrnParams','medEffect'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            var adminSt = document.getElementById('medAdminStatus');
+            if (adminSt) adminSt.value = 'Given';
+            var holdReason = document.getElementById('medHoldReason');
+            if (holdReason) holdReason.value = '';
+            var notGiven = document.getElementById('medNotGivenReason');
+            if (notGiven) notGiven.style.display = 'none';
+            // Clear infusion fields
+            ['medIVFluid','medConcentration','medRate','medVolume','medDuration','medPumpChannel','medPrevRate','medTitrationReason','medTitrationDir'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            // Clear verify
+            var dv = document.getElementById('medDualVerify');
+            if (dv) dv.checked = false;
+            var vn = document.getElementById('medVerifyNurse');
+            if (vn) vn.value = '';
+            // Hide conditional panels
+            var inf = document.getElementById('medInfusionFields');
+            if (inf) inf.style.display = 'none';
+            var vr = document.getElementById('medVerifyRow');
+            if (vr) vr.style.display = 'none';
+            // Reset route to PO
+            var rt = document.getElementById('medRoute');
+            if (rt) rt.value = 'PO';
+            onMedRouteChange();
+            document.getElementById('drugDropdown').classList.remove('show');
+        }
+
+        function insertMedication() {
+            if (!lastActiveTextarea) {
+                showToast('Please click in a text field first, then click "Insert Med".', 'warning');
                 return;
             }
+            const name = document.getElementById('medName').value.trim();
+            if (!name) { showToast('Please enter at least a medication name.', 'warning'); return; }
 
-            // Format time to 24hr
-            let timeStr = '';
-            if (time) {
-                timeStr = time.replace(':', '');
-            }
-
-            // Build medication string
-            let medStr = name;
-            if (dose) medStr += ' ' + dose;
-            medStr += ' ' + route;
-            if (freq) medStr += ' ' + freq;
-            if (site) medStr += ' to ' + site;
-            if (timeStr) medStr += ' @ ' + timeStr;
-            if (indication) medStr += ' for ' + indication;
-            if (prnParams) medStr += ' (PRN: ' + prnParams + ')';
-            if (effect) medStr += '. Response: ' + effect;
-            medStr += '. Patient tolerated without adverse reaction. ';
-
-            // Insert at cursor position in textarea
+            const medStr = buildMedNarrative() + ' ';
             const start = lastActiveTextarea.selectionStart;
             const end = lastActiveTextarea.selectionEnd;
             const text = lastActiveTextarea.value;
             lastActiveTextarea.value = text.substring(0, start) + medStr + text.substring(end);
-
-            // Move cursor to end of inserted text
             lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + medStr.length;
             lastActiveTextarea.focus();
 
-            // Clear med fields
-            document.getElementById('medName').value = '';
-            document.getElementById('medDose').value = '';
-            document.getElementById('medFreq').value = '';
-            document.getElementById('medSite').value = '';
-            document.getElementById('medTime').value = '';
-            document.getElementById('medIndication').value = '';
-            document.getElementById('medPrnParams').value = '';
-            document.getElementById('medEffect').value = '';
-            // Also hide the dropdown
-            document.getElementById('drugDropdown').classList.remove('show');
-
-            if (name) {
-                saveMedRecent(name);
-                renderMedRecents();
-            }
+            if (name) { saveMedRecent(name); renderMedRecents(); }
+            clearMedFields();
         }
 
         // ========== SAVED VITALS & MEDICATIONS FOR EXPORT ==========
@@ -3934,36 +4250,10 @@
 
         function saveMedication() {
             const name = document.getElementById('medName').value.trim();
-            const dose = document.getElementById('medDose').value.trim();
-            const freq = document.getElementById('medFreq').value;
-            const route = document.getElementById('medRoute').value;
-            const site = document.getElementById('medSite').value;
-            const time = document.getElementById('medTime').value;
-            const indication = document.getElementById('medIndication').value.trim();
-            const prnParams = document.getElementById('medPrnParams').value.trim();
-            const effect = document.getElementById('medEffect').value.trim();
+            if (!name) { showToast('Please enter at least a medication name.', 'warning'); return; }
 
-            if (!name) {
-                showToast('Please enter at least a medication name.', 'warning');
-                return;
-            }
-
-            // Format time
-            let timeStr = '';
-            if (time) {
-                timeStr = time.replace(':', '');
-            }
-
-            // Build medication string
-            let medStr = name;
-            if (dose) medStr += ' ' + dose;
-            medStr += ' ' + route;
-            if (freq) medStr += ' ' + freq;
-            if (site) medStr += ' to ' + site;
-            if (timeStr) medStr += ' @ ' + timeStr;
-            if (indication) medStr += ' for ' + indication;
-            if (prnParams) medStr += ' (PRN: ' + prnParams + ')';
-            if (effect) medStr += ' → ' + effect;
+            const timeStr = (document.getElementById('medTime').value || '').replace(':', '');
+            const medStr = buildMedNarrative();
 
             savedMedications.push({
                 display: medStr,
@@ -3972,21 +4262,8 @@
                 timestamp: Date.now()
             });
 
-            // Clear fields
-            document.getElementById('medName').value = '';
-            document.getElementById('medDose').value = '';
-            document.getElementById('medFreq').value = '';
-            document.getElementById('medSite').value = '';
-            document.getElementById('medTime').value = '';
-            document.getElementById('medIndication').value = '';
-            document.getElementById('medPrnParams').value = '';
-            document.getElementById('medEffect').value = '';
-            document.getElementById('drugDropdown').classList.remove('show');
-
-            if (name) {
-                saveMedRecent(name);
-                renderMedRecents();
-            }
+            if (name) { saveMedRecent(name); renderMedRecents(); }
+            clearMedFields();
 
             renderSavedMedications();
             showToast('Medication saved! Will be included in PDF/Word export.', 'success');
@@ -4202,6 +4479,264 @@
             }, { danger: true });
         }
 
+        // ========== ROUTE-ADAPTIVE MED FORM + HIGH-ALERT DETECTION ==========
+        const ROUTE_CONFIG = {
+            PO:          { showSite: false, showInfusion: false, showVerify: false },
+            SL:          { showSite: false, showInfusion: false, showVerify: false },
+            PR:          { showSite: false, showInfusion: false, showVerify: false },
+            GT:          { showSite: false, showInfusion: false, showVerify: false },
+            NGT:         { showSite: false, showInfusion: false, showVerify: false },
+            IM:          { showSite: true,  showInfusion: false, showVerify: false },
+            SubQ:        { showSite: true,  showInfusion: false, showVerify: false },
+            'IV Push':   { showSite: true,  showInfusion: false, showVerify: true },
+            IV:          { showSite: true,  showInfusion: true,  showVerify: true },
+            IVPB:        { showSite: true,  showInfusion: true,  showVerify: false },
+            Topical:     { showSite: true,  showInfusion: false, showVerify: false },
+            Transdermal: { showSite: true,  showInfusion: false, showVerify: false },
+            Inhaled:     { showSite: false, showInfusion: false, showVerify: false },
+            Nasal:       { showSite: false, showInfusion: false, showVerify: false },
+            Ophthalmic:  { showSite: true,  showInfusion: false, showVerify: false },
+            Otic:        { showSite: true,  showInfusion: false, showVerify: false }
+        };
+
+        const HIGH_ALERT_KEYWORDS = [
+            'insulin', 'heparin', 'warfarin', 'morphine', 'hydromorphone', 'fentanyl',
+            'dilaudid', 'methadone', 'oxycodone', 'potassium chloride', 'kcl',
+            'magnesium sulfate', 'nicardipine', 'nitroglycerin', 'nitroprusside',
+            'dopamine', 'dobutamine', 'epinephrine', 'norepinephrine', 'vasopressin',
+            'amiodarone', 'propofol', 'midazolam', 'alteplase', 'oxytocin', 'pitocin'
+        ];
+
+        const IV_ACCESS_TYPES = ['PIV', 'PICC', 'Central Line', 'Midline', 'Port', 'Arterial Line'];
+
+        function onMedRouteChange() {
+            const route = document.getElementById('medRoute').value;
+            const config = ROUTE_CONFIG[route] || {};
+            const infusionPanel = document.getElementById('medInfusionFields');
+            const verifyRow = document.getElementById('medVerifyRow');
+            const siteGroup = document.getElementById('medSiteGroup');
+            const doseInput = document.getElementById('medDose');
+
+            if (infusionPanel) infusionPanel.style.display = config.showInfusion ? 'block' : 'none';
+            if (verifyRow && config.showVerify) verifyRow.style.display = 'block';
+            if (siteGroup) siteGroup.style.display = config.showSite !== false ? 'block' : 'none';
+
+            if (doseInput) {
+                if (config.showInfusion) doseInput.placeholder = 'e.g., 5 mg/hr or 25 mcg/kg/min';
+                else doseInput.placeholder = 'e.g., 10 mg';
+            }
+            checkHighAlert();
+        }
+
+        function onMedStatusChange() {
+            const status = document.getElementById('medAdminStatus').value;
+            const reasonDiv = document.getElementById('medNotGivenReason');
+            if (reasonDiv) reasonDiv.style.display = (status === 'Held' || status === 'Refused' || status === 'Not Available') ? 'block' : 'none';
+        }
+
+        function checkHighAlert() {
+            const name = (document.getElementById('medName').value || '').toLowerCase();
+            const route = document.getElementById('medRoute').value;
+            const isHighAlert = HIGH_ALERT_KEYWORDS.some(kw => name.includes(kw));
+            const isIV = ['IV', 'IV Push', 'IVPB'].includes(route);
+            const verifyRow = document.getElementById('medVerifyRow');
+            if (verifyRow && (isHighAlert || isIV)) verifyRow.style.display = 'block';
+            const nameInput = document.getElementById('medName');
+            if (nameInput) {
+                if (isHighAlert) {
+                    nameInput.style.borderColor = '#c62828';
+                    nameInput.style.background = 'rgba(211,47,47,0.04)';
+                } else {
+                    nameInput.style.borderColor = '';
+                    nameInput.style.background = '';
+                }
+            }
+        }
+
+        // Attach high-alert check to medName input
+        (function() {
+            const mn = document.getElementById('medName');
+            if (mn) mn.addEventListener('input', checkHighAlert);
+        })();
+
+        // ========== LINE TYPE CHANGE — dynamic status + IV assessment ==========
+        function onLineTypeChange() {
+            const type = document.getElementById('lineType').value;
+            const isIV = IV_ACCESS_TYPES.includes(type);
+            const ivPanel = document.getElementById('lineIVAssessment');
+            if (ivPanel) ivPanel.style.display = isIV ? 'block' : 'none';
+
+            // Update size placeholder
+            const sizeInput = document.getElementById('lineSize');
+            if (['PIV', 'Midline'].includes(type)) sizeInput.placeholder = 'e.g., 18g, 20g, 22g';
+            else if (['PICC', 'Central Line'].includes(type)) sizeInput.placeholder = 'e.g., 5Fr double lumen';
+            else if (type === 'Port') sizeInput.placeholder = 'e.g., power port, 20g Huber';
+            else if (type === 'Foley') sizeInput.placeholder = 'e.g., 16Fr, 18Fr';
+            else if (type === 'Chest Tube') sizeInput.placeholder = 'e.g., 28Fr, 32Fr';
+            else if (['NC', 'Simple Mask', 'Non-Rebreather', 'High-Flow NC', 'Venturi Mask'].includes(type)) sizeInput.placeholder = 'e.g., 2L, 6L, 15L';
+            else if (['ETT', 'Trach'].includes(type)) sizeInput.placeholder = 'e.g., 7.0 ETT, #6 Shiley';
+            else sizeInput.placeholder = 'e.g., size/gauge';
+
+            // Update status options
+            updateLineStatusOptions(type);
+        }
+
+        function updateLineStatusOptions(type) {
+            const sel = document.getElementById('lineStatus');
+            let opts = [];
+            if (IV_ACCESS_TYPES.includes(type)) {
+                opts = ['Patent','Infusing','Capped/Saline locked','Hep locked','Discontinued','Needs replacement'];
+            } else if (type === 'Foley') {
+                opts = ['Patent, draining','Clamped','Irrigated','Discontinued'];
+            } else if (['JP Drain','Hemovac'].includes(type)) {
+                opts = ['Patent, bulb compressed','Patent, draining','Emptied and recompressed','Discontinued'];
+            } else if (type === 'Chest Tube') {
+                opts = ['Patent, tidaling','To suction','To water seal','Clamped','Air leak present','Discontinued'];
+            } else if (['NG Tube','Dobhoff','OG Tube'].includes(type)) {
+                opts = ['To low intermittent suction','To low continuous suction','To gravity','Clamped','For feeding','For medications','Discontinued'];
+            } else if (['G-Tube','PEG Tube','Jejunostomy'].includes(type)) {
+                opts = ['Patent','For feeding','For medications','Clamped','Vented'];
+            } else {
+                opts = ['In place','Patent','Discontinued'];
+            }
+            sel.innerHTML = opts.map(o => '<option value="' + o + '">' + o + '</option>').join('');
+        }
+
+        // ========== GENERATE LINE NARRATIVE ==========
+        function generateLineNarrative() {
+            const type = document.getElementById('lineType').value;
+            const location = document.getElementById('lineLocation').value.trim();
+            const size = document.getElementById('lineSize').value.trim();
+            const status = document.getElementById('lineStatus').value;
+            const output = document.getElementById('lineOutput').value.trim();
+            const dressing = document.getElementById('lineDressing').value.trim();
+            const notes = document.getElementById('lineNotes').value.trim();
+            const isIV = IV_ACCESS_TYPES.includes(type);
+
+            if (!type) { showToast('Please select a type first.', 'warning'); return; }
+
+            let narrative = '';
+            if (isIV) {
+                const bloodReturn = document.getElementById('lineBloodReturn').value;
+                const flush = document.getElementById('lineFlush').value;
+                const dressingType = document.getElementById('lineDressingType').value;
+                const dressingCondition = document.getElementById('lineDressingCondition').value;
+                const dressingDate = document.getElementById('lineDressingDate').value.trim();
+                const insertDate = document.getElementById('lineInsertDate').value.trim();
+
+                const negFindings = [], posFindings = [];
+                [['lineSiteErythema','erythema'],['lineSiteEdema','edema'],['lineSiteInfiltration','infiltration'],
+                 ['lineSitePhlebitis','phlebitis'],['lineSiteDrainage','drainage'],['lineSiteTender','tenderness'],
+                 ['lineSiteWarmth','warmth']].forEach(function(cb) {
+                    var el = document.getElementById(cb[0]);
+                    if (el && el.checked) posFindings.push(cb[1]);
+                    else negFindings.push(cb[1]);
+                });
+
+                narrative = type;
+                if (size) narrative += ' ' + size;
+                if (location) narrative += ' to ' + location;
+                narrative += ' assessed as ' + status.toLowerCase();
+                if (flush !== 'not flushed') narrative += ', ' + flush;
+                if (bloodReturn !== 'not assessed') narrative += ' with blood return ' + bloodReturn;
+                narrative += '.';
+
+                if (posFindings.length > 0) {
+                    narrative += ' ' + posFindings.map(function(f) { return f.charAt(0).toUpperCase() + f.slice(1); }).join(', ') + ' noted at site.';
+                }
+                if (negFindings.length > 0) {
+                    narrative += ' No ' + negFindings.join(', ') + ' noted.';
+                }
+                if (dressingType || dressing) {
+                    narrative += ' Dressing ' + (dressingCondition || 'CDI').toLowerCase();
+                    if (dressingDate) narrative += ' and dated ' + dressingDate;
+                    narrative += '.';
+                }
+                if (insertDate) narrative += ' Inserted ' + insertDate + '.';
+
+            } else if (type === 'Foley') {
+                narrative = 'Foley catheter';
+                if (size) narrative += ' ' + size;
+                narrative += ' in place, ' + status.toLowerCase();
+                if (output) narrative += '. Output ' + output;
+                narrative += '. Catheter secured. No signs of CAUTI observed.';
+
+            } else if (['JP Drain','Hemovac'].includes(type)) {
+                narrative = type;
+                if (location) narrative += ' to ' + location;
+                narrative += ', ' + status.toLowerCase();
+                if (output) narrative += '. Output: ' + output;
+                narrative += '.';
+
+            } else if (type === 'Chest Tube') {
+                narrative = 'Chest tube';
+                if (size) narrative += ' ' + size;
+                if (location) narrative += ' to ' + location;
+                narrative += ', ' + status.toLowerCase();
+                if (output) narrative += '. Drainage: ' + output;
+                narrative += '. Connections secure, no kinks.';
+
+            } else if (['NG Tube','Dobhoff','OG Tube'].includes(type)) {
+                narrative = type;
+                if (location) narrative += ' in ' + location;
+                narrative += ', ' + status.toLowerCase();
+                if (output) narrative += '. Output: ' + output;
+                narrative += '. Placement verified. Secured to nose.';
+
+            } else if (['NC','Simple Mask','Non-Rebreather','High-Flow NC','CPAP/BiPAP','Venturi Mask'].includes(type)) {
+                narrative = type;
+                if (size) narrative += ' at ' + size;
+                narrative += ' in place, ' + status.toLowerCase() + '.';
+
+            } else if (['Trach','ETT'].includes(type)) {
+                narrative = type;
+                if (size) narrative += ' ' + size;
+                narrative += ' in place and ' + status.toLowerCase() + '. Ties/tape secure.';
+
+            } else {
+                narrative = type;
+                if (size) narrative += ' ' + size;
+                if (location) narrative += ' to ' + location;
+                narrative += ', ' + status.toLowerCase();
+                if (output) narrative += '. Output: ' + output;
+                narrative += '.';
+            }
+            if (notes) narrative += ' ' + notes + '.';
+
+            showLineNarrativePreview(narrative);
+        }
+
+        function showLineNarrativePreview(narrative) {
+            var preview = document.getElementById('lineNarrativePreview');
+            if (!preview) return;
+            preview.style.display = 'block';
+            preview.style.cssText = 'display:block; background:#fff3e0; border:2px solid #ff9800; border-radius:8px; padding:12px; margin-top:10px;';
+            preview.innerHTML =
+                '<label style="font-size:11px;font-weight:700;color:#e65100;display:block;margin-bottom:6px;">Generated Narrative (edit as needed):</label>' +
+                '<textarea id="lineNarrativeText" style="width:100%;min-height:60px;padding:8px;border:1px solid #ffcc80;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;">' + narrative + '</textarea>' +
+                '<div style="display:flex;gap:8px;margin-top:8px;">' +
+                '<button onclick="insertLineNarrative()" style="background:#ff9800;color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">Insert into Note</button>' +
+                '<button onclick="copyLineNarrative()" style="background:#1565c0;color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">Copy to Clipboard</button>' +
+                '</div>';
+        }
+
+        function insertLineNarrative() {
+            var narrative = document.getElementById('lineNarrativeText').value;
+            if (!lastActiveTextarea) { showToast('Please click in a text field first.', 'warning'); return; }
+            var start = lastActiveTextarea.selectionStart;
+            var end = lastActiveTextarea.selectionEnd;
+            var text = lastActiveTextarea.value;
+            lastActiveTextarea.value = text.substring(0, start) + narrative + ' ' + text.substring(end);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + narrative.length + 1;
+            lastActiveTextarea.focus();
+            showToast('Narrative inserted.', 'success');
+        }
+
+        function copyLineNarrative() {
+            var text = document.getElementById('lineNarrativeText').value;
+            navigator.clipboard.writeText(text).then(function() { showToast('Copied to clipboard.', 'success'); });
+        }
+
         const MED_RECENTS_KEY = 'bendbsn_med_recents';
 
         function getMedRecents() {
@@ -4227,9 +4762,17 @@
                 container.innerHTML = '';
                 return;
             }
-            container.innerHTML = recents.map(n =>
-                `<button onclick="selectDrug('${n.replace(/'/g, "\\'")}')" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #1f4e79; padding: 3px 8px; border-radius: 999px; font-size: 11px; cursor: pointer;">${n}</button>`
-            ).join('');
+            container.innerHTML = '<span style="font-size:10px;color:#94a3b8;margin-right:4px;">Recent:</span>' +
+                recents.map(n =>
+                    `<button onclick="selectDrug('${n.replace(/'/g, "\\'")}')" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #1f4e79; padding: 3px 8px; border-radius: 999px; font-size: 11px; cursor: pointer;">${n}</button>`
+                ).join('') +
+                '<button onclick="clearMedRecents()" style="border: 1px solid #ef9a9a; background: #fff5f5; color: #d32f2f; padding: 3px 8px; border-radius: 999px; font-size: 11px; cursor: pointer;" title="Clear recent medications">✕ Clear</button>';
+        }
+
+        function clearMedRecents() {
+            localStorage.removeItem(MED_RECENTS_KEY);
+            renderMedRecents();
+            showToast('Recent medications cleared.', 'info');
         }
 
         // Drug Autocomplete using NIH RxNav API
@@ -4387,13 +4930,56 @@
             }
         }
 
+        const DRUG_DEFAULTS = {
+            'Acetaminophen':   { route: 'PO', freq: 'q6h', dose: '650 mg', indication: 'pain/fever' },
+            'Ibuprofen':       { route: 'PO', freq: 'q6h', dose: '400 mg', indication: 'pain/inflammation' },
+            'Morphine':        { route: 'IV Push', freq: 'PRN', dose: '2-4 mg', indication: 'pain' },
+            'Hydromorphone':   { route: 'IV Push', freq: 'PRN', dose: '0.5-1 mg', indication: 'pain' },
+            'Oxycodone':       { route: 'PO', freq: 'PRN', dose: '5 mg', indication: 'pain' },
+            'Ketorolac':       { route: 'IV Push', freq: 'q6h', dose: '15-30 mg', indication: 'pain' },
+            'Lisinopril':      { route: 'PO', freq: 'Daily', dose: '10 mg', indication: 'HTN' },
+            'Metoprolol':      { route: 'PO', freq: 'BID', dose: '25 mg', indication: 'HTN/HR control' },
+            'Amlodipine':      { route: 'PO', freq: 'Daily', dose: '5 mg', indication: 'HTN' },
+            'Losartan':        { route: 'PO', freq: 'Daily', dose: '50 mg', indication: 'HTN' },
+            'Furosemide':      { route: 'IV', freq: 'BID', dose: '40 mg', indication: 'fluid overload' },
+            'Carvedilol':      { route: 'PO', freq: 'BID', dose: '12.5 mg', indication: 'HF/HTN' },
+            'Heparin':         { route: 'IV', freq: 'Continuous', indication: 'anticoagulation' },
+            'Insulin (Regular)': { route: 'IV', freq: 'Continuous', indication: 'hyperglycemia' },
+            'Insulin (Lispro)': { route: 'SubQ', freq: 'PRN', indication: 'blood glucose coverage' },
+            'Nicardipine':     { route: 'IV', freq: 'Continuous', indication: 'HTN emergency' },
+            'Nitroglycerin':   { route: 'IV', freq: 'Continuous', indication: 'chest pain/HTN' },
+            'Norepinephrine':  { route: 'IV', freq: 'Continuous', indication: 'hypotension/shock' },
+            'Amiodarone':      { route: 'IV', freq: 'Once', dose: '150 mg', indication: 'arrhythmia' },
+            'Ondansetron':     { route: 'IV Push', freq: 'PRN', dose: '4 mg', indication: 'nausea' },
+            'Pantoprazole':    { route: 'IV', freq: 'Daily', dose: '40 mg', indication: 'GI prophylaxis' },
+            'Albuterol':       { route: 'Inhaled', freq: 'PRN', dose: '2.5 mg neb', indication: 'bronchospasm' },
+            'Enoxaparin':      { route: 'SubQ', freq: 'q12h', dose: '40 mg', indication: 'DVT prophylaxis' },
+            'Warfarin':        { route: 'PO', freq: 'Daily', dose: '5 mg', indication: 'anticoagulation' },
+            'Metformin':       { route: 'PO', freq: 'BID', dose: '500 mg', indication: 'hyperglycemia' },
+            'Levothyroxine':   { route: 'PO', freq: 'Daily', dose: '50 mcg', indication: 'hypothyroidism' },
+            'Diphenhydramine': { route: 'PO', freq: 'PRN', dose: '25 mg', indication: 'allergic reaction' },
+            'Lorazepam':       { route: 'PO', freq: 'PRN', dose: '0.5-1 mg', indication: 'anxiety' }
+        };
+
         function selectDrug(drugName) {
             medNameInput.value = drugName;
             drugDropdown.classList.remove('show');
             saveMedRecent(drugName);
             renderMedRecents();
             updateClearButton();
-            // Focus the dose field after selecting
+
+            // Apply defaults for known drugs
+            const defaults = DRUG_DEFAULTS[drugName];
+            if (defaults) {
+                if (defaults.route) {
+                    document.getElementById('medRoute').value = defaults.route;
+                    onMedRouteChange();
+                }
+                if (defaults.freq) document.getElementById('medFreq').value = defaults.freq;
+                if (defaults.dose) document.getElementById('medDose').placeholder = defaults.dose + ' (typical)';
+                if (defaults.indication) document.getElementById('medIndication').placeholder = defaults.indication + ' (typical)';
+            }
+            checkHighAlert();
             document.getElementById('medDose').focus();
         }
 
