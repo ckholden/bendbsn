@@ -858,17 +858,13 @@
             <span class="clx-sidebar-label">Resources</span>
         </a>
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
-        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
-            <span class="clx-sidebar-icon">🩻</span>
-            <span class="clx-sidebar-label">Clinical Packet</span>
-        </a>
         <a href="/apa/" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">📄</span>
             <span class="clx-sidebar-label">APA Generator</span>
         </a>
         <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
             <span class="clx-sidebar-icon">🗓️</span>
-            <span class="clx-sidebar-label">Sched Generator</span>
+            <span class="clx-sidebar-label">Lab Sched Generator</span>
         </a>
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
         <button class="clx-sidebar-item" onclick="toggleDarkMode()">
@@ -1693,6 +1689,328 @@
                 </div>
             </div>
 
+            <!-- I&O Tracking Panel -->
+            <div class="io-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #00897b; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('ioContent', this)">
+                    <h3 style="color: #00695c; margin: 0;">💧 Intake &amp; Output <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); saveIO()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertIO()" style="background: #00897b; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                    </div>
+                </div>
+                <div id="ioContent" style="display: none; margin-top: 12px;">
+                    <!-- Intake Section -->
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #00695c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Intake</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                            <div><label style="font-size:11px;font-weight:600;">PO Fluids (mL)</label><input type="number" id="ioPO" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">IV Fluids (mL)</label><input type="number" id="ioIV" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">IV Meds (mL)</label><input type="number" id="ioIVMeds" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Tube Feed (mL)</label><input type="number" id="ioTF" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Blood Products (mL)</label><input type="number" id="ioBlood" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                        </div>
+                    </div>
+                    <!-- Output Section -->
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #00695c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Output</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                            <div><label style="font-size:11px;font-weight:600;">Urine (mL)</label><input type="number" id="ioUrine" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Emesis (mL)</label><input type="number" id="ioEmesis" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Drain (mL)</label><input type="number" id="ioDrain" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Stool (mL)</label><input type="number" id="ioStool" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">NG Suction (mL)</label><input type="number" id="ioNG" placeholder="0" min="0" style="width:100%;padding:6px;font-size:12px;"></div>
+                        </div>
+                    </div>
+                    <!-- Balance Summary -->
+                    <div id="ioBalanceSummary" style="background: #e0f2f1; border-radius: 8px; padding: 10px 14px; font-size: 13px; font-weight: 600; color: #00695c; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <span>Intake: <strong id="ioTotalIn">0</strong> mL</span>
+                        <span>Output: <strong id="ioTotalOut">0</strong> mL</span>
+                        <span>Net Balance: <strong id="ioNet">0</strong> mL</span>
+                    </div>
+                </div>
+                <div id="savedIOList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #00897b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #00695c;">Saved I&amp;O (will be included in export):</span>
+                        <button onclick="clearSavedIO()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedIOEntries"></div>
+                </div>
+            </div>
+
+            <!-- Blood Glucose + Sliding Scale Panel -->
+            <div class="bg-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #f57c00; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('bgContent', this)">
+                    <h3 style="color: #e65100; margin: 0;">🩸 Blood Glucose &amp; Sliding Scale <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); saveBG()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertBG()" style="background: #f57c00; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                    </div>
+                </div>
+                <div id="bgContent" style="display: none; margin-top: 12px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                        <div><label style="font-size:11px;font-weight:600;">BG Value (mg/dL)</label><input type="number" id="bgValue" placeholder="e.g. 180" min="0" max="600" style="width:100%;padding:6px;font-size:12px;" oninput="updateBGStatus()"></div>
+                        <div><label style="font-size:11px;font-weight:600;">Timing</label>
+                            <select id="bgTiming" style="width:100%;padding:6px;font-size:12px;">
+                                <option value="Fasting">Fasting</option>
+                                <option value="Pre-meal">Pre-meal</option>
+                                <option value="Post-meal">Post-meal (2hr)</option>
+                                <option value="Bedtime">Bedtime</option>
+                                <option value="Random">Random</option>
+                            </select>
+                        </div>
+                        <div><label style="font-size:11px;font-weight:600;">Method</label>
+                            <select id="bgMethod" style="width:100%;padding:6px;font-size:12px;">
+                                <option value="Fingerstick">Fingerstick</option>
+                                <option value="POC meter">POC meter</option>
+                                <option value="Lab draw">Lab draw</option>
+                                <option value="CGM">CGM</option>
+                            </select>
+                        </div>
+                        <div><label style="font-size:11px;font-weight:600;">Site</label>
+                            <select id="bgSite" style="width:100%;padding:6px;font-size:12px;">
+                                <option value="">--</option>
+                                <option value="L ring finger">L ring finger</option>
+                                <option value="R ring finger">R ring finger</option>
+                                <option value="L middle finger">L middle finger</option>
+                                <option value="R middle finger">R middle finger</option>
+                                <option value="Alternate site">Alternate site</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- BG Status Indicator -->
+                    <div id="bgStatusBar" style="margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; display: none;"></div>
+                    <!-- Sliding Scale Section -->
+                    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #f57c00;">
+                        <div style="font-weight: 600; font-size: 12px; color: #e65100; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Sliding Scale Insulin Coverage</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                            <div><label style="font-size:11px;font-weight:600;">Insulin Type</label>
+                                <select id="bgInsulinType" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="">None given</option>
+                                    <option value="Lispro (Humalog)">Lispro (Humalog)</option>
+                                    <option value="Aspart (NovoLog)">Aspart (NovoLog)</option>
+                                    <option value="Regular (Humulin R)">Regular (Humulin R)</option>
+                                    <option value="Glulisine (Apidra)">Glulisine (Apidra)</option>
+                                </select>
+                            </div>
+                            <div><label style="font-size:11px;font-weight:600;">Units Given</label><input type="number" id="bgInsulinUnits" placeholder="0" min="0" max="100" step="0.5" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Route</label>
+                                <select id="bgInsulinRoute" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="SubQ">SubQ</option>
+                                    <option value="IV">IV</option>
+                                </select>
+                            </div>
+                            <div><label style="font-size:11px;font-weight:600;">Injection Site</label>
+                                <select id="bgInsulinSite" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="">--</option>
+                                    <option value="L abdomen">L abdomen</option>
+                                    <option value="R abdomen">R abdomen</option>
+                                    <option value="L thigh">L thigh</option>
+                                    <option value="R thigh">R thigh</option>
+                                    <option value="L arm">L arm</option>
+                                    <option value="R arm">R arm</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Two-nurse verification for insulin -->
+                    <div id="bgVerifyRow" style="margin-top: 10px; padding: 8px 12px; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 6px; display: none;">
+                        <label style="font-size: 12px; font-weight: 600; color: #e65100; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="bgVerified"> Two-nurse verification completed
+                        </label>
+                        <div style="margin-top: 4px;">
+                            <label style="font-size: 11px;">Verifying nurse initials:</label>
+                            <input type="text" id="bgVerifyInitials" placeholder="XX" maxlength="4" style="width: 60px; padding: 4px; font-size: 12px; text-transform: uppercase;">
+                        </div>
+                    </div>
+                </div>
+                <div id="savedBGList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #f57c00;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #e65100;">Saved BG Checks (will be included in export):</span>
+                        <button onclick="clearSavedBG()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedBGEntries"></div>
+                </div>
+            </div>
+
+            <!-- Pain Reassessment Loop Panel -->
+            <div class="pain-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #c62828; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('painContent', this)">
+                    <h3 style="color: #b71c1c; margin: 0;">🔴 Pain Assessment &amp; Reassessment <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); savePain()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertPain()" style="background: #c62828; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                    </div>
+                </div>
+                <div id="painContent" style="display: none; margin-top: 12px;">
+                    <!-- Initial Assessment -->
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #b71c1c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Initial Assessment</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">
+                            <div><label style="font-size:11px;font-weight:600;">Pain Scale (0-10)</label><input type="number" id="painInitScore" placeholder="0" min="0" max="10" style="width:100%;padding:6px;font-size:12px;" oninput="updatePainVisual('init')"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Location</label><input type="text" id="painLocation" placeholder="e.g. RLQ abdomen" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Quality</label>
+                                <select id="painQuality" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="">--</option>
+                                    <option value="Sharp">Sharp</option>
+                                    <option value="Dull">Dull</option>
+                                    <option value="Aching">Aching</option>
+                                    <option value="Burning">Burning</option>
+                                    <option value="Throbbing">Throbbing</option>
+                                    <option value="Stabbing">Stabbing</option>
+                                    <option value="Cramping">Cramping</option>
+                                    <option value="Pressure">Pressure</option>
+                                    <option value="Radiating">Radiating</option>
+                                </select>
+                            </div>
+                            <div><label style="font-size:11px;font-weight:600;">Onset</label>
+                                <select id="painOnset" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="">--</option>
+                                    <option value="Sudden">Sudden</option>
+                                    <option value="Gradual">Gradual</option>
+                                    <option value="Chronic">Chronic</option>
+                                    <option value="Post-op">Post-op</option>
+                                    <option value="Post-procedure">Post-procedure</option>
+                                </select>
+                            </div>
+                            <div><label style="font-size:11px;font-weight:600;">Radiation</label><input type="text" id="painRadiation" placeholder="e.g. to back" style="width:100%;padding:6px;font-size:12px;"></div>
+                        </div>
+                        <div id="painInitVisual" style="margin-top: 6px; height: 6px; border-radius: 3px; background: #e0e0e0;"><div style="height: 100%; border-radius: 3px; width: 0%; transition: width 0.3s;"></div></div>
+                    </div>
+                    <!-- Intervention -->
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #b71c1c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Intervention</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                            <div><label style="font-size:11px;font-weight:600;">Intervention Type</label>
+                                <select id="painIntervention" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="">--</option>
+                                    <optgroup label="Pharmacological">
+                                        <option value="PO analgesic">PO analgesic</option>
+                                        <option value="IV analgesic">IV analgesic</option>
+                                        <option value="IM analgesic">IM analgesic</option>
+                                        <option value="PCA">PCA</option>
+                                        <option value="Epidural">Epidural</option>
+                                        <option value="Nerve block">Nerve block</option>
+                                        <option value="Topical analgesic">Topical analgesic</option>
+                                    </optgroup>
+                                    <optgroup label="Non-Pharmacological">
+                                        <option value="Repositioning">Repositioning</option>
+                                        <option value="Ice/cold pack">Ice/cold pack</option>
+                                        <option value="Heat therapy">Heat therapy</option>
+                                        <option value="Elevation">Elevation</option>
+                                        <option value="Deep breathing">Deep breathing</option>
+                                        <option value="Distraction">Distraction</option>
+                                        <option value="Guided imagery">Guided imagery</option>
+                                        <option value="Massage">Massage</option>
+                                        <option value="Splinting">Splinting</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div><label style="font-size:11px;font-weight:600;">Medication (if applicable)</label><input type="text" id="painMedGiven" placeholder="e.g. Morphine 2mg IV" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Time Given</label><input type="text" id="painTimeGiven" placeholder="HHMM" maxlength="4" style="width:100%;padding:6px;font-size:12px;"></div>
+                        </div>
+                    </div>
+                    <!-- Reassessment -->
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-weight: 600; font-size: 12px; color: #b71c1c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Reassessment (30-60 min post-intervention)</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">
+                            <div><label style="font-size:11px;font-weight:600;">Reassess Score (0-10)</label><input type="number" id="painReassessScore" placeholder="0" min="0" max="10" style="width:100%;padding:6px;font-size:12px;" oninput="updatePainVisual('reassess')"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Reassess Time</label><input type="text" id="painReassessTime" placeholder="HHMM" maxlength="4" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Patient Response</label>
+                                <select id="painResponse" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="">--</option>
+                                    <option value="Pain relieved">Pain relieved</option>
+                                    <option value="Pain improved">Pain improved</option>
+                                    <option value="No change">No change</option>
+                                    <option value="Pain worsened">Pain worsened</option>
+                                    <option value="Tolerable - patient satisfied">Tolerable - patient satisfied</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="painReassessVisual" style="margin-top: 6px; height: 6px; border-radius: 3px; background: #e0e0e0;"><div style="height: 100%; border-radius: 3px; width: 0%; transition: width 0.3s;"></div></div>
+                    </div>
+                    <!-- Pain trend indicator -->
+                    <div id="painTrend" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-top: 6px;"></div>
+                </div>
+                <div id="savedPainList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #c62828;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #b71c1c;">Saved Pain Assessments (will be included in export):</span>
+                        <button onclick="clearSavedPain()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedPainEntries"></div>
+                </div>
+            </div>
+
+            <!-- Provider Notification (SBAR) Panel -->
+            <div class="notify-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #5c6bc0; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('notifyContent', this)">
+                    <h3 style="color: #283593; margin: 0;">📞 Provider Notification (SBAR) <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); saveNotify()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertNotify()" style="background: #5c6bc0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                    </div>
+                </div>
+                <div id="notifyContent" style="display: none; margin-top: 12px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                        <div><label style="font-size:11px;font-weight:600;">Provider Name/Title</label><input type="text" id="notifyProvider" placeholder="e.g. Dr. Smith, Attending" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">Time of Call</label><input type="text" id="notifyTime" placeholder="HHMM" maxlength="4" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">Contact Method</label>
+                            <select id="notifyMethod" style="width:100%;padding:6px;font-size:12px;">
+                                <option value="Phone call">Phone call</option>
+                                <option value="Page">Page</option>
+                                <option value="Secure message">Secure message</option>
+                                <option value="In person">In person</option>
+                                <option value="Bedside">Bedside</option>
+                            </select>
+                        </div>
+                        <div><label style="font-size:11px;font-weight:600;">Reason for Call</label>
+                            <select id="notifyReason" style="width:100%;padding:6px;font-size:12px;">
+                                <option value="">--</option>
+                                <option value="Change in condition">Change in condition</option>
+                                <option value="Abnormal vital signs">Abnormal vital signs</option>
+                                <option value="Abnormal lab values">Abnormal lab values</option>
+                                <option value="Pain management">Pain management</option>
+                                <option value="New symptom onset">New symptom onset</option>
+                                <option value="Medication concern">Medication concern</option>
+                                <option value="Fall/safety event">Fall/safety event</option>
+                                <option value="Request for orders">Request for orders</option>
+                                <option value="Discharge planning">Discharge planning</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- SBAR Fields -->
+                    <div style="display: grid; gap: 8px;">
+                        <div>
+                            <label style="font-size:11px;font-weight:600;"><span style="background:#5c6bc0;color:white;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px;">S</span> Situation</label>
+                            <textarea id="notifySituation" placeholder="I am calling about [patient], who is [reason for call]..." style="width:100%;padding:6px;font-size:12px;min-height:50px;resize:vertical;"></textarea>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;font-weight:600;"><span style="background:#5c6bc0;color:white;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px;">B</span> Background</label>
+                            <textarea id="notifyBackground" placeholder="Patient was admitted for... History includes... Current treatment..." style="width:100%;padding:6px;font-size:12px;min-height:50px;resize:vertical;"></textarea>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;font-weight:600;"><span style="background:#5c6bc0;color:white;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px;">A</span> Assessment</label>
+                            <textarea id="notifyAssessment" placeholder="I believe the problem is... The patient's condition is..." style="width:100%;padding:6px;font-size:12px;min-height:50px;resize:vertical;"></textarea>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;font-weight:600;"><span style="background:#5c6bc0;color:white;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px;">R</span> Recommendation / Orders Received</label>
+                            <textarea id="notifyRecommendation" placeholder="I recommend... Provider ordered... Read back confirmed..." style="width:100%;padding:6px;font-size:12px;min-height:50px;resize:vertical;"></textarea>
+                        </div>
+                    </div>
+                    <!-- Read-back verification -->
+                    <div style="margin-top: 10px; padding: 8px 12px; background: #e8eaf6; border: 1px solid #c5cae9; border-radius: 6px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #283593; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="notifyReadback"> Read-back of orders completed and confirmed
+                        </label>
+                    </div>
+                </div>
+                <div id="savedNotifyList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #5c6bc0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #283593;">Saved Notifications (will be included in export):</span>
+                        <button onclick="clearSavedNotify()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedNotifyEntries"></div>
+                </div>
+            </div>
 
             <h2 class="section-title" id="section-format">Documentation Format</h2>
             <div class="form-progress-bar-wrap" id="formProgressWrap" title="Note completion">
@@ -3380,12 +3698,29 @@
                 syncUserProfile(user);
                 migrateLegacyDocumentsIfNeeded();
 
-                // Check user role and hide APA link for instructors
+                // Load user profile: role, year, instructor visibility
                 userProfilesRef.child(user.uid).once('value').then((snap) => {
                     const profile = snap.val();
-                    if (profile && profile.role === 'Instructor') {
+                    if (!profile) return;
+                    if (profile.role === 'Instructor') {
                         const apaLink = document.getElementById('apaMenuLink');
                         if (apaLink) apaLink.style.display = 'none';
+                    }
+                    // Auto-populate role/year from Firebase if no localStorage cache
+                    const cached = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
+                    if (!cached.id && profile.role_id) {
+                        const data = { id: profile.role_id, label: profile.role_label || '', requires_year: !!profile.role_year, year: profile.role_year || null };
+                        try { localStorage.setItem('bendbsn_role_v2', JSON.stringify(data)); } catch(e) {}
+                        const noteRole = document.getElementById('noteRole');
+                        if (noteRole && noteRole.querySelector('[value="' + CSS.escape(profile.role_id) + '"]')) {
+                            noteRole.value = profile.role_id;
+                            onNoteRoleChange(true);
+                        }
+                        if (profile.role_year) {
+                            const noteYear = document.getElementById('noteYear');
+                            if (noteYear) noteYear.value = profile.role_year;
+                        }
+                        buildDocumentedBy();
                     }
                 });
             } else {
@@ -4477,6 +4812,291 @@
                 savedLinesDA = [];
                 renderSavedLines();
             }, { danger: true });
+        }
+
+        // ========== I&O TRACKING ==========
+        let savedIO = [];
+
+        function calcIOTotals() {
+            const ids = { in: ['ioPO','ioIV','ioIVMeds','ioTF','ioBlood'], out: ['ioUrine','ioEmesis','ioDrain','ioStool','ioNG'] };
+            const totalIn = ids.in.reduce((s,id) => s + (parseInt(document.getElementById(id)?.value) || 0), 0);
+            const totalOut = ids.out.reduce((s,id) => s + (parseInt(document.getElementById(id)?.value) || 0), 0);
+            const net = totalIn - totalOut;
+            document.getElementById('ioTotalIn').textContent = totalIn;
+            document.getElementById('ioTotalOut').textContent = totalOut;
+            const netEl = document.getElementById('ioNet');
+            netEl.textContent = (net >= 0 ? '+' : '') + net;
+            netEl.style.color = net >= 0 ? '#2e7d32' : '#c62828';
+            return { totalIn, totalOut, net };
+        }
+        // Auto-calc on input
+        document.addEventListener('input', function(e) {
+            if (['ioPO','ioIV','ioIVMeds','ioTF','ioBlood','ioUrine','ioEmesis','ioDrain','ioStool','ioNG'].includes(e.target.id)) calcIOTotals();
+        });
+
+        function buildIODisplay() {
+            const inParts = [], outParts = [];
+            const fields = {
+                in: [['ioPO','PO'],['ioIV','IV'],['ioIVMeds','IV Meds'],['ioTF','TF'],['ioBlood','Blood']],
+                out: [['ioUrine','Urine'],['ioEmesis','Emesis'],['ioDrain','Drain'],['ioStool','Stool'],['ioNG','NG']]
+            };
+            fields.in.forEach(([id,label]) => { const v = parseInt(document.getElementById(id)?.value) || 0; if (v) inParts.push(label + ' ' + v); });
+            fields.out.forEach(([id,label]) => { const v = parseInt(document.getElementById(id)?.value) || 0; if (v) outParts.push(label + ' ' + v); });
+            const t = calcIOTotals();
+            let display = 'I&O: Intake ' + t.totalIn + ' mL';
+            if (inParts.length) display += ' (' + inParts.join(', ') + ')';
+            display += ' | Output ' + t.totalOut + ' mL';
+            if (outParts.length) display += ' (' + outParts.join(', ') + ')';
+            display += ' | Net ' + (t.net >= 0 ? '+' : '') + t.net + ' mL';
+            return display;
+        }
+
+        function saveIO() {
+            const t = calcIOTotals();
+            if (t.totalIn === 0 && t.totalOut === 0) { showToast('Enter at least one I&O value.', 'warning'); return; }
+            savedIO.push({ display: buildIODisplay(), time: formatTimeDisplay(new Date()), timestamp: Date.now() });
+            renderSavedIO();
+            showToast('I&O saved for export.', 'success');
+        }
+
+        function insertIO() {
+            if (!lastActiveTextarea) { showToast('Click in a text field first.', 'warning'); return; }
+            const t = calcIOTotals();
+            if (t.totalIn === 0 && t.totalOut === 0) { showToast('Enter at least one I&O value.', 'warning'); return; }
+            const str = buildIODisplay() + '. ';
+            const start = lastActiveTextarea.selectionStart;
+            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
+            lastActiveTextarea.focus();
+            showToast('I&O inserted.', 'success');
+        }
+
+        function renderSavedIO() {
+            const list = document.getElementById('savedIOList'), entries = document.getElementById('savedIOEntries');
+            if (savedIO.length === 0) { list.style.display = 'none'; return; }
+            list.style.display = 'block';
+            entries.innerHTML = savedIO.map((item, i) => `<div style="display:flex;justify-content:space-between;align-items:center;background:white;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px;"><div><span style="color:#00897b;font-weight:600;">${item.time}</span> <span style="margin-left:8px;color:#333;">${item.display}</span></div><button onclick="savedIO.splice(${i},1);renderSavedIO();" style="background:#ffebee;border:none;color:#d32f2f;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">Remove</button></div>`).join('');
+        }
+
+        function clearSavedIO() {
+            showConfirmModal('Clear I&O', 'Clear all saved I&O entries?', function() { savedIO = []; renderSavedIO(); }, { danger: true });
+        }
+
+        // ========== BLOOD GLUCOSE & SLIDING SCALE ==========
+        let savedBG = [];
+
+        function updateBGStatus() {
+            const val = parseInt(document.getElementById('bgValue')?.value) || 0;
+            const bar = document.getElementById('bgStatusBar');
+            const verifyRow = document.getElementById('bgVerifyRow');
+            if (!val) { bar.style.display = 'none'; if (verifyRow) verifyRow.style.display = 'none'; return; }
+            bar.style.display = 'block';
+            let text, bg, color;
+            if (val < 70) { text = 'HYPOGLYCEMIA (' + val + ' mg/dL) — Follow hypoglycemia protocol'; bg = '#ffebee'; color = '#c62828'; }
+            else if (val <= 110) { text = 'Normal (' + val + ' mg/dL)'; bg = '#e8f5e9'; color = '#2e7d32'; }
+            else if (val <= 180) { text = 'Mild hyperglycemia (' + val + ' mg/dL)'; bg = '#fff8e1'; color = '#f57f17'; }
+            else if (val <= 250) { text = 'Moderate hyperglycemia (' + val + ' mg/dL) — Check sliding scale'; bg = '#fff3e0'; color = '#e65100'; }
+            else { text = 'SEVERE HYPERGLYCEMIA (' + val + ' mg/dL) — Notify provider'; bg = '#ffebee'; color = '#c62828'; }
+            bar.textContent = text;
+            bar.style.background = bg;
+            bar.style.color = color;
+            // Show insulin verify row if insulin will be given
+            if (verifyRow) verifyRow.style.display = (val > 150) ? 'block' : 'none';
+        }
+
+        function buildBGDisplay() {
+            const val = document.getElementById('bgValue')?.value || '';
+            const timing = document.getElementById('bgTiming')?.value || '';
+            const method = document.getElementById('bgMethod')?.value || '';
+            const site = document.getElementById('bgSite')?.value || '';
+            const insulinType = document.getElementById('bgInsulinType')?.value || '';
+            const units = document.getElementById('bgInsulinUnits')?.value || '';
+            const route = document.getElementById('bgInsulinRoute')?.value || '';
+            const injSite = document.getElementById('bgInsulinSite')?.value || '';
+            const verified = document.getElementById('bgVerified')?.checked;
+            const verifyInit = document.getElementById('bgVerifyInitials')?.value || '';
+            let display = 'BG ' + val + ' mg/dL (' + timing + ') via ' + method;
+            if (site) display += ' at ' + site;
+            if (insulinType && units) {
+                display += '. Coverage: ' + insulinType + ' ' + units + ' units ' + route;
+                if (injSite) display += ' to ' + injSite;
+                if (verified && verifyInit) display += '. Two-nurse verification by ' + verifyInit;
+            }
+            return display;
+        }
+
+        function saveBG() {
+            if (!document.getElementById('bgValue')?.value) { showToast('Enter a BG value.', 'warning'); return; }
+            savedBG.push({ display: buildBGDisplay(), time: formatTimeDisplay(new Date()), timestamp: Date.now() });
+            renderSavedBG();
+            showToast('Blood glucose saved for export.', 'success');
+        }
+
+        function insertBG() {
+            if (!lastActiveTextarea) { showToast('Click in a text field first.', 'warning'); return; }
+            if (!document.getElementById('bgValue')?.value) { showToast('Enter a BG value.', 'warning'); return; }
+            const str = buildBGDisplay() + '. ';
+            const start = lastActiveTextarea.selectionStart;
+            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
+            lastActiveTextarea.focus();
+            showToast('BG check inserted.', 'success');
+        }
+
+        function renderSavedBG() {
+            const list = document.getElementById('savedBGList'), entries = document.getElementById('savedBGEntries');
+            if (savedBG.length === 0) { list.style.display = 'none'; return; }
+            list.style.display = 'block';
+            entries.innerHTML = savedBG.map((item, i) => `<div style="display:flex;justify-content:space-between;align-items:center;background:white;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px;"><div><span style="color:#f57c00;font-weight:600;">${item.time}</span> <span style="margin-left:8px;color:#333;">${item.display}</span></div><button onclick="savedBG.splice(${i},1);renderSavedBG();" style="background:#ffebee;border:none;color:#d32f2f;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">Remove</button></div>`).join('');
+        }
+
+        function clearSavedBG() {
+            showConfirmModal('Clear BG Checks', 'Clear all saved blood glucose entries?', function() { savedBG = []; renderSavedBG(); }, { danger: true });
+        }
+
+        // ========== PAIN ASSESSMENT & REASSESSMENT ==========
+        let savedPain = [];
+
+        function updatePainVisual(which) {
+            const scoreEl = document.getElementById(which === 'init' ? 'painInitScore' : 'painReassessScore');
+            const barEl = document.getElementById(which === 'init' ? 'painInitVisual' : 'painReassessVisual');
+            const score = parseInt(scoreEl?.value) || 0;
+            const inner = barEl?.querySelector('div');
+            if (!inner) return;
+            inner.style.width = (score * 10) + '%';
+            const colors = ['#4caf50','#4caf50','#8bc34a','#cddc39','#ffeb3b','#ffc107','#ff9800','#ff5722','#f44336','#d32f2f','#b71c1c'];
+            inner.style.background = colors[Math.min(score, 10)];
+            // Update trend indicator
+            const initScore = parseInt(document.getElementById('painInitScore')?.value) || 0;
+            const reassessScore = parseInt(document.getElementById('painReassessScore')?.value) || 0;
+            const trend = document.getElementById('painTrend');
+            if (trend && initScore > 0 && reassessScore > 0) {
+                const diff = initScore - reassessScore;
+                trend.style.display = 'block';
+                if (diff > 0) { trend.textContent = 'Pain improved: ' + initScore + ' → ' + reassessScore + ' (decreased by ' + diff + ')'; trend.style.background = '#e8f5e9'; trend.style.color = '#2e7d32'; }
+                else if (diff < 0) { trend.textContent = 'Pain worsened: ' + initScore + ' → ' + reassessScore + ' (increased by ' + Math.abs(diff) + ')'; trend.style.background = '#ffebee'; trend.style.color = '#c62828'; }
+                else { trend.textContent = 'Pain unchanged: ' + initScore + ' → ' + reassessScore; trend.style.background = '#fff8e1'; trend.style.color = '#f57f17'; }
+            } else if (trend) { trend.style.display = 'none'; }
+        }
+
+        function buildPainDisplay() {
+            const init = document.getElementById('painInitScore')?.value || '';
+            const loc = document.getElementById('painLocation')?.value || '';
+            const quality = document.getElementById('painQuality')?.value || '';
+            const onset = document.getElementById('painOnset')?.value || '';
+            const radiation = document.getElementById('painRadiation')?.value || '';
+            const intervention = document.getElementById('painIntervention')?.value || '';
+            const med = document.getElementById('painMedGiven')?.value || '';
+            const timeGiven = document.getElementById('painTimeGiven')?.value || '';
+            const reassess = document.getElementById('painReassessScore')?.value || '';
+            const reassessTime = document.getElementById('painReassessTime')?.value || '';
+            const response = document.getElementById('painResponse')?.value || '';
+            let display = 'Pain ' + init + '/10';
+            if (loc) display += ' at ' + loc;
+            if (quality) display += ', ' + quality.toLowerCase();
+            if (onset) display += ', ' + onset.toLowerCase() + ' onset';
+            if (radiation) display += ', radiating to ' + radiation;
+            display += '.';
+            if (intervention) {
+                display += ' Intervention: ' + intervention;
+                if (med) display += ' (' + med + ')';
+                if (timeGiven) display += ' at ' + timeGiven;
+                display += '.';
+            }
+            if (reassess) {
+                display += ' Reassessment: ' + reassess + '/10';
+                if (reassessTime) display += ' at ' + reassessTime;
+                if (response) display += ', ' + response.toLowerCase();
+                display += '.';
+            }
+            return display;
+        }
+
+        function savePain() {
+            if (!document.getElementById('painInitScore')?.value) { showToast('Enter an initial pain score.', 'warning'); return; }
+            savedPain.push({ display: buildPainDisplay(), time: formatTimeDisplay(new Date()), timestamp: Date.now() });
+            renderSavedPain();
+            showToast('Pain assessment saved for export.', 'success');
+        }
+
+        function insertPain() {
+            if (!lastActiveTextarea) { showToast('Click in a text field first.', 'warning'); return; }
+            if (!document.getElementById('painInitScore')?.value) { showToast('Enter an initial pain score.', 'warning'); return; }
+            const str = buildPainDisplay() + ' ';
+            const start = lastActiveTextarea.selectionStart;
+            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
+            lastActiveTextarea.focus();
+            showToast('Pain assessment inserted.', 'success');
+        }
+
+        function renderSavedPain() {
+            const list = document.getElementById('savedPainList'), entries = document.getElementById('savedPainEntries');
+            if (savedPain.length === 0) { list.style.display = 'none'; return; }
+            list.style.display = 'block';
+            entries.innerHTML = savedPain.map((item, i) => `<div style="display:flex;justify-content:space-between;align-items:center;background:white;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px;"><div><span style="color:#c62828;font-weight:600;">${item.time}</span> <span style="margin-left:8px;color:#333;">${item.display}</span></div><button onclick="savedPain.splice(${i},1);renderSavedPain();" style="background:#ffebee;border:none;color:#d32f2f;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">Remove</button></div>`).join('');
+        }
+
+        function clearSavedPain() {
+            showConfirmModal('Clear Pain Assessments', 'Clear all saved pain assessments?', function() { savedPain = []; renderSavedPain(); }, { danger: true });
+        }
+
+        // ========== PROVIDER NOTIFICATION (SBAR) ==========
+        let savedNotify = [];
+
+        function buildNotifyDisplay() {
+            const provider = document.getElementById('notifyProvider')?.value || '';
+            const time = document.getElementById('notifyTime')?.value || '';
+            const method = document.getElementById('notifyMethod')?.value || '';
+            const reason = document.getElementById('notifyReason')?.value || '';
+            const situation = document.getElementById('notifySituation')?.value?.trim() || '';
+            const background = document.getElementById('notifyBackground')?.value?.trim() || '';
+            const assessment = document.getElementById('notifyAssessment')?.value?.trim() || '';
+            const recommendation = document.getElementById('notifyRecommendation')?.value?.trim() || '';
+            const readback = document.getElementById('notifyReadback')?.checked;
+            let display = 'Provider notification: ' + (provider || 'Provider') + ' contacted via ' + method;
+            if (time) display += ' at ' + time;
+            if (reason) display += ' for ' + reason.toLowerCase();
+            display += '.';
+            if (situation) display += ' S: ' + situation;
+            if (background) display += ' B: ' + background;
+            if (assessment) display += ' A: ' + assessment;
+            if (recommendation) display += ' R: ' + recommendation;
+            if (readback) display += ' Read-back confirmed.';
+            return display;
+        }
+
+        function saveNotify() {
+            const provider = document.getElementById('notifyProvider')?.value;
+            const situation = document.getElementById('notifySituation')?.value?.trim();
+            if (!provider && !situation) { showToast('Enter provider name or situation.', 'warning'); return; }
+            savedNotify.push({ display: buildNotifyDisplay(), time: formatTimeDisplay(new Date()), timestamp: Date.now() });
+            renderSavedNotify();
+            showToast('Provider notification saved for export.', 'success');
+        }
+
+        function insertNotify() {
+            if (!lastActiveTextarea) { showToast('Click in a text field first.', 'warning'); return; }
+            const provider = document.getElementById('notifyProvider')?.value;
+            const situation = document.getElementById('notifySituation')?.value?.trim();
+            if (!provider && !situation) { showToast('Enter provider name or situation.', 'warning'); return; }
+            const str = buildNotifyDisplay() + ' ';
+            const start = lastActiveTextarea.selectionStart;
+            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
+            lastActiveTextarea.focus();
+            showToast('Provider notification inserted.', 'success');
+        }
+
+        function renderSavedNotify() {
+            const list = document.getElementById('savedNotifyList'), entries = document.getElementById('savedNotifyEntries');
+            if (savedNotify.length === 0) { list.style.display = 'none'; return; }
+            list.style.display = 'block';
+            entries.innerHTML = savedNotify.map((item, i) => `<div style="display:flex;justify-content:space-between;align-items:center;background:white;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px;"><div style="max-width:85%;"><span style="color:#5c6bc0;font-weight:600;">${item.time}</span> <span style="margin-left:8px;color:#333;">${escapeHtml(item.display).substring(0, 200)}${item.display.length > 200 ? '...' : ''}</span></div><button onclick="savedNotify.splice(${i},1);renderSavedNotify();" style="background:#ffebee;border:none;color:#d32f2f;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">Remove</button></div>`).join('');
+        }
+
+        function clearSavedNotify() {
+            showConfirmModal('Clear Notifications', 'Clear all saved provider notifications?', function() { savedNotify = []; renderSavedNotify(); }, { danger: true });
         }
 
         // ========== ROUTE-ADAPTIVE MED FORM + HIGH-ALERT DETECTION ==========
@@ -6519,6 +7139,70 @@
                 y += ldaH + 4;
             }
 
+            // I&O
+            if (savedIO.length > 0) {
+                doc.setFillColor(224, 242, 241);
+                doc.setDrawColor(0, 137, 123);
+                const ioContent = savedIO.map(item => `${item.time}: ${item.display}`).join('\n');
+                const ioLines = doc.splitTextToSize(ioContent, cw - 12);
+                const ioH = 10 + ioLines.length * 4;
+                if (y + ioH > 280) { doc.addPage(); y = 15; }
+                doc.roundedRect(m, y, cw, ioH, 2, 2, 'FD');
+                doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(0, 105, 92);
+                doc.text('Intake & Output:', m + 4, y + 6);
+                doc.setFont('helvetica','normal'); doc.setTextColor(0);
+                let ioY = y + 10; ioLines.forEach(line => { doc.text(line, m + 4, ioY); ioY += 4; });
+                y += ioH + 4;
+            }
+
+            // Blood Glucose
+            if (savedBG.length > 0) {
+                doc.setFillColor(255, 243, 224);
+                doc.setDrawColor(245, 124, 0);
+                const bgContent = savedBG.map(item => `${item.time}: ${item.display}`).join('\n');
+                const bgLines = doc.splitTextToSize(bgContent, cw - 12);
+                const bgH = 10 + bgLines.length * 4;
+                if (y + bgH > 280) { doc.addPage(); y = 15; }
+                doc.roundedRect(m, y, cw, bgH, 2, 2, 'FD');
+                doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(230, 81, 0);
+                doc.text('Blood Glucose:', m + 4, y + 6);
+                doc.setFont('helvetica','normal'); doc.setTextColor(0);
+                let bgY = y + 10; bgLines.forEach(line => { doc.text(line, m + 4, bgY); bgY += 4; });
+                y += bgH + 4;
+            }
+
+            // Pain Assessments
+            if (savedPain.length > 0) {
+                doc.setFillColor(255, 235, 238);
+                doc.setDrawColor(198, 40, 40);
+                const painContent = savedPain.map(item => `${item.time}: ${item.display}`).join('\n');
+                const painLines = doc.splitTextToSize(painContent, cw - 12);
+                const painH = 10 + painLines.length * 4;
+                if (y + painH > 280) { doc.addPage(); y = 15; }
+                doc.roundedRect(m, y, cw, painH, 2, 2, 'FD');
+                doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(183, 28, 28);
+                doc.text('Pain Assessments:', m + 4, y + 6);
+                doc.setFont('helvetica','normal'); doc.setTextColor(0);
+                let painY = y + 10; painLines.forEach(line => { doc.text(line, m + 4, painY); painY += 4; });
+                y += painH + 4;
+            }
+
+            // Provider Notifications
+            if (savedNotify.length > 0) {
+                doc.setFillColor(232, 234, 246);
+                doc.setDrawColor(92, 107, 192);
+                const notifyContent = savedNotify.map(item => `${item.time}: ${item.display}`).join('\n');
+                const notifyLines = doc.splitTextToSize(notifyContent, cw - 12);
+                const notifyH = 10 + notifyLines.length * 4;
+                if (y + notifyH > 280) { doc.addPage(); y = 15; }
+                doc.roundedRect(m, y, cw, notifyH, 2, 2, 'FD');
+                doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(40, 53, 147);
+                doc.text('Provider Notifications:', m + 4, y + 6);
+                doc.setFont('helvetica','normal'); doc.setTextColor(0);
+                let notifyY = y + 10; notifyLines.forEach(line => { doc.text(line, m + 4, notifyY); notifyY += 4; });
+                y += notifyH + 4;
+            }
+
             // Focus
             if (['dar','darp'].includes(currentNoteType) && d.focus) {
                 doc.setFillColor(31, 78, 121);
@@ -6713,6 +7397,30 @@
                             spacing: {after: 40}
                         }));
                     });
+                }
+
+                // Saved I&O
+                if (savedIO.length > 0) {
+                    ch.push(new Paragraph({ children: [new TextRun({text: 'Intake & Output:', bold: true, color: '00695c'})], spacing: {before: 100, after: 50} }));
+                    savedIO.forEach(item => { ch.push(new Paragraph({ children: [new TextRun({text: item.time + ': ', bold: true, color: '00897b'}), new TextRun(item.display)], spacing: {after: 40} })); });
+                }
+
+                // Saved Blood Glucose
+                if (savedBG.length > 0) {
+                    ch.push(new Paragraph({ children: [new TextRun({text: 'Blood Glucose:', bold: true, color: 'e65100'})], spacing: {before: 100, after: 50} }));
+                    savedBG.forEach(item => { ch.push(new Paragraph({ children: [new TextRun({text: item.time + ': ', bold: true, color: 'f57c00'}), new TextRun(item.display)], spacing: {after: 40} })); });
+                }
+
+                // Saved Pain Assessments
+                if (savedPain.length > 0) {
+                    ch.push(new Paragraph({ children: [new TextRun({text: 'Pain Assessments:', bold: true, color: 'b71c1c'})], spacing: {before: 100, after: 50} }));
+                    savedPain.forEach(item => { ch.push(new Paragraph({ children: [new TextRun({text: item.time + ': ', bold: true, color: 'c62828'}), new TextRun(item.display)], spacing: {after: 40} })); });
+                }
+
+                // Saved Provider Notifications
+                if (savedNotify.length > 0) {
+                    ch.push(new Paragraph({ children: [new TextRun({text: 'Provider Notifications:', bold: true, color: '283593'})], spacing: {before: 100, after: 50} }));
+                    savedNotify.forEach(item => { ch.push(new Paragraph({ children: [new TextRun({text: item.time + ': ', bold: true, color: '5c6bc0'}), new TextRun(item.display)], spacing: {after: 40} })); });
                 }
 
                 // Focus (for DAR/DARP)
@@ -6962,6 +7670,127 @@
             }
         }
         maybeShowFirstNoteWizard();
+
+        // ========== DOCUMENTATION COMPLETENESS SCORE ==========
+        function getCompletenessReport() {
+            const issues = [];
+            const checks = [];
+            // Patient info
+            const pid = (document.getElementById('patientId')?.value || '').trim();
+            checks.push({ label: 'Patient ID', done: !!pid });
+            if (!pid) issues.push({ type: 'error', msg: 'Missing patient identifier' });
+            const noteDate = (document.getElementById('noteDate')?.value || '').trim();
+            checks.push({ label: 'Date', done: !!noteDate });
+            const noteTime = (document.getElementById('noteTime')?.value || '').trim();
+            checks.push({ label: 'Time', done: !!noteTime });
+            // Role
+            const roleId = (document.getElementById('noteRole')?.value || '');
+            checks.push({ label: 'Role', done: !!roleId });
+            // Note content
+            const activeFields = document.querySelectorAll('.note-fields.active textarea');
+            const filledFields = Array.from(activeFields).filter(f => f.value.trim().length > 0);
+            const noteHasContent = filledFields.length > 0;
+            checks.push({ label: 'Note content', done: noteHasContent });
+            if (!noteHasContent) issues.push({ type: 'error', msg: 'No documentation content entered' });
+            // Vitals
+            const hasVitals = savedVitals.length > 0;
+            checks.push({ label: 'Vitals', done: hasVitals });
+            if (!hasVitals) issues.push({ type: 'warning', msg: 'No vitals documented — consider adding vital signs' });
+            // Scored items
+            const hasMeds = savedMedications.length > 0;
+            checks.push({ label: 'Medications', done: hasMeds });
+            const hasAssessment = currentNoteType === 'h2t' || filledFields.length >= 2;
+            checks.push({ label: 'Assessment data', done: hasAssessment });
+            const done = checks.filter(c => c.done).length;
+            const pct = Math.round((done / checks.length) * 100);
+            return { checks, issues, pct, done, total: checks.length };
+        }
+
+        function updateCompletenessIndicator() {
+            const report = getCompletenessReport();
+            const bar = document.getElementById('formProgressBar');
+            if (bar) {
+                bar.style.width = report.pct + '%';
+                bar.style.background = report.pct >= 80 ? '#4caf50' : report.pct >= 50 ? '#ff9800' : '#f44336';
+            }
+            const wrap = document.getElementById('formProgressWrap');
+            if (wrap) wrap.title = 'Completeness: ' + report.pct + '% (' + report.done + '/' + report.total + ')';
+        }
+
+        // Override the simple progress bar with completeness-aware version
+        const _origUpdateFormProgress = updateFormProgress;
+        updateFormProgress = function() { updateCompletenessIndicator(); };
+
+        // ========== COMMON ERROR FLAGGING ==========
+        function checkDocumentationErrors() {
+            const warnings = [];
+            // Check for real patient identifiers
+            const pid = (document.getElementById('patientId')?.value || '').trim().toLowerCase();
+            if (/\b\d{3}-?\d{2}-?\d{4}\b/.test(pid)) warnings.push('Patient ID may contain an SSN — use fictional identifiers only');
+            if (/\b\d{6,}\b/.test(pid) && pid.length > 8) warnings.push('Patient ID looks like a real MRN — use fictional identifiers only');
+            // Check note content for common issues
+            const activeFields = document.querySelectorAll('.note-fields.active textarea');
+            activeFields.forEach(f => {
+                const val = f.value.toLowerCase();
+                if (val.includes('patient tolerated well') || val.includes('tolerated without')) {
+                    warnings.push('Avoid reflexive phrases like "tolerated well" — document specific objective assessment findings');
+                }
+                if (/\bwr\b|within normal/.test(val) && !/wnl/.test(val) && val.length < 50) {
+                    warnings.push('Vague documentation — expand on what is within normal limits');
+                }
+                if (val.includes('no complaints') && val.length < 30) {
+                    warnings.push('"No complaints" alone is insufficient — document what was assessed');
+                }
+            });
+            // Check for unsigned note (no role)
+            if (!(document.getElementById('noteRole')?.value)) {
+                warnings.push('Role not selected — documentation needs author credentials');
+            }
+            // Check for missing time on meds
+            if (savedMedications.length > 0 && !savedVitals.length) {
+                warnings.push('Medications documented without vitals — consider documenting vital signs');
+            }
+            // Pain reassessment check
+            if (savedPain.length > 0) {
+                const lastPain = savedPain[savedPain.length - 1];
+                if (lastPain.display && !lastPain.display.includes('Reassessment:')) {
+                    warnings.push('Pain intervention documented without reassessment — reassess 30-60 min post-intervention');
+                }
+            }
+            return warnings;
+        }
+
+        function showDocWarnings() {
+            const warnings = checkDocumentationErrors();
+            const existing = document.getElementById('docWarningsPanel');
+            if (existing) existing.remove();
+            if (warnings.length === 0) return;
+            const panel = document.createElement('div');
+            panel.id = 'docWarningsPanel';
+            panel.style.cssText = 'background:#fff8e1;border:1px solid #ffcc80;border-left:4px solid #ff9800;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;';
+            panel.innerHTML = '<div style="font-weight:600;color:#e65100;margin-bottom:6px;">Documentation Alerts</div>' +
+                warnings.map(w => '<div style="color:#795548;margin-bottom:3px;">&#9888; ' + w + '</div>').join('');
+            const formatSection = document.getElementById('section-format');
+            if (formatSection) formatSection.parentNode.insertBefore(panel, formatSection);
+        }
+
+        // Run checks when saving or exporting
+        const _origSaveToHistory = typeof saveToHistory === 'function' ? saveToHistory : null;
+        if (_origSaveToHistory) {
+            const _wrappedSave = saveToHistory;
+            saveToHistory = function() { showDocWarnings(); return _wrappedSave.apply(this, arguments); };
+        }
+
+        // Also run on copy
+        const _origCopyNote = typeof copyNoteToClipboard === 'function' ? copyNoteToClipboard : null;
+        if (_origCopyNote) {
+            const _wrappedCopy = copyNoteToClipboard;
+            copyNoteToClipboard = function() { showDocWarnings(); return _wrappedCopy.apply(this, arguments); };
+        }
+
+        // Periodic completeness update
+        setInterval(updateCompletenessIndicator, 5000);
+        updateCompletenessIndicator();
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
