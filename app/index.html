@@ -1078,13 +1078,13 @@
                     <label>Unit</label>
                     <input type="text" id="unit" placeholder="e.g., Med-Surg 3B">
                 </div>
-                <div class="form-group" id="noteRoleGroup" style="min-width:130px;flex:1;">
+                <div class="form-group" id="noteRoleGroup" style="display:none;">
                     <label>Role</label>
                     <select id="noteRole" onchange="onNoteRoleChange()">
                         <option value="">Loading…</option>
                     </select>
                 </div>
-                <div class="form-group" id="noteYearGroup" style="min-width:110px;flex:1;display:none;">
+                <div class="form-group" id="noteYearGroup" style="display:none;">
                     <label>Year</label>
                     <select id="noteYear" onchange="updateRoleCache();buildDocumentedBy();">
                         <option value="">Select year</option>
@@ -2011,6 +2011,19 @@
                     <div id="savedNotifyEntries"></div>
                 </div>
             </div>
+
+            <!-- Generate Full Narrative from all Quick Entry data -->
+            <div style="background: linear-gradient(135deg, #1a237e 0%, #283593 100%); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="color: white; font-weight: 700; font-size: 15px;">Generate Full Narrative</div>
+                    <div style="color: rgba(255,255,255,0.75); font-size: 12px;">Compile all saved Quick Entry data into one narrative paragraph</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="generateFullNarrative('insert')" style="background: white; color: #1a237e; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px;">Insert into Note ➜</button>
+                    <button onclick="generateFullNarrative('copy')" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Copy to Clipboard</button>
+                </div>
+            </div>
+            <div id="fullNarrativePreview" style="display:none; background: #e8eaf6; border: 1px solid #c5cae9; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; color: #1a237e; white-space: pre-wrap;"></div>
 
             <h2 class="section-title" id="section-format">Documentation Format</h2>
             <div class="form-progress-bar-wrap" id="formProgressWrap" title="Note completion">
@@ -5099,6 +5112,78 @@
             showConfirmModal('Clear Notifications', 'Clear all saved provider notifications?', function() { savedNotify = []; renderSavedNotify(); }, { danger: true });
         }
 
+        // ========== GENERATE FULL NARRATIVE ==========
+        function buildFullNarrative() {
+            const parts = [];
+            // Vitals
+            if (savedVitals.length > 0) {
+                const latest = savedVitals[savedVitals.length - 1];
+                parts.push('VS: ' + latest.display);
+            }
+            // Lines/Drains/Airways
+            if (savedLinesDA.length > 0) {
+                savedLinesDA.forEach(l => parts.push(l.display));
+            }
+            // I&O
+            if (savedIO.length > 0) {
+                const latest = savedIO[savedIO.length - 1];
+                parts.push(latest.display);
+            }
+            // Medications
+            if (savedMedications.length > 0) {
+                const medParts = savedMedications.map(m => m.time + ' — ' + m.display);
+                parts.push('Medications: ' + medParts.join('; '));
+            }
+            // Blood Glucose
+            if (savedBG.length > 0) {
+                savedBG.forEach(bg => parts.push(bg.display));
+            }
+            // Pain
+            if (savedPain.length > 0) {
+                savedPain.forEach(p => parts.push(p.display));
+            }
+            // Provider Notifications
+            if (savedNotify.length > 0) {
+                savedNotify.forEach(n => parts.push(n.display));
+            }
+            // Screenings
+            if (typeof savedScreenings !== 'undefined' && savedScreenings.length > 0) {
+                const scrParts = savedScreenings.map(s => s.display);
+                parts.push('Screenings: ' + scrParts.join('; '));
+            }
+            return parts.join(' ');
+        }
+
+        function generateFullNarrative(action) {
+            const narrative = buildFullNarrative();
+            if (!narrative) {
+                showToast('No saved Quick Entry data to compile. Save some entries first.', 'warning');
+                return;
+            }
+            // Show preview
+            const preview = document.getElementById('fullNarrativePreview');
+            if (preview) { preview.textContent = narrative; preview.style.display = 'block'; }
+
+            if (action === 'copy') {
+                navigator.clipboard.writeText(narrative).then(() => {
+                    showToast('Full narrative copied to clipboard.', 'success');
+                }).catch(() => {
+                    showToast('Copy failed — try Insert instead.', 'error');
+                });
+            } else if (action === 'insert') {
+                if (!lastActiveTextarea) {
+                    showToast('Click in a note text field first, then click Insert.', 'warning');
+                    return;
+                }
+                const str = narrative + ' ';
+                const start = lastActiveTextarea.selectionStart;
+                lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
+                lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
+                lastActiveTextarea.focus();
+                showToast('Full narrative inserted into note.', 'success');
+            }
+        }
+
         // ========== ROUTE-ADAPTIVE MED FORM + HIGH-ALERT DETECTION ==========
         const ROUTE_CONFIG = {
             PO:          { showSite: false, showInfusion: false, showVerify: false },
@@ -6365,12 +6450,9 @@
             const yearSel = document.getElementById('noteYear');
             const loggedInRole = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
 
-            if (role.requires_year && role.year_options && yearGroup && yearSel) {
-                yearGroup.style.display = '';
+            if (role.requires_year && role.year_options && yearSel) {
                 yearSel.innerHTML = role.year_options.map(y => `<option>${y}</option>`).join('');
                 if (fromCache && loggedInRole.year) yearSel.value = loggedInRole.year;
-            } else if (yearGroup) {
-                yearGroup.style.display = 'none';
             }
             updateRoleCache();
             buildDocumentedBy();
