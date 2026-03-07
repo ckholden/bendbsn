@@ -952,6 +952,12 @@
             background: rgba(255,255,255,0.08);
             color: #fca5a5;
         }
+        .abg-th-acid { background: #fef2f2; color: #991b1b; }
+        .abg-th-norm { background: #f0fdf4; color: #166534; }
+        .abg-th-alk { background: #eff6ff; color: #1e40af; }
+        [data-theme="dark"] .abg-th-acid { background: #7f1d1d; color: #fca5a5; }
+        [data-theme="dark"] .abg-th-norm { background: #064e3b; color: #6ee7b7; }
+        [data-theme="dark"] .abg-th-alk { background: #1e3a5f; color: #93c5fd; }
         [data-theme="dark"] .resource-card .card-content input,
         [data-theme="dark"] .resource-card .card-content select,
         [data-theme="dark"] .resource-card .card-content textarea {
@@ -1159,6 +1165,93 @@
                         </div>
                         <div id="labTableContainer"></div>
                     </div>
+
+                <!-- ABG Tic-Tac-Toe Interpreter -->
+                <div id="section-abg-interpreter" class="card resource-card collapsible collapsed" data-tags="abg arterial blood gas interpretation respiratory tic-tac-toe acid base">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🫁 ABG Tic-Tac-Toe Interpreter</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 13px; color: var(--clx-text-secondary); margin-bottom: 14px;">
+                            Enter ABG values to interpret using the tic-tac-toe method. The grid highlights which column each value falls in — when two rows land in the same column, that's your primary disorder.
+                        </p>
+
+                        <!-- Clinical Scenarios -->
+                        <div style="margin-bottom: 14px;">
+                            <label style="font-size: 11px; font-weight: 700; color: var(--clx-text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">Load Example</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                <button class="resource-chip" onclick="loadABGScenario('normal')">Normal</button>
+                                <button class="resource-chip" onclick="loadABGScenario('dka')">DKA</button>
+                                <button class="resource-chip" onclick="loadABGScenario('copd')">COPD</button>
+                                <button class="resource-chip" onclick="loadABGScenario('hyperventilation')">Hyperventilation</button>
+                                <button class="resource-chip" onclick="loadABGScenario('vomiting')">Vomiting</button>
+                                <button class="resource-chip" onclick="loadABGScenario('renal')">Renal Failure</button>
+                            </div>
+                        </div>
+
+                        <!-- Input Fields -->
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--clx-text-primary);">pH</label>
+                                <input type="number" id="abgPH" placeholder="7.40" step="0.01" min="6.8" max="7.8" style="width: 100%; padding: 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 16px; font-weight: 600; text-align: center; background: var(--clx-bg-surface); color: var(--clx-text-primary);" oninput="interpretABG()">
+                                <span style="font-size: 10px; color: var(--clx-text-muted); display: block; text-align: center; margin-top: 2px;">Normal: 7.35–7.45</span>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--clx-text-primary);">PaCO₂ <span style="font-weight: 400; color: var(--clx-text-muted);">mmHg</span></label>
+                                <input type="number" id="abgCO2" placeholder="40" step="1" min="10" max="120" style="width: 100%; padding: 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 16px; font-weight: 600; text-align: center; background: var(--clx-bg-surface); color: var(--clx-text-primary);" oninput="interpretABG()">
+                                <span style="font-size: 10px; color: var(--clx-text-muted); display: block; text-align: center; margin-top: 2px;">Normal: 35–45</span>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--clx-text-primary);">HCO₃⁻ <span style="font-weight: 400; color: var(--clx-text-muted);">mEq/L</span></label>
+                                <input type="number" id="abgHCO3" placeholder="24" step="1" min="5" max="50" style="width: 100%; padding: 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 16px; font-weight: 600; text-align: center; background: var(--clx-bg-surface); color: var(--clx-text-primary);" oninput="interpretABG()">
+                                <span style="font-size: 10px; color: var(--clx-text-muted); display: block; text-align: center; margin-top: 2px;">Normal: 22–26</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                            <button onclick="interpretABG()" style="flex: 1; padding: 10px; background: var(--clx-accent); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">Interpret ABG</button>
+                            <button onclick="resetABG()" style="padding: 10px 16px; background: var(--clx-bg-surface-2); color: var(--clx-text-secondary); border: 1px solid var(--clx-border); border-radius: 8px; font-size: 14px; cursor: pointer;">Reset</button>
+                        </div>
+
+                        <!-- Tic-Tac-Toe Grid -->
+                        <div id="abgGrid" style="display: none; margin-bottom: 16px;">
+                            <table id="abgTicTacToe" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13px;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 8px; background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); font-size: 11px; font-weight: 700; color: var(--clx-text-muted); width: 25%;"></th>
+                                        <th class="abg-th-acid" style="padding: 8px; border: 1px solid var(--clx-border); font-weight: 700;">Acidosis</th>
+                                        <th class="abg-th-norm" style="padding: 8px; border: 1px solid var(--clx-border); font-weight: 700;">Normal</th>
+                                        <th class="abg-th-alk" style="padding: 8px; border: 1px solid var(--clx-border); font-weight: 700;">Alkalosis</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 10px 8px; font-weight: 700; background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border);">pH</td>
+                                        <td id="abgCell-ph-acid" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">↓ &lt; 7.35</td>
+                                        <td id="abgCell-ph-norm" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">7.35–7.45</td>
+                                        <td id="abgCell-ph-alk" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">↑ &gt; 7.45</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px 8px; font-weight: 700; background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border);">PaCO₂</td>
+                                        <td id="abgCell-co2-acid" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">↑ &gt; 45</td>
+                                        <td id="abgCell-co2-norm" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">35–45</td>
+                                        <td id="abgCell-co2-alk" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">↓ &lt; 35</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px 8px; font-weight: 700; background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border);">HCO₃⁻</td>
+                                        <td id="abgCell-hco3-acid" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">↓ &lt; 22</td>
+                                        <td id="abgCell-hco3-norm" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">22–26</td>
+                                        <td id="abgCell-hco3-alk" style="padding: 10px 8px; border: 1px solid var(--clx-border); transition: all 0.3s;">↑ &gt; 26</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Results -->
+                        <div id="abgResult" style="display: none;"></div>
+                    </div>
+                </div>
 
                 <!-- Vital Signs -->
                 <div id="section-vital-signs" class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges">
@@ -2199,8 +2292,9 @@
     <script>
         // Display current user
         const currentUsername = localStorage.getItem('bendbsn_user');
-        if (currentUsername) {
-            document.getElementById('userDisplay').textContent = 'Logged in as: ' + currentUsername;
+        const userDisplayEl = document.getElementById('userDisplay');
+        if (currentUsername && userDisplayEl) {
+            userDisplayEl.textContent = 'Logged in as: ' + currentUsername;
         }
 
         // Logout function
@@ -2861,6 +2955,242 @@
             } catch (e) {
                 console.log('Audio not supported');
             }
+        }
+
+        // ========== ABG TIC-TAC-TOE INTERPRETER ==========
+        const ABG_SCENARIOS = {
+            normal:           { ph: 7.40, co2: 40, hco3: 24, label: 'Normal ABG' },
+            dka:              { ph: 7.25, co2: 28, hco3: 14, label: 'DKA (Diabetic Ketoacidosis)' },
+            copd:             { ph: 7.32, co2: 55, hco3: 30, label: 'COPD Exacerbation' },
+            hyperventilation: { ph: 7.52, co2: 28, hco3: 23, label: 'Hyperventilation / Anxiety' },
+            vomiting:         { ph: 7.50, co2: 44, hco3: 32, label: 'Prolonged Vomiting' },
+            renal:            { ph: 7.30, co2: 38, hco3: 18, label: 'Renal Failure' }
+        };
+
+        function loadABGScenario(name) {
+            const s = ABG_SCENARIOS[name];
+            if (!s) return;
+            document.getElementById('abgPH').value = s.ph;
+            document.getElementById('abgCO2').value = s.co2;
+            document.getElementById('abgHCO3').value = s.hco3;
+            interpretABG();
+        }
+
+        function resetABG() {
+            document.getElementById('abgPH').value = '';
+            document.getElementById('abgCO2').value = '';
+            document.getElementById('abgHCO3').value = '';
+            document.getElementById('abgGrid').style.display = 'none';
+            document.getElementById('abgResult').style.display = 'none';
+            // Clear cell highlights
+            document.querySelectorAll('[id^="abgCell-"]').forEach(cell => {
+                cell.style.background = '';
+                cell.style.fontWeight = '';
+                cell.style.color = '';
+            });
+        }
+
+        function interpretABG() {
+            const ph = parseFloat(document.getElementById('abgPH').value);
+            const co2 = parseFloat(document.getElementById('abgCO2').value);
+            const hco3 = parseFloat(document.getElementById('abgHCO3').value);
+
+            if (isNaN(ph) || isNaN(co2) || isNaN(hco3)) return;
+            if (ph < 6.8 || ph > 7.8) { showToast('pH should be 6.8–7.8', 'warning'); return; }
+            if (co2 < 10 || co2 > 120) { showToast('PaCO₂ should be 10–120', 'warning'); return; }
+            if (hco3 < 5 || hco3 > 50) { showToast('HCO₃ should be 5–50', 'warning'); return; }
+
+            // Classify each value
+            const phDir = ph < 7.35 ? 'acid' : ph > 7.45 ? 'alk' : 'norm';
+            const co2Dir = co2 > 45 ? 'acid' : co2 < 35 ? 'alk' : 'norm';
+            const hco3Dir = hco3 < 22 ? 'acid' : hco3 > 26 ? 'alk' : 'norm';
+
+            // Highlight grid
+            document.getElementById('abgGrid').style.display = '';
+            const dk = document.documentElement.getAttribute('data-theme') === 'dark';
+            const highlight = dk ? { acid: '#7f1d1d', norm: '#064e3b', alk: '#1e3a5f' } : { acid: '#fecaca', norm: '#bbf7d0', alk: '#bfdbfe' };
+            const textColor = dk ? { acid: '#fca5a5', norm: '#6ee7b7', alk: '#93c5fd' } : { acid: '#991b1b', norm: '#166534', alk: '#1e40af' };
+
+            document.querySelectorAll('[id^="abgCell-"]').forEach(cell => {
+                cell.style.background = '';
+                cell.style.fontWeight = '';
+                cell.style.color = '';
+                cell.style.fontSize = '';
+            });
+
+            function markCell(row, dir, value) {
+                const cell = document.getElementById('abgCell-' + row + '-' + dir);
+                if (cell) {
+                    cell.style.background = highlight[dir];
+                    cell.style.fontWeight = '700';
+                    cell.style.color = textColor[dir];
+                    cell.style.fontSize = '14px';
+                    // Show actual value in cell
+                    const labels = {
+                        'ph-acid': '↓ ' + value, 'ph-norm': value, 'ph-alk': '↑ ' + value,
+                        'co2-acid': '↑ ' + value, 'co2-norm': value, 'co2-alk': '↓ ' + value,
+                        'hco3-acid': '↓ ' + value, 'hco3-norm': value, 'hco3-alk': '↑ ' + value
+                    };
+                    cell.textContent = labels[row + '-' + dir] || value;
+                }
+            }
+            markCell('ph', phDir, ph.toFixed(2));
+            markCell('co2', co2Dir, co2);
+            markCell('hco3', hco3Dir, hco3);
+
+            // Build reasoning steps
+            const steps = [];
+            const dirLabels = { acid: 'Acidosis', norm: 'Normal', alk: 'Alkalosis' };
+
+            steps.push('1. <strong>pH ' + ph.toFixed(2) + '</strong> → ' + dirLabels[phDir] +
+                (phDir === 'acid' ? ' (below 7.35)' : phDir === 'alk' ? ' (above 7.45)' : ' (7.35–7.45)'));
+            steps.push('2. <strong>PaCO₂ ' + co2 + '</strong> → ' + dirLabels[co2Dir] +
+                (co2Dir === 'acid' ? ' (above 45 — respiratory acid)' : co2Dir === 'alk' ? ' (below 35 — respiratory alkalosis)' : ' (35–45)'));
+            steps.push('3. <strong>HCO₃ ' + hco3 + '</strong> → ' + dirLabels[hco3Dir] +
+                (hco3Dir === 'acid' ? ' (below 22 — metabolic acid)' : hco3Dir === 'alk' ? ' (above 26 — metabolic alkalosis)' : ' (22–26)'));
+
+            // Determine disorder
+            let diagnosis = '';
+            let compensation = '';
+            let explanation = '';
+
+            if (phDir === 'norm' && co2Dir === 'norm' && hco3Dir === 'norm') {
+                diagnosis = 'Normal ABG';
+                compensation = '';
+                explanation = 'All values within normal range. No acid-base disturbance.';
+            } else if (phDir === 'norm') {
+                // pH normal but others abnormal = fully compensated
+                if (co2Dir === 'acid' && hco3Dir === 'alk') {
+                    diagnosis = 'Respiratory Acidosis';
+                    compensation = 'Fully Compensated';
+                    explanation = 'CO₂ is elevated (respiratory acid) but pH is normal — the kidneys have fully compensated by retaining HCO₃.';
+                } else if (co2Dir === 'alk' && hco3Dir === 'acid') {
+                    diagnosis = 'Respiratory Alkalosis';
+                    compensation = 'Fully Compensated';
+                    explanation = 'CO₂ is low (respiratory alkalosis) but pH is normal — the kidneys compensated by excreting HCO₃.';
+                } else if (hco3Dir === 'acid' && co2Dir === 'alk') {
+                    diagnosis = 'Metabolic Acidosis';
+                    compensation = 'Fully Compensated';
+                    explanation = 'HCO₃ is low (metabolic acid) but pH is normal — the lungs compensated by blowing off CO₂.';
+                } else if (hco3Dir === 'alk' && co2Dir === 'acid') {
+                    diagnosis = 'Metabolic Alkalosis';
+                    compensation = 'Fully Compensated';
+                    explanation = 'HCO₃ is elevated (metabolic alkalosis) but pH is normal — the lungs compensated by retaining CO₂.';
+                } else {
+                    diagnosis = 'Normal / Borderline';
+                    explanation = 'pH is normal with minor variations in CO₂ or HCO₃.';
+                }
+            } else if (phDir === 'acid') {
+                // pH acidotic — find the cause
+                if (co2Dir === 'acid' && hco3Dir !== 'acid') {
+                    diagnosis = 'Respiratory Acidosis';
+                    if (hco3Dir === 'alk') {
+                        compensation = 'Partially Compensated';
+                        explanation = 'Elevated CO₂ is causing acidosis. The kidneys are partially compensating by retaining HCO₃, but pH hasn\'t normalized yet.';
+                    } else {
+                        compensation = 'Uncompensated';
+                        explanation = 'Elevated CO₂ is causing acidosis. HCO₃ is normal — the kidneys have not yet begun to compensate.';
+                    }
+                } else if (hco3Dir === 'acid' && co2Dir !== 'acid') {
+                    diagnosis = 'Metabolic Acidosis';
+                    if (co2Dir === 'alk') {
+                        compensation = 'Partially Compensated';
+                        explanation = 'Low HCO₃ is causing acidosis. The lungs are partially compensating by hyperventilating (lowering CO₂), but pH hasn\'t normalized.';
+                    } else {
+                        compensation = 'Uncompensated';
+                        explanation = 'Low HCO₃ is causing acidosis. CO₂ is normal — the lungs have not yet compensated.';
+                    }
+                } else if (co2Dir === 'acid' && hco3Dir === 'acid') {
+                    diagnosis = 'Mixed Acidosis';
+                    compensation = 'Combined Respiratory & Metabolic';
+                    explanation = 'Both CO₂ and HCO₃ point to acidosis — this is a mixed disorder (e.g., cardiac arrest, septic shock).';
+                }
+            } else if (phDir === 'alk') {
+                if (co2Dir === 'alk' && hco3Dir !== 'alk') {
+                    diagnosis = 'Respiratory Alkalosis';
+                    if (hco3Dir === 'acid') {
+                        compensation = 'Partially Compensated';
+                        explanation = 'Low CO₂ (hyperventilation) is causing alkalosis. The kidneys are partially compensating by excreting HCO₃.';
+                    } else {
+                        compensation = 'Uncompensated';
+                        explanation = 'Low CO₂ (hyperventilation) is causing alkalosis. HCO₃ is normal — no renal compensation yet.';
+                    }
+                } else if (hco3Dir === 'alk' && co2Dir !== 'alk') {
+                    diagnosis = 'Metabolic Alkalosis';
+                    if (co2Dir === 'acid') {
+                        compensation = 'Partially Compensated';
+                        explanation = 'Elevated HCO₃ is causing alkalosis. The lungs are partially compensating by retaining CO₂ (hypoventilation).';
+                    } else {
+                        compensation = 'Uncompensated';
+                        explanation = 'Elevated HCO₃ is causing alkalosis. CO₂ is normal — no respiratory compensation yet.';
+                    }
+                } else if (co2Dir === 'alk' && hco3Dir === 'alk') {
+                    diagnosis = 'Mixed Alkalosis';
+                    compensation = 'Combined Respiratory & Metabolic';
+                    explanation = 'Both CO₂ and HCO₃ point to alkalosis — this is a mixed disorder.';
+                }
+            }
+
+            if (!diagnosis) {
+                diagnosis = 'Indeterminate';
+                explanation = 'The combination of values doesn\'t fit a standard pattern. Consider mixed or complex acid-base disorders.';
+            }
+
+            // Match scenario label if applicable
+            let scenarioMatch = '';
+            for (const [key, s] of Object.entries(ABG_SCENARIOS)) {
+                if (s.ph === ph && s.co2 === co2 && s.hco3 === hco3) {
+                    scenarioMatch = s.label;
+                    break;
+                }
+            }
+
+            // Determine colors for result badge (dark-mode aware)
+            const isAcid = diagnosis.includes('Acidosis');
+            const isAlk = diagnosis.includes('Alkalosis');
+            const isMixed = diagnosis.includes('Mixed');
+            const isNormal = diagnosis === 'Normal ABG' || diagnosis === 'Normal / Borderline';
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            let badgeBg, badgeColor, badgeBorder;
+            if (isDark) {
+                badgeBg = isNormal ? '#064e3b' : isAcid ? '#450a0a' : isAlk ? '#1e3a5f' : '#422006';
+                badgeColor = isNormal ? '#6ee7b7' : isAcid ? '#fca5a5' : isAlk ? '#93c5fd' : '#fde68a';
+                badgeBorder = isNormal ? '#065f46' : isAcid ? '#7f1d1d' : isAlk ? '#1e40af' : '#854d0e';
+            } else {
+                badgeBg = isNormal ? '#dcfce7' : isAcid ? '#fef2f2' : isAlk ? '#eff6ff' : '#fef9c3';
+                badgeColor = isNormal ? '#166534' : isAcid ? '#991b1b' : isAlk ? '#1e40af' : '#854d0e';
+                badgeBorder = isNormal ? '#86efac' : isAcid ? '#fca5a5' : isAlk ? '#93c5fd' : '#fde68a';
+            }
+
+            // Build result HTML
+            let html = '<div style="background: ' + badgeBg + '; border: 1px solid ' + badgeBorder + '; border-radius: 10px; padding: 16px; color: ' + badgeColor + ';">';
+            html += '<div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">' + diagnosis + '</div>';
+            if (compensation) {
+                html += '<div style="font-size: 14px; font-weight: 600; opacity: 0.85; margin-bottom: 8px;">' + compensation + '</div>';
+            }
+            if (scenarioMatch) {
+                html += '<div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; opacity: 0.7;">Matches: ' + scenarioMatch + '</div>';
+            }
+            html += '<div style="font-size: 13px; line-height: 1.5; margin-bottom: 12px;">' + explanation + '</div>';
+            html += '<div style="border-top: 1px solid ' + badgeBorder + '; padding-top: 10px; font-size: 12px; line-height: 1.8; color: var(--clx-text-primary);">';
+            html += '<strong style="color: ' + badgeColor + ';">Reasoning Steps:</strong><br>';
+            html += steps.join('<br>');
+
+            // Step 4: identify primary
+            if (diagnosis !== 'Normal ABG' && diagnosis !== 'Normal / Borderline' && diagnosis !== 'Indeterminate') {
+                const isResp = diagnosis.includes('Respiratory');
+                const causeLbl = isResp ? 'PaCO₂ matches the pH direction → Respiratory cause' : 'HCO₃ matches the pH direction → Metabolic cause';
+                html += '<br>4. <strong>' + causeLbl + '</strong>';
+                if (compensation) {
+                    const compSys = isResp ? 'HCO₃ (kidneys)' : 'PaCO₂ (lungs)';
+                    html += '<br>5. <strong>' + compSys + ' is ' + (compensation === 'Uncompensated' ? 'normal → No compensation yet' : 'shifting to compensate → ' + compensation) + '</strong>';
+                }
+            }
+            html += '</div></div>';
+
+            const resultEl = document.getElementById('abgResult');
+            resultEl.innerHTML = html;
+            resultEl.style.display = '';
         }
 
         // APGAR Calculator
