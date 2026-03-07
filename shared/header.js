@@ -38,6 +38,74 @@
         }
     }
 
+    // ── Hamburger Sidebar Toggle (tablet <900px) ─────────
+    if (!isLoginPage) {
+        var sidebar = document.querySelector('.clx-sidebar');
+        if (sidebar) {
+            // Create backdrop
+            var backdrop = document.createElement('div');
+            backdrop.className = 'clx-sidebar-backdrop';
+            document.body.appendChild(backdrop);
+
+            // Create hamburger button
+            var hamburger = document.createElement('button');
+            hamburger.className = 'clx-hamburger';
+            hamburger.setAttribute('aria-label', 'Open navigation');
+            hamburger.innerHTML = '&#9776;'; // ☰
+            var hdr = document.querySelector('.site-header');
+            if (hdr) {
+                // Insert after logo, before other elements
+                var logoLink = hdr.querySelector('.logo-link');
+                if (logoLink && logoLink.nextSibling) {
+                    hdr.insertBefore(hamburger, logoLink);
+                } else {
+                    hdr.appendChild(hamburger);
+                }
+            }
+
+            function openMobileSidebar() {
+                sidebar.classList.add('mobile-open');
+                backdrop.classList.add('visible');
+                hamburger.innerHTML = '&times;'; // ×
+                hamburger.setAttribute('aria-label', 'Close navigation');
+            }
+
+            function closeMobileSidebar() {
+                sidebar.classList.remove('mobile-open');
+                backdrop.classList.remove('visible');
+                hamburger.innerHTML = '&#9776;'; // ☰
+                hamburger.setAttribute('aria-label', 'Open navigation');
+            }
+
+            hamburger.addEventListener('click', function() {
+                if (sidebar.classList.contains('mobile-open')) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
+            });
+
+            backdrop.addEventListener('click', closeMobileSidebar);
+
+            // Close sidebar when a nav item is clicked
+            sidebar.addEventListener('click', function(e) {
+                if (e.target.closest('.clx-sidebar-item') && window.innerWidth < 900) {
+                    closeMobileSidebar();
+                }
+            });
+
+            // Expose globally for other scripts
+            window.toggleMobileSidebar = function() {
+                if (sidebar.classList.contains('mobile-open')) {
+                    closeMobileSidebar();
+                } else {
+                    openMobileSidebar();
+                }
+            };
+            window.closeMobileSidebar = closeMobileSidebar;
+        }
+    }
+
     // ── Confirm Modal ─────────────────────────────────────
     // Usage: showConfirmModal('Delete?', 'This cannot be undone.', () => { doDelete(); })
     // Options: { confirmText, cancelText, danger }

@@ -195,24 +195,35 @@
 }
 
 /* =========================================================
-   MOBILE <900px — Sidebar forced collapsed (icons only, 56px)
+   TABLET <900px — Sidebar hidden, hamburger overlay
    ========================================================= */
 @media (max-width: 899px) {
     .clx-sidebar {
-        width: 56px !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px !important;
+        z-index: 1100;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        height: 100dvh;
+    }
+    .clx-sidebar.mobile-open {
+        transform: translateX(0);
     }
     .clx-sidebar .clx-sidebar-label,
     .clx-sidebar .clx-sidebar-section,
     .clx-sidebar .clx-sidebar-toggle-label {
-        display: none !important;
+        display: revert !important;
     }
     .clx-sidebar .clx-sidebar-item {
-        justify-content: center;
-        padding: 12px 0;
+        justify-content: flex-start;
+        padding: 10px 16px;
     }
     .clx-sidebar .clx-sidebar-toggle {
-        justify-content: center;
-        padding: 11px 0;
+        justify-content: flex-start;
+        padding: 11px 16px;
     }
     .clx-shell {
         padding-bottom: 0;
@@ -220,6 +231,19 @@
     .clx-main {
         padding: 12px;
     }
+}
+
+/* Sidebar overlay backdrop */
+.clx-sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1099;
+    -webkit-tap-highlight-color: transparent;
+}
+.clx-sidebar-backdrop.visible {
+    display: block;
 }
 
 /* =========================================================
@@ -299,6 +323,12 @@
 
 @media (max-width: 480px) {
     .clx-sidebar {
+        display: none !important;
+    }
+    .clx-sidebar-backdrop {
+        display: none !important;
+    }
+    .clx-hamburger {
         display: none !important;
     }
     .clx-mobile-nav {
