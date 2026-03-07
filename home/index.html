@@ -1110,8 +1110,8 @@
                     }
                 });
 
-                // Load recent notes from Firebase
-                loadRecentNotes(user.email);
+                // Load recent notes from Firebase (keyed by uid, not email)
+                loadRecentNotes(user.uid);
             }
         });
 
@@ -1320,9 +1320,9 @@
         function sanitizeEmail(email) {
             return email.replace(/\./g, '_').replace(/@/g, '_at_');
         }
-        function loadRecentNotes(email) {
-            if (!email) { renderRecentNotes([]); return; }
-            const ref = database.ref('userDocuments/' + sanitizeEmail(email));
+        function loadRecentNotes(uid) {
+            if (!uid) { renderRecentNotes([]); return; }
+            const ref = database.ref('userDocuments/' + uid);
             // Get total count for hero stat
             ref.once('value', (snap) => {
                 const total = snap.numChildren();
@@ -1507,6 +1507,9 @@
                 sidebar.classList.add('collapsed');
                 const icon = document.getElementById('sidebarToggleIcon');
                 if (icon) icon.textContent = '▶';
+            } else {
+                const label = document.querySelector('.clx-sidebar-toggle-label');
+                if (label) label.textContent = 'Collapse';
             }
         })();
 
@@ -1517,6 +1520,8 @@
             localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
             const icon = document.getElementById('sidebarToggleIcon');
             if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
     </script>
     <script src="/shared/toast.js"></script>
