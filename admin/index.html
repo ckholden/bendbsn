@@ -67,8 +67,8 @@
             align-items: center;
             border-radius: 10px 10px 0 0;
         }
-        .card-body { padding: 16px 20px; max-height: 250px; overflow-y: auto; }
-        .card-body.tall { max-height: 300px; }
+        .card-body { padding: 16px 20px; max-height: 280px; overflow-y: auto; }
+        .card-body.tall { max-height: 350px; }
 
         .user-item {
             display: flex;
@@ -117,13 +117,13 @@
 
         .stat-box {
             text-align: center;
-            padding: 20px;
+            padding: 16px 12px;
             background: var(--clx-bg-surface-2, #f5f8fa);
             border-radius: 12px;
-            margin-bottom: 15px;
+            border: 1px solid var(--clx-border, #e2e8f0);
         }
-        .stat-number { font-size: 36px; font-weight: 700; color: var(--clx-accent, #0f7490); }
-        .stat-label { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-top: 5px; }
+        .stat-number { font-size: 32px; font-weight: 700; color: var(--clx-accent, #0f7490); }
+        .stat-label { font-size: 11px; font-weight: 600; color: var(--clx-text-secondary, #4a5568); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 
         .login-overlay {
             position: fixed;
@@ -231,7 +231,14 @@
         <div class="login-box">
             <h2>Admin Access</h2>
             <p id="adminGateMessage" style="color: #666; margin-bottom: 20px;">Sign in with an admin account to continue.</p>
-            <button class="btn btn-primary" style="width: 100%;" onclick="openFirebaseAuthModal()">Sign in to Firebase</button>
+            <button class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="firebaseGoogleSignIn()">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Sign in with Google
+            </button>
+            <div style="margin: 16px 0; font-size: 12px; color: #999; display: flex; align-items: center; gap: 10px;">
+                <hr style="flex: 1; border: none; border-top: 1px solid #ddd;"><span>or</span><hr style="flex: 1; border: none; border-top: 1px solid #ddd;">
+            </div>
+            <button class="btn btn-secondary" style="width: 100%;" onclick="openFirebaseAuthModal()">Sign in with Email</button>
             <a href="/" style="display: block; margin-top: 20px; color: #666; font-size: 14px;">Back to Login</a>
         </div>
     </div>
@@ -293,7 +300,6 @@
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <span id="firebaseAuthStatus" style="font-size:12px;color:var(--clx-text-muted,#718096);"></span>
-                <button class="btn btn-secondary btn-sm" onclick="openFirebaseAuthModal()">Firebase Sign In</button>
                 <button class="btn btn-secondary btn-sm" onclick="window.location.href='/app/'">Back to App</button>
                 <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
             </div>
@@ -303,49 +309,44 @@
         <div class="action-bar" id="adminStatusPanel" style="justify-content: space-between;">
             <div style="display: flex; gap: 18px; flex-wrap: wrap; align-items: center;">
                 <div style="font-size: 12px; color: var(--clx-text-secondary);">
-                    <strong>Admin UI:</strong> <span id="adminUiStatus">Unknown</span>
+                    <strong>Admin:</strong> <span id="adminUiStatus">Unknown</span>
                 </div>
                 <div style="font-size: 12px; color: var(--clx-text-secondary);">
-                    <strong>Firebase Auth:</strong> <span id="adminFirebaseStatus">Not signed in</span>
+                    <strong>Auth:</strong> <span id="adminFirebaseStatus">Not signed in</span>
                 </div>
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button class="btn btn-secondary btn-sm" onclick="openFirebaseAuthModal()">Sign in to Firebase</button>
             </div>
         </div>
 
         <!-- Quick Stats -->
-        <div class="grid" style="margin-bottom: 20px;">
-            <div class="card">
-                <div class="card-body" style="display: flex; gap: 15px;">
-                    <div class="stat-box" style="flex: 1;">
-                        <div class="stat-number" id="statOnline">0</div>
-                        <div class="stat-label">Online Now</div>
-                    </div>
-                    <div class="stat-box" style="flex: 1;">
-                        <div class="stat-number" id="statRegistered">0</div>
-                        <div class="stat-label">Registered Users</div>
-                    </div>
-                    <div class="stat-box" style="flex: 1;">
-                        <div class="stat-number" id="statBanned">0</div>
-                        <div class="stat-label">Banned</div>
-                    </div>
-                    <div class="stat-box" style="flex: 1;">
-                        <div class="stat-number" id="statPosts">0</div>
-                        <div class="stat-label">Community Posts</div>
-                    </div>
-                </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+            <div class="stat-box" style="border-left: 3px solid #28a745;">
+                <div class="stat-number" id="statOnline" style="color: #28a745;">0</div>
+                <div class="stat-label">Online</div>
+            </div>
+            <div class="stat-box" style="border-left: 3px solid var(--clx-accent, #0f7490);">
+                <div class="stat-number" id="statRegistered">0</div>
+                <div class="stat-label">Registered</div>
+            </div>
+            <div class="stat-box" style="border-left: 3px solid #dc3545;">
+                <div class="stat-number" id="statBanned" style="color: #dc3545;">0</div>
+                <div class="stat-label">Banned</div>
+            </div>
+            <div class="stat-box" style="border-left: 3px solid #6f42c1;">
+                <div class="stat-number" id="statPosts" style="color: #6f42c1;">0</div>
+                <div class="stat-label">Posts</div>
             </div>
         </div>
 
         <!-- Action Bar -->
-        <div class="action-bar">
-            <label>Quick Actions:</label>
-            <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All Data</button>
+        <div class="action-bar" style="gap: 6px;">
+            <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All</button>
+            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
             <button class="btn btn-secondary btn-sm" onclick="showLoginHistory()">Login History</button>
             <button class="btn btn-secondary btn-sm" onclick="showExportHistory()">Export History</button>
-            <button class="btn btn-secondary btn-sm" onclick="showNotificationLog()">📧 Email Notifications</button>
-            <button class="btn btn-secondary btn-sm" onclick="showPendingWelcomeEmails()" id="pendingEmailsBtn">📬 Pending Welcome Emails</button>
+            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
+            <button class="btn btn-secondary btn-sm" onclick="showNotificationLog()">Email Log</button>
+            <button class="btn btn-secondary btn-sm" onclick="showPendingWelcomeEmails()" id="pendingEmailsBtn">Pending Emails</button>
+            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
             <button class="btn btn-secondary btn-sm" onclick="showSmartPhrases()">Smart Phrases</button>
             <button class="btn btn-secondary btn-sm" onclick="showCommunityStats()">Community Stats</button>
             <button class="btn btn-secondary btn-sm" onclick="normalizeUserRoles()">Normalize Roles</button>
@@ -602,6 +603,9 @@
                         <button class="refresh-btn" onclick="loadMessages()">&#x21bb;</button>
                     </div>
                 </div>
+                <div style="padding: 8px 15px; border-bottom: 1px solid var(--clx-border); background: var(--clx-bg-surface-2);">
+                    <input type="text" id="chatMessageSearch" placeholder="Search messages..." oninput="filterChatMessages()" style="width: 100%; padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                </div>
                 <div class="card-body tall" id="messagesList">
                     <div class="empty-state">
                         <div class="icon">&#128172;</div>
@@ -700,13 +704,20 @@
     <div id="firebaseAuthModal" class="bsn-modal-overlay" style="display:none;">
         <div class="bsn-confirm-modal" style="max-width:420px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="font-size: 18px;">Firebase Sign In</h2>
+                <h2 style="font-size: 18px;">Admin Sign In</h2>
                 <button onclick="closeFirebaseAuthModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">&times;</button>
             </div>
             <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Sign in so admin actions can update Firebase data.</p>
+            <button class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px;" onclick="firebaseGoogleSignIn()">
+                <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Sign in with Google
+            </button>
+            <div style="margin: 8px 0; font-size: 11px; color: #999; display: flex; align-items: center; gap: 8px;">
+                <hr style="flex: 1; border: none; border-top: 1px solid #ddd;"><span>or email</span><hr style="flex: 1; border: none; border-top: 1px solid #ddd;">
+            </div>
             <input type="email" id="firebaseAuthEmail" placeholder="Email" autocomplete="email">
-            <input type="password" id="firebaseAuthPassword" placeholder="Password" autocomplete="current-password">
-            <button class="btn btn-primary" style="width: 100%;" onclick="firebaseAdminSignIn()">Sign In</button>
+            <input type="password" id="firebaseAuthPassword" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')firebaseAdminSignIn()">
+            <button class="btn btn-secondary" style="width: 100%;" onclick="firebaseAdminSignIn()">Sign In with Email</button>
         </div>
     </div>
     </main><!-- /clx-main -->
@@ -1030,6 +1041,21 @@
                 requireAdminAccess();
             } catch (e) {
                 showToast('Firebase sign-in failed: ' + e.message, 'error');
+            }
+        }
+
+        async function firebaseGoogleSignIn() {
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await auth.signInWithPopup(provider);
+                updateFirebaseAuthStatus();
+                closeFirebaseAuthModal();
+                showToast('Signed in with Google.', 'success');
+                requireAdminAccess();
+            } catch (e) {
+                if (e.code !== 'auth/popup-closed-by-user') {
+                    showToast('Google sign-in failed: ' + e.message, 'error');
+                }
             }
         }
 
@@ -1629,6 +1655,15 @@
                 container.innerHTML = html;
             }, (err) => {
                 container.innerHTML = `<div class="empty-state"><p>Error: ${escapeHtml(err.message)}</p></div>`;
+            });
+        }
+
+        function filterChatMessages() {
+            const term = (document.getElementById('chatMessageSearch')?.value || '').toLowerCase();
+            const items = document.querySelectorAll('#messagesList .message-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(term) ? '' : 'none';
             });
         }
 
