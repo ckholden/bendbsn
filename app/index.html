@@ -318,7 +318,7 @@
             position: fixed;
             left: 0;
             right: 0;
-            bottom: 60px;
+            bottom: calc(56px + env(safe-area-inset-bottom, 0px));
             display: none;
             gap: 8px;
             padding: 8px 10px;
@@ -384,6 +384,7 @@
             border-radius: 14px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.12);
             width: 220px;
+            max-width: calc(100vw - 24px);
             max-height: 50vh;
             overflow-y: auto;
             display: none;
@@ -487,12 +488,32 @@
 
             /* Better form field spacing */
             .form-group {
-                margin-bottom: 16px;
+                margin-bottom: 20px;
             }
 
             label {
                 margin-bottom: 8px;
                 display: block;
+            }
+
+            /* Reduce textarea height on phones */
+            textarea {
+                min-height: 80px !important;
+            }
+
+            .h2t-grid {
+                gap: 10px;
+            }
+
+            /* Quick-fill buttons: prevent truncation */
+            .quick-fill {
+                font-size: 11px;
+                min-width: fit-content;
+            }
+
+            /* Section jump panel: narrower on phones */
+            .section-jump-panel {
+                width: 180px;
             }
         }
 
@@ -2011,6 +2032,301 @@
                 </div>
             </div>
 
+            <!-- Clinical Screenings Panel (available for ALL note types) -->
+            <div class="screenings-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #e91e63; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('screeningsContent', this)">
+                    <h3 style="color: #880e4f; margin: 0; font-size: 16px;">Clinical Screenings <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <span style="font-size: 12px; color: var(--clx-text-secondary);">PHQ-9, GAD-7, C-SSRS, CAGE, Morse, Braden, CAM</span>
+                </div>
+                <div id="screeningsContent" style="display: none; margin-top: 14px;">
+
+                <!-- PHQ-9 Collapsible Panel -->
+                <div class="phq9-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #e91e63; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('phq9Content', this)">
+                        <h3 style="color: #880e4f; margin: 0;">🧠 PHQ-9 Depression Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="event.stopPropagation(); saveScreening('phq9')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                            <button onclick="event.stopPropagation(); insertScreening('phq9')" style="background: #e91e63; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                        </div>
+                    </div>
+                    <div id="phq9Content" style="display: none;">
+                        <div style="font-size: 12px; font-style: italic; color: #880e4f; margin-top: 10px; margin-bottom: 4px;">"Over the last 2 weeks, how often have you been bothered by the following?"</div>
+                        <div style="display: flex; gap: 10px; font-size: 10px; color: #666; margin-bottom: 8px; flex-wrap: wrap;">
+                            <span><strong>0</strong> = Not at all</span>
+                            <span><strong>1</strong> = Several days</span>
+                            <span><strong>2</strong> = More than half the days</span>
+                            <span><strong>3</strong> = Nearly every day</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
+                            <div>1. Little interest or pleasure in doing things</div>
+                            <select id="phq1" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>2. Feeling down, depressed, or hopeless</div>
+                            <select id="phq2" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>3. Trouble falling or staying asleep, or sleeping too much</div>
+                            <select id="phq3" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>4. Feeling tired or having little energy</div>
+                            <select id="phq4" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>5. Poor appetite or overeating</div>
+                            <select id="phq5" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>6. Feeling bad about yourself, or that you are a failure or have let yourself or your family down</div>
+                            <select id="phq6" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>7. Trouble concentrating on things, such as reading or watching television</div>
+                            <select id="phq7" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>8. Moving or speaking so slowly that other people could have noticed, or the opposite — being so fidgety or restless that you have been moving around a lot more than usual</div>
+                            <select id="phq8" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>9. Thoughts that you would be better off dead, or of hurting yourself in some way</div>
+                            <select id="phq9" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(136,14,79,0.06); border-radius: 6px;">
+                            <strong>Severity:</strong> 0-4 None | 5-9 Mild | 10-14 Moderate | 15-19 Mod. Severe | 20-27 Severe
+                        </div>
+                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #880e4f;">PHQ-9 Total: <strong id="phq9Score">0</strong> <span id="phq9Severity" style="font-weight:400; font-size:12px;"></span></div>
+                    </div>
+                    <div id="savedPhq9List" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e91e63;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #880e4f;">Saved PHQ-9 Screenings (will be included in export):</span>
+                            <button onclick="clearSavedScreenings('phq9')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                        </div>
+                        <div id="savedPhq9Entries"></div>
+                    </div>
+                </div>
+
+                <!-- GAD-7 Collapsible Panel -->
+                <div class="gad7-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #7c4dff; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('gad7Content', this)">
+                        <h3 style="color: #4a148c; margin: 0;">💭 GAD-7 Anxiety Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="event.stopPropagation(); saveScreening('gad7')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                            <button onclick="event.stopPropagation(); insertScreening('gad7')" style="background: #7c4dff; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                        </div>
+                    </div>
+                    <div id="gad7Content" style="display: none;">
+                        <div style="font-size: 12px; font-style: italic; color: #4a148c; margin-top: 10px; margin-bottom: 4px;">"Over the last 2 weeks, how often have you been bothered by the following?"</div>
+                        <div style="display: flex; gap: 10px; font-size: 10px; color: #666; margin-bottom: 8px; flex-wrap: wrap;">
+                            <span><strong>0</strong> = Not at all</span>
+                            <span><strong>1</strong> = Several days</span>
+                            <span><strong>2</strong> = More than half the days</span>
+                            <span><strong>3</strong> = Nearly every day</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
+                            <div>1. Feeling nervous, anxious, or on edge</div>
+                            <select id="gad1" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>2. Not being able to stop or control worrying</div>
+                            <select id="gad2" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>3. Worrying too much about different things</div>
+                            <select id="gad3" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>4. Trouble relaxing</div>
+                            <select id="gad4" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>5. Being so restless that it's hard to sit still</div>
+                            <select id="gad5" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>6. Becoming easily annoyed or irritable</div>
+                            <select id="gad6" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                            <div>7. Feeling afraid, as if something awful might happen</div>
+                            <select id="gad7" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(74,20,140,0.06); border-radius: 6px;">
+                            <strong>Severity:</strong> 0-4 Minimal | 5-9 Mild | 10-14 Moderate | 15-21 Severe
+                        </div>
+                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #4a148c;">GAD-7 Total: <strong id="gad7Score">0</strong> <span id="gad7Severity" style="font-weight:400; font-size:12px;"></span></div>
+                    </div>
+                    <div id="savedGad7List" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #7c4dff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #4a148c;">Saved GAD-7 Screenings (will be included in export):</span>
+                            <button onclick="clearSavedScreenings('gad7')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                        </div>
+                        <div id="savedGad7Entries"></div>
+                    </div>
+                </div>
+
+                <!-- C-SSRS Suicide Screening Panel -->
+                <div class="cssrs-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #d32f2f; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('cssrsContent', this)">
+                        <h3 style="color: #b71c1c; margin: 0;">🚨 C-SSRS Suicide Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="event.stopPropagation(); saveScreening('cssrs')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                            <button onclick="event.stopPropagation(); insertScreening('cssrs')" style="background: #d32f2f; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                        </div>
+                    </div>
+                    <div id="cssrsContent" style="display: none;">
+                        <div style="font-size: 12px; font-style: italic; color: #b71c1c; margin-top: 10px; margin-bottom: 8px;">"Ask the patient each question directly."</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
+                            <div>1. Have you wished you were dead or wished you could go to sleep and not wake up?</div>
+                            <select id="cssrs1" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div>2. Have you actually had any thoughts of killing yourself?</div>
+                            <select id="cssrs2" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div>3. Have you been thinking about how you might do this?</div>
+                            <select id="cssrs3" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div>4. Have you had these thoughts and had some intention of acting on them?</div>
+                            <select id="cssrs4" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div>5. Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?</div>
+                            <select id="cssrs5" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div>6. Have you ever done anything, started to do anything, or prepared to do anything to end your life?</div>
+                            <select id="cssrs6" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(183,28,28,0.06); border-radius: 6px;">
+                            <strong>Triage:</strong> All No = Negative screen | Q1-2 Yes = Low risk, refer | Q3-5 Yes = Moderate-High risk, immediate safety plan | Q6 Yes = Behavioral risk, immediate intervention
+                        </div>
+                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #b71c1c;">Result: <strong id="cssrsResult">--</strong></div>
+                    </div>
+                    <div id="savedCssrsList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d32f2f;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #b71c1c;">Saved C-SSRS Screenings (will be included in export):</span>
+                            <button onclick="clearSavedScreenings('cssrs')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                        </div>
+                        <div id="savedCssrsEntries"></div>
+                    </div>
+                </div>
+
+                <!-- CAGE Alcohol Screening Panel -->
+                <div class="cage-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #ff8f00; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('cageContent', this)">
+                        <h3 style="color: #e65100; margin: 0;">🍺 CAGE Alcohol Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="event.stopPropagation(); saveScreening('cage')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                            <button onclick="event.stopPropagation(); insertScreening('cage')" style="background: #ff8f00; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                        </div>
+                    </div>
+                    <div id="cageContent" style="display: none;">
+                        <div style="font-size: 12px; font-style: italic; color: #e65100; margin-top: 10px; margin-bottom: 8px;">"Ask the patient each question."</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
+                            <div><strong>C</strong> - Have you ever felt you should <strong>Cut down</strong> on your drinking?</div>
+                            <select id="cage1" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div><strong>A</strong> - Have people <strong>Annoyed</strong> you by criticizing your drinking?</div>
+                            <select id="cage2" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div><strong>G</strong> - Have you ever felt bad or <strong>Guilty</strong> about your drinking?</div>
+                            <select id="cage3" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                            <div><strong>E</strong> - Have you ever had a drink first thing in the morning to steady your nerves or get rid of a hangover (<strong>Eye-opener</strong>)?</div>
+                            <select id="cage4" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(230,81,0,0.06); border-radius: 6px;">
+                            <strong>Scoring:</strong> 0-1 = Negative screen | 2+ = Clinically significant, further evaluation recommended
+                        </div>
+                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #e65100;">CAGE Score: <strong id="cageScore">0</strong>/4 <span id="cageSeverity" style="font-weight:400; font-size:12px;"></span></div>
+                    </div>
+                    <div id="savedCageList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ff8f00;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #e65100;">Saved CAGE Screenings (will be included in export):</span>
+                            <button onclick="clearSavedScreenings('cage')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                        </div>
+                        <div id="savedCageEntries"></div>
+                    </div>
+                </div>
+
+                <!-- Morse Fall Scale Panel -->
+                <div class="morse-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #43a047; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('morseContent', this)">
+                        <h3 style="color: #1b5e20; margin: 0;">⚠️ Morse Fall Scale <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="event.stopPropagation(); saveScreening('morse')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                            <button onclick="event.stopPropagation(); insertScreening('morse')" style="background: #43a047; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                        </div>
+                    </div>
+                    <div id="morseContent" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 1fr 100px; gap: 6px; font-size: 12px; margin-top: 12px;">
+                            <div>1. History of falling (within 3 months)</div>
+                            <select id="morse1" onchange="updateMorseScore()"><option value="">--</option><option value="0">No (0)</option><option value="25">Yes (25)</option></select>
+                            <div>2. Secondary diagnosis (2 or more medical diagnoses)</div>
+                            <select id="morse2" onchange="updateMorseScore()"><option value="">--</option><option value="0">No (0)</option><option value="15">Yes (15)</option></select>
+                            <div>3. Ambulatory aid</div>
+                            <select id="morse3" onchange="updateMorseScore()"><option value="">--</option><option value="0">None / Bed rest / Nurse assist (0)</option><option value="15">Crutches / Cane / Walker (15)</option><option value="30">Furniture (30)</option></select>
+                            <div>4. IV / Heparin lock</div>
+                            <select id="morse4" onchange="updateMorseScore()"><option value="">--</option><option value="0">No (0)</option><option value="20">Yes (20)</option></select>
+                            <div>5. Gait</div>
+                            <select id="morse5" onchange="updateMorseScore()"><option value="">--</option><option value="0">Normal / Bed rest / Immobile (0)</option><option value="10">Weak (10)</option><option value="20">Impaired (20)</option></select>
+                            <div>6. Mental status</div>
+                            <select id="morse6" onchange="updateMorseScore()"><option value="">--</option><option value="0">Oriented to own ability (0)</option><option value="15">Overestimates / Forgets limitations (15)</option></select>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(27,94,32,0.06); border-radius: 6px;">
+                            <strong>Risk Level:</strong> 0-24 Low (good basic nursing care) | 25-44 Moderate (standard fall prevention) | 45+ High (high-risk fall prevention)
+                        </div>
+                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #1b5e20;">Morse Score: <strong id="morseScore">0</strong>/125 <span id="morseSeverity" style="font-weight:400; font-size:12px;"></span></div>
+                    </div>
+                    <div id="savedMorseList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #43a047;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #1b5e20;">Saved Morse Screenings (will be included in export):</span>
+                            <button onclick="clearSavedScreenings('morse')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                        </div>
+                        <div id="savedMorseEntries"></div>
+                    </div>
+                </div>
+
+                <!-- Braden Scale Panel -->
+                <div class="braden-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #1976d2; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('bradenContent', this)">
+                        <h3 style="color: #0d47a1; margin: 0;">🛡️ Braden Scale (Pressure Injury Risk) <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="event.stopPropagation(); saveScreening('braden')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                            <button onclick="event.stopPropagation(); insertScreening('braden')" style="background: #1976d2; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                        </div>
+                    </div>
+                    <div id="bradenContent" style="display: none;">
+                        <div style="font-size: 11px; font-style: italic; color: #0d47a1; margin-top: 10px; margin-bottom: 8px;">Rate each subscale (lower score = higher risk)</div>
+                        <div style="display: grid; grid-template-columns: 1fr 160px; gap: 6px; font-size: 12px;">
+                            <div><strong>Sensory Perception</strong> — Ability to respond to pressure-related discomfort</div>
+                            <select id="braden1" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Completely limited</option><option value="2">2 - Very limited</option><option value="3">3 - Slightly limited</option><option value="4">4 - No impairment</option></select>
+                            <div><strong>Moisture</strong> — Degree to which skin is exposed to moisture</div>
+                            <select id="braden2" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Constantly moist</option><option value="2">2 - Very moist</option><option value="3">3 - Occasionally moist</option><option value="4">4 - Rarely moist</option></select>
+                            <div><strong>Activity</strong> — Degree of physical activity</div>
+                            <select id="braden3" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Bedfast</option><option value="2">2 - Chairfast</option><option value="3">3 - Walks occasionally</option><option value="4">4 - Walks frequently</option></select>
+                            <div><strong>Mobility</strong> — Ability to change and control body position</div>
+                            <select id="braden4" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Completely immobile</option><option value="2">2 - Very limited</option><option value="3">3 - Slightly limited</option><option value="4">4 - No limitation</option></select>
+                            <div><strong>Nutrition</strong> — Usual food intake pattern</div>
+                            <select id="braden5" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Very poor</option><option value="2">2 - Probably inadequate</option><option value="3">3 - Adequate</option><option value="4">4 - Excellent</option></select>
+                            <div><strong>Friction & Shear</strong> — Assistance required for movement</div>
+                            <select id="braden6" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Problem</option><option value="2">2 - Potential problem</option><option value="3">3 - No apparent problem</option></select>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(13,71,161,0.06); border-radius: 6px;">
+                            <strong>Risk:</strong> 19-23 No risk | 15-18 Mild risk | 13-14 Moderate risk | 10-12 High risk | 9 or below Very high risk
+                        </div>
+                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #0d47a1;">Braden Score: <strong id="bradenScore">0</strong>/23 <span id="bradenSeverity" style="font-weight:400; font-size:12px;"></span></div>
+                    </div>
+                    <div id="savedBradenList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #1976d2;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #0d47a1;">Saved Braden Screenings (will be included in export):</span>
+                            <button onclick="clearSavedScreenings('braden')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                        </div>
+                        <div id="savedBradenEntries"></div>
+                    </div>
+                </div>
+
+                <!-- CAM Delirium Screening Panel -->
+                <div class="cam-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #8e24aa; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('camContent', this)">
+                        <h3 style="color: #4a148c; margin: 0;">🔍 CAM Delirium Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="event.stopPropagation(); saveScreening('cam')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                            <button onclick="event.stopPropagation(); insertScreening('cam')" style="background: #8e24aa; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
+                        </div>
+                    </div>
+                    <div id="camContent" style="display: none;">
+                        <div style="font-size: 12px; font-style: italic; color: #4a148c; margin-top: 10px; margin-bottom: 8px;">Assess patient for each feature. Delirium = Feature 1 AND 2, PLUS either 3 OR 4.</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 8px; font-size: 12px;">
+                            <div><strong>Feature 1: Acute Onset & Fluctuating Course</strong><br><span style="font-size:11px;color:#666;">Is there evidence of an acute change in mental status from baseline? Does the abnormal behavior fluctuate during the day?</span></div>
+                            <select id="cam1" onchange="updateCamResult()"><option value="">--</option><option value="yes">Present</option><option value="no">Absent</option></select>
+                            <div><strong>Feature 2: Inattention</strong><br><span style="font-size:11px;color:#666;">Does the patient have difficulty focusing attention? Are they easily distracted or have difficulty keeping track of what is said?</span></div>
+                            <select id="cam2" onchange="updateCamResult()"><option value="">--</option><option value="yes">Present</option><option value="no">Absent</option></select>
+                            <div><strong>Feature 3: Disorganized Thinking</strong><br><span style="font-size:11px;color:#666;">Is the patient's thinking disorganized or incoherent? Rambling or irrelevant conversation, unclear or illogical flow of ideas, unpredictable switching between subjects?</span></div>
+                            <select id="cam3" onchange="updateCamResult()"><option value="">--</option><option value="yes">Present</option><option value="no">Absent</option></select>
+                            <div><strong>Feature 4: Altered Level of Consciousness</strong><br><span style="font-size:11px;color:#666;">Overall, how would you rate this patient's level of consciousness? (Alert = normal, anything else = abnormal: Vigilant, Lethargic, Stupor, Coma)</span></div>
+                            <select id="cam4" onchange="updateCamResult()"><option value="">--</option><option value="yes">Abnormal (not Alert)</option><option value="no">Alert (normal)</option></select>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(74,20,140,0.06); border-radius: 6px;">
+                            <strong>Interpretation:</strong> Positive = Feature 1 + Feature 2 + (Feature 3 OR Feature 4) → Delirium likely present
+                        </div>
+                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #4a148c;">CAM Result: <strong id="camResult">--</strong></div>
+                    </div>
+                    <div id="savedCamList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #8e24aa;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #4a148c;">Saved CAM Screenings (will be included in export):</span>
+                            <button onclick="clearSavedScreenings('cam')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                        </div>
+                        <div id="savedCamEntries"></div>
+                    </div>
+                </div>
+
+                </div><!-- end screeningsContent -->
+            </div>
+
             <!-- Generate Full Narrative from all Quick Entry data -->
             <div style="background: linear-gradient(135deg, #1a237e 0%, #283593 100%); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
@@ -2443,291 +2759,6 @@
                             <span class="quick-fill" onclick="appendToField('h2tLines', 'PIV patent, dressing CDI. ')">PIV</span>
                         </div>
                         <textarea id="h2tLines" placeholder="IV/lines, drains, O2/airway devices... (Use Lines/Drains panel in Quick Entry above for structured entry)"></textarea>
-                    </div>
-                </div>
-
-
-                <!-- PHQ-9 Collapsible Panel -->
-                <div class="phq9-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #e91e63; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('phq9Content', this)">
-                        <h3 style="color: #880e4f; margin: 0;">🧠 PHQ-9 Depression Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveScreening('phq9')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertScreening('phq9')" style="background: #e91e63; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="phq9Content" style="display: none;">
-                        <div style="font-size: 12px; font-style: italic; color: #880e4f; margin-top: 10px; margin-bottom: 4px;">"Over the last 2 weeks, how often have you been bothered by the following?"</div>
-                        <div style="display: flex; gap: 10px; font-size: 10px; color: #666; margin-bottom: 8px; flex-wrap: wrap;">
-                            <span><strong>0</strong> = Not at all</span>
-                            <span><strong>1</strong> = Several days</span>
-                            <span><strong>2</strong> = More than half the days</span>
-                            <span><strong>3</strong> = Nearly every day</span>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
-                            <div>1. Little interest or pleasure in doing things</div>
-                            <select id="phq1" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>2. Feeling down, depressed, or hopeless</div>
-                            <select id="phq2" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>3. Trouble falling or staying asleep, or sleeping too much</div>
-                            <select id="phq3" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>4. Feeling tired or having little energy</div>
-                            <select id="phq4" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>5. Poor appetite or overeating</div>
-                            <select id="phq5" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>6. Feeling bad about yourself, or that you are a failure or have let yourself or your family down</div>
-                            <select id="phq6" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>7. Trouble concentrating on things, such as reading or watching television</div>
-                            <select id="phq7" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>8. Moving or speaking so slowly that other people could have noticed, or the opposite — being so fidgety or restless that you have been moving around a lot more than usual</div>
-                            <select id="phq8" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>9. Thoughts that you would be better off dead, or of hurting yourself in some way</div>
-                            <select id="phq9" onchange="updatePhq9Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                        </div>
-                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(136,14,79,0.06); border-radius: 6px;">
-                            <strong>Severity:</strong> 0-4 None | 5-9 Mild | 10-14 Moderate | 15-19 Mod. Severe | 20-27 Severe
-                        </div>
-                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #880e4f;">PHQ-9 Total: <strong id="phq9Score">0</strong> <span id="phq9Severity" style="font-weight:400; font-size:12px;"></span></div>
-                    </div>
-                    <div id="savedPhq9List" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e91e63;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #880e4f;">Saved PHQ-9 Screenings (will be included in export):</span>
-                            <button onclick="clearSavedScreenings('phq9')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedPhq9Entries"></div>
-                    </div>
-                </div>
-
-                <!-- GAD-7 Collapsible Panel -->
-                <div class="gad7-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #7c4dff; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('gad7Content', this)">
-                        <h3 style="color: #4a148c; margin: 0;">💭 GAD-7 Anxiety Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveScreening('gad7')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertScreening('gad7')" style="background: #7c4dff; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="gad7Content" style="display: none;">
-                        <div style="font-size: 12px; font-style: italic; color: #4a148c; margin-top: 10px; margin-bottom: 4px;">"Over the last 2 weeks, how often have you been bothered by the following?"</div>
-                        <div style="display: flex; gap: 10px; font-size: 10px; color: #666; margin-bottom: 8px; flex-wrap: wrap;">
-                            <span><strong>0</strong> = Not at all</span>
-                            <span><strong>1</strong> = Several days</span>
-                            <span><strong>2</strong> = More than half the days</span>
-                            <span><strong>3</strong> = Nearly every day</span>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
-                            <div>1. Feeling nervous, anxious, or on edge</div>
-                            <select id="gad1" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>2. Not being able to stop or control worrying</div>
-                            <select id="gad2" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>3. Worrying too much about different things</div>
-                            <select id="gad3" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>4. Trouble relaxing</div>
-                            <select id="gad4" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>5. Being so restless that it's hard to sit still</div>
-                            <select id="gad5" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>6. Becoming easily annoyed or irritable</div>
-                            <select id="gad6" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                            <div>7. Feeling afraid, as if something awful might happen</div>
-                            <select id="gad7" onchange="updateGad7Score()"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
-                        </div>
-                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(74,20,140,0.06); border-radius: 6px;">
-                            <strong>Severity:</strong> 0-4 Minimal | 5-9 Mild | 10-14 Moderate | 15-21 Severe
-                        </div>
-                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #4a148c;">GAD-7 Total: <strong id="gad7Score">0</strong> <span id="gad7Severity" style="font-weight:400; font-size:12px;"></span></div>
-                    </div>
-                    <div id="savedGad7List" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #7c4dff;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #4a148c;">Saved GAD-7 Screenings (will be included in export):</span>
-                            <button onclick="clearSavedScreenings('gad7')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedGad7Entries"></div>
-                    </div>
-                </div>
-
-                <!-- C-SSRS Suicide Screening Panel -->
-                <div class="cssrs-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #d32f2f; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('cssrsContent', this)">
-                        <h3 style="color: #b71c1c; margin: 0;">🚨 C-SSRS Suicide Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveScreening('cssrs')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertScreening('cssrs')" style="background: #d32f2f; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="cssrsContent" style="display: none;">
-                        <div style="font-size: 12px; font-style: italic; color: #b71c1c; margin-top: 10px; margin-bottom: 8px;">"Ask the patient each question directly."</div>
-                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
-                            <div>1. Have you wished you were dead or wished you could go to sleep and not wake up?</div>
-                            <select id="cssrs1" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div>2. Have you actually had any thoughts of killing yourself?</div>
-                            <select id="cssrs2" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div>3. Have you been thinking about how you might do this?</div>
-                            <select id="cssrs3" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div>4. Have you had these thoughts and had some intention of acting on them?</div>
-                            <select id="cssrs4" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div>5. Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?</div>
-                            <select id="cssrs5" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div>6. Have you ever done anything, started to do anything, or prepared to do anything to end your life?</div>
-                            <select id="cssrs6" onchange="updateCssrsResult()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                        </div>
-                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(183,28,28,0.06); border-radius: 6px;">
-                            <strong>Triage:</strong> All No = Negative screen | Q1-2 Yes = Low risk, refer | Q3-5 Yes = Moderate-High risk, immediate safety plan | Q6 Yes = Behavioral risk, immediate intervention
-                        </div>
-                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #b71c1c;">Result: <strong id="cssrsResult">--</strong></div>
-                    </div>
-                    <div id="savedCssrsList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d32f2f;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #b71c1c;">Saved C-SSRS Screenings (will be included in export):</span>
-                            <button onclick="clearSavedScreenings('cssrs')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedCssrsEntries"></div>
-                    </div>
-                </div>
-
-                <!-- CAGE Alcohol Screening Panel -->
-                <div class="cage-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #ff8f00; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('cageContent', this)">
-                        <h3 style="color: #e65100; margin: 0;">🍺 CAGE Alcohol Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveScreening('cage')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertScreening('cage')" style="background: #ff8f00; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="cageContent" style="display: none;">
-                        <div style="font-size: 12px; font-style: italic; color: #e65100; margin-top: 10px; margin-bottom: 8px;">"Ask the patient each question."</div>
-                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 6px; font-size: 12px;">
-                            <div><strong>C</strong> - Have you ever felt you should <strong>Cut down</strong> on your drinking?</div>
-                            <select id="cage1" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div><strong>A</strong> - Have people <strong>Annoyed</strong> you by criticizing your drinking?</div>
-                            <select id="cage2" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div><strong>G</strong> - Have you ever felt bad or <strong>Guilty</strong> about your drinking?</div>
-                            <select id="cage3" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                            <div><strong>E</strong> - Have you ever had a drink first thing in the morning to steady your nerves or get rid of a hangover (<strong>Eye-opener</strong>)?</div>
-                            <select id="cage4" onchange="updateCageScore()"><option value="">--</option><option value="yes">Yes</option><option value="no">No</option></select>
-                        </div>
-                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(230,81,0,0.06); border-radius: 6px;">
-                            <strong>Scoring:</strong> 0-1 = Negative screen | 2+ = Clinically significant, further evaluation recommended
-                        </div>
-                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #e65100;">CAGE Score: <strong id="cageScore">0</strong>/4 <span id="cageSeverity" style="font-weight:400; font-size:12px;"></span></div>
-                    </div>
-                    <div id="savedCageList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ff8f00;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #e65100;">Saved CAGE Screenings (will be included in export):</span>
-                            <button onclick="clearSavedScreenings('cage')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedCageEntries"></div>
-                    </div>
-                </div>
-
-                <!-- Morse Fall Scale Panel -->
-                <div class="morse-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #43a047; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('morseContent', this)">
-                        <h3 style="color: #1b5e20; margin: 0;">⚠️ Morse Fall Scale <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveScreening('morse')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertScreening('morse')" style="background: #43a047; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="morseContent" style="display: none;">
-                        <div style="display: grid; grid-template-columns: 1fr 100px; gap: 6px; font-size: 12px; margin-top: 12px;">
-                            <div>1. History of falling (within 3 months)</div>
-                            <select id="morse1" onchange="updateMorseScore()"><option value="">--</option><option value="0">No (0)</option><option value="25">Yes (25)</option></select>
-                            <div>2. Secondary diagnosis (2 or more medical diagnoses)</div>
-                            <select id="morse2" onchange="updateMorseScore()"><option value="">--</option><option value="0">No (0)</option><option value="15">Yes (15)</option></select>
-                            <div>3. Ambulatory aid</div>
-                            <select id="morse3" onchange="updateMorseScore()"><option value="">--</option><option value="0">None / Bed rest / Nurse assist (0)</option><option value="15">Crutches / Cane / Walker (15)</option><option value="30">Furniture (30)</option></select>
-                            <div>4. IV / Heparin lock</div>
-                            <select id="morse4" onchange="updateMorseScore()"><option value="">--</option><option value="0">No (0)</option><option value="20">Yes (20)</option></select>
-                            <div>5. Gait</div>
-                            <select id="morse5" onchange="updateMorseScore()"><option value="">--</option><option value="0">Normal / Bed rest / Immobile (0)</option><option value="10">Weak (10)</option><option value="20">Impaired (20)</option></select>
-                            <div>6. Mental status</div>
-                            <select id="morse6" onchange="updateMorseScore()"><option value="">--</option><option value="0">Oriented to own ability (0)</option><option value="15">Overestimates / Forgets limitations (15)</option></select>
-                        </div>
-                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(27,94,32,0.06); border-radius: 6px;">
-                            <strong>Risk Level:</strong> 0-24 Low (good basic nursing care) | 25-44 Moderate (standard fall prevention) | 45+ High (high-risk fall prevention)
-                        </div>
-                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #1b5e20;">Morse Score: <strong id="morseScore">0</strong>/125 <span id="morseSeverity" style="font-weight:400; font-size:12px;"></span></div>
-                    </div>
-                    <div id="savedMorseList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #43a047;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #1b5e20;">Saved Morse Screenings (will be included in export):</span>
-                            <button onclick="clearSavedScreenings('morse')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedMorseEntries"></div>
-                    </div>
-                </div>
-
-                <!-- Braden Scale Panel -->
-                <div class="braden-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #1976d2; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('bradenContent', this)">
-                        <h3 style="color: #0d47a1; margin: 0;">🛡️ Braden Scale (Pressure Injury Risk) <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveScreening('braden')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertScreening('braden')" style="background: #1976d2; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="bradenContent" style="display: none;">
-                        <div style="font-size: 11px; font-style: italic; color: #0d47a1; margin-top: 10px; margin-bottom: 8px;">Rate each subscale (lower score = higher risk)</div>
-                        <div style="display: grid; grid-template-columns: 1fr 160px; gap: 6px; font-size: 12px;">
-                            <div><strong>Sensory Perception</strong> — Ability to respond to pressure-related discomfort</div>
-                            <select id="braden1" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Completely limited</option><option value="2">2 - Very limited</option><option value="3">3 - Slightly limited</option><option value="4">4 - No impairment</option></select>
-                            <div><strong>Moisture</strong> — Degree to which skin is exposed to moisture</div>
-                            <select id="braden2" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Constantly moist</option><option value="2">2 - Very moist</option><option value="3">3 - Occasionally moist</option><option value="4">4 - Rarely moist</option></select>
-                            <div><strong>Activity</strong> — Degree of physical activity</div>
-                            <select id="braden3" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Bedfast</option><option value="2">2 - Chairfast</option><option value="3">3 - Walks occasionally</option><option value="4">4 - Walks frequently</option></select>
-                            <div><strong>Mobility</strong> — Ability to change and control body position</div>
-                            <select id="braden4" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Completely immobile</option><option value="2">2 - Very limited</option><option value="3">3 - Slightly limited</option><option value="4">4 - No limitation</option></select>
-                            <div><strong>Nutrition</strong> — Usual food intake pattern</div>
-                            <select id="braden5" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Very poor</option><option value="2">2 - Probably inadequate</option><option value="3">3 - Adequate</option><option value="4">4 - Excellent</option></select>
-                            <div><strong>Friction & Shear</strong> — Assistance required for movement</div>
-                            <select id="braden6" onchange="updateBradenScore()"><option value="">--</option><option value="1">1 - Problem</option><option value="2">2 - Potential problem</option><option value="3">3 - No apparent problem</option></select>
-                        </div>
-                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(13,71,161,0.06); border-radius: 6px;">
-                            <strong>Risk:</strong> 19-23 No risk | 15-18 Mild risk | 13-14 Moderate risk | 10-12 High risk | 9 or below Very high risk
-                        </div>
-                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #0d47a1;">Braden Score: <strong id="bradenScore">0</strong>/23 <span id="bradenSeverity" style="font-weight:400; font-size:12px;"></span></div>
-                    </div>
-                    <div id="savedBradenList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #1976d2;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #0d47a1;">Saved Braden Screenings (will be included in export):</span>
-                            <button onclick="clearSavedScreenings('braden')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedBradenEntries"></div>
-                    </div>
-                </div>
-
-                <!-- CAM Delirium Screening Panel -->
-                <div class="cam-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #8e24aa; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('camContent', this)">
-                        <h3 style="color: #4a148c; margin: 0;">🔍 CAM Delirium Screening <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="event.stopPropagation(); saveScreening('cam')" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
-                            <button onclick="event.stopPropagation(); insertScreening('cam')" style="background: #8e24aa; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert Now ➜</button>
-                        </div>
-                    </div>
-                    <div id="camContent" style="display: none;">
-                        <div style="font-size: 12px; font-style: italic; color: #4a148c; margin-top: 10px; margin-bottom: 8px;">Assess patient for each feature. Delirium = Feature 1 AND 2, PLUS either 3 OR 4.</div>
-                        <div style="display: grid; grid-template-columns: 1fr 80px; gap: 8px; font-size: 12px;">
-                            <div><strong>Feature 1: Acute Onset & Fluctuating Course</strong><br><span style="font-size:11px;color:#666;">Is there evidence of an acute change in mental status from baseline? Does the abnormal behavior fluctuate during the day?</span></div>
-                            <select id="cam1" onchange="updateCamResult()"><option value="">--</option><option value="yes">Present</option><option value="no">Absent</option></select>
-                            <div><strong>Feature 2: Inattention</strong><br><span style="font-size:11px;color:#666;">Does the patient have difficulty focusing attention? Are they easily distracted or have difficulty keeping track of what is said?</span></div>
-                            <select id="cam2" onchange="updateCamResult()"><option value="">--</option><option value="yes">Present</option><option value="no">Absent</option></select>
-                            <div><strong>Feature 3: Disorganized Thinking</strong><br><span style="font-size:11px;color:#666;">Is the patient's thinking disorganized or incoherent? Rambling or irrelevant conversation, unclear or illogical flow of ideas, unpredictable switching between subjects?</span></div>
-                            <select id="cam3" onchange="updateCamResult()"><option value="">--</option><option value="yes">Present</option><option value="no">Absent</option></select>
-                            <div><strong>Feature 4: Altered Level of Consciousness</strong><br><span style="font-size:11px;color:#666;">Overall, how would you rate this patient's level of consciousness? (Alert = normal, anything else = abnormal: Vigilant, Lethargic, Stupor, Coma)</span></div>
-                            <select id="cam4" onchange="updateCamResult()"><option value="">--</option><option value="yes">Abnormal (not Alert)</option><option value="no">Alert (normal)</option></select>
-                        </div>
-                        <div style="margin-top: 10px; font-size: 11px; color: #666; padding: 6px 8px; background: rgba(74,20,140,0.06); border-radius: 6px;">
-                            <strong>Interpretation:</strong> Positive = Feature 1 + Feature 2 + (Feature 3 OR Feature 4) → Delirium likely present
-                        </div>
-                        <div style="margin-top: 8px; font-size: 13px; font-weight: 600; color: #4a148c;">CAM Result: <strong id="camResult">--</strong></div>
-                    </div>
-                    <div id="savedCamList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #8e24aa;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 12px; font-weight: 600; color: #4a148c;">Saved CAM Screenings (will be included in export):</span>
-                            <button onclick="clearSavedScreenings('cam')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
-                        </div>
-                        <div id="savedCamEntries"></div>
                     </div>
                 </div>
 
@@ -4707,8 +4738,13 @@
             const data = getScreeningData(type);
             if (!data) return;
             if (data.isEmpty) { showToast('Please complete the screening before inserting.', 'warning'); return; }
-            appendToField('h2tPsych', data.display + '. ');
-            showToast(`${data.label} score inserted into Psychosocial notes.`, 'success');
+            if (!lastActiveTextarea) { showToast('Click in a text field first, then insert the screening.', 'warning'); return; }
+            const str = data.display + '. ';
+            const start = lastActiveTextarea.selectionStart;
+            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
+            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
+            lastActiveTextarea.focus();
+            showToast(`${data.label} screening inserted.`, 'success');
         }
 
         function renderSavedScreenings(type) {
