@@ -72,22 +72,33 @@
 
         .user-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 14px;
             border-bottom: 1px solid var(--clx-border, #e2e8f0);
             transition: background 0.15s;
         }
         .user-item:hover { background: var(--clx-accent-subtle, #e0f2f8); }
         .user-item:last-child { border-bottom: none; }
-        .user-info { flex: 1; }
-        .user-name { font-weight: 600; color: var(--clx-text-primary, #1a2532); }
-        .user-email { font-size: 12px; color: var(--clx-text-secondary, #4a5568); }
-        .user-status { font-size: 11px; margin-top: 3px; }
-        .status-approved { color: #28a745; }
-        .status-pending { color: #ffc107; }
-        .status-banned { color: #dc3545; }
-        .user-actions { display: flex; gap: 5px; }
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--clx-accent, #0f7490); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+        }
+        .user-info { flex: 1; min-width: 0; }
+        .user-name { font-weight: 600; font-size: 14px; color: var(--clx-text-primary, #1a2532); }
+        .user-email { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-badges { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+        .user-badge {
+            display: inline-block; padding: 1px 7px; border-radius: 10px;
+            font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+        }
+        .badge-role { background: #e0f2fe; color: #0369a1; }
+        .badge-approved { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-banned { background: #fee2e2; color: #991b1b; }
+        .user-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
 
         .online-dot {
             width: 8px;
@@ -212,6 +223,8 @@
         }
         @media (max-width: 480px) {
             .action-bar { gap: 6px; padding: 10px 12px; }
+            /* App-like flush layout */
+            .container { padding: 0 8px !important; max-width: 100% !important; }
         }
 
     </style>
@@ -543,6 +556,48 @@
             </div>
         </div>
 
+        <!-- Add User Modal -->
+        <div id="addUserModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 480px; margin: 60px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">+ Add User</h2>
+                    <button onclick="closeAddUserModal()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer;">✕</button>
+                </div>
+                <div style="padding: 20px;">
+                    <p style="font-size: 12px; color: var(--clx-text-secondary); margin: 0 0 16px; padding: 10px 12px; background: var(--clx-accent-subtle); border-radius: 6px; border-left: 3px solid var(--clx-accent);">
+                        This creates a Firebase profile only. The user must visit the <strong>registration page</strong> to set their own password and activate their account.
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: var(--clx-text-primary); display: block; margin-bottom: 4px;">Display Name <span style="color:#dc3545;">*</span></label>
+                            <input type="text" id="addUserName" placeholder="e.g. Jane Smith"
+                                style="width: 100%; padding: 9px 11px; border: 1px solid var(--clx-border); border-radius: 7px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: var(--clx-text-primary); display: block; margin-bottom: 4px;">Email <span style="color:#dc3545;">*</span></label>
+                            <input type="email" id="addUserEmail" placeholder="e.g. jane@example.com"
+                                style="width: 100%; padding: 9px 11px; border: 1px solid var(--clx-border); border-radius: 7px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; color: var(--clx-text-primary); display: block; margin-bottom: 4px;">Role</label>
+                            <select id="addUserRole"
+                                style="width: 100%; padding: 9px 11px; border: 1px solid var(--clx-border); border-radius: 7px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); box-sizing: border-box;">
+                                <option value="RN Student">RN Student</option>
+                                <option value="Instructor">Instructor</option>
+                                <option value="RN">RN</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                        <button onclick="closeAddUserModal()" style="padding: 9px 20px; border: 1px solid var(--clx-border); background: var(--clx-bg-surface-2); color: var(--clx-text-primary); border-radius: 7px; cursor: pointer; font-size: 13px;">Cancel</button>
+                        <button onclick="submitAddUser()" style="padding: 9px 20px; background: var(--clx-accent); color: white; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600;">Add User</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="grid">
             <!-- Online Users -->
             <div class="card">
@@ -581,26 +636,43 @@
             <!-- Registered Users -->
             <div class="card">
                 <div class="card-header">
-                    <span>Registered Users</span>
-                    <div style="display: flex; gap: 8px;">
+                    <span>Registered Users <span id="registeredUsersCountBadge" style="font-size:11px;font-weight:400;color:var(--clx-text-muted);"></span></span>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                         <span class="updated-label muted" id="registeredUsersUpdated">Updated —</span>
+                        <button class="btn btn-sm" style="background:#28a745;color:white;" onclick="openAddUserModal()" title="Manually add a user">+ Add User</button>
                         <button class="btn btn-sm btn-warning" onclick="sendWelcomeEmailsToAll()" title="Send welcome email to all users">📧 Email All</button>
                         <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
                     </div>
                 </div>
                 <div style="padding: 8px 15px; background: var(--clx-accent-subtle); font-size: 11px; color: var(--clx-accent);">
-                    <strong>Note:</strong> Ban users here. To fully delete accounts, go to <a href="https://console.firebase.google.com/project/bendbsn-17377/authentication/users" target="_blank" style="color: var(--clx-accent);">Firebase Console → Authentication</a>
+                    <strong>Note:</strong> Users are loaded from Firebase. To delete Firebase Auth accounts, go to <a href="https://console.firebase.google.com/project/bendbsn-17377/authentication/users" target="_blank" style="color: var(--clx-accent);">Firebase Console → Authentication</a>
                 </div>
                 <div style="padding: 10px 15px; border-bottom: 1px solid var(--clx-border); background: var(--clx-bg-surface-2);">
                     <input
                         type="text"
                         id="registeredUserSearch"
-                        placeholder="Search users by name, email, or username..."
+                        placeholder="Search by name, email, or username..."
                         oninput="filterRegisteredUsers()"
                         style="width: 100%; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);"
                     >
-                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-secondary btn-sm" onclick="clearRegisteredUsersCache()">Clear Cache</button>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center;">
+                        <select id="registeredUsersRoleSelect" onchange="registeredUsersRoleFilter=this.value;filterRegisteredUsers()"
+                            style="padding: 5px 8px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                            <option value="">All Roles</option>
+                            <option value="RN Student">RN Student</option>
+                            <option value="Instructor">Instructor</option>
+                            <option value="RN">RN</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <select id="registeredUsersStatusSelect" onchange="registeredUsersStatusFilter=this.value;filterRegisteredUsers()"
+                            style="padding: 5px 8px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                            <option value="">All Statuses</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
+                            <option value="banned">Banned</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="exportUsersCSV()">⬇ Export CSV</button>
                         <button class="btn btn-sm btn-danger" onclick="bulkDeleteFilteredUsers()">Delete Filtered</button>
                     </div>
                 </div>
@@ -779,6 +851,9 @@
         let userProfilesByUid = {};
         let registeredUsersCache = [];
         let registeredUsersFiltered = [];
+        let _userRowData = [];
+        let registeredUsersRoleFilter = '';
+        let registeredUsersStatusFilter = '';
         let adminInitialized = false;
         let isAdminVerified = false;
 
@@ -1263,25 +1338,15 @@
             }
 
             try {
-                // If user has a Firebase profile (has logged in), update it
-                if (uid && uid !== 'undefined' && uid !== '') {
-                    await userProfilesRef.child(uid).update({
-                        role: role,
-                        email: email || null,
-                        updatedAt: Date.now()
-                    });
+                if (!uid || uid === 'undefined' || uid === '') {
+                    showToast('Cannot update role: no Firebase UID for this user', 'error');
+                    return;
                 }
-
-                // Always update Google Sheet role too (works even if user hasn't logged in)
-                if (email) {
-                    const params = new URLSearchParams({
-                        action: 'updateRole',
-                        email: email,
-                        role: role
-                    });
-                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                }
-
+                await userProfilesRef.child(uid).update({
+                    role: role,
+                    email: email || null,
+                    updatedAt: Date.now()
+                });
                 showToast(`Role updated to ${role}`, 'success');
                 await refreshUserProfilesMap();
                 loadRegisteredUsers();
@@ -1294,44 +1359,56 @@
             const container = document.getElementById('registeredUsersList');
             if (!container) return;
 
+            _userRowData = users || [];
             registeredUsersFiltered = users || [];
 
             if (!users || users.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">&#128100;</div><p>No registered users</p></div>';
+                container.innerHTML = '<div class="empty-state"><div class="icon">&#128100;</div><p>No users match the current filters</p></div>';
                 return;
             }
 
             let html = '';
-            users.forEach((user) => {
-                const statusClass = user.status === 'approved' ? 'status-approved' :
-                                   user.status === 'banned' ? 'status-banned' : 'status-pending';
+            users.forEach((user, i) => {
+                const status = user.status || 'approved';
+                const statusBadgeClass = status === 'approved' ? 'badge-approved' :
+                                         status === 'banned'   ? 'badge-banned'   : 'badge-pending';
                 const emailKey = (user.email || '').toLowerCase();
                 const profile = userProfilesByEmail[emailKey] || null;
+                const uid = user.uid || (profile ? (profile.uid || '') : '');
                 const roleValue = (profile && profile.role) || user.role || 'RN Student';
-                const roleLabel = roleValue || 'RN Student';
-                const profileUid = profile ? profile.uid : '';
+                const name = user.name || user.username || 'Unknown';
+                const initials = name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+
+                // Safe attribute escaping for uid/email used in onclick (no user-controlled content)
+                const safeUid = uid.replace(/'/g, '');
+                const safeEmail = (user.email || '').replace(/'/g, '');
+
                 const roleSelect = auth.currentUser
-                    ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; margin-right: 6px;">
-                           ${getRoleOptionsHtml(roleLabel)}
-                       </select>`
-                    : `<span style="font-size: 12px; color: #666;">${roleLabel}</span>`;
+                    ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid var(--clx-border); font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                           ${getRoleOptionsHtml(roleValue)}
+                       </select>
+                       <button class="btn btn-sm btn-primary" onclick="updateUserRole('${safeUid}', '${safeEmail}', this.previousElementSibling.value)" style="white-space:nowrap;">Save Role</button>`
+                    : '';
+
                 html += `
                     <div class="user-item">
+                        <div class="user-avatar">${escapeHtml(initials)}</div>
                         <div class="user-info">
-                            <div class="user-name">${user.name || user.username}</div>
-                            <div class="user-email">${user.email || ''} | @${user.username}</div>
-                            <div class="user-status ${statusClass}">${user.status || 'pending'}</div>
-                            <div class="user-status" style="font-size: 11px; color: #1f4e79;">Role: ${roleLabel}</div>
+                            <div class="user-name">${escapeHtml(name)}</div>
+                            <div class="user-email">${escapeHtml(user.email || '')}${user.username ? ' · @' + escapeHtml(user.username) : ''}</div>
+                            <div class="user-badges">
+                                <span class="user-badge badge-role">${escapeHtml(roleValue)}</span>
+                                <span class="user-badge ${statusBadgeClass}">${escapeHtml(status)}</span>
+                            </div>
                         </div>
                         <div class="user-actions">
-                            ${user.status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveUser('${user.username}')">Approve</button>` : ''}
-                            ${auth.currentUser ? `
-                                ${roleSelect}
-                                <button class="btn btn-sm btn-primary" onclick="updateUserRole('${profileUid}', '${user.email || ''}', this.previousElementSibling.value)">Save Role</button>
-                            ` : ''}
-                            ${profileUid ? (profile && profile.isAdmin ? `<button class="btn btn-sm" style="background:#6b7280;color:white;" onclick="grantAdminClaim('${profileUid}', true)" title="Revoke admin access">Revoke Admin</button>` : `<button class="btn btn-sm" style="background:#1f4e79;color:white;" onclick="grantAdminClaim('${profileUid}', false)" title="Grant admin custom claim">Grant Admin</button>`) : ''}
-                            <button class="btn btn-danger btn-sm" onclick="banUser('${user.username}')">Ban</button>
-                            <button class="btn btn-sm" style="background:#dc3545;color:white;" onclick="deleteUser('${user.username}', '${user.email || ''}', '${profileUid}', '${user.name || user.username}')" title="Permanently delete user">🗑️</button>
+                            ${status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveUser(${i})">Approve</button>` : ''}
+                            ${roleSelect}
+                            ${uid ? (profile && profile.isAdmin
+                                ? `<button class="btn btn-sm" style="background:#6b7280;color:white;white-space:nowrap;" onclick="grantAdminClaim('${safeUid}', true)">Revoke Admin</button>`
+                                : `<button class="btn btn-sm" style="background:#1f4e79;color:white;white-space:nowrap;" onclick="grantAdminClaim('${safeUid}', false)">Grant Admin</button>`) : ''}
+                            <button class="btn btn-warning btn-sm" onclick="banUser(${i})">Ban</button>
+                            <button class="btn btn-sm" style="background:#dc3545;color:white;" onclick="deleteUser(${i})" title="Permanently delete user">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -1342,7 +1419,10 @@
         function filterRegisteredUsers() {
             const input = document.getElementById('registeredUserSearch');
             const search = (input?.value || '').toLowerCase().trim();
-            if (!search) {
+            const roleF = registeredUsersRoleFilter;
+            const statusF = registeredUsersStatusFilter;
+
+            if (!search && !roleF && !statusF) {
                 renderRegisteredUsers(registeredUsersCache);
                 return;
             }
@@ -1350,7 +1430,12 @@
                 const name = (u.name || '').toLowerCase();
                 const email = (u.email || '').toLowerCase();
                 const username = (u.username || '').toLowerCase();
-                return name.includes(search) || email.includes(search) || username.includes(search);
+                const role = (u.role || '').toLowerCase();
+                const status = (u.status || 'approved').toLowerCase();
+                if (search && !name.includes(search) && !email.includes(search) && !username.includes(search)) return false;
+                if (roleF && role !== roleF.toLowerCase()) return false;
+                if (statusF && status !== statusF.toLowerCase()) return false;
+                return true;
             });
             renderRegisteredUsers(filtered);
         }
@@ -1401,22 +1486,12 @@
                     }
                 }
 
-                try {
-                    const params = new URLSearchParams({
-                        action: 'deleteUser',
-                        username: username,
-                        email: email
-                    });
-                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                    deletedItems.push('Google Sheet');
-                } catch (e) {
-                    errors.push('Google Sheet: ' + e.message);
-                }
-
+                // Remove from banned list
                 try {
                     const bannedSnapshot = await bannedRef.once('value');
                     bannedSnapshot.forEach((child) => {
-                        if (child.val().username === username || child.val().username === email) {
+                        const val = child.val();
+                        if (val.username === username || val.email === email || val.uid === uid) {
                             child.ref.remove();
                         }
                     });
@@ -1425,10 +1500,12 @@
                 }
 
                 if (deletedItems.length > 0) {
-                    showToast(`Deleted ${displayName || username} from: ${deletedItems.join(', ')}`, 'success');
+                    showToast(`Deleted ${escapeHtml(displayName || username)} from: ${deletedItems.join(', ')}`, 'success');
+                } else if (errors.length === 0) {
+                    showToast('No Firebase profile found to delete (may only have Auth account)', 'warning');
                 }
                 if (errors.length > 0) {
-                    showToast(`Errors deleting ${displayName || username}: ${errors.join('; ')}`, 'warning');
+                    showToast(`Errors: ${errors.join('; ')}`, 'warning');
                 }
             } catch (e) {
                 showToast('Error deleting user: ' + e.message, 'error');
@@ -1469,93 +1546,136 @@
         // Load registered users from Google Sheets
         async function loadRegisteredUsers() {
             const container = document.getElementById('registeredUsersList');
-            container.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading users...</p></div>';
             updateLastUpdated('registeredUsersUpdated');
 
+            if (!auth.currentUser) {
+                container.innerHTML = `<div class="empty-state">
+                    <div class="icon">&#128274;</div>
+                    <p style="font-weight:600;">Sign in to Firebase to view users</p>
+                    <button class="btn btn-primary btn-sm" onclick="openFirebaseAuthModal()" style="margin-top:12px;">Sign In</button>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading users...</p></div>';
+
             try {
-                // Try to refresh Firebase profiles (but don't fail if not signed in)
-                await refreshUserProfilesMap().catch(err => {
-                    console.warn('Could not load Firebase profiles (not signed in?):', err);
-                });
+                await refreshUserProfilesMap();
 
-                // Fetch users from Google Sheets
-                console.log('Fetching users from Google Sheets API...');
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                registeredUsersCache = Object.entries(userProfilesByUid).map(([uid, profile]) => ({
+                    uid: uid,
+                    name: profile.displayName || profile.name || '',
+                    email: profile.email || '',
+                    username: profile.username || (profile.email || '').split('@')[0],
+                    status: profile.status || 'approved',
+                    role: profile.role || 'RN Student',
+                    createdAt: profile.createdAt || null
+                })).filter(u => u.email || u.name);
 
-                const response = await fetch(API_URL + '&action=getUsers', {
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
+                // Sort newest first
+                registeredUsersCache.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-                console.log('Response status:', response.status);
+                const count = registeredUsersCache.length;
+                document.getElementById('statRegistered').textContent = count;
+                const badge = document.getElementById('registeredUsersCountBadge');
+                if (badge) badge.textContent = `(${count})`;
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                console.log('Users data:', data);
-
-                // Accept multiple response shapes from Apps Script
-                let rawUsers = [];
-                if (Array.isArray(data?.users)) rawUsers = data.users;
-                else if (Array.isArray(data?.data)) rawUsers = data.data;
-                else if (Array.isArray(data)) rawUsers = data;
-
-                const normalized = rawUsers
-                    .map(normalizeRegisteredUser)
-                    .filter(u => u.username || u.email || u.name);
-
-                if (normalized.length > 0) {
-                    registeredUsersCache = normalized;
-                } else {
-                    // Fallback to Firebase profiles if sheet returns empty/unexpected response
-                    const fallback = usersFromProfilesFallback();
-                    if (fallback.length > 0) {
-                        registeredUsersCache = fallback;
-                        showToast('Using Firebase profile fallback for user list.', 'warning');
-                    } else {
-                        registeredUsersCache = [];
-                    }
-                }
-
-                document.getElementById('statRegistered').textContent = registeredUsersCache.length;
                 filterRegisteredUsers();
             } catch (e) {
                 console.error('Error loading users:', e);
-
-                // If Google Sheets fails, fallback to Firebase profiles instead of blank/error
-                const fallback = usersFromProfilesFallback();
-                if (fallback.length > 0) {
-                    registeredUsersCache = fallback;
-                    document.getElementById('statRegistered').textContent = registeredUsersCache.length;
-                    filterRegisteredUsers();
-                    showToast('Google Sheets unavailable. Showing Firebase profile users.', 'warning');
-                    return;
-                }
-
-                // Show detailed error message
-                let errorMsg = 'Unknown error';
-                if (e.name === 'AbortError') {
-                    errorMsg = 'Request timed out (Google Sheets API not responding)';
-                } else if (e.message.includes('HTTP')) {
-                    errorMsg = e.message;
-                } else if (e.message.includes('Failed to fetch')) {
-                    errorMsg = 'Network error - check internet connection or CORS settings';
-                } else {
-                    errorMsg = e.message;
-                }
-
                 container.innerHTML = `<div class="empty-state">
                     <div class="icon">&#128679;</div>
-                    <p style="color: #dc3545; font-weight: 600;">Error loading users</p>
-                    <p style="font-size: 12px; color: #666; margin-top: 8px;">${errorMsg}</p>
-                    <button class="btn btn-sm btn-primary" onclick="loadRegisteredUsers()" style="margin-top: 12px;">Retry</button>
-                    ${!auth.currentUser ? '<p style="font-size: 11px; color: #ff9800; margin-top: 8px;">💡 Try signing in to Firebase using the button above</p>' : ''}
+                    <p style="color:#dc3545;font-weight:600;">Error loading users</p>
+                    <p style="font-size:12px;color:#666;margin-top:8px;">${escapeHtml(e.message)}</p>
+                    <button class="btn btn-sm btn-primary" onclick="loadRegisteredUsers()" style="margin-top:12px;">Retry</button>
                 </div>`;
             }
         }
+
+        // ========== ADD USER MODAL ==========
+        function openAddUserModal() {
+            if (!auth.currentUser) {
+                showToast('Sign in to Firebase first to add users.', 'error');
+                openFirebaseAuthModal();
+                return;
+            }
+            document.getElementById('addUserName').value = '';
+            document.getElementById('addUserEmail').value = '';
+            document.getElementById('addUserRole').value = 'RN Student';
+            document.getElementById('addUserModal').style.display = 'block';
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'none';
+        }
+
+        async function submitAddUser() {
+            const name = (document.getElementById('addUserName').value || '').trim();
+            const email = (document.getElementById('addUserEmail').value || '').trim().toLowerCase();
+            const role = document.getElementById('addUserRole').value || 'RN Student';
+
+            if (!name) { showToast('Display name is required', 'error'); return; }
+            if (!email || !email.includes('@')) { showToast('Valid email is required', 'error'); return; }
+
+            // Check for duplicate
+            const existing = registeredUsersCache.find(u => (u.email || '').toLowerCase() === email);
+            if (existing) {
+                showToast('A user with that email already exists', 'warning');
+                return;
+            }
+
+            try {
+                const key = 'manual_' + Date.now();
+                await userProfilesRef.child(key).set({
+                    displayName: name,
+                    email: email,
+                    username: email.split('@')[0],
+                    role: role,
+                    status: 'approved',
+                    createdAt: Date.now(),
+                    tenantId: 'bendbsn',
+                    addedByAdmin: true
+                });
+                showToast(`User "${escapeHtml(name)}" added successfully`, 'success');
+                closeAddUserModal();
+                loadRegisteredUsers();
+            } catch (e) {
+                showToast('Error adding user: ' + e.message, 'error');
+            }
+        }
+
+        // ========== EXPORT USERS CSV ==========
+        function sanitizeForCSV(val) {
+            const str = String(val == null ? '' : val).replace(/"/g, '""');
+            // Prevent formula injection: prefix dangerous-start chars with apostrophe
+            if (/^[=+@\-]/.test(str)) return `'${str}`;
+            return str;
+        }
+
+        function exportUsersCSV() {
+            const data = registeredUsersFiltered.length > 0 ? registeredUsersFiltered : registeredUsersCache;
+            if (data.length === 0) {
+                showToast('No users to export', 'info');
+                return;
+            }
+            let csv = 'Name,Email,Username,Role,Status,Created\n';
+            data.forEach(u => {
+                const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '';
+                csv += `"${sanitizeForCSV(u.name)}","${sanitizeForCSV(u.email)}","${sanitizeForCSV(u.username)}","${sanitizeForCSV(u.role)}","${sanitizeForCSV(u.status)}","${sanitizeForCSV(created)}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'bendbsn-users-' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Close Add User modal on overlay click
+        document.getElementById('addUserModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddUserModal();
+        });
 
         // Load chat messages
         // ========== CHAT CHANNELS ADMIN ==========
@@ -1713,23 +1833,34 @@
         }
 
         // Ban user
-        function banUser(username) {
-            showPromptModal('Ban User', `Ban ${username}? Enter reason (optional):`, function(reason) {
+        function banUser(idx) {
+            const user = _userRowData[idx];
+            if (!user) return;
+            const username = user.username || user.email || 'unknown';
+            showPromptModal('Ban User', `Ban ${escapeHtml(user.name || username)}? Enter reason (optional):`, function(reason) {
                 bannedRef.push({
                     username: username,
+                    email: user.email || '',
+                    uid: user.uid || '',
                     reason: reason,
                     timestamp: Date.now(),
                     bannedBy: 'admin'
-                }).then(() => {
-                    showToast(`${username} has been banned`, 'success');
-                    // Also kick them from chat
+                }).then(async () => {
+                    // Also update status in Firebase profile
+                    if (user.uid) {
+                        await userProfilesRef.child(user.uid).update({ status: 'banned' }).catch(() => {});
+                    }
+                    showToast(`${escapeHtml(user.name || username)} has been banned`, 'success');
+                    // Kick from chat presence
                     presenceRef.once('value', (snapshot) => {
                         snapshot.forEach((child) => {
-                            if (child.val().user === username) {
+                            const val = child.val();
+                            if (val.user === username || val.email === user.email || val.uid === user.uid) {
                                 child.ref.remove();
                             }
                         });
                     });
+                    loadRegisteredUsers();
                 }).catch((e) => showToast('Error: ' + e.message, 'error'));
             }, { submitText: 'Ban', defaultValue: 'Rule violation', placeholder: 'Enter reason...' });
         }
@@ -1743,17 +1874,19 @@
             }, { confirmText: 'Unban' });
         }
 
-        // Approve user (update Google Sheets)
-        async function approveUser(username) {
-            showConfirmModal('Approve User', `Approve ${username}?`, async function() {
+        // Approve user (update Firebase)
+        async function approveUser(idx) {
+            const user = _userRowData[idx];
+            if (!user) return;
+            const displayName = escapeHtml(user.name || user.email || 'this user');
+            showConfirmModal('Approve User', `Approve ${displayName}?`, async function() {
                 try {
-                    const params = new URLSearchParams({
-                        action: 'updateStatus',
-                        username: username,
-                        status: 'approved'
-                    });
-                    await fetch(API_URL + '&' + params.toString(), { method: 'POST', mode: 'no-cors' });
-                    showToast(`${username} has been approved`, 'success');
+                    if (!user.uid) {
+                        showToast('Cannot approve: user has no Firebase profile UID', 'error');
+                        return;
+                    }
+                    await userProfilesRef.child(user.uid).update({ status: 'approved' });
+                    showToast(`${displayName} has been approved`, 'success');
                     loadRegisteredUsers();
                 } catch (e) {
                     showToast('Error: ' + e.message, 'error');
@@ -1762,23 +1895,21 @@
         }
 
         // Delete user completely
-        async function deleteUser(username, email, uid, displayName) {
-            const confirmMsg = `PERMANENTLY DELETE "${displayName || username}"?\n\nThis will remove:\n• User profile from database\n• User from Google Sheet\n\nYou'll also need to delete from Firebase Auth Console.\n\nThis cannot be undone!`;
+        async function deleteUser(idx) {
+            const user = _userRowData[idx];
+            if (!user) return;
+            const displayName = user.name || user.email || user.username || 'this user';
+            const confirmMsg = `PERMANENTLY DELETE "${escapeHtml(displayName)}"?\n\nThis will remove their Firebase profile and ban list entries.\n\nYou'll still need to delete their Auth account from Firebase Console.\n\nThis cannot be undone!`;
 
             showConfirmModal('Delete User', confirmMsg, function() {
                 showConfirmModal('Are You Sure?', 'Are you REALLY sure? This action is permanent.', async function() {
+                    await deleteUserDirect(user.username || '', user.email || '', user.uid || '', displayName);
 
-            await deleteUserDirect(username, email, uid, displayName);
+                    showConfirmModal('Open Firebase Console', 'Profile deleted!\n\nOpen Firebase Console to also delete the Auth account?', function() {
+                        window.open('https://console.firebase.google.com/project/bendbsn-17377/authentication/users', '_blank');
+                    }, { confirmText: 'Open Console' });
 
-            // Open Firebase Console for Auth deletion
-            showConfirmModal('Open Firebase Console', 'User data deleted!\n\nOpen Firebase Console to delete the Auth account?\n\n(Required to fully remove the user)', function() {
-                window.open('https://console.firebase.google.com/project/bendbsn-17377/authentication/users', '_blank');
-            }, { confirmText: 'Open Console' });
-
-            // Refresh user list
-            localStorage.removeItem('bendbsn_userCache');
-            localStorage.removeItem('bendbsn_userCacheTime');
-            loadRegisteredUsers();
+                    loadRegisteredUsers();
                 }, { confirmText: 'Yes, Delete', danger: true });
             }, { confirmText: 'Delete User', danger: true });
         }
@@ -2353,7 +2484,7 @@
                 if ((!durationSeconds || durationSeconds === 0) && start && end) {
                     durationSeconds = Math.max(0, Math.round((end - start) / 1000));
                 }
-                csv += `"${date}","${login.username || ''}","${login.displayName || ''}","${status}","${durationSeconds || ''}","${userAgent}"\n`;
+                csv += `"${sanitizeForCSV(date)}","${sanitizeForCSV(login.username)}","${sanitizeForCSV(login.displayName)}","${sanitizeForCSV(status)}","${sanitizeForCSV(durationSeconds)}","${sanitizeForCSV(userAgent)}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -2666,7 +2797,7 @@
             let csv = 'Date/Time,User,Email,Format,Note Type,Patient ID\n';
             data.forEach((entry) => {
                 const date = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : entry.date || '';
-                csv += `"${date}","${entry.displayName || ''}","${entry.userEmail || ''}","${entry.exportFormat || ''}","${entry.noteType || ''}","${entry.patientId || ''}"\n`;
+                csv += `"${sanitizeForCSV(date)}","${sanitizeForCSV(entry.displayName)}","${sanitizeForCSV(entry.userEmail)}","${sanitizeForCSV(entry.exportFormat)}","${sanitizeForCSV(entry.noteType)}","${sanitizeForCSV(entry.patientId)}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });

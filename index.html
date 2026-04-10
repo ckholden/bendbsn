@@ -788,18 +788,6 @@
                     tenantId: 'bendbsn'
                 });
 
-                // Save user profile to Google Sheet (no password stored)
-                const params = new URLSearchParams({
-                    action: 'addUser',
-                    username: email,
-                    password: '[Firebase Auth]', // Placeholder - password handled by Firebase
-                    status: 'approved',
-                    name: name,
-                    email: email,
-                    role: role
-                });
-                await fetch(API_URL + '&' + params.toString(), { mode: 'no-cors' });
-
                 // Send email notification to admin
                 await sendEmailNotification(name, email, email, 'new_registration', role);
 
@@ -869,19 +857,6 @@
             }
 
             try {
-                // Add to Google Sheet (no password - Firebase Auth handles that)
-                const params = new URLSearchParams({
-                    action: 'addUser',
-                    username: username,
-                    password: '[Firebase Auth]',
-                    status: 'approved',
-                    name: name,
-                    email: email,
-                    role: role
-                });
-
-                await fetch(API_URL + '&' + params.toString(), { mode: 'no-cors' });
-
                 // Send email notification to admin for auditing
                 await sendEmailNotification(name, email, username, 'new_registration', role);
                 // Send welcome email to the new user
