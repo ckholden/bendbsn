@@ -589,6 +589,14 @@
                                 <option value="Other">Other</option>
                             </select>
                         </div>
+                        <div style="padding: 10px 12px; background: var(--clx-bg-surface-2); border-radius: 7px; border: 1px solid var(--clx-border);">
+                            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="addUserSendEmail" checked style="margin-top: 2px; width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; accent-color: var(--clx-accent);">
+                                <span style="font-size: 12px; color: var(--clx-text-primary); line-height: 1.4;">
+                                    <strong>Send welcome email</strong> — notifies the user with instructions to register and create their password at <em>bendbsn.com</em>
+                                </span>
+                            </label>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
                         <button onclick="closeAddUserModal()" style="padding: 9px 20px; border: 1px solid var(--clx-border); background: var(--clx-bg-surface-2); color: var(--clx-text-primary); border-radius: 7px; cursor: pointer; font-size: 13px;">Cancel</button>
@@ -1602,6 +1610,7 @@
             document.getElementById('addUserName').value = '';
             document.getElementById('addUserEmail').value = '';
             document.getElementById('addUserRole').value = 'RN Student';
+            document.getElementById('addUserSendEmail').checked = true;
             document.getElementById('addUserModal').style.display = 'block';
         }
 
@@ -1624,8 +1633,30 @@
                 return;
             }
 
+            const sendEmail = document.getElementById('addUserSendEmail').checked;
+
             try {
                 const key = 'manual_' + Date.now();
+                let welcomeEmailSent = false;
+
+                // Send welcome email before writing to Firebase so we can record the result
+                if (sendEmail) {
+                    try {
+                        const templateParams = {
+                            to_name: name,
+                            to_email: email,
+                            reply_to: email,
+                            login_link: 'https://bendbsn.com',
+                            message: `Hi ${name},\n\nAn account has been created for you on BendBSN by an administrator.\n\nTo get started:\n1. Go to https://bendbsn.com\n2. Click "Register" and sign up using this email address (${email})\n3. Create your password to activate your account\n\nYour role is set to: ${role}\n\nOnce registered, you can log in anytime at https://bendbsn.com.`
+                        };
+                        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+                        welcomeEmailSent = true;
+                    } catch (emailErr) {
+                        console.error('Welcome email failed:', emailErr);
+                        showToast('Note: Welcome email failed to send — user was still added.', 'warning');
+                    }
+                }
+
                 await userProfilesRef.child(key).set({
                     displayName: name,
                     email: email,
@@ -1634,9 +1665,12 @@
                     status: 'approved',
                     createdAt: Date.now(),
                     tenantId: 'bendbsn',
-                    addedByAdmin: true
+                    addedByAdmin: true,
+                    welcomeEmailSent: welcomeEmailSent
                 });
-                showToast(`User "${escapeHtml(name)}" added successfully`, 'success');
+
+                const emailNote = welcomeEmailSent ? ' — welcome email sent' : '';
+                showToast(`User "${escapeHtml(name)}" added${emailNote}`, 'success');
                 closeAddUserModal();
                 loadRegisteredUsers();
             } catch (e) {
