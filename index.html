@@ -795,6 +795,9 @@
                 const welcomeSent = await sendWelcomeEmail(name, email);
                 database.ref('userProfiles/' + user.uid).update({ welcomeEmailSent: welcomeSent }).catch(() => {});
 
+                // Remove any admin-created manual_ profile for this email (fire-and-forget)
+                cleanupManualProfile(email).catch(() => {});
+
                 // Registration complete — navigate now that profile is written
                 _preventAuthRedirect = false;
                 localStorage.setItem('bendbsn_auth', 'true');
@@ -1245,6 +1248,8 @@
                     database.ref("userProfiles/" + user.uid).update({ welcomeEmailSent: sent }).catch(() => {});
                 });
                 sendEmailNotification(name, user.email, user.email, "new_registration", roleData.label).catch(() => {});
+                // Remove any admin-created manual_ profile for this email (fire-and-forget)
+                cleanupManualProfile(user.email).catch(() => {});
 
                 localStorage.setItem("bendbsn_auth", "true");
                 localStorage.setItem("bendbsn_user", user.email || "");
@@ -1292,6 +1297,20 @@
         // Initialize EmailJS with object format (v4)
         if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
             emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+        }
+
+        // Clean up any manual_ admin-created profile for this email now that a real UID profile exists
+        async function cleanupManualProfile(email) {
+            try {
+                const snapshot = await database.ref('userProfiles').orderByChild('email').equalTo(email).once('value');
+                const profiles = snapshot.val() || {};
+                const deletions = Object.keys(profiles)
+                    .filter(key => key.startsWith('manual_'))
+                    .map(key => database.ref('userProfiles/' + key).remove());
+                await Promise.all(deletions);
+            } catch (e) {
+                console.warn('Manual profile cleanup failed:', e);
+            }
         }
 
         // Send welcome email to new user — returns true if sent, false if all methods failed
