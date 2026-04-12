@@ -312,6 +312,22 @@
             <span class="clx-sidebar-icon">🗓️</span>
             <span class="clx-sidebar-label">Lab Sched Generator</span>
         </a>
+        <a href="/sbar/" class="clx-sidebar-item" data-page="sbar">
+            <span class="clx-sidebar-icon">📋</span>
+            <span class="clx-sidebar-label">SBAR</span>
+        </a>
+        <a href="/careplan/" class="clx-sidebar-item" data-page="careplan">
+            <span class="clx-sidebar-icon">🗂️</span>
+            <span class="clx-sidebar-label">Care Plans</span>
+        </a>
+        <a href="/rotationlog/" class="clx-sidebar-item" data-page="rotationlog">
+            <span class="clx-sidebar-icon">🏥</span>
+            <span class="clx-sidebar-label">Rotation Log</span>
+        </a>
+        <a href="/profile/" class="clx-sidebar-item" data-page="profile">
+            <span class="clx-sidebar-icon">👤</span>
+            <span class="clx-sidebar-label">Profile</span>
+        </a>
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
         <button class="clx-sidebar-item" onclick="logout()">
             <span class="clx-sidebar-icon">🚪</span>
@@ -795,6 +811,60 @@
                     <div id="rolesList"><div class="empty-state"><div class="icon">&#128101;</div><p>Loading roles...</p></div></div>
                 </div>
             </div>
+
+            <!-- Student Submissions for Review -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <span>Student Submissions for Review</span>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <span class="updated-label" id="submissionsUpdated">Updated —</span>
+                        <button class="refresh-btn" onclick="loadStudentSubmissions()">&#x21bb;</button>
+                    </div>
+                </div>
+                <div class="card-body tall" id="submissionsList">
+                    <div class="empty-state">
+                        <div class="icon">&#128196;</div>
+                        <p>Loading submissions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Review Modal -->
+    <div id="feedbackReviewModal" class="bsn-modal-overlay" style="display:none;z-index:9100;" onclick="if(event.target===this)closeFeedbackModal()">
+        <div class="bsn-confirm-modal" style="max-width:640px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h2 style="font-size:16px;font-weight:700;" id="feedbackModalTitle">Review Submission</h2>
+                <button onclick="closeFeedbackModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted);">&times;</button>
+            </div>
+            <div id="feedbackModalMeta" style="font-size:12px;color:var(--clx-text-muted);margin-bottom:12px;"></div>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:700;color:var(--clx-text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Note Content</div>
+                <pre id="feedbackModalContent" style="background:var(--clx-bg-surface-2);border:1px solid var(--clx-border);border-radius:6px;padding:12px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:280px;overflow-y:auto;color:var(--clx-text-primary);font-family:inherit;"></pre>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;font-weight:700;color:var(--clx-text-secondary);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Instructor Feedback</label>
+                <textarea id="feedbackModalText" rows="4" placeholder="Write feedback for the student..." style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:14px;">
+                <div style="flex:1;">
+                    <label style="font-size:12px;font-weight:700;color:var(--clx-text-secondary);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Score (0–100)</label>
+                    <input type="number" id="feedbackModalScore" min="0" max="100" placeholder="e.g. 87" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:12px;font-weight:700;color:var(--clx-text-secondary);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Pass / Fail</label>
+                    <select id="feedbackModalPassFail" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                        <option value="">— Select —</option>
+                        <option value="Pass">Pass</option>
+                        <option value="Fail">Fail</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="closeFeedbackModal()">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="saveFeedback()">Save Feedback</button>
+            </div>
         </div>
     </div>
 
@@ -1173,6 +1243,7 @@
             loadMessages();
             loadCommunityPosts();
             loadAdminChannels();
+            loadStudentSubmissions();
             updatePendingEmailsBadge();
 
             // Real-time updates
@@ -3206,6 +3277,164 @@
         }
 
         // ========== END COMMUNITY POSTS MANAGEMENT ==========
+
+        // ========== STUDENT SUBMISSIONS FOR REVIEW ==========
+        let currentFeedbackDoc = null; // { sanitizedEmail, docId, studentName, noteType, savedAt, content }
+
+        function sanitizeEmailForPath(email) {
+            return (email || '').replace(/\./g, '_').replace(/@/g, '_at_');
+        }
+
+        async function loadStudentSubmissions() {
+            const container = document.getElementById('submissionsList');
+            if (!container) return;
+            container.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>Loading submissions...</p></div>';
+            updateLastUpdated('submissionsUpdated');
+
+            try {
+                const snap = await database.ref('userDocuments').once('value');
+                if (!snap.exists()) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>No student submissions found.</p></div>';
+                    return;
+                }
+
+                // Gather all docs with their owner info
+                const allDocs = [];
+                snap.forEach((userSnap) => {
+                    const sanitizedEmail = userSnap.key;
+                    userSnap.forEach((docSnap) => {
+                        const doc = docSnap.val() || {};
+                        allDocs.push({
+                            sanitizedEmail,
+                            docId: docSnap.key,
+                            studentName: escapeHtml(doc.displayName || doc.studentName || sanitizedEmail),
+                            noteType: escapeHtml(doc.noteType || doc.type || 'Note'),
+                            savedAt: doc.savedAt || doc.timestamp || doc.createdAt || 0,
+                            content: doc.content || doc.noteContent || doc.text || ''
+                        });
+                    });
+                });
+
+                if (allDocs.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>No student submissions found.</p></div>';
+                    return;
+                }
+
+                // Sort newest first
+                allDocs.sort((a, b) => b.savedAt - a.savedAt);
+
+                // Fetch existing feedback keys for status display
+                const feedbackSnap = await database.ref('documentFeedback').once('value');
+                const feedbackData = feedbackSnap.val() || {};
+
+                let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+                html += '<thead><tr style="border-bottom:2px solid var(--clx-border);text-align:left;">';
+                html += '<th style="padding:8px 10px;font-weight:700;color:var(--clx-text-secondary);">Student</th>';
+                html += '<th style="padding:8px 10px;font-weight:700;color:var(--clx-text-secondary);">Note Type</th>';
+                html += '<th style="padding:8px 10px;font-weight:700;color:var(--clx-text-secondary);">Date Saved</th>';
+                html += '<th style="padding:8px 10px;font-weight:700;color:var(--clx-text-secondary);">Status</th>';
+                html += '</tr></thead><tbody>';
+
+                allDocs.forEach((doc, idx) => {
+                    const feedbackForUser = (feedbackData[doc.sanitizedEmail] || {});
+                    const hasReview = !!feedbackForUser[doc.docId];
+                    const status = hasReview
+                        ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Reviewed</span>'
+                        : '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Pending</span>';
+                    const dateStr = doc.savedAt ? new Date(doc.savedAt).toLocaleDateString() : '—';
+                    html += `<tr style="border-bottom:1px solid var(--clx-border);cursor:pointer;transition:background 0.1s;"
+                        onclick="openFeedbackModal(${idx})"
+                        onmouseover="this.style.background='var(--clx-bg-surface-2)'"
+                        onmouseout="this.style.background=''"
+                        data-doc-idx="${idx}">`;
+                    html += `<td style="padding:9px 10px;">${doc.studentName}</td>`;
+                    html += `<td style="padding:9px 10px;">${doc.noteType}</td>`;
+                    html += `<td style="padding:9px 10px;">${dateStr}</td>`;
+                    html += `<td style="padding:9px 10px;">${status}</td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+
+                // Store docs list for modal access
+                window._submissionDocs = allDocs;
+
+            } catch(e) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">&#128683;</div><p>Error loading submissions: ' + escapeHtml(e.message) + '</p></div>';
+            }
+        }
+
+        function openFeedbackModal(idx) {
+            const docs = window._submissionDocs || [];
+            const doc = docs[idx];
+            if (!doc) return;
+            currentFeedbackDoc = doc;
+
+            const modal = document.getElementById('feedbackReviewModal');
+            const titleEl = document.getElementById('feedbackModalTitle');
+            const metaEl = document.getElementById('feedbackModalMeta');
+            const contentEl = document.getElementById('feedbackModalContent');
+            const textEl = document.getElementById('feedbackModalText');
+            const scoreEl = document.getElementById('feedbackModalScore');
+            const passFailEl = document.getElementById('feedbackModalPassFail');
+
+            if (titleEl) titleEl.textContent = 'Review: ' + doc.studentName + ' — ' + doc.noteType;
+            if (metaEl) metaEl.textContent = 'Student: ' + doc.studentName + ' | Saved: ' + (doc.savedAt ? new Date(doc.savedAt).toLocaleString() : '—');
+
+            // Display content — handle string or object
+            let displayContent = '';
+            if (typeof doc.content === 'string') {
+                displayContent = doc.content;
+            } else if (typeof doc.content === 'object' && doc.content !== null) {
+                displayContent = JSON.stringify(doc.content, null, 2);
+            }
+            if (contentEl) contentEl.textContent = displayContent || '(no content)';
+
+            // Pre-fill existing feedback if any
+            database.ref('documentFeedback').child(doc.sanitizedEmail).child(doc.docId).once('value').then((snap) => {
+                const existing = snap.val() || {};
+                if (textEl) textEl.value = existing.feedback || '';
+                if (scoreEl) scoreEl.value = existing.score || '';
+                if (passFailEl) passFailEl.value = existing.passFail || '';
+            }).catch(() => {});
+
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeFeedbackModal() {
+            const modal = document.getElementById('feedbackReviewModal');
+            if (modal) modal.style.display = 'none';
+            currentFeedbackDoc = null;
+        }
+
+        async function saveFeedback() {
+            if (!currentFeedbackDoc) return;
+            const feedback = (document.getElementById('feedbackModalText') || {}).value || '';
+            const score = (document.getElementById('feedbackModalScore') || {}).value || '';
+            const passFail = (document.getElementById('feedbackModalPassFail') || {}).value || '';
+            const reviewerEmail = auth.currentUser ? auth.currentUser.email : 'admin';
+
+            try {
+                await database.ref('documentFeedback')
+                    .child(currentFeedbackDoc.sanitizedEmail)
+                    .child(currentFeedbackDoc.docId)
+                    .set({
+                        feedback: feedback,
+                        score: score ? parseInt(score, 10) : null,
+                        passFail: passFail || null,
+                        reviewedBy: reviewerEmail,
+                        reviewedAt: Date.now()
+                    });
+                showToast('Feedback saved successfully.', 'success');
+                closeFeedbackModal();
+                loadStudentSubmissions();
+            } catch(e) {
+                showToast('Error saving feedback: ' + e.message, 'error');
+            }
+        }
+
+        // ========== END STUDENT SUBMISSIONS FOR REVIEW ==========
 
         async function normalizeUserRoles() {
             showConfirmModal('Normalize Roles', 'Set all users to RN Student and set Ann to Instructor?', async function() {

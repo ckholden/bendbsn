@@ -496,11 +496,20 @@
             &#9888;&#65039; <strong>Educational Only:</strong> This AI assistant is for educational purposes only. It does not provide medical advice. Always verify information with your instructors and official clinical resources.
         </div>
 
+        <!-- Quick Nav Links -->
+        <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border,#e2e8f0);">
+            <a href="/sbar/" style="font-size:12px;color:var(--accent,#0f7490);text-decoration:none;padding:3px 8px;border:1px solid var(--border,#e2e8f0);border-radius:5px;">📋 SBAR</a>
+            <a href="/careplan/" style="font-size:12px;color:var(--accent,#0f7490);text-decoration:none;padding:3px 8px;border:1px solid var(--border,#e2e8f0);border-radius:5px;">🗂️ Care Plans</a>
+            <a href="/rotationlog/" style="font-size:12px;color:var(--accent,#0f7490);text-decoration:none;padding:3px 8px;border:1px solid var(--border,#e2e8f0);border-radius:5px;">🏥 Rotation Log</a>
+            <a href="/profile/" style="font-size:12px;color:var(--accent,#0f7490);text-decoration:none;padding:3px 8px;border:1px solid var(--border,#e2e8f0);border-radius:5px;">👤 Profile</a>
+        </div>
+
         <!-- Mode Tabs -->
         <div class="ai-tabs">
             <button class="ai-tab active" data-tab="chat" onclick="switchAITab('chat')">&#128172; Chat</button>
             <button class="ai-tab" data-tab="quiz" onclick="switchAITab('quiz')">&#129534; NCLEX Quiz</button>
             <button class="ai-tab" data-tab="careplan" onclick="switchAITab('careplan')">&#128203; Care Plan</button>
+            <button class="ai-tab" data-tab="ngn" onclick="switchAITab('ngn')">&#127981; NGN Practice</button>
         </div>
 
         <!-- Chat Panel -->
@@ -589,6 +598,25 @@
             </div>
             <div class="cp-output" id="cpOutput">
                 <div class="cp-idle">Fill in the patient details above and tap <strong>Generate Care Plan</strong>.<br>The AI will create NANDA-I diagnoses, NOC outcomes, and NIC interventions.</div>
+            </div>
+        </div>
+
+        <!-- NGN Practice Panel -->
+        <div id="aiNgnPanel" class="ai-panel">
+            <div class="cp-form" style="flex-shrink:0;">
+                <label>Question Type</label>
+                <select id="ngnQuestionType">
+                    <option value="emr">Extended Multiple Response</option>
+                    <option value="matrix">Matrix / Grid</option>
+                    <option value="bowtie">Bow-Tie</option>
+                    <option value="trend">Trend / Highlight</option>
+                </select>
+                <label>Clinical Topic</label>
+                <input id="ngnTopic" type="text" placeholder="e.g. heart failure, diabetic ketoacidosis, sepsis">
+                <button class="cp-generate" id="ngnGenBtn" onclick="generateNGNQuestion()">&#127981; Generate NGN Question</button>
+            </div>
+            <div class="cp-output" id="ngnOutput" style="flex:1;overflow-y:auto;">
+                <div class="cp-idle">Select a question type and enter a clinical topic, then tap <strong>Generate NGN Question</strong>.<br>NGN-style questions prepare you for Next Generation NCLEX critical thinking.</div>
             </div>
         </div>
     </div>
@@ -718,7 +746,7 @@ Important guidelines:
 
         // ========== TAB SWITCHING ==========
         function switchAITab(tab) {
-            const panelMap = { chat: 'aiChatPanel', quiz: 'aiQuizPanel', careplan: 'aiCarePlanPanel' };
+            const panelMap = { chat: 'aiChatPanel', quiz: 'aiQuizPanel', careplan: 'aiCarePlanPanel', ngn: 'aiNgnPanel' };
             document.querySelectorAll('.ai-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
             document.querySelectorAll('.ai-panel').forEach(p => p.classList.toggle('active', p.id === panelMap[tab]));
             if (tab === 'chat') document.getElementById('aiInput')?.focus();
@@ -921,6 +949,267 @@ Important guidelines:
                 document.getElementById('cpOutput').innerHTML = '<div class="cp-idle">Network error. Please check your connection.</div>';
             });
         }
+
+        // ========== NGN PRACTICE ==========
+        let ngnCurrentQuestion = null; // parsed question data
+        let ngnAnswered = false;
+
+        function generateNGNQuestion() {
+            const qType = document.getElementById('ngnQuestionType')?.value || 'emr';
+            const topic = (document.getElementById('ngnTopic')?.value || '').trim() || 'general nursing';
+            const genBtn = document.getElementById('ngnGenBtn');
+            const output = document.getElementById('ngnOutput');
+
+            if (genBtn) { genBtn.disabled = true; genBtn.textContent = 'Generating...'; }
+            if (output) output.innerHTML = '<div class="cp-idle">&#8987; Generating NGN question\u2026</div>';
+            ngnCurrentQuestion = null;
+            ngnAnswered = false;
+
+            if (!navigator.onLine) {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = '&#127981; Generate NGN Question'; }
+                if (output) output.innerHTML = '<div class="cp-idle">You\'re offline. Please reconnect.</div>';
+                return;
+            }
+
+            let prompt = '';
+            if (qType === 'emr') {
+                prompt = `Generate an NCLEX Next-Generation Extended Multiple Response question about ${topic}. Return ONLY valid JSON in this exact format (no markdown, no code fences): {"question":"string","options":[{"id":"a","text":"string","correct":true}],"rationale":"string"}. Include 5-6 options with 2-3 correct.`;
+            } else if (qType === 'matrix') {
+                prompt = `Generate an NCLEX Next-Generation Matrix/Grid question about ${topic}. Return ONLY valid JSON: {"stem":"string","rows":[{"condition":"string"}],"columns":[{"action":"string"}],"answers":[{"row":0,"col":0,"value":"indicated"}],"rationale":"string"}. Use 4 rows, 3 columns. Values: "indicated", "not_indicated", or "contraindicated".`;
+            } else if (qType === 'bowtie') {
+                prompt = `Generate an NCLEX Next-Generation Bow-Tie question about ${topic}. Return ONLY valid JSON: {"stem":"string","condition":"string","causes":[{"id":"a","text":"string","correct":true}],"actions":[{"id":"a","text":"string","correct":true}],"rationale":"string"}. Include 4 causes (2 correct) and 4 actions (2 correct).`;
+            } else {
+                prompt = `Generate an NCLEX Next-Generation Trend/Highlight question about ${topic}. Return ONLY valid JSON: {"stem":"string","findings":[{"id":"a","text":"string","concerning":true}],"rationale":"string"}. Include 6-8 findings with 2-4 marked as concerning.`;
+            }
+
+            fetch(AI_API_URL, {
+                method: 'POST', redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], systemPrompt: AI_SYSTEM_PROMPT })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = '&#127981; Generate NGN Question'; }
+                if (data.success && data.response) {
+                    renderNGNQuestion(qType, data.response);
+                } else {
+                    if (output) output.innerHTML = '<div class="cp-idle">Failed to generate question. Please try again.</div>';
+                }
+            })
+            .catch(() => {
+                if (genBtn) { genBtn.disabled = false; genBtn.textContent = '&#127981; Generate NGN Question'; }
+                if (output) output.innerHTML = '<div class="cp-idle">Network error. Please check your connection.</div>';
+            });
+        }
+
+        function ngnEsc(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function renderNGNQuestion(qType, rawResponse) {
+            const output = document.getElementById('ngnOutput');
+            let qData = null;
+
+            // Try to parse JSON from the response
+            try {
+                // Strip markdown code fences if present
+                let cleaned = rawResponse.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'').trim();
+                qData = JSON.parse(cleaned);
+            } catch(e) {
+                // Fallback: show raw response
+                if (output) output.innerHTML = `<div class="cp-result"><p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:8px;">Could not parse structured question. Raw response:</p><pre style="white-space:pre-wrap;font-size:13px;">${ngnEsc(rawResponse)}</pre></div>`;
+                return;
+            }
+
+            ngnCurrentQuestion = { qType, qData };
+            ngnAnswered = false;
+
+            let html = '<div class="cp-result">';
+            html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--clx-accent,#0f7490);margin-bottom:8px;">NGN — ' + ngnEsc(qType === 'emr' ? 'Extended Multiple Response' : qType === 'matrix' ? 'Matrix / Grid' : qType === 'bowtie' ? 'Bow-Tie' : 'Trend / Highlight') + '</div>';
+
+            if (qType === 'emr') {
+                html += renderNGNEmr(qData);
+            } else if (qType === 'matrix') {
+                html += renderNGNMatrix(qData);
+            } else if (qType === 'bowtie') {
+                html += renderNGNBowtie(qData);
+            } else {
+                html += renderNGNTrend(qData);
+            }
+
+            html += `<div style="margin-top:14px;"><button onclick="submitNGNAnswer()" style="padding:8px 20px;background:var(--clx-accent,#0f7490);color:white;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;" id="ngnSubmitBtn">Submit Answers</button></div>`;
+            html += '<div id="ngnRationale" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:13px;line-height:1.6;"></div>';
+            html += '</div>';
+
+            if (output) output.innerHTML = html;
+        }
+
+        function renderNGNEmr(q) {
+            let html = `<p style="font-size:14px;font-weight:600;margin-bottom:12px;line-height:1.5;">${ngnEsc(q.question)}</p>`;
+            html += '<div style="font-size:12px;color:var(--clx-text-muted);margin-bottom:8px;">Select all that apply:</div>';
+            html += '<div id="ngnEmrOptions">';
+            (q.options || []).forEach(opt => {
+                html += `<label style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;margin-bottom:6px;border:1px solid var(--clx-border);border-radius:6px;cursor:pointer;transition:background 0.1s;" data-id="${ngnEsc(opt.id)}" data-correct="${opt.correct}" class="ngn-emr-opt">
+                    <input type="checkbox" style="margin-top:2px;flex-shrink:0;" data-id="${ngnEsc(opt.id)}">
+                    <span>${ngnEsc(opt.text)}</span>
+                </label>`;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderNGNMatrix(q) {
+            let html = `<p style="font-size:14px;font-weight:600;margin-bottom:12px;line-height:1.5;">${ngnEsc(q.stem)}</p>`;
+            html += '<div style="overflow-x:auto;"><table id="ngnMatrixTable" style="border-collapse:collapse;width:100%;min-width:400px;font-size:13px;">';
+            html += '<thead><tr><th style="padding:8px 10px;text-align:left;border:1px solid var(--clx-border);background:var(--clx-bg-surface-2);">Condition</th>';
+            (q.columns || []).forEach(col => {
+                html += `<th style="padding:8px 10px;text-align:center;border:1px solid var(--clx-border);background:var(--clx-bg-surface-2);">${ngnEsc(col.action)}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            (q.rows || []).forEach((row, ri) => {
+                html += `<tr><td style="padding:8px 10px;border:1px solid var(--clx-border);font-weight:500;">${ngnEsc(row.condition)}</td>`;
+                (q.columns || []).forEach((col, ci) => {
+                    html += `<td style="padding:8px 10px;border:1px solid var(--clx-border);text-align:center;">
+                        <select class="ngn-matrix-cell" data-row="${ri}" data-col="${ci}" style="padding:4px;border:1px solid var(--clx-border);border-radius:4px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);width:100%;min-width:90px;">
+                            <option value="">—</option>
+                            <option value="indicated">Indicated</option>
+                            <option value="not_indicated">Not Indicated</option>
+                            <option value="contraindicated">Contraindicated</option>
+                        </select>
+                    </td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            return html;
+        }
+
+        function renderNGNBowtie(q) {
+            let html = `<p style="font-size:14px;font-weight:600;margin-bottom:12px;line-height:1.5;">${ngnEsc(q.stem)}</p>`;
+            html += `<div style="text-align:center;font-size:13px;font-weight:700;padding:8px 16px;background:var(--clx-accent,#0f7490);color:white;border-radius:6px;margin-bottom:12px;display:inline-block;">${ngnEsc(q.condition)}</div>`;
+            html += '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;margin-top:8px;">';
+            // Causes
+            html += '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);margin-bottom:6px;">Causes (select 2)</div><div id="ngnBowtieCauses">';
+            (q.causes || []).forEach(c => {
+                html += `<label style="display:flex;align-items:flex-start;gap:8px;padding:7px 8px;margin-bottom:5px;border:1px solid var(--clx-border);border-radius:5px;cursor:pointer;font-size:12px;" data-id="${ngnEsc(c.id)}" data-correct="${c.correct}" class="ngn-bowtie-cause">
+                    <input type="checkbox" style="margin-top:1px;flex-shrink:0;" data-id="${ngnEsc(c.id)}" data-group="cause">
+                    <span>${ngnEsc(c.text)}</span>
+                </label>`;
+            });
+            html += '</div></div>';
+            // Center bow
+            html += '<div style="display:flex;align-items:center;justify-content:center;padding-top:24px;font-size:24px;color:var(--clx-accent,#0f7490);">&#9654;</div>';
+            // Actions
+            html += '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);margin-bottom:6px;">Nursing Actions (select 2)</div><div id="ngnBowtieActions">';
+            (q.actions || []).forEach(a => {
+                html += `<label style="display:flex;align-items:flex-start;gap:8px;padding:7px 8px;margin-bottom:5px;border:1px solid var(--clx-border);border-radius:5px;cursor:pointer;font-size:12px;" data-id="${ngnEsc(a.id)}" data-correct="${a.correct}" class="ngn-bowtie-action">
+                    <input type="checkbox" style="margin-top:1px;flex-shrink:0;" data-id="${ngnEsc(a.id)}" data-group="action">
+                    <span>${ngnEsc(a.text)}</span>
+                </label>`;
+            });
+            html += '</div></div>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderNGNTrend(q) {
+            let html = `<p style="font-size:14px;font-weight:600;margin-bottom:12px;line-height:1.5;">${ngnEsc(q.stem)}</p>`;
+            html += '<div style="font-size:12px;color:var(--clx-text-muted);margin-bottom:8px;">Click to highlight concerning findings:</div>';
+            html += '<div id="ngnTrendFindings" style="display:flex;flex-direction:column;gap:6px;">';
+            (q.findings || []).forEach(f => {
+                html += `<div class="ngn-trend-finding" data-id="${ngnEsc(f.id)}" data-concerning="${f.concerning}"
+                    style="padding:9px 12px;border:1px solid var(--clx-border);border-radius:6px;cursor:pointer;font-size:13px;transition:background 0.15s;"
+                    onclick="toggleTrendFinding(this)">
+                    ${ngnEsc(f.text)}
+                </div>`;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function toggleTrendFinding(el) {
+            if (ngnAnswered) return;
+            const highlighted = el.getAttribute('data-highlighted') === 'true';
+            if (highlighted) {
+                el.removeAttribute('data-highlighted');
+                el.style.background = '';
+                el.style.borderColor = 'var(--clx-border)';
+            } else {
+                el.setAttribute('data-highlighted', 'true');
+                el.style.background = 'rgba(15,116,144,0.12)';
+                el.style.borderColor = 'var(--clx-accent,#0f7490)';
+            }
+        }
+
+        function submitNGNAnswer() {
+            if (!ngnCurrentQuestion || ngnAnswered) return;
+            ngnAnswered = true;
+            const { qType, qData } = ngnCurrentQuestion;
+            const rationaleEl = document.getElementById('ngnRationale');
+            const submitBtn = document.getElementById('ngnSubmitBtn');
+            if (submitBtn) submitBtn.style.display = 'none';
+
+            if (qType === 'emr') {
+                const opts = document.querySelectorAll('.ngn-emr-opt');
+                opts.forEach(el => {
+                    const correct = el.getAttribute('data-correct') === 'true';
+                    const checked = el.querySelector('input[type=checkbox]').checked;
+                    el.style.pointerEvents = 'none';
+                    if (correct && checked) { el.style.background='#d1fae5'; el.style.borderColor='#059669'; }
+                    else if (correct && !checked) { el.style.background='#fef3c7'; el.style.borderColor='#d97706'; }
+                    else if (!correct && checked) { el.style.background='#fee2e2'; el.style.borderColor='#dc2626'; }
+                });
+            } else if (qType === 'matrix') {
+                const cells = document.querySelectorAll('.ngn-matrix-cell');
+                cells.forEach(sel => {
+                    sel.disabled = true;
+                    const ri = parseInt(sel.getAttribute('data-row'));
+                    const ci = parseInt(sel.getAttribute('data-col'));
+                    const userVal = sel.value;
+                    const correctAnswer = (qData.answers || []).find(a => a.row === ri && a.col === ci);
+                    const correctVal = correctAnswer ? correctAnswer.value : '';
+                    if (userVal === correctVal && userVal) {
+                        sel.style.background = '#d1fae5'; sel.style.borderColor = '#059669';
+                    } else if (correctVal && userVal !== correctVal) {
+                        sel.style.background = '#fee2e2'; sel.style.borderColor = '#dc2626';
+                        // Show correct answer
+                        const option = sel.querySelector(`option[value="${correctVal}"]`);
+                        if (option) option.textContent = option.textContent + ' ✓';
+                    }
+                });
+            } else if (qType === 'bowtie') {
+                ['ngn-bowtie-cause', 'ngn-bowtie-action'].forEach(cls => {
+                    document.querySelectorAll('.' + cls).forEach(el => {
+                        const correct = el.getAttribute('data-correct') === 'true';
+                        const checked = el.querySelector('input[type=checkbox]').checked;
+                        el.style.pointerEvents = 'none';
+                        if (correct && checked) { el.style.background='#d1fae5'; el.style.borderColor='#059669'; }
+                        else if (correct && !checked) { el.style.background='#fef3c7'; el.style.borderColor='#d97706'; }
+                        else if (!correct && checked) { el.style.background='#fee2e2'; el.style.borderColor='#dc2626'; }
+                    });
+                });
+            } else if (qType === 'trend') {
+                document.querySelectorAll('.ngn-trend-finding').forEach(el => {
+                    const concerning = el.getAttribute('data-concerning') === 'true';
+                    const highlighted = el.getAttribute('data-highlighted') === 'true';
+                    el.style.pointerEvents = 'none';
+                    if (concerning && highlighted) { el.style.background='#d1fae5'; el.style.borderColor='#059669'; }
+                    else if (concerning && !highlighted) { el.style.background='#fef3c7'; el.style.borderColor='#d97706'; }
+                    else if (!concerning && highlighted) { el.style.background='#fee2e2'; el.style.borderColor='#dc2626'; }
+                });
+            }
+
+            if (rationaleEl) {
+                const rationaleHtml = ngnEsc(qData.rationale || 'Review your nursing textbooks for rationale.')
+                    .replace(/\n/g,'<br>');
+                rationaleEl.style.display = 'block';
+                rationaleEl.style.cssText = 'display:block;margin-top:12px;padding:12px;border-radius:8px;font-size:13px;line-height:1.6;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;';
+                rationaleEl.innerHTML = '<strong>Rationale:</strong> ' + rationaleHtml;
+                rationaleEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // ========== END NGN PRACTICE ==========
 
         function addAIMessage(text, isUser) {
             const container = document.getElementById('aiMessages');
