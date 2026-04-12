@@ -2542,6 +2542,17 @@
             </div>
 
             <h2 class="section-title" id="section-h2t">Head-to-Toe Assessment</h2>
+            <!-- Assessment Progress Bar (H2T only) -->
+            <div id="h2tProgressWrap" style="display:none;position:sticky;top:56px;z-index:90;background:var(--clx-bg-surface);border-bottom:1px solid var(--clx-border);padding:6px 14px;margin-bottom:2px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:11px;font-weight:700;color:var(--clx-text-muted);white-space:nowrap;">Assessment:</span>
+                    <div style="flex:1;background:var(--clx-bg-surface-2);border-radius:4px;height:8px;overflow:hidden;">
+                        <div id="h2tProgressFill" style="height:100%;width:0%;border-radius:4px;background:#16a34a;transition:width 0.3s,background 0.3s;"></div>
+                    </div>
+                    <span id="h2tProgressLabel" style="font-size:11px;font-weight:700;color:var(--clx-text-muted);white-space:nowrap;">0 / 18</span>
+                </div>
+            </div>
+
             <!-- Head-to-Toe Assessment -->
             <div id="h2tFields" class="note-fields">
                 <p style="font-size:12px;color:#666;margin-bottom:15px;">Click quick-fill buttons to insert common findings, then edit as needed.</p>
@@ -2778,6 +2789,8 @@
 
             <div class="btn-container">
                 <button class="btn btn-clear" onclick="clearForm()">Clear</button>
+                <button class="btn" onclick="copyNoteToClipboard()" style="background:var(--clx-bg-surface-2);color:var(--clx-text-primary);border:1px solid var(--clx-border);">Copy</button>
+                <button class="btn" onclick="openTemplatesModal()" style="background:var(--clx-bg-surface-2);color:var(--clx-text-primary);border:1px solid var(--clx-border);">Templates</button>
                 <button class="btn btn-word" id="btnExportWord" onclick="generateWord(this)">Export Word</button>
                 <button class="btn btn-pdf" id="btnExportPdf" onclick="generatePDF(this)">Export PDF</button>
             </div>
@@ -2802,6 +2815,22 @@
             </div>
 
                     </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div id="templatesModal" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)closeTemplatesModal()">
+        <div style="background:var(--clx-bg-surface);border-radius:12px;padding:22px;max-width:520px;width:92%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 24px rgba(0,0,0,0.12);animation:bsnModalSlideIn 0.18s ease;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:2px solid var(--clx-accent);padding-bottom:12px;">
+                <h3 style="color:var(--clx-text-primary);margin:0;font-size:14px;">Note Templates</h3>
+                <button onclick="closeTemplatesModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted);">&#215;</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button onclick="saveAsTemplate()" style="flex:1;padding:9px 14px;background:var(--clx-accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;font-family:inherit;">Save Current as Template</button>
+            </div>
+            <div id="templatesList" style="flex:1;overflow-y:auto;min-height:100px;">
+                <p style="text-align:center;color:var(--clx-text-muted);padding:20px;font-size:13px;">No saved templates yet. Fill out a note and click "Save Current as Template".</p>
+            </div>
+        </div>
     </div>
 
     <!-- Document History Modal -->
@@ -7922,6 +7951,227 @@
         // Periodic completeness update
         setInterval(updateCompletenessIndicator, 5000);
         updateCompletenessIndicator();
+
+        // ================================================================
+        //  ASSESSMENT PROGRESS BAR (H2T)
+        // ================================================================
+        const H2T_SECTION_IDS = [
+            'h2tMental','h2tHeent','h2tNeck','h2tNeuro','h2tCardio','h2tResp',
+            'h2tGI','h2tGU','h2tSkin','h2tMSK','h2tUpperExt','h2tLowerExt',
+            'h2tPain','h2tSafety','h2tLines','h2tPsych','h2tSoap','h2tNarrative'
+        ];
+
+        function updateH2tProgress() {
+            const wrap = document.getElementById('h2tProgressWrap');
+            const fill = document.getElementById('h2tProgressFill');
+            const label = document.getElementById('h2tProgressLabel');
+            if (!wrap || !fill || !label) return;
+
+            const h2tVisible = document.getElementById('h2tFields') && document.getElementById('h2tFields').style.display !== 'none';
+            wrap.style.display = h2tVisible ? '' : 'none';
+            if (!h2tVisible) return;
+
+            let filled = 0;
+            const ids = H2T_SECTION_IDS;
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value && el.value.trim().length > 0) filled++;
+            });
+            const total = ids.length;
+            const pct = Math.round((filled / total) * 100);
+            fill.style.width = pct + '%';
+            label.textContent = filled + ' / ' + total;
+            if (pct >= 80) fill.style.background = '#16a34a';
+            else if (pct >= 50) fill.style.background = '#d97706';
+            else fill.style.background = '#dc2626';
+        }
+
+        // Wire up live update on all H2T textareas
+        H2T_SECTION_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', updateH2tProgress);
+        });
+        // Also update when note type switches
+        const _origShowNoteType = typeof showNoteType === 'function' ? showNoteType : null;
+        if (_origShowNoteType) {
+            const _wrappedShowNoteType = showNoteType;
+            showNoteType = function() {
+                const r = _wrappedShowNoteType.apply(this, arguments);
+                setTimeout(updateH2tProgress, 100);
+                return r;
+            };
+        }
+        updateH2tProgress();
+
+        // ================================================================
+        //  UNDO FOR CLEAR FORM
+        // ================================================================
+        let _clearFormSnapshot = null;
+        let _clearFormUndoTimer = null;
+
+        (function() {
+            const origClearForm = clearForm;
+            clearForm = function() {
+                showConfirmModal('Clear Form', 'Clear all fields? You can undo within 15 seconds.', function() {
+                    // Snapshot
+                    _clearFormSnapshot = {};
+                    document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach(el => {
+                        if (el.id) _clearFormSnapshot[el.id] = el.value;
+                    });
+
+                    // Do the original clear (without its own confirm — call inner logic directly)
+                    document.querySelectorAll('input:not([type="date"]), textarea').forEach(el => el.value = '');
+                    document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+                    const nd = document.getElementById('noteDate');
+                    const nt = document.getElementById('noteTime');
+                    if (nd) nd.value = formatDateDisplay(new Date());
+                    if (nt) nt.value = formatTimeDisplay(new Date());
+                    if (typeof selectedDiagnoses !== 'undefined') { selectedDiagnoses = []; if (typeof renderDiagnoses === 'function') renderDiagnoses(); }
+                    if (typeof savedVitals !== 'undefined') { savedVitals = []; if (typeof renderSavedVitals === 'function') renderSavedVitals(); }
+                    if (typeof savedMedications !== 'undefined') { savedMedications = []; if (typeof renderSavedMedications === 'function') renderSavedMedications(); }
+                    if (typeof savedScreenings !== 'undefined') { savedScreenings = []; ['phq9','gad7','cssrs','cage','morse','braden','cam'].forEach(t => { if (typeof renderSavedScreenings === 'function') renderSavedScreenings(t); }); }
+                    if (typeof savedLinesDA !== 'undefined') { savedLinesDA = []; if (typeof renderSavedLines === 'function') renderSavedLines(); }
+                    if (typeof clearDraft === 'function' && typeof currentNoteType !== 'undefined') clearDraft(currentNoteType);
+
+                    updateH2tProgress();
+
+                    // Show undo toast (15 second timeout)
+                    if (_clearFormUndoTimer) clearTimeout(_clearFormUndoTimer);
+                    showToast('Form cleared — click to Undo', 'warning', 15000, function() {
+                        undoClearForm();
+                    });
+                    _clearFormUndoTimer = setTimeout(function() {
+                        _clearFormSnapshot = null;
+                    }, 15000);
+                }, { danger: true, confirmText: 'Clear' });
+            };
+        })();
+
+        function undoClearForm() {
+            if (!_clearFormSnapshot) return;
+            Object.entries(_clearFormSnapshot).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            });
+            _clearFormSnapshot = null;
+            if (_clearFormUndoTimer) clearTimeout(_clearFormUndoTimer);
+            updateH2tProgress();
+            showToast('Form restored.', 'success');
+        }
+
+        // ================================================================
+        //  NOTE TEMPLATES (localStorage)
+        // ================================================================
+        const TEMPLATES_KEY = 'bendbsn_templates';
+        const MAX_TEMPLATES = 10;
+
+        function getTemplates() {
+            try { return JSON.parse(localStorage.getItem(TEMPLATES_KEY) || '[]'); } catch(e) { return []; }
+        }
+        function saveTemplates(tmpl) {
+            localStorage.setItem(TEMPLATES_KEY, JSON.stringify(tmpl));
+        }
+
+        function openTemplatesModal() {
+            document.getElementById('templatesModal').classList.remove('hidden');
+            renderTemplatesList();
+        }
+        function closeTemplatesModal() {
+            document.getElementById('templatesModal').classList.add('hidden');
+        }
+
+        function saveAsTemplate() {
+            const templates = getTemplates();
+            if (templates.length >= MAX_TEMPLATES) {
+                showToast('Maximum ' + MAX_TEMPLATES + ' templates reached. Delete one first.', 'warning');
+                return;
+            }
+            showPromptModal('Save Template', 'Enter a name for this template:', function(name) {
+                if (!name || !name.trim()) return;
+                const snapshot = {};
+                document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach(el => {
+                    if (el.id) snapshot[el.id] = el.value;
+                });
+                templates.push({ name: name.trim(), data: snapshot, savedAt: Date.now() });
+                saveTemplates(templates);
+                renderTemplatesList();
+                showToast('Template "' + name.trim() + '" saved.', 'success');
+            }, { placeholder: 'e.g., Med-Surg Standard Shift Note', submitText: 'Save Template' });
+        }
+
+        function loadTemplate(idx) {
+            const templates = getTemplates();
+            if (!templates[idx]) return;
+            const tpl = templates[idx];
+            showConfirmModal('Load Template', 'Load "' + tpl.name + '"? This will overwrite your current form.', function() {
+                Object.entries(tpl.data).forEach(([id, val]) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val;
+                });
+                updateH2tProgress();
+                closeTemplatesModal();
+                showToast('Template "' + tpl.name + '" loaded.', 'success');
+            }, { confirmText: 'Load Template' });
+        }
+
+        function deleteTemplate(idx) {
+            const templates = getTemplates();
+            if (!templates[idx]) return;
+            const name = templates[idx].name;
+            showConfirmModal('Delete Template', 'Delete template "' + name + '"?', function() {
+                templates.splice(idx, 1);
+                saveTemplates(templates);
+                renderTemplatesList();
+                showToast('Template deleted.', 'success');
+            }, { confirmText: 'Delete', danger: true });
+        }
+
+        function renderTemplatesList() {
+            const el = document.getElementById('templatesList');
+            if (!el) return;
+            const templates = getTemplates();
+            if (!templates.length) {
+                el.innerHTML = '<p style="text-align:center;color:var(--clx-text-muted);padding:20px;font-size:13px;">No saved templates yet. Fill out a note and click "Save Current as Template".</p>';
+                return;
+            }
+            el.innerHTML = templates.map((tpl, i) => {
+                const date = new Date(tpl.savedAt || 0).toLocaleDateString();
+                return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--clx-border);border-radius:8px;margin-bottom:8px;background:var(--clx-bg-surface);">' +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<div style="font-size:13px;font-weight:600;color:var(--clx-text-primary);">' + (tpl.name || 'Unnamed').replace(/</g,'&lt;') + '</div>' +
+                        '<div style="font-size:11px;color:var(--clx-text-muted);">Saved ' + date + '</div>' +
+                    '</div>' +
+                    '<button onclick="loadTemplate(' + i + ')" style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--clx-accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;">Load</button>' +
+                    '<button onclick="deleteTemplate(' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:16px;padding:4px;border-radius:4px;font-family:inherit;" aria-label="Delete template">&#128465;</button>' +
+                '</div>';
+            }).join('');
+        }
+
+        // Patch showToast to support action button (undo)
+        (function() {
+            const _origShowToast = showToast;
+            showToast = function(msg, type, duration, actionCallback) {
+                _origShowToast(msg, type, duration);
+                // If there's an action callback (for undo), we inject a button into the last toast
+                if (actionCallback) {
+                    setTimeout(function() {
+                        const toasts = document.querySelectorAll('.bsn-toast');
+                        if (toasts.length) {
+                            const lastToast = toasts[toasts.length - 1];
+                            if (lastToast && !lastToast.querySelector('.toast-undo-btn')) {
+                                const btn = document.createElement('button');
+                                btn.className = 'toast-undo-btn';
+                                btn.textContent = 'Undo';
+                                btn.style.cssText = 'margin-left:10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:inherit;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;';
+                                btn.onclick = function(e) { e.stopPropagation(); actionCallback(); lastToast.remove(); };
+                                lastToast.appendChild(btn);
+                            }
+                        }
+                    }, 50);
+                }
+            };
+        })();
+
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
