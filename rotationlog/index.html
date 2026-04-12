@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
+    <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0d1f2d">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
+    <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
+    <title>BendBSN — Rotation Log</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            background: var(--clx-bg-canvas);
+            color: var(--clx-text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 60px;
+        }
+        .rl-page { max-width: 1000px; margin: 0 auto; padding: 16px; flex: 1; }
+        .rl-page-title { font-size: 20px; font-weight: 700; color: var(--clx-text-primary); }
+        .rl-page-sub { font-size: 13px; color: var(--clx-text-muted); margin-top: 2px; margin-bottom: 14px; }
+
+        /* Tabs */
+        .rl-tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--clx-border); margin-bottom: 16px; }
+        .rl-tab { padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--clx-text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; font-family: inherit; transition: color 0.15s; }
+        .rl-tab:hover { color: var(--clx-text-primary); }
+        .rl-tab.active { color: var(--clx-accent); border-bottom-color: var(--clx-accent); }
+        .rl-panel { display: none; }
+        .rl-panel.active { display: block; }
+
+        /* Stats row */
+        .rl-stats-row { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 10px; margin-bottom: 16px; }
+        .rl-stat-card { background: var(--clx-bg-surface); border: 1px solid var(--clx-border); border-radius: 8px; padding: 12px 14px; text-align: center; }
+        .rl-stat-num { font-size: 26px; font-weight: 800; color: var(--clx-accent); line-height: 1; }
+        .rl-stat-label { font-size: 11px; color: var(--clx-text-muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* Form card */
+        .rl-form-card { background: var(--clx-bg-surface); border: 1px solid var(--clx-border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+        .rl-form-card-title { font-size: 13px; font-weight: 700; color: var(--clx-text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .rl-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .rl-form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .rl-field { display: flex; flex-direction: column; gap: 4px; }
+        .rl-field.full { grid-column: 1 / -1; }
+        .rl-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--clx-text-muted); }
+        .rl-input, .rl-select, .rl-textarea {
+            padding: 8px 10px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+            width: 100%;
+        }
+        .rl-input:focus, .rl-select:focus, .rl-textarea:focus { outline: none; border-color: var(--clx-accent); box-shadow: 0 0 0 2px var(--clx-accent-subtle); }
+        .rl-textarea { resize: vertical; }
+
+        /* Skills checkboxes */
+        .skills-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+        .skill-chip { display: flex; align-items: center; gap: 4px; padding: 4px 9px; border: 1px solid var(--clx-border); border-radius: 16px; font-size: 11px; cursor: pointer; background: var(--clx-bg-surface); color: var(--clx-text-secondary); transition: all 0.15s; user-select: none; }
+        .skill-chip input { display: none; }
+        .skill-chip.checked { background: var(--clx-accent-subtle); border-color: var(--clx-accent); color: var(--clx-accent); font-weight: 600; }
+
+        /* Buttons */
+        .rl-btn { padding: 9px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--clx-border); background: var(--clx-bg-surface); color: var(--clx-text-primary); cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s; }
+        .rl-btn:hover { background: var(--clx-bg-surface-2); border-color: var(--clx-border-strong); }
+        .rl-btn.primary { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
+        .rl-btn.primary:hover { background: var(--clx-accent-hover); border-color: var(--clx-accent-hover); }
+        .rl-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+        /* Log table */
+        .rl-table-wrap { overflow-x: auto; }
+        .rl-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .rl-table th { background: var(--clx-bg-surface-2); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--clx-text-muted); padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--clx-border); white-space: nowrap; }
+        .rl-table td { padding: 8px 10px; border-bottom: 1px solid var(--clx-border); color: var(--clx-text-primary); vertical-align: middle; }
+        .rl-table tr:hover td { background: var(--clx-accent-subtle); }
+        .rl-table .skill-tag { display: inline-block; background: var(--clx-accent-subtle); color: var(--clx-accent); border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 600; margin: 1px; }
+
+        /* Specialty bar chart */
+        .spec-bar-wrap { margin-top: 12px; }
+        .spec-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .spec-bar-label { width: 100px; font-size: 11px; color: var(--clx-text-secondary); flex-shrink: 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .spec-bar-track { flex: 1; background: var(--clx-bg-surface-2); border-radius: 4px; height: 12px; overflow: hidden; }
+        .spec-bar-fill { height: 100%; background: var(--clx-accent); border-radius: 4px; transition: width 0.3s; }
+        .spec-bar-hours { font-size: 11px; color: var(--clx-text-muted); width: 42px; text-align: right; flex-shrink: 0; }
+
+        /* Skills count */
+        .skills-count-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .skill-count-badge { background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: var(--clx-text-secondary); }
+        .skill-count-badge strong { color: var(--clx-accent); }
+
+        /* Checklist */
+        .checklist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .checklist-card { background: var(--clx-bg-surface); border: 1px solid var(--clx-border); border-radius: 10px; overflow: hidden; }
+        .checklist-card-hd { background: var(--clx-bg-surface-2); border-bottom: 1px solid var(--clx-border); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+        .checklist-card-title { font-size: 13px; font-weight: 700; }
+        .checklist-progress-wrap { height: 6px; background: var(--clx-bg-surface-2); border-radius: 0; }
+        .checklist-progress-fill { height: 100%; background: var(--clx-accent); transition: width 0.3s; }
+        .checklist-progress-label { font-size: 11px; color: var(--clx-text-muted); padding: 4px 14px 6px; }
+        .checklist-items { padding: 8px 0; }
+        .checklist-item { display: flex; align-items: center; gap: 10px; padding: 6px 14px; }
+        .checklist-item:hover { background: var(--clx-accent-subtle); }
+        .checklist-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--clx-accent); cursor: pointer; flex-shrink: 0; }
+        .checklist-item label { font-size: 12px; color: var(--clx-text-primary); cursor: pointer; flex: 1; }
+        .checklist-item.completed label { text-decoration: line-through; color: var(--clx-text-muted); }
+
+        @media (max-width: 600px) {
+            .rl-form-grid { grid-template-columns: 1fr; }
+            .rl-form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
+        <div class="header-actions">
+            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
+        </div>
+    </header>
+
+    <div class="clx-shell">
+    <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
+        <div class="clx-sidebar-section">Navigation</div>
+        <a href="/home/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🏠</span><span class="clx-sidebar-label">Home</span></a>
+        <a href="/app/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📝</span><span class="clx-sidebar-label">RN Notes</span></a>
+        <a href="/chat/" class="clx-sidebar-item" target="_blank"><span class="clx-sidebar-icon">💬</span><span class="clx-sidebar-label">Chat</span></a>
+        <a href="/ai/" class="clx-sidebar-item" target="_blank"><span class="clx-sidebar-icon">🩺</span><span class="clx-sidebar-label">AI Assistant</span></a>
+        <a href="/community/" class="clx-sidebar-item"><span class="clx-sidebar-icon">👥</span><span class="clx-sidebar-label">Community</span></a>
+        <a href="/resources/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📚</span><span class="clx-sidebar-label">Resources</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
+        <a href="/sbar/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📋</span><span class="clx-sidebar-label">SBAR Handoff</span></a>
+        <a href="/careplan/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🗂️</span><span class="clx-sidebar-label">Care Plans</span></a>
+        <a href="/rotationlog/" class="clx-sidebar-item active"><span class="clx-sidebar-icon">🕐</span><span class="clx-sidebar-label">Rotation Log</span></a>
+        <a href="/profile/" class="clx-sidebar-item"><span class="clx-sidebar-icon">👤</span><span class="clx-sidebar-label">Profile</span></a>
+        <a href="/apa/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📄</span><span class="clx-sidebar-label">APA Generator</span></a>
+        <a href="/labsched/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🗓️</span><span class="clx-sidebar-label">Lab Sched Generator</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+        <button class="clx-sidebar-item" onclick="toggleDarkMode()"><span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span><span class="clx-sidebar-label">Theme</span></button>
+        <button class="clx-sidebar-item" onclick="lockScreen()"><span class="clx-sidebar-icon">🔒</span><span class="clx-sidebar-label">Lock</span></button>
+        <button class="clx-sidebar-item" onclick="logout()"><span class="clx-sidebar-icon">🚪</span><span class="clx-sidebar-label">Logout</span></button>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><span class="clx-sidebar-icon">&#9658;</span><span class="clx-sidebar-toggle-label">Expand</span></button>
+    </aside>
+    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <main class="clx-main" role="main">
+    <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;"><span id="alertText"></span></div>
+
+    <div class="rl-page">
+        <div class="rl-page-title">Clinical Rotation Log</div>
+        <div class="rl-page-sub">Track clinical hours, skills, and competencies across all rotations</div>
+
+        <div class="rl-tabs" role="tablist">
+            <button class="rl-tab active" onclick="showRlTab('log')" role="tab">Hour Log</button>
+            <button class="rl-tab" onclick="showRlTab('checklists')" role="tab">Competency Checklists</button>
+        </div>
+
+        <!-- Hour Log tab -->
+        <div class="rl-panel active" id="rl-tab-log">
+            <!-- Stats -->
+            <div class="rl-stats-row" id="rlStatsRow">
+                <div class="rl-stat-card"><div class="rl-stat-num" id="statTotalHours">0</div><div class="rl-stat-label">Total Hours</div></div>
+                <div class="rl-stat-card"><div class="rl-stat-num" id="statTotalEntries">0</div><div class="rl-stat-label">Entries</div></div>
+                <div class="rl-stat-card"><div class="rl-stat-num" id="statTotalSkills">0</div><div class="rl-stat-label">Skills Logged</div></div>
+            </div>
+
+            <!-- Hours by specialty -->
+            <div class="rl-form-card" id="specBarCard" style="display:none;">
+                <div class="rl-form-card-title">Hours by Specialty</div>
+                <div class="spec-bar-wrap" id="specBars"></div>
+            </div>
+
+            <!-- Add Entry Form -->
+            <div class="rl-form-card">
+                <div class="rl-form-card-title">+ Add Rotation Entry</div>
+                <div class="rl-form-grid">
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlDate">Date</label>
+                        <input type="date" id="rlDate" class="rl-input">
+                    </div>
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlFacility">Facility Name</label>
+                        <input type="text" id="rlFacility" class="rl-input" placeholder="e.g., Central Valley Medical Center">
+                    </div>
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlUnit">Unit / Floor</label>
+                        <select id="rlUnit" class="rl-select">
+                            <option value="">Select…</option>
+                            <option>Med-Surg</option>
+                            <option>ICU</option>
+                            <option>ER</option>
+                            <option>L&D</option>
+                            <option>Postpartum</option>
+                            <option>NICU</option>
+                            <option>Peds</option>
+                            <option>Psych</option>
+                            <option>OR</option>
+                            <option>PACU</option>
+                            <option>Oncology</option>
+                            <option>Rehab</option>
+                            <option>LTC</option>
+                            <option>Outpatient</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlUnitOther">Unit (if Other)</label>
+                        <input type="text" id="rlUnitOther" class="rl-input" placeholder="Specify unit…">
+                    </div>
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlShift">Shift</label>
+                        <select id="rlShift" class="rl-select">
+                            <option value="">Select…</option>
+                            <option>Days (0700–1900)</option>
+                            <option>Evenings (1500–2300)</option>
+                            <option>Nights (1900–0700)</option>
+                        </select>
+                    </div>
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlHours">Hours</label>
+                        <input type="number" id="rlHours" class="rl-input" placeholder="e.g., 8" min="0.5" max="24" step="0.5">
+                    </div>
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlPreceptor">Preceptor Name (optional)</label>
+                        <input type="text" id="rlPreceptor" class="rl-input" placeholder="e.g., Jane Wilson, RN">
+                    </div>
+                    <div class="rl-field">
+                        <label class="rl-label" for="rlPopulation">Patient Population (optional)</label>
+                        <input type="text" id="rlPopulation" class="rl-input" placeholder="e.g., post-op cardiac, pediatric oncology">
+                    </div>
+                    <div class="rl-field full">
+                        <label class="rl-label">Skills Performed (select all)</label>
+                        <div class="skills-grid" id="skillsGrid">
+                            <label class="skill-chip"><input type="checkbox" value="IV insertion"> IV insertion</label>
+                            <label class="skill-chip"><input type="checkbox" value="Foley catheter"> Foley catheter</label>
+                            <label class="skill-chip"><input type="checkbox" value="NG tube"> NG tube</label>
+                            <label class="skill-chip"><input type="checkbox" value="Wound care"> Wound care</label>
+                            <label class="skill-chip"><input type="checkbox" value="Blood draw/venipuncture"> Blood draw</label>
+                            <label class="skill-chip"><input type="checkbox" value="Medication administration"> Med admin</label>
+                            <label class="skill-chip"><input type="checkbox" value="Blood transfusion"> Blood transfusion</label>
+                            <label class="skill-chip"><input type="checkbox" value="Trach care"> Trach care</label>
+                            <label class="skill-chip"><input type="checkbox" value="Ostomy care"> Ostomy care</label>
+                            <label class="skill-chip"><input type="checkbox" value="Central line dressing"> Central line dressing</label>
+                            <label class="skill-chip"><input type="checkbox" value="Chest tube monitoring"> Chest tube monitoring</label>
+                            <label class="skill-chip"><input type="checkbox" value="Telemetry monitoring"> Telemetry</label>
+                            <label class="skill-chip"><input type="checkbox" value="Foley removal"> Foley removal</label>
+                            <label class="skill-chip"><input type="checkbox" value="Straight cath"> Straight cath</label>
+                            <label class="skill-chip"><input type="checkbox" value="PEG tube"> PEG tube</label>
+                            <label class="skill-chip"><input type="checkbox" value="Skin assessment"> Skin assessment</label>
+                            <label class="skill-chip"><input type="checkbox" value="Fall prevention"> Fall prevention</label>
+                            <label class="skill-chip"><input type="checkbox" value="Patient education"> Patient education</label>
+                            <label class="skill-chip"><input type="checkbox" value="SBAR handoff"> SBAR handoff</label>
+                            <label class="skill-chip"><input type="checkbox" value="Code blue participation"> Code blue</label>
+                        </div>
+                    </div>
+                    <div class="rl-field full">
+                        <label class="rl-label" for="rlSkillOther">Other Skills (free text)</label>
+                        <input type="text" id="rlSkillOther" class="rl-input" placeholder="List any additional skills performed…">
+                    </div>
+                    <div class="rl-field full">
+                        <label class="rl-label" for="rlNotes">Notes (optional)</label>
+                        <textarea id="rlNotes" class="rl-textarea" rows="2" placeholder="Clinical notes, learning points, observations…"></textarea>
+                    </div>
+                </div>
+                <div class="rl-actions">
+                    <button class="rl-btn primary" onclick="addRlEntry()">Add Entry</button>
+                    <button class="rl-btn" onclick="clearRlForm()">Clear</button>
+                </div>
+            </div>
+
+            <!-- Search & Log Table -->
+            <div class="rl-form-card">
+                <div class="rl-form-card-title" style="justify-content:space-between;">
+                    <span>All Entries</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" id="rlSearch" class="rl-input" style="width:200px;padding:5px 8px;" placeholder="Search entries…" oninput="renderRlTable()">
+                        <button class="rl-btn" onclick="exportRlCsv()">Export CSV</button>
+                    </div>
+                </div>
+                <div class="rl-table-wrap">
+                    <table class="rl-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortRlTable('date')" style="cursor:pointer;">Date &#8597;</th>
+                                <th onclick="sortRlTable('facility')" style="cursor:pointer;">Facility &#8597;</th>
+                                <th>Unit</th>
+                                <th>Shift</th>
+                                <th onclick="sortRlTable('hours')" style="cursor:pointer;">Hrs &#8597;</th>
+                                <th>Skills</th>
+                                <th>Notes</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rlTableBody">
+                            <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--clx-text-muted);">Loading…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Skills summary -->
+            <div class="rl-form-card" id="skillsSummaryCard" style="display:none;">
+                <div class="rl-form-card-title">Skills Summary</div>
+                <div class="skills-count-wrap" id="skillsCountWrap"></div>
+            </div>
+        </div><!-- /rl-tab-log -->
+
+        <!-- Competency Checklists tab -->
+        <div class="rl-panel" id="rl-tab-checklists">
+            <div class="checklist-grid" id="checklistGrid"></div>
+        </div>
+    </div><!-- /rl-page -->
+
+    </main>
+    </div><!-- /clx-shell -->
+
+    <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+        <a href="/home/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">🏠</span><span>Home</span></a>
+        <a href="/app/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">📝</span><span>Notes</span></a>
+        <a href="/chat/" class="clx-mobile-nav-item" target="_blank"><span class="clx-mobile-nav-icon">💬</span><span>Chat</span></a>
+        <a href="/ai/" class="clx-mobile-nav-item" target="_blank"><span class="clx-mobile-nav-icon">🤖</span><span>AI</span></a>
+        <a href="/rotationlog/" class="clx-mobile-nav-item active"><span class="clx-mobile-nav-icon">🕐</span><span>Rotations</span></a>
+    </nav>
+
+    <script src="/shared/header.js"></script>
+    <script src="/shared/toast.js"></script>
+    <script>
+        const currentUser = localStorage.getItem('bendbsn_user') || '';
+        const displayName = localStorage.getItem('bendbsn_displayName') || 'User';
+        const currentUid = localStorage.getItem('bendbsn_uid') || '';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.appspot.com",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function initTheme() {
+            const t = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function toggleDarkMode() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('bsn9b_theme', next);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+        }
+        initTheme();
+
+        let sidebarOpen = false;
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            document.getElementById('appSidebar').classList.toggle('mobile-open', sidebarOpen);
+            document.getElementById('sidebarBackdrop').classList.toggle('visible', sidebarOpen);
+        }
+        function lockScreen() { localStorage.removeItem('bendbsn_auth'); window.location.href = '/'; }
+        function logout() {
+            showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
+                try { firebase.auth().signOut(); } catch(e) {}
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
+                window.location.href = '/';
+            }, { confirmText: 'Logout', danger: true });
+        }
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Skill chips toggle
+        document.querySelectorAll('.skill-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                this.classList.toggle('checked', this.querySelector('input').checked);
+            });
+            chip.querySelector('input').addEventListener('change', function() {
+                chip.classList.toggle('checked', this.checked);
+            });
+        });
+
+        // Set today's date
+        document.getElementById('rlDate').valueAsDate = new Date();
+
+        // Tab switch
+        function showRlTab(tab) {
+            document.querySelectorAll('.rl-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.rl-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('rl-tab-' + tab).classList.add('active');
+            const tabs = document.querySelectorAll('.rl-tab');
+            const order = ['log','checklists'];
+            const idx = order.indexOf(tab);
+            if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+            if (tab === 'checklists') renderChecklists();
+        }
+
+        // --- Data ---
+        let rlEntries = [];
+        let rlSortField = 'date';
+        let rlSortDir = -1; // -1 = desc
+
+        function loadRlEntries() {
+            if (!currentUid) { renderRlTable(); return; }
+            database.ref('rotationLog/' + currentUid).once('value').then(snap => {
+                const val = snap.val();
+                rlEntries = val ? Object.entries(val).map(([id, d]) => ({...d, _id: id})) : [];
+                renderRlTable();
+                updateRlStats();
+            }).catch(() => { showToast('Error loading log.', 'error'); });
+        }
+
+        function getSelectedSkills() {
+            return Array.from(document.querySelectorAll('.skill-chip input:checked')).map(cb => cb.value);
+        }
+
+        function addRlEntry() {
+            const date = document.getElementById('rlDate').value;
+            const facility = document.getElementById('rlFacility').value.trim();
+            const unit = document.getElementById('rlUnit').value;
+            const unitOther = document.getElementById('rlUnitOther').value.trim();
+            const shift = document.getElementById('rlShift').value;
+            const hours = parseFloat(document.getElementById('rlHours').value);
+            const preceptor = document.getElementById('rlPreceptor').value.trim();
+            const population = document.getElementById('rlPopulation').value.trim();
+            const skillOther = document.getElementById('rlSkillOther').value.trim();
+            const notes = document.getElementById('rlNotes').value.trim();
+            const skills = getSelectedSkills();
+            if (skillOther) skills.push(skillOther);
+
+            if (!date) { showToast('Please select a date.', 'warning'); return; }
+            if (!facility) { showToast('Please enter a facility name.', 'warning'); return; }
+            if (!unit) { showToast('Please select a unit.', 'warning'); return; }
+            if (!hours || isNaN(hours) || hours <= 0) { showToast('Please enter valid hours.', 'warning'); return; }
+
+            if (!currentUid) { showToast('Sign in to save entries.', 'warning'); return; }
+
+            const entryId = Date.now().toString();
+            const entry = {
+                date, facility, unit: unit === 'Other' ? unitOther : unit,
+                shift, hours, preceptor, population, skills, notes,
+                createdAt: Date.now()
+            };
+            database.ref('rotationLog/' + currentUid + '/' + entryId).set(entry).then(() => {
+                rlEntries.push({...entry, _id: entryId});
+                renderRlTable();
+                updateRlStats();
+                clearRlForm();
+                showToast('Entry added.', 'success');
+            }).catch(e => showToast('Save failed: ' + e.message, 'error'));
+        }
+
+        function deleteRlEntry(id) {
+            showConfirmModal('Delete Entry', 'Delete this rotation log entry?', function() {
+                database.ref('rotationLog/' + currentUid + '/' + id).remove().then(() => {
+                    rlEntries = rlEntries.filter(e => e._id !== id);
+                    renderRlTable();
+                    updateRlStats();
+                    showToast('Entry deleted.', 'success');
+                });
+            }, { confirmText: 'Delete', danger: true });
+        }
+
+        function clearRlForm() {
+            document.getElementById('rlFacility').value = '';
+            document.getElementById('rlUnit').value = '';
+            document.getElementById('rlUnitOther').value = '';
+            document.getElementById('rlShift').value = '';
+            document.getElementById('rlHours').value = '';
+            document.getElementById('rlPreceptor').value = '';
+            document.getElementById('rlPopulation').value = '';
+            document.getElementById('rlSkillOther').value = '';
+            document.getElementById('rlNotes').value = '';
+            document.querySelectorAll('.skill-chip input').forEach(cb => { cb.checked = false; cb.closest('.skill-chip').classList.remove('checked'); });
+        }
+
+        function sortRlTable(field) {
+            if (rlSortField === field) rlSortDir *= -1;
+            else { rlSortField = field; rlSortDir = -1; }
+            renderRlTable();
+        }
+
+        function renderRlTable() {
+            const tbody = document.getElementById('rlTableBody');
+            const query = (document.getElementById('rlSearch').value || '').toLowerCase();
+            let filtered = rlEntries.filter(e => {
+                if (!query) return true;
+                return (e.facility||'').toLowerCase().includes(query) ||
+                       (e.unit||'').toLowerCase().includes(query) ||
+                       (e.notes||'').toLowerCase().includes(query) ||
+                       (e.date||'').includes(query);
+            });
+            filtered.sort((a,b) => {
+                let av = a[rlSortField] || '';
+                let bv = b[rlSortField] || '';
+                if (rlSortField === 'hours') { av = parseFloat(av)||0; bv = parseFloat(bv)||0; }
+                if (av < bv) return -1 * rlSortDir;
+                if (av > bv) return 1 * rlSortDir;
+                return 0;
+            });
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--clx-text-muted);">' + (rlEntries.length ? 'No results match your search.' : 'No entries yet. Add your first rotation above.') + '</td></tr>';
+                return;
+            }
+            tbody.innerHTML = filtered.map(e => {
+                const skillsHtml = (e.skills||[]).slice(0,3).map(s => '<span class="skill-tag">' + escapeHtml(s) + '</span>').join('') + (e.skills && e.skills.length > 3 ? '<span class="skill-tag">+' + (e.skills.length-3) + '</span>' : '');
+                return '<tr>' +
+                    '<td>' + escapeHtml(e.date) + '</td>' +
+                    '<td>' + escapeHtml(e.facility) + '</td>' +
+                    '<td>' + escapeHtml(e.unit) + '</td>' +
+                    '<td style="white-space:nowrap;">' + escapeHtml((e.shift||'').split(' ')[0]) + '</td>' +
+                    '<td>' + escapeHtml(String(e.hours)) + '</td>' +
+                    '<td>' + skillsHtml + '</td>' +
+                    '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(e.notes) + '">' + escapeHtml(e.notes || '—') + '</td>' +
+                    '<td><button onclick="deleteRlEntry(\'' + e._id + '\')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:14px;padding:2px 6px;border-radius:4px;" title="Delete" aria-label="Delete">&#128465;</button></td>' +
+                '</tr>';
+            }).join('');
+        }
+
+        function updateRlStats() {
+            const total = rlEntries.reduce((s,e) => s + (parseFloat(e.hours)||0), 0);
+            document.getElementById('statTotalHours').textContent = total % 1 === 0 ? total : total.toFixed(1);
+            document.getElementById('statTotalEntries').textContent = rlEntries.length;
+            const allSkills = rlEntries.flatMap(e => e.skills || []);
+            document.getElementById('statTotalSkills').textContent = allSkills.length;
+
+            // Hours by specialty
+            const specMap = {};
+            rlEntries.forEach(e => {
+                const spec = e.unit || 'Unknown';
+                specMap[spec] = (specMap[spec] || 0) + (parseFloat(e.hours)||0);
+            });
+            const specs = Object.entries(specMap).sort((a,b) => b[1]-a[1]);
+            const maxH = specs[0] ? specs[0][1] : 1;
+            const specCard = document.getElementById('specBarCard');
+            if (specs.length) {
+                specCard.style.display = '';
+                document.getElementById('specBars').innerHTML = specs.map(([name, h]) =>
+                    '<div class="spec-bar-row"><div class="spec-bar-label" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</div>' +
+                    '<div class="spec-bar-track"><div class="spec-bar-fill" style="width:' + Math.round((h/maxH)*100) + '%"></div></div>' +
+                    '<div class="spec-bar-hours">' + (h % 1 === 0 ? h : h.toFixed(1)) + 'h</div></div>'
+                ).join('');
+            } else { specCard.style.display = 'none'; }
+
+            // Skills count
+            const skillMap = {};
+            allSkills.forEach(s => { skillMap[s] = (skillMap[s]||0) + 1; });
+            const skillsSummaryCard = document.getElementById('skillsSummaryCard');
+            const skillsWrap = document.getElementById('skillsCountWrap');
+            if (Object.keys(skillMap).length) {
+                skillsSummaryCard.style.display = '';
+                const sorted = Object.entries(skillMap).sort((a,b) => b[1]-a[1]);
+                skillsWrap.innerHTML = sorted.map(([s,c]) => '<div class="skill-count-badge">' + escapeHtml(s) + ' <strong>×' + c + '</strong></div>').join('');
+            } else { skillsSummaryCard.style.display = 'none'; }
+        }
+
+        function exportRlCsv() {
+            if (!rlEntries.length) { showToast('No entries to export.', 'warning'); return; }
+            const header = ['Date','Facility','Unit','Shift','Hours','Preceptor','Population','Skills','Notes'];
+            const rows = rlEntries.map(e => [
+                e.date, e.facility, e.unit, e.shift, e.hours,
+                e.preceptor, e.population,
+                (e.skills||[]).join('; '), e.notes
+            ].map(v => '"' + String(v||'').replace(/"/g,'""') + '"'));
+            const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+            const blob = new Blob([csv], {type:'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'RotationLog_' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click(); URL.revokeObjectURL(url);
+            showToast('CSV exported.', 'success');
+        }
+
+        // ---- Competency Checklists ----
+        const CHECKLISTS = {
+            'Med-Surg': [
+                'Perform head-to-toe assessment','Administer oral medications','Administer IV medications','IV insertion','Blood draw/venipuncture','Foley catheter insertion','Wound assessment and dressing change','Vital signs interpretation','Pain assessment and management','Fall risk assessment (Morse)','Skin integrity assessment (Braden)','Patient/family education','SBAR handoff to oncoming nurse','Medication reconciliation','Intake and output monitoring','Incentive spirometry instruction','Ambulation assistance','Telemetry strip interpretation','Documentation in EMR','Discharge planning participation'
+            ],
+            'ICU': [
+                'Hemodynamic monitoring interpretation','Arterial line care','Central line care','Ventilator settings review','Ventilator weaning assessment','RASS sedation scale scoring','CAM-ICU delirium assessment','Vasopressor drip titration','Continuous infusion management','CVP monitoring','Daily wake-up trial participation','VAP bundle compliance','CLABSI bundle compliance','Prone positioning assistance','Chest tube monitoring','Swan-Ganz catheter data interpretation','Glasgow Coma Scale scoring','Restraint monitoring and documentation','Family communication and support','End-of-life care participation'
+            ],
+            'ER': [
+                'Triage assessment','12-lead ECG acquisition','Cardiac rhythm interpretation','Rapid assessment (ABCDs)','Trauma assessment','IV access in emergent setting','Medication administration in code','Code blue participation','SBAR to admitting team','Pain assessment and management','Stroke assessment (NIHSS)','Sepsis bundle initiation','Splinting assistance','Wound irrigation and closure assistance','Overdose/toxicology assessment','Mental health crisis assessment','Domestic violence screening','Pediatric vital sign interpretation','Documentation under time pressure','Handoff to inpatient nurse'
+            ],
+            'OB/L&D': [
+                'Fetal heart rate monitoring','Contraction assessment','Leopold maneuvers','Cervical dilation assessment support','Labor support interventions','Epidural care and monitoring','Magnesium sulfate infusion management','Preeclampsia assessment','Postpartum assessment (BUBBLE-HE)','Fundal massage','Lochia assessment','Breastfeeding support','Newborn assessment','APGAR scoring','Newborn care (bathing, cord care)','Oxytocin administration/titration','Shoulder dystocia response participation','Emergency cesarean section preparation','Blood type and crossmatch preparation','Family-centered care documentation'
+            ],
+            'Psych': [
+                'Therapeutic communication','Mental status examination','PHQ-9 administration and scoring','Columbia Suicide Severity Rating (C-SSRS)','Safety plan discussion','De-escalation technique','Medication administration (PO and IM)','CIWA-Ar monitoring','Restraint monitoring (behavioral)','Group therapy observation','Milieu management','Behavioral documentation','Family systems assessment','Trauma-informed care approach','Crisis intervention participation','Interdisciplinary team rounds documentation','Discharge planning for mental health','Community resource identification','Informed consent discussion support','Boundary setting in therapeutic relationship'
+            ],
+            'Peds': [
+                'Pediatric vital sign interpretation','Weight-based medication calculation','Pediatric pain assessment (FACES/FLACC)','Developmental milestone assessment','Age-appropriate communication','Infant/child head-to-toe assessment','Immunization administration','IV insertion in pediatric patient','Oral rehydration therapy','Fever management','Seizure precautions','Respiratory distress assessment','Growth chart interpretation','Family-centered care documentation','Child abuse/neglect screening','Pediatric code response','NG tube in pediatric patient','Pediatric fluid management','Parent/guardian education','School-age patient teaching'
+            ]
+        };
+
+        let checklistData = {}; // { specialty: { itemIdx: true/false } }
+
+        function renderChecklists() {
+            if (!currentUid) {
+                document.getElementById('checklistGrid').innerHTML = '<div style="padding:20px;color:var(--clx-text-muted);">Sign in to use checklists.</div>';
+                return;
+            }
+            // Load from Firebase then render
+            database.ref('rotationChecklists/' + currentUid).once('value').then(snap => {
+                checklistData = snap.val() || {};
+                buildChecklistGrid();
+            }).catch(() => buildChecklistGrid());
+        }
+
+        function buildChecklistGrid() {
+            const grid = document.getElementById('checklistGrid');
+            grid.innerHTML = Object.entries(CHECKLISTS).map(([specialty, items]) => {
+                const saved = checklistData[specialty] || {};
+                const completed = items.filter((_,i) => saved[i]).length;
+                const pct = Math.round((completed / items.length) * 100);
+                const itemsHtml = items.map((item, i) => {
+                    const checked = !!saved[i];
+                    return '<div class="checklist-item' + (checked ? ' completed' : '') + '">' +
+                        '<input type="checkbox" id="cl-' + specialty.replace(/\//g,'-') + '-' + i + '" ' + (checked ? 'checked' : '') +
+                        ' onchange="toggleChecklistItem(\'' + specialty + '\',' + i + ',this.checked)">' +
+                        '<label for="cl-' + specialty.replace(/\//g,'-') + '-' + i + '">' + escapeHtml(item) + '</label>' +
+                    '</div>';
+                }).join('');
+                return '<div class="checklist-card">' +
+                    '<div class="checklist-card-hd">' +
+                        '<div class="checklist-card-title">' + escapeHtml(specialty) + '</div>' +
+                        '<div style="font-size:11px;color:var(--clx-text-muted);">' + completed + '/' + items.length + '</div>' +
+                    '</div>' +
+                    '<div class="checklist-progress-wrap"><div class="checklist-progress-fill" style="width:' + pct + '%"></div></div>' +
+                    '<div class="checklist-progress-label">' + pct + '% complete</div>' +
+                    '<div class="checklist-items">' + itemsHtml + '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        function toggleChecklistItem(specialty, idx, checked) {
+            if (!checklistData[specialty]) checklistData[specialty] = {};
+            if (checked) checklistData[specialty][idx] = true;
+            else delete checklistData[specialty][idx];
+            // Update UI
+            const itemEl = document.getElementById('cl-' + specialty.replace(/\//g,'-') + '-' + idx);
+            if (itemEl) itemEl.closest('.checklist-item').classList.toggle('completed', checked);
+            // Save to Firebase
+            if (currentUid) {
+                database.ref('rotationChecklists/' + currentUid + '/' + specialty).set(checklistData[specialty] || {});
+            }
+            // Update progress bar
+            buildChecklistGrid();
+        }
+
+        // Init
+        loadRlEntries();
+    </script>
+</body>
+</html>

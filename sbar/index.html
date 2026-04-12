@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
+    <script>
+        if (localStorage.getItem('bendbsn_auth') !== 'true') { window.location.href = '/'; }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0d1f2d">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BendBSN">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
+    <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
+    <title>BendBSN — SBAR Handoff</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            background: var(--clx-bg-canvas);
+            color: var(--clx-text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 60px;
+        }
+
+        /* ---- SBAR Tab Nav ---- */
+        .sbar-tabs {
+            display: flex;
+            gap: 2px;
+            padding: 0 0 0 0;
+            border-bottom: 2px solid var(--clx-border);
+            background: var(--clx-bg-surface);
+            flex-shrink: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .sbar-tabs::-webkit-scrollbar { display: none; }
+        .sbar-tab {
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--clx-text-muted);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            white-space: nowrap;
+            font-family: inherit;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .sbar-tab:hover { color: var(--clx-text-primary); }
+        .sbar-tab.active {
+            color: var(--clx-accent);
+            border-bottom-color: var(--clx-accent);
+        }
+
+        /* ---- Tab Panels ---- */
+        .sbar-panel { display: none; }
+        .sbar-panel.active { display: block; }
+
+        /* ---- Section headers ---- */
+        .sbar-section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .sbar-letter {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--clx-accent);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .sbar-section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--clx-text-primary);
+        }
+        .sbar-section-sub {
+            font-size: 12px;
+            color: var(--clx-text-muted);
+            margin-top: 1px;
+        }
+
+        /* ---- Form grid ---- */
+        .sbar-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .sbar-form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .sbar-field { display: flex; flex-direction: column; gap: 4px; }
+        .sbar-field.full { grid-column: 1 / -1; }
+        .sbar-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--clx-text-muted);
+        }
+        .sbar-input, .sbar-select, .sbar-textarea {
+            padding: 8px 10px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+            width: 100%;
+            transition: border-color 0.15s;
+        }
+        .sbar-input:focus, .sbar-select:focus, .sbar-textarea:focus {
+            outline: none;
+            border-color: var(--clx-accent);
+            box-shadow: 0 0 0 3px var(--clx-accent-subtle);
+        }
+        .sbar-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+        /* ---- Checkbox group ---- */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .checkbox-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border: 1px solid var(--clx-border);
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-secondary);
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .checkbox-chip input[type="checkbox"] { display: none; }
+        .checkbox-chip.checked {
+            background: var(--clx-accent-subtle);
+            border-color: var(--clx-accent);
+            color: var(--clx-accent);
+            font-weight: 600;
+        }
+
+        /* ---- Vitals row ---- */
+        .vitals-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+        .vitals-field { display: flex; flex-direction: column; gap: 3px; }
+        .vitals-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--clx-text-muted);
+        }
+        .vitals-input {
+            padding: 6px 8px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+            width: 100%;
+        }
+        .vitals-input:focus {
+            outline: none;
+            border-color: var(--clx-accent);
+            box-shadow: 0 0 0 2px var(--clx-accent-subtle);
+        }
+
+        /* ---- Output area ---- */
+        .sbar-output {
+            background: var(--clx-bg-surface-2);
+            border: 1px solid var(--clx-border);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            color: var(--clx-text-primary);
+            min-height: 200px;
+            margin-top: 14px;
+        }
+        .sbar-output-header {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--clx-text-muted);
+            margin-bottom: 8px;
+        }
+
+        /* ---- Action bar ---- */
+        .sbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .sbar-btn {
+            padding: 9px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--clx-border);
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            cursor: pointer;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .sbar-btn:hover { background: var(--clx-bg-surface-2); border-color: var(--clx-border-strong); }
+        .sbar-btn.primary { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
+        .sbar-btn.primary:hover { background: var(--clx-accent-hover); border-color: var(--clx-accent-hover); }
+
+        /* ---- Previous reports list ---- */
+        .report-list { margin-top: 16px; }
+        .report-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid var(--clx-border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: var(--clx-bg-surface);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .report-item:hover { background: var(--clx-accent-subtle); border-color: var(--clx-accent); }
+        .report-item-date { font-size: 11px; color: var(--clx-text-muted); white-space: nowrap; }
+        .report-item-title { flex: 1; font-size: 13px; font-weight: 500; }
+        .report-item-del {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--clx-text-muted);
+            font-size: 16px;
+            padding: 4px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .report-item-del:hover { color: #dc2626; background: #fee2e2; }
+
+        /* ---- Page layout ---- */
+        .sbar-page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
+            flex: 1;
+        }
+        .sbar-page-header {
+            margin-bottom: 16px;
+        }
+        .sbar-page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--clx-text-primary);
+        }
+        .sbar-page-sub {
+            font-size: 13px;
+            color: var(--clx-text-muted);
+            margin-top: 2px;
+        }
+        .sbar-card {
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        .edu-notice {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #92400e;
+            margin-bottom: 14px;
+        }
+        [data-theme="dark"] .edu-notice {
+            background: #1c1a0e;
+            border-color: #78350f;
+            color: #fcd34d;
+        }
+
+        @media (max-width: 600px) {
+            .sbar-form-grid { grid-template-columns: 1fr; }
+            .sbar-form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
+        <div class="header-actions">
+            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
+        </div>
+    </header>
+
+    <div class="clx-shell">
+    <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
+        <div class="clx-sidebar-section">Navigation</div>
+        <a href="/home/" class="clx-sidebar-item" data-page="home"><span class="clx-sidebar-icon">🏠</span><span class="clx-sidebar-label">Home</span></a>
+        <a href="/app/" class="clx-sidebar-item" data-page="app"><span class="clx-sidebar-icon">📝</span><span class="clx-sidebar-label">RN Notes</span></a>
+        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank"><span class="clx-sidebar-icon">💬</span><span class="clx-sidebar-label">Chat</span></a>
+        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank"><span class="clx-sidebar-icon">🩺</span><span class="clx-sidebar-label">AI Assistant</span></a>
+        <a href="/community/" class="clx-sidebar-item" data-page="community"><span class="clx-sidebar-icon">👥</span><span class="clx-sidebar-label">Community</span></a>
+        <a href="/resources/" class="clx-sidebar-item" data-page="resources"><span class="clx-sidebar-icon">📚</span><span class="clx-sidebar-label">Resources</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
+        <a href="/sbar/" class="clx-sidebar-item active" data-page="sbar"><span class="clx-sidebar-icon">📋</span><span class="clx-sidebar-label">SBAR Handoff</span></a>
+        <a href="/careplan/" class="clx-sidebar-item" data-page="careplan"><span class="clx-sidebar-icon">🗂️</span><span class="clx-sidebar-label">Care Plans</span></a>
+        <a href="/rotationlog/" class="clx-sidebar-item" data-page="rotationlog"><span class="clx-sidebar-icon">🕐</span><span class="clx-sidebar-label">Rotation Log</span></a>
+        <a href="/profile/" class="clx-sidebar-item" data-page="profile"><span class="clx-sidebar-icon">👤</span><span class="clx-sidebar-label">Profile</span></a>
+        <a href="/apa/" class="clx-sidebar-item" data-page="apa"><span class="clx-sidebar-icon">📄</span><span class="clx-sidebar-label">APA Generator</span></a>
+        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched"><span class="clx-sidebar-icon">🗓️</span><span class="clx-sidebar-label">Lab Sched Generator</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+        <button class="clx-sidebar-item" onclick="toggleDarkMode()"><span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span><span class="clx-sidebar-label">Theme</span></button>
+        <button class="clx-sidebar-item" onclick="lockScreen()"><span class="clx-sidebar-icon">🔒</span><span class="clx-sidebar-label">Lock</span></button>
+        <button class="clx-sidebar-item" onclick="logout()"><span class="clx-sidebar-icon">🚪</span><span class="clx-sidebar-label">Logout</span></button>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar"><span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9658;</span><span class="clx-sidebar-toggle-label">Expand</span></button>
+    </aside>
+    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <main class="clx-main" role="main">
+
+    <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;"><span id="alertText"></span></div>
+    <div id="fyiBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#d97706;color:#1a1a2e;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:9999;"><span id="fyiText"></span></div>
+
+    <div class="sbar-page">
+        <div class="sbar-page-header">
+            <div class="sbar-page-title">SBAR Handoff Generator</div>
+            <div class="sbar-page-sub">Situation — Background — Assessment — Recommendation</div>
+        </div>
+        <div class="edu-notice">EDUCATIONAL USE ONLY — All patients and scenarios are fictional. This tool is for nursing education and training purposes.</div>
+
+        <!-- Tab Navigation -->
+        <div class="sbar-tabs" role="tablist">
+            <button class="sbar-tab active" onclick="showSbarTab('situation')" role="tab" aria-selected="true">S — Situation</button>
+            <button class="sbar-tab" onclick="showSbarTab('background')" role="tab" aria-selected="false">B — Background</button>
+            <button class="sbar-tab" onclick="showSbarTab('assessment')" role="tab" aria-selected="false">A — Assessment</button>
+            <button class="sbar-tab" onclick="showSbarTab('recommendation')" role="tab" aria-selected="false">R — Recommendation</button>
+            <button class="sbar-tab" onclick="showSbarTab('output')" role="tab" aria-selected="false">Report & Save</button>
+            <button class="sbar-tab" onclick="showSbarTab('history')" role="tab" aria-selected="false">Previous Reports</button>
+        </div>
+
+        <!-- S — Situation -->
+        <div class="sbar-panel active" id="sbar-tab-situation">
+            <div class="sbar-card">
+                <div class="sbar-section-header">
+                    <div class="sbar-letter">S</div>
+                    <div>
+                        <div class="sbar-section-title">Situation</div>
+                        <div class="sbar-section-sub">What is happening right now — identify yourself and the patient</div>
+                    </div>
+                </div>
+                <div class="sbar-form-grid">
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sPatientName">Patient Name (fictional)</label>
+                        <input type="text" id="sPatientName" class="sbar-input" placeholder="e.g., John Smith">
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sPatientAge">Age</label>
+                        <input type="number" id="sPatientAge" class="sbar-input" placeholder="e.g., 68" min="0" max="130">
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sPatientSex">Sex</label>
+                        <select id="sPatientSex" class="sbar-select">
+                            <option value="">Select…</option>
+                            <option>Male</option>
+                            <option>Female</option>
+                        </select>
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sRoom">Room / Bed</label>
+                        <input type="text" id="sRoom" class="sbar-input" placeholder="e.g., 214B">
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sAttendingMd">Attending MD</label>
+                        <input type="text" id="sAttendingMd" class="sbar-input" placeholder="e.g., Dr. Rivera">
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sAdmitDx">Admitting Diagnosis</label>
+                        <input type="text" id="sAdmitDx" class="sbar-input" placeholder="e.g., COPD exacerbation">
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sHandoffReason">Reason for Handoff</label>
+                        <select id="sHandoffReason" class="sbar-select">
+                            <option value="">Select…</option>
+                            <option>End of shift</option>
+                            <option>Transfer to another unit</option>
+                            <option>Rapid response activation</option>
+                            <option>Pre-procedure handoff</option>
+                            <option>Post-procedure handoff</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="sCodeStatus">Code Status</label>
+                        <select id="sCodeStatus" class="sbar-select">
+                            <option value="">Select…</option>
+                            <option>Full Code</option>
+                            <option>DNR (Do Not Resuscitate)</option>
+                            <option>DNI (Do Not Intubate)</option>
+                            <option>DNR/DNI</option>
+                            <option>Comfort Care Only</option>
+                        </select>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="sSitDetails">Current Situation (brief)</label>
+                        <textarea id="sSitDetails" class="sbar-textarea" placeholder="Describe what is happening right now in 1-2 sentences…" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="sbar-actions">
+                <button class="sbar-btn primary" onclick="showSbarTab('background')">Next: Background →</button>
+            </div>
+        </div>
+
+        <!-- B — Background -->
+        <div class="sbar-panel" id="sbar-tab-background">
+            <div class="sbar-card">
+                <div class="sbar-section-header">
+                    <div class="sbar-letter">B</div>
+                    <div>
+                        <div class="sbar-section-title">Background</div>
+                        <div class="sbar-section-sub">Relevant history, medications, and context</div>
+                    </div>
+                </div>
+                <div class="sbar-form-grid">
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="bAdmitDate">Admission Date</label>
+                        <input type="date" id="bAdmitDate" class="sbar-input">
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label">Relevant PMH (select all that apply)</label>
+                        <div class="checkbox-group" id="pmhGroup">
+                            <label class="checkbox-chip"><input type="checkbox" value="HTN"> HTN</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="DM Type 2"> DM Type 2</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="DM Type 1"> DM Type 1</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="CAD"> CAD</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="CHF"> CHF</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="COPD"> COPD</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="CKD"> CKD</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Cancer"> Cancer</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Prior CVA/Stroke"> Prior CVA/Stroke</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Atrial Fibrillation"> A-fib</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Asthma"> Asthma</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="GERD"> GERD</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Hypothyroidism"> Hypothyroidism</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Obesity"> Obesity</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Anxiety/Depression"> Anxiety/Depression</label>
+                        </div>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="bPmhOther">Additional PMH</label>
+                        <input type="text" id="bPmhOther" class="sbar-input" placeholder="e.g., prior MI 2019, appendectomy">
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="bAllergies">Allergies</label>
+                        <input type="text" id="bAllergies" class="sbar-input" placeholder="e.g., PCN (rash), Sulfa (hives), NKDA">
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="bMeds">Current Medications</label>
+                        <textarea id="bMeds" class="sbar-textarea" placeholder="List current medications, doses, routes, frequencies…" rows="4"></textarea>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="bLabsImaging">Significant Lab / Imaging Findings</label>
+                        <textarea id="bLabsImaging" class="sbar-textarea" placeholder="e.g., Troponin 0.8 (trending up), CXR — bilateral infiltrates, WBC 14.2…" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="sbar-actions">
+                <button class="sbar-btn" onclick="showSbarTab('situation')">← Situation</button>
+                <button class="sbar-btn primary" onclick="showSbarTab('assessment')">Next: Assessment →</button>
+            </div>
+        </div>
+
+        <!-- A — Assessment -->
+        <div class="sbar-panel" id="sbar-tab-assessment">
+            <div class="sbar-card">
+                <div class="sbar-section-header">
+                    <div class="sbar-letter">A</div>
+                    <div>
+                        <div class="sbar-section-title">Assessment</div>
+                        <div class="sbar-section-sub">Current clinical picture — what you observe and measure</div>
+                    </div>
+                </div>
+                <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:12px;">Use observation language. Describe what you see and measure — not a diagnosis.</p>
+                <div style="margin-bottom:14px;">
+                    <div class="sbar-label" style="margin-bottom:6px;">Current Vitals</div>
+                    <div class="vitals-row">
+                        <div class="vitals-field"><span class="vitals-label">BP</span><input type="text" id="aVsBp" class="vitals-input" placeholder="120/80"></div>
+                        <div class="vitals-field"><span class="vitals-label">HR</span><input type="number" id="aVsHr" class="vitals-input" placeholder="72" min="20" max="250"></div>
+                        <div class="vitals-field"><span class="vitals-label">RR</span><input type="number" id="aVsRr" class="vitals-input" placeholder="16" min="4" max="60"></div>
+                        <div class="vitals-field"><span class="vitals-label">Temp °F</span><input type="number" id="aVsTemp" class="vitals-input" placeholder="98.6" step="0.1" min="90" max="110"></div>
+                        <div class="vitals-field"><span class="vitals-label">SpO2 %</span><input type="number" id="aVsO2" class="vitals-input" placeholder="98" min="50" max="100"></div>
+                        <div class="vitals-field"><span class="vitals-label">Pain 0-10</span><input type="number" id="aVsPain" class="vitals-input" placeholder="3" min="0" max="10"></div>
+                    </div>
+                </div>
+                <div class="sbar-form-grid">
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="aOverallStatus">Overall Status</label>
+                        <select id="aOverallStatus" class="sbar-select">
+                            <option value="">Select…</option>
+                            <option>Stable</option>
+                            <option>Unstable</option>
+                            <option>Critical</option>
+                            <option>Improving</option>
+                            <option>Declining</option>
+                        </select>
+                    </div>
+                    <div class="sbar-field">
+                        <label class="sbar-label" for="aIvAccess">IV Access</label>
+                        <input type="text" id="aIvAccess" class="sbar-input" placeholder="e.g., 18g PIV L antecubital, patent">
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="aPrimaryConcern">Primary Concern Right Now</label>
+                        <input type="text" id="aPrimaryConcern" class="sbar-input" placeholder="e.g., Patient's O2 sat declining despite supplemental O2 at 4L NC">
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="aActiveProblems">Active Problems List</label>
+                        <textarea id="aActiveProblems" class="sbar-textarea" placeholder="List active nursing and medical problems…" rows="3"></textarea>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="aDrips">Current Drips / Infusions</label>
+                        <textarea id="aDrips" class="sbar-textarea" placeholder="e.g., NS 0.9% at 125 mL/hr, Heparin 800 units/hr per protocol…" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="sbar-actions">
+                <button class="sbar-btn" onclick="showSbarTab('background')">← Background</button>
+                <button class="sbar-btn primary" onclick="showSbarTab('recommendation')">Next: Recommendation →</button>
+            </div>
+        </div>
+
+        <!-- R — Recommendation -->
+        <div class="sbar-panel" id="sbar-tab-recommendation">
+            <div class="sbar-card">
+                <div class="sbar-section-header">
+                    <div class="sbar-letter">R</div>
+                    <div>
+                        <div class="sbar-section-title">Recommendation</div>
+                        <div class="sbar-section-sub">What you need from the oncoming nurse or provider</div>
+                    </div>
+                </div>
+                <div class="sbar-form-grid">
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="rAnticipatedOrders">Anticipated Orders / Interventions</label>
+                        <textarea id="rAnticipatedOrders" class="sbar-textarea" placeholder="e.g., Monitor SpO2 hourly, notify MD if < 92%…" rows="3"></textarea>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="rPendingResults">Pending Results to Follow Up</label>
+                        <textarea id="rPendingResults" class="sbar-textarea" placeholder="e.g., AM troponin due at 0600, CT chest results pending…" rows="2"></textarea>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="rTasksForOncoming">Tasks for Oncoming Nurse</label>
+                        <textarea id="rTasksForOncoming" class="sbar-textarea" placeholder="e.g., Wound dressing change due at 0800, PT consult to be scheduled…" rows="3"></textarea>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label">Safety Concerns (select all that apply)</label>
+                        <div class="checkbox-group" id="safetyGroup">
+                            <label class="checkbox-chip"><input type="checkbox" value="High fall risk"> High fall risk</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Contact precautions"> Contact precautions</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Droplet precautions"> Droplet precautions</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Airborne precautions"> Airborne precautions</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Soft restraints in use"> Soft restraints in use</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Aspiration risk"> Aspiration risk</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Elopement risk"> Elopement risk</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Suicide/self-harm risk"> Suicide/self-harm risk</label>
+                            <label class="checkbox-chip"><input type="checkbox" value="Difficult IV access"> Difficult IV access</label>
+                        </div>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="rFamilyNotes">Family / Communication Notes</label>
+                        <textarea id="rFamilyNotes" class="sbar-textarea" placeholder="e.g., Daughter (listed as HCP) has been updated. No visitors until 0800…" rows="2"></textarea>
+                    </div>
+                    <div class="sbar-field full">
+                        <label class="sbar-label" for="rWatchFor">Anything Unusual to Watch For</label>
+                        <textarea id="rWatchFor" class="sbar-textarea" placeholder="e.g., Patient has been increasingly agitated overnight — may need reassessment for delirium…" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="sbar-actions">
+                <button class="sbar-btn" onclick="showSbarTab('assessment')">← Assessment</button>
+                <button class="sbar-btn primary" onclick="generateSbarReport()">Generate Report →</button>
+            </div>
+        </div>
+
+        <!-- Output / Report -->
+        <div class="sbar-panel" id="sbar-tab-output">
+            <div class="sbar-card">
+                <div class="sbar-section-header" style="margin-bottom:8px;">
+                    <div class="sbar-letter" style="background:#16a34a;">✓</div>
+                    <div>
+                        <div class="sbar-section-title">Generated SBAR Report</div>
+                        <div class="sbar-section-sub">Review, copy, export, or save this handoff report</div>
+                    </div>
+                </div>
+                <div class="edu-notice">EDUCATIONAL OUTPUT ONLY — Not for use in actual clinical settings.</div>
+                <div class="sbar-output-header">SBAR Handoff Report</div>
+                <div class="sbar-output" id="sbarOutputText">Click "Generate Report" from the Recommendation tab to build your SBAR.</div>
+                <div class="sbar-actions">
+                    <button class="sbar-btn primary" onclick="generateSbarReport()">Regenerate</button>
+                    <button class="sbar-btn" onclick="copySbarToClipboard()">Copy to Clipboard</button>
+                    <button class="sbar-btn" onclick="exportSbarDocx()">Export to Word</button>
+                    <button class="sbar-btn" onclick="saveSbarToFirebase()">Save to Account</button>
+                    <button class="sbar-btn" onclick="clearSbarForm()">Clear Form</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div class="sbar-panel" id="sbar-tab-history">
+            <div class="sbar-card">
+                <div class="sbar-section-header" style="margin-bottom:8px;">
+                    <div class="sbar-letter" style="background:#7c3aed;">H</div>
+                    <div>
+                        <div class="sbar-section-title">Previous Reports</div>
+                        <div class="sbar-section-sub">Saved SBAR handoffs from your account</div>
+                    </div>
+                </div>
+                <div id="sbarHistoryList">
+                    <div style="text-align:center;padding:24px;color:var(--clx-text-muted);font-size:13px;">Loading reports…</div>
+                </div>
+            </div>
+        </div>
+    </div><!-- /sbar-page -->
+
+    </main>
+    </div><!-- /clx-shell -->
+
+    <!-- Mobile bottom nav -->
+    <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+        <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">🏠</span><span>Home</span></a>
+        <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">📝</span><span>Notes</span></a>
+        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat"><span class="clx-mobile-nav-icon">💬</span><span>Chat</span></a>
+        <a href="/ai/" class="clx-mobile-nav-item" target="_blank" aria-label="AI Assistant"><span class="clx-mobile-nav-icon">🤖</span><span>AI</span></a>
+        <a href="/sbar/" class="clx-mobile-nav-item active" aria-label="SBAR"><span class="clx-mobile-nav-icon">📋</span><span>SBAR</span></a>
+    </nav>
+
+    <script src="/shared/header.js"></script>
+    <script src="/shared/toast.js"></script>
+    <script>
+        const currentUser = localStorage.getItem('bendbsn_user') || '';
+        const displayName = localStorage.getItem('bendbsn_displayName') || 'User';
+        const currentUid = localStorage.getItem('bendbsn_uid') || '';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.appspot.com",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Theme init
+        function initTheme() {
+            const t = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function toggleDarkMode() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('bsn9b_theme', next);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+        }
+        initTheme();
+
+        // Sidebar
+        let sidebarOpen = false;
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            const sidebar = document.getElementById('appSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar) sidebar.classList.toggle('mobile-open', sidebarOpen);
+            if (backdrop) backdrop.classList.toggle('visible', sidebarOpen);
+        }
+
+        // Lock / Logout
+        function lockScreen() {
+            localStorage.removeItem('bendbsn_auth');
+            window.location.href = '/';
+        }
+        function logout() {
+            showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
+                try { firebase.auth().signOut(); } catch(e) {}
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
+                window.location.href = '/';
+            }, { confirmText: 'Logout', danger: true });
+        }
+
+        // Checkbox chips
+        document.querySelectorAll('.checkbox-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                this.classList.toggle('checked', this.querySelector('input').checked);
+            });
+            const cb = chip.querySelector('input');
+            cb.addEventListener('change', function() {
+                chip.classList.toggle('checked', this.checked);
+            });
+        });
+
+        // Tab navigation
+        function showSbarTab(tab) {
+            document.querySelectorAll('.sbar-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sbar-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+            const panel = document.getElementById('sbar-tab-' + tab);
+            if (panel) panel.classList.add('active');
+            const tabs = document.querySelectorAll('.sbar-tab');
+            const tabOrder = ['situation','background','assessment','recommendation','output','history'];
+            const idx = tabOrder.indexOf(tab);
+            if (idx >= 0 && tabs[idx]) { tabs[idx].classList.add('active'); tabs[idx].setAttribute('aria-selected','true'); }
+            if (tab === 'history') loadSbarHistory();
+        }
+
+        // Collect checked values from a group
+        function getCheckedValues(groupId) {
+            const group = document.getElementById(groupId);
+            if (!group) return [];
+            return Array.from(group.querySelectorAll('input:checked')).map(cb => cb.value);
+        }
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Generate SBAR text
+        function buildSbarText() {
+            const pName = document.getElementById('sPatientName').value.trim() || 'Patient';
+            const pAge = document.getElementById('sPatientAge').value.trim();
+            const pSex = document.getElementById('sPatientSex').value;
+            const room = document.getElementById('sRoom').value.trim();
+            const md = document.getElementById('sAttendingMd').value.trim();
+            const dx = document.getElementById('sAdmitDx').value.trim();
+            const reason = document.getElementById('sHandoffReason').value;
+            const code = document.getElementById('sCodeStatus').value;
+            const sitDetails = document.getElementById('sSitDetails').value.trim();
+
+            const admitDate = document.getElementById('bAdmitDate').value;
+            const pmh = getCheckedValues('pmhGroup');
+            const pmhOther = document.getElementById('bPmhOther').value.trim();
+            const allergies = document.getElementById('bAllergies').value.trim();
+            const meds = document.getElementById('bMeds').value.trim();
+            const labsImaging = document.getElementById('bLabsImaging').value.trim();
+
+            const bp = document.getElementById('aVsBp').value.trim();
+            const hr = document.getElementById('aVsHr').value.trim();
+            const rr = document.getElementById('aVsRr').value.trim();
+            const temp = document.getElementById('aVsTemp').value.trim();
+            const o2 = document.getElementById('aVsO2').value.trim();
+            const pain = document.getElementById('aVsPain').value.trim();
+            const status = document.getElementById('aOverallStatus').value;
+            const ivAccess = document.getElementById('aIvAccess').value.trim();
+            const concern = document.getElementById('aPrimaryConcern').value.trim();
+            const problems = document.getElementById('aActiveProblems').value.trim();
+            const drips = document.getElementById('aDrips').value.trim();
+
+            const orders = document.getElementById('rAnticipatedOrders').value.trim();
+            const pending = document.getElementById('rPendingResults').value.trim();
+            const tasks = document.getElementById('rTasksForOncoming').value.trim();
+            const safety = getCheckedValues('safetyGroup');
+            const family = document.getElementById('rFamilyNotes').value.trim();
+            const watchFor = document.getElementById('rWatchFor').value.trim();
+
+            const now = new Date().toLocaleString();
+            let lines = [];
+            lines.push('=== SBAR HANDOFF REPORT ===');
+            lines.push('Generated: ' + now);
+            lines.push('Clinician: ' + displayName + ' (' + currentUser + ')');
+            lines.push('[EDUCATIONAL USE ONLY — NOT FOR REAL CLINICAL USE]');
+            lines.push('');
+            lines.push('--- SITUATION ---');
+            let sitLine = 'Patient: ' + pName;
+            if (pAge) sitLine += ', ' + pAge + ' y/o';
+            if (pSex) sitLine += ' ' + pSex;
+            if (room) sitLine += ' in room ' + room;
+            if (md) sitLine += ', attending Dr. ' + md.replace(/^Dr\.?\s*/i,'');
+            lines.push(sitLine);
+            if (dx) lines.push('Admitting Diagnosis: ' + dx);
+            if (reason) lines.push('Reason for Handoff: ' + reason);
+            if (code) lines.push('Code Status: ' + code);
+            if (sitDetails) lines.push(sitDetails);
+            lines.push('');
+            lines.push('--- BACKGROUND ---');
+            if (admitDate) lines.push('Admitted: ' + admitDate);
+            if (pmh.length) lines.push('PMH: ' + pmh.join(', ') + (pmhOther ? ', ' + pmhOther : ''));
+            else if (pmhOther) lines.push('PMH: ' + pmhOther);
+            if (allergies) lines.push('Allergies: ' + allergies);
+            if (meds) lines.push('Current Medications:\n' + meds);
+            if (labsImaging) lines.push('Significant Labs/Imaging:\n' + labsImaging);
+            lines.push('');
+            lines.push('--- ASSESSMENT ---');
+            let vitalsParts = [];
+            if (bp) vitalsParts.push('BP ' + bp);
+            if (hr) vitalsParts.push('HR ' + hr);
+            if (rr) vitalsParts.push('RR ' + rr);
+            if (temp) vitalsParts.push('Temp ' + temp + '°F');
+            if (o2) vitalsParts.push('SpO2 ' + o2 + '%');
+            if (pain) vitalsParts.push('Pain ' + pain + '/10');
+            if (vitalsParts.length) lines.push('Vitals: ' + vitalsParts.join(' | '));
+            if (status) lines.push('Overall Status: ' + status);
+            if (concern) lines.push('Primary Concern: ' + concern);
+            if (problems) lines.push('Active Problems:\n' + problems);
+            if (ivAccess) lines.push('IV Access: ' + ivAccess);
+            if (drips) lines.push('Drips/Infusions:\n' + drips);
+            lines.push('');
+            lines.push('--- RECOMMENDATION ---');
+            if (orders) lines.push('Anticipated Orders/Interventions:\n' + orders);
+            if (pending) lines.push('Pending Results to Follow Up:\n' + pending);
+            if (tasks) lines.push('Tasks for Oncoming Nurse:\n' + tasks);
+            if (safety.length) lines.push('Safety Concerns: ' + safety.join(', '));
+            if (family) lines.push('Family/Communication:\n' + family);
+            if (watchFor) lines.push('Watch For:\n' + watchFor);
+            lines.push('');
+            lines.push('=== END OF REPORT ===');
+            return lines.join('\n');
+        }
+
+        function generateSbarReport() {
+            const text = buildSbarText();
+            document.getElementById('sbarOutputText').textContent = text;
+            showSbarTab('output');
+        }
+
+        function copySbarToClipboard() {
+            const text = document.getElementById('sbarOutputText').textContent;
+            if (!text || text.includes('Click "Generate Report"')) {
+                showToast('Generate a report first.', 'warning'); return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!', 'success');
+            }).catch(() => showToast('Copy failed — try selecting and copying manually.', 'warning'));
+        }
+
+        function exportSbarDocx() {
+            const text = document.getElementById('sbarOutputText').textContent;
+            if (!text || text.includes('Click "Generate Report"')) {
+                showToast('Generate a report first.', 'warning'); return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/docx@8.2.2/build/index.umd.js';
+            script.onload = function() {
+                const fsSrc = document.createElement('script');
+                fsSrc.src = 'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
+                fsSrc.onload = function() { doExportSbarDocx(text); };
+                document.head.appendChild(fsSrc);
+            };
+            document.head.appendChild(script);
+        }
+        function doExportSbarDocx(text) {
+            try {
+                const paragraphs = text.split('\n').map(line => {
+                    const isHeader = line.startsWith('---') || line.startsWith('===');
+                    return new docx.Paragraph({
+                        children: [new docx.TextRun({ text: line, bold: isHeader, size: 22 })],
+                        spacing: { after: isHeader ? 200 : 100 }
+                    });
+                });
+                const doc = new docx.Document({
+                    sections: [{ properties: {}, children: paragraphs }]
+                });
+                docx.Packer.toBlob(doc).then(blob => {
+                    const pName = document.getElementById('sPatientName').value.trim().replace(/\s+/g,'_') || 'SBAR';
+                    saveAs(blob, 'SBAR_' + pName + '_' + new Date().toISOString().split('T')[0] + '.docx');
+                    showToast('Word document exported.', 'success');
+                });
+            } catch(e) { showToast('Export failed: ' + e.message, 'error'); }
+        }
+
+        function saveSbarToFirebase() {
+            if (!currentUid) { showToast('Sign in to save reports.', 'warning'); return; }
+            const text = document.getElementById('sbarOutputText').textContent;
+            if (!text || text.includes('Click "Generate Report"')) {
+                showToast('Generate a report first.', 'warning'); return;
+            }
+            const pName = document.getElementById('sPatientName').value.trim() || 'Unknown';
+            const key = Date.now();
+            const ref = database.ref('sbarReports/' + currentUid + '/' + key);
+            ref.set({
+                patientName: pName,
+                reportText: text,
+                createdAt: key,
+                createdBy: displayName
+            }).then(() => {
+                showToast('Report saved to account.', 'success');
+            }).catch(e => showToast('Save failed: ' + e.message, 'error'));
+        }
+
+        function loadSbarHistory() {
+            if (!currentUid) {
+                document.getElementById('sbarHistoryList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Sign in to view saved reports.</div>';
+                return;
+            }
+            const listEl = document.getElementById('sbarHistoryList');
+            listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Loading…</div>';
+            database.ref('sbarReports/' + currentUid).orderByKey().limitToLast(50).once('value').then(snap => {
+                const val = snap.val();
+                if (!val) { listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">No saved reports yet.</div>'; return; }
+                const items = Object.entries(val).reverse();
+                listEl.innerHTML = items.map(([key, data]) => {
+                    const date = new Date(parseInt(key)).toLocaleDateString();
+                    const time = new Date(parseInt(key)).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                    return '<div class="report-item" onclick="loadSbarReport(\'' + key + '\')">' +
+                        '<div class="report-item-title">' + escapeHtml(data.patientName) + ' — SBAR</div>' +
+                        '<div class="report-item-date">' + date + ' ' + time + '</div>' +
+                        '<button class="report-item-del" onclick="event.stopPropagation();deleteSbarReport(\'' + key + '\')" title="Delete" aria-label="Delete report">&#128465;</button>' +
+                    '</div>';
+                }).join('');
+            }).catch(e => {
+                listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Error loading reports.</div>';
+            });
+        }
+
+        function loadSbarReport(key) {
+            database.ref('sbarReports/' + currentUid + '/' + key).once('value').then(snap => {
+                const data = snap.val();
+                if (!data) return;
+                document.getElementById('sbarOutputText').textContent = data.reportText || '';
+                showSbarTab('output');
+                showToast('Report loaded.', 'success');
+            });
+        }
+
+        function deleteSbarReport(key) {
+            showConfirmModal('Delete Report', 'Delete this saved SBAR report?', function() {
+                database.ref('sbarReports/' + currentUid + '/' + key).remove().then(() => {
+                    showToast('Report deleted.', 'success');
+                    loadSbarHistory();
+                });
+            }, { confirmText: 'Delete', danger: true });
+        }
+
+        function clearSbarForm() {
+            showConfirmModal('Clear Form', 'Clear all fields and start over?', function() {
+                document.querySelectorAll('.sbar-input, .sbar-select, .sbar-textarea').forEach(el => el.value = '');
+                document.querySelectorAll('.checkbox-chip input').forEach(cb => { cb.checked = false; cb.closest('.checkbox-chip').classList.remove('checked'); });
+                document.getElementById('sbarOutputText').textContent = 'Click "Generate Report" from the Recommendation tab to build your SBAR.';
+                showSbarTab('situation');
+                showToast('Form cleared.', 'success');
+            }, { confirmText: 'Clear', danger: true });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
+    <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0d1f2d">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
+    <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
+    <title>BendBSN — Care Plan Builder</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            background: var(--clx-bg-canvas);
+            color: var(--clx-text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 60px;
+        }
+
+        .cp-page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px;
+            flex: 1;
+        }
+        .cp-page-title { font-size: 20px; font-weight: 700; color: var(--clx-text-primary); }
+        .cp-page-sub { font-size: 13px; color: var(--clx-text-muted); margin-top: 2px; margin-bottom: 14px; }
+
+        .edu-notice {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #92400e;
+            margin-bottom: 14px;
+        }
+        [data-theme="dark"] .edu-notice { background: #1c1a0e; border-color: #78350f; color: #fcd34d; }
+
+        /* Scenario card */
+        .cp-scenario-card {
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .cp-scenario-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--clx-text-muted);
+            margin-bottom: 6px;
+        }
+        .cp-scenario-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+            resize: vertical;
+        }
+        .cp-scenario-input:focus {
+            outline: none;
+            border-color: var(--clx-accent);
+            box-shadow: 0 0 0 3px var(--clx-accent-subtle);
+        }
+
+        /* NANDA Search */
+        .nanda-search-wrap {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .nanda-search {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+        }
+        .nanda-search:focus { outline: none; border-color: var(--clx-accent); }
+        .nanda-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 200;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            display: none;
+        }
+        .nanda-dropdown.open { display: block; }
+        .nanda-option {
+            padding: 9px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--clx-border);
+            font-size: 13px;
+        }
+        .nanda-option:last-child { border-bottom: none; }
+        .nanda-option:hover { background: var(--clx-accent-subtle); color: var(--clx-accent); }
+        .nanda-option-code { font-size: 10px; color: var(--clx-text-muted); margin-bottom: 1px; }
+        .nanda-option-label { font-weight: 600; color: var(--clx-text-primary); }
+        .nanda-option-domain { font-size: 11px; color: var(--clx-text-muted); }
+
+        /* Diagnosis cards */
+        .dx-card {
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: 10px;
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+        .dx-card-header {
+            background: var(--clx-bg-surface-2);
+            border-bottom: 1px solid var(--clx-border);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dx-priority-badge {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--clx-accent);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .dx-title {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--clx-text-primary);
+        }
+        .dx-domain-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--clx-accent-subtle);
+            color: var(--clx-accent);
+            font-weight: 600;
+        }
+        .dx-card-body { padding: 14px; }
+        .dx-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .dx-field { display: flex; flex-direction: column; gap: 4px; }
+        .dx-field.full { grid-column: 1 / -1; }
+        .dx-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--clx-text-muted);
+        }
+        .dx-input, .dx-textarea {
+            padding: 8px 10px;
+            border: 1px solid var(--clx-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+            width: 100%;
+        }
+        .dx-input:focus, .dx-textarea:focus { outline: none; border-color: var(--clx-accent); box-shadow: 0 0 0 2px var(--clx-accent-subtle); }
+        .dx-textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+
+        /* Interventions */
+        .intervention-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: start;
+        }
+        .intervention-row .dx-input, .intervention-row .dx-textarea { margin: 0; }
+        .add-intervention-btn {
+            margin-top: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px dashed var(--clx-border-strong);
+            border-radius: 6px;
+            background: none;
+            color: var(--clx-accent);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .add-intervention-btn:hover { background: var(--clx-accent-subtle); }
+
+        /* Order buttons */
+        .dx-order-btns { display: flex; gap: 4px; }
+        .order-btn {
+            background: none;
+            border: 1px solid var(--clx-border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 3px 7px;
+            color: var(--clx-text-muted);
+            font-family: inherit;
+        }
+        .order-btn:hover { background: var(--clx-bg-surface-2); color: var(--clx-text-primary); }
+        .del-dx-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--clx-text-muted);
+            font-size: 16px;
+            padding: 3px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .del-dx-btn:hover { color: #dc2626; background: #fee2e2; }
+
+        /* Action bar */
+        .cp-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .cp-btn {
+            padding: 9px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--clx-border);
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            cursor: pointer;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s;
+        }
+        .cp-btn:hover { background: var(--clx-bg-surface-2); border-color: var(--clx-border-strong); }
+        .cp-btn.primary { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
+        .cp-btn.primary:hover { background: var(--clx-accent-hover); border-color: var(--clx-accent-hover); }
+
+        /* Saved plans list */
+        .plan-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid var(--clx-border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: var(--clx-bg-surface);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .plan-item:hover { background: var(--clx-accent-subtle); border-color: var(--clx-accent); }
+        .plan-item-title { flex: 1; font-size: 13px; font-weight: 500; }
+        .plan-item-date { font-size: 11px; color: var(--clx-text-muted); white-space: nowrap; }
+        .plan-item-del {
+            background: none; border: none; cursor: pointer;
+            color: var(--clx-text-muted); font-size: 16px; padding: 4px;
+            border-radius: 4px; font-family: inherit;
+        }
+        .plan-item-del:hover { color: #dc2626; background: #fee2e2; }
+
+        /* Tabs */
+        .cp-tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--clx-border); margin-bottom: 16px; }
+        .cp-tab {
+            padding: 9px 16px; font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none; background: none;
+            color: var(--clx-text-muted); border-bottom: 3px solid transparent;
+            margin-bottom: -2px; font-family: inherit; transition: color 0.15s;
+        }
+        .cp-tab:hover { color: var(--clx-text-primary); }
+        .cp-tab.active { color: var(--clx-accent); border-bottom-color: var(--clx-accent); }
+        .cp-panel { display: none; }
+        .cp-panel.active { display: block; }
+
+        @media (max-width: 600px) {
+            .dx-form-grid { grid-template-columns: 1fr; }
+            .intervention-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
+        <div class="header-actions">
+            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
+        </div>
+    </header>
+
+    <div class="clx-shell">
+    <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
+        <div class="clx-sidebar-section">Navigation</div>
+        <a href="/home/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🏠</span><span class="clx-sidebar-label">Home</span></a>
+        <a href="/app/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📝</span><span class="clx-sidebar-label">RN Notes</span></a>
+        <a href="/chat/" class="clx-sidebar-item" target="_blank"><span class="clx-sidebar-icon">💬</span><span class="clx-sidebar-label">Chat</span></a>
+        <a href="/ai/" class="clx-sidebar-item" target="_blank"><span class="clx-sidebar-icon">🩺</span><span class="clx-sidebar-label">AI Assistant</span></a>
+        <a href="/community/" class="clx-sidebar-item"><span class="clx-sidebar-icon">👥</span><span class="clx-sidebar-label">Community</span></a>
+        <a href="/resources/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📚</span><span class="clx-sidebar-label">Resources</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
+        <a href="/sbar/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📋</span><span class="clx-sidebar-label">SBAR Handoff</span></a>
+        <a href="/careplan/" class="clx-sidebar-item active"><span class="clx-sidebar-icon">🗂️</span><span class="clx-sidebar-label">Care Plans</span></a>
+        <a href="/rotationlog/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🕐</span><span class="clx-sidebar-label">Rotation Log</span></a>
+        <a href="/profile/" class="clx-sidebar-item"><span class="clx-sidebar-icon">👤</span><span class="clx-sidebar-label">Profile</span></a>
+        <a href="/apa/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📄</span><span class="clx-sidebar-label">APA Generator</span></a>
+        <a href="/labsched/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🗓️</span><span class="clx-sidebar-label">Lab Sched Generator</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+        <button class="clx-sidebar-item" onclick="toggleDarkMode()"><span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span><span class="clx-sidebar-label">Theme</span></button>
+        <button class="clx-sidebar-item" onclick="lockScreen()"><span class="clx-sidebar-icon">🔒</span><span class="clx-sidebar-label">Lock</span></button>
+        <button class="clx-sidebar-item" onclick="logout()"><span class="clx-sidebar-icon">🚪</span><span class="clx-sidebar-label">Logout</span></button>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><span class="clx-sidebar-icon">&#9658;</span><span class="clx-sidebar-toggle-label">Expand</span></button>
+    </aside>
+    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <main class="clx-main" role="main">
+    <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;"><span id="alertText"></span></div>
+
+    <div class="cp-page">
+        <div class="cp-page-title">Care Plan Builder</div>
+        <div class="cp-page-sub">Build NANDA-I based nursing care plans for clinical education scenarios</div>
+        <div class="edu-notice">EDUCATIONAL USE ONLY — All patients and scenarios are fictional. Not for use in actual clinical settings.</div>
+
+        <div class="cp-tabs" role="tablist">
+            <button class="cp-tab active" onclick="showCpTab('builder')" role="tab">Build Plan</button>
+            <button class="cp-tab" onclick="showCpTab('saved')" role="tab">Saved Plans</button>
+        </div>
+
+        <div class="cp-panel active" id="cp-tab-builder">
+            <!-- Scenario -->
+            <div class="cp-scenario-card">
+                <div class="cp-scenario-label">Patient Scenario</div>
+                <textarea id="cpScenario" class="cp-scenario-input" rows="2" placeholder="Brief scenario: age, diagnosis, chief complaint (e.g., 72 y/o male admitted with acute CHF exacerbation, SOB, +3 pitting edema bilateral LE, weight gain 8 lbs in 3 days)"></textarea>
+            </div>
+
+            <!-- Add Diagnosis -->
+            <div class="cp-scenario-card">
+                <div class="cp-scenario-label">Add NANDA-I Nursing Diagnosis</div>
+                <div class="nanda-search-wrap">
+                    <input type="text" id="nandaSearch" class="nanda-search" placeholder="Search NANDA diagnoses (e.g., pain, fluid, anxiety)…" autocomplete="off" oninput="filterNanda(this.value)" onfocus="filterNanda(this.value)">
+                    <div class="nanda-dropdown" id="nandaDropdown"></div>
+                </div>
+                <div style="font-size:12px;color:var(--clx-text-muted);">Select from the list to add a diagnosis (max 5 per plan)</div>
+            </div>
+
+            <!-- Diagnoses list -->
+            <div id="dxList"></div>
+
+            <!-- Actions -->
+            <div class="cp-actions">
+                <button class="cp-btn primary" onclick="saveCpToFirebase()">Save Care Plan</button>
+                <button class="cp-btn" onclick="exportCpDocx()">Export to Word</button>
+                <button class="cp-btn" onclick="clearCpForm()">Clear Form</button>
+            </div>
+        </div><!-- /builder -->
+
+        <div class="cp-panel" id="cp-tab-saved">
+            <div id="cpSavedList">
+                <div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Loading saved plans…</div>
+            </div>
+        </div>
+    </div><!-- /cp-page -->
+
+    </main>
+    </div><!-- /clx-shell -->
+
+    <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+        <a href="/home/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">🏠</span><span>Home</span></a>
+        <a href="/app/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">📝</span><span>Notes</span></a>
+        <a href="/chat/" class="clx-mobile-nav-item" target="_blank"><span class="clx-mobile-nav-icon">💬</span><span>Chat</span></a>
+        <a href="/ai/" class="clx-mobile-nav-item" target="_blank"><span class="clx-mobile-nav-icon">🤖</span><span>AI</span></a>
+        <a href="/careplan/" class="clx-mobile-nav-item active"><span class="clx-mobile-nav-icon">🗂️</span><span>Plans</span></a>
+    </nav>
+
+    <script src="/shared/header.js"></script>
+    <script src="/shared/toast.js"></script>
+    <script>
+        const currentUser = localStorage.getItem('bendbsn_user') || '';
+        const displayName = localStorage.getItem('bendbsn_displayName') || 'User';
+        const currentUid = localStorage.getItem('bendbsn_uid') || '';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.appspot.com",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function initTheme() {
+            const t = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function toggleDarkMode() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('bsn9b_theme', next);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+        }
+        initTheme();
+
+        let sidebarOpen = false;
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            document.getElementById('appSidebar').classList.toggle('mobile-open', sidebarOpen);
+            document.getElementById('sidebarBackdrop').classList.toggle('visible', sidebarOpen);
+        }
+        function lockScreen() { localStorage.removeItem('bendbsn_auth'); window.location.href = '/'; }
+        function logout() {
+            showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
+                try { firebase.auth().signOut(); } catch(e) {}
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
+                window.location.href = '/';
+            }, { confirmText: 'Logout', danger: true });
+        }
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // NANDA-I diagnoses list
+        const NANDA_LIST = [
+            {code:'00132',label:'Acute Pain',domain:'Comfort'},
+            {code:'00133',label:'Chronic Pain',domain:'Comfort'},
+            {code:'00030',label:'Impaired Gas Exchange',domain:'Activity/Rest'},
+            {code:'00031',label:'Ineffective Airway Clearance',domain:'Safety/Protection'},
+            {code:'00032',label:'Ineffective Breathing Pattern',domain:'Activity/Rest'},
+            {code:'00029',label:'Decreased Cardiac Output',domain:'Activity/Rest'},
+            {code:'00092',label:'Activity Intolerance',domain:'Activity/Rest'},
+            {code:'00085',label:'Impaired Physical Mobility',domain:'Activity/Rest'},
+            {code:'00155',label:'Risk for Falls',domain:'Safety/Protection'},
+            {code:'00004',label:'Risk for Infection',domain:'Safety/Protection'},
+            {code:'00046',label:'Impaired Skin Integrity',domain:'Safety/Protection'},
+            {code:'00047',label:'Risk for Impaired Skin Integrity',domain:'Safety/Protection'},
+            {code:'00002',label:'Imbalanced Nutrition: Less Than Body Requirements',domain:'Nutrition'},
+            {code:'00027',label:'Deficient Fluid Volume',domain:'Nutrition'},
+            {code:'00026',label:'Excess Fluid Volume',domain:'Nutrition'},
+            {code:'00016',label:'Impaired Urinary Elimination',domain:'Elimination'},
+            {code:'00011',label:'Constipation',domain:'Elimination'},
+            {code:'00013',label:'Diarrhea',domain:'Elimination'},
+            {code:'00146',label:'Anxiety',domain:'Coping/Stress Tolerance'},
+            {code:'00148',label:'Fear',domain:'Coping/Stress Tolerance'},
+            {code:'00069',label:'Ineffective Coping',domain:'Coping/Stress Tolerance'},
+            {code:'00124',label:'Hopelessness',domain:'Self-Perception'},
+            {code:'00095',label:'Disturbed Sleep Pattern',domain:'Activity/Rest'},
+            {code:'00093',label:'Fatigue',domain:'Activity/Rest'},
+            {code:'00128',label:'Acute Confusion',domain:'Perception/Cognition'},
+            {code:'00129',label:'Chronic Confusion',domain:'Perception/Cognition'},
+            {code:'00131',label:'Impaired Memory',domain:'Perception/Cognition'},
+            {code:'00126',label:'Deficient Knowledge',domain:'Perception/Cognition'},
+            {code:'00079',label:'Noncompliance',domain:'Health Promotion'},
+            {code:'00051',label:'Impaired Verbal Communication',domain:'Perception/Cognition'},
+            {code:'00053',label:'Social Isolation',domain:'Role Relationships'},
+            {code:'00061',label:'Caregiver Role Strain',domain:'Role Relationships'},
+            {code:'00206',label:'Risk for Bleeding',domain:'Safety/Protection'},
+            {code:'00039',label:'Risk for Aspiration',domain:'Safety/Protection'},
+            {code:'00179',label:'Risk for Unstable Blood Glucose',domain:'Nutrition'},
+            {code:'00005',label:'Ineffective Thermoregulation',domain:'Safety/Protection'},
+            {code:'00007',label:'Hyperthermia',domain:'Safety/Protection'},
+            {code:'00006',label:'Hypothermia',domain:'Safety/Protection'},
+            {code:'00204',label:'Impaired Tissue Perfusion',domain:'Activity/Rest'},
+            {code:'00268',label:'Risk for DVT',domain:'Safety/Protection'},
+            {code:'00108',label:'Self-Care Deficit: Bathing',domain:'Activity/Rest'},
+            {code:'00109',label:'Self-Care Deficit: Dressing',domain:'Activity/Rest'},
+            {code:'00102',label:'Self-Care Deficit: Feeding',domain:'Activity/Rest'},
+            {code:'00110',label:'Self-Care Deficit: Toileting',domain:'Activity/Rest'},
+            {code:'00136',label:'Grieving',domain:'Coping/Stress Tolerance'},
+            {code:'00141',label:'Post-Trauma Syndrome',domain:'Coping/Stress Tolerance'},
+            {code:'00099',label:'Ineffective Health Maintenance',domain:'Health Promotion'},
+            {code:'00150',label:'Risk for Suicide',domain:'Safety/Protection'},
+            {code:'00140',label:'Risk for Self-Directed Violence',domain:'Safety/Protection'},
+            {code:'00118',label:'Disturbed Body Image',domain:'Self-Perception'},
+            {code:'00120',label:'Chronic Low Self-Esteem',domain:'Self-Perception'},
+            {code:'00125',label:'Powerlessness',domain:'Self-Perception'},
+            {code:'00066',label:'Spiritual Distress',domain:'Life Principles'}
+        ];
+
+        let dxCards = []; // [{nanda, rt, aeb, stGoal, ltGoal, interventions:[{text,rationale}], evaluation}]
+        let nandaSearchTimeout = null;
+
+        function filterNanda(query) {
+            const dropdown = document.getElementById('nandaDropdown');
+            clearTimeout(nandaSearchTimeout);
+            nandaSearchTimeout = setTimeout(() => {
+                const q = query.toLowerCase().trim();
+                const filtered = q ? NANDA_LIST.filter(n => n.label.toLowerCase().includes(q) || n.code.includes(q) || n.domain.toLowerCase().includes(q)) : NANDA_LIST;
+                if (!filtered.length) {
+                    dropdown.innerHTML = '<div class="nanda-option" style="color:var(--clx-text-muted);">No matches found</div>';
+                } else {
+                    dropdown.innerHTML = filtered.slice(0,20).map(n =>
+                        '<div class="nanda-option" onclick="selectNanda(' + JSON.stringify(JSON.stringify(n)) + ')">' +
+                        '<div class="nanda-option-code">' + escapeHtml(n.code) + ' — ' + escapeHtml(n.domain) + '</div>' +
+                        '<div class="nanda-option-label">' + escapeHtml(n.label) + '</div>' +
+                        '</div>'
+                    ).join('');
+                }
+                dropdown.classList.add('open');
+            }, 120);
+        }
+
+        function selectNanda(jsonStr) {
+            const n = JSON.parse(jsonStr);
+            document.getElementById('nandaDropdown').classList.remove('open');
+            document.getElementById('nandaSearch').value = '';
+            if (dxCards.length >= 5) { showToast('Maximum 5 diagnoses per plan.', 'warning'); return; }
+            if (dxCards.find(d => d.nanda.code === n.code)) { showToast('This diagnosis is already in the plan.', 'warning'); return; }
+            dxCards.push({ nanda: n, rt: '', aeb: '', stGoal: '', ltGoal: '', interventions: [{text:'',rationale:''}], evaluation: '' });
+            renderDxCards();
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.nanda-search-wrap')) {
+                document.getElementById('nandaDropdown').classList.remove('open');
+            }
+        });
+
+        function renderDxCards() {
+            const listEl = document.getElementById('dxList');
+            if (!dxCards.length) { listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);font-size:13px;border:1px dashed var(--clx-border);border-radius:8px;margin-bottom:12px;">No diagnoses added yet. Search for a NANDA-I diagnosis above.</div>'; return; }
+            listEl.innerHTML = dxCards.map((dx, i) => buildDxCardHtml(dx, i)).join('');
+        }
+
+        function buildDxCardHtml(dx, i) {
+            const interventionsHtml = dx.interventions.map((iv, j) =>
+                '<div class="intervention-row" id="iv-row-' + i + '-' + j + '">' +
+                '<div><div class="dx-label">Intervention ' + (j+1) + '</div><textarea class="dx-textarea" rows="2" placeholder="Nursing intervention…" onchange="updateInterventionText(' + i + ',' + j + ',this.value)">' + escapeHtml(iv.text) + '</textarea></div>' +
+                '<div><div class="dx-label">Rationale</div><textarea class="dx-textarea" rows="2" placeholder="Scientific rationale…" onchange="updateInterventionRationale(' + i + ',' + j + ',this.value)">' + escapeHtml(iv.rationale) + '</textarea></div>' +
+                '</div>'
+            ).join('');
+
+            return '<div class="dx-card" id="dx-card-' + i + '">' +
+                '<div class="dx-card-header">' +
+                    '<div class="dx-priority-badge">' + (i+1) + '</div>' +
+                    '<div class="dx-title">' + escapeHtml(dx.nanda.label) + '</div>' +
+                    '<span class="dx-domain-badge">' + escapeHtml(dx.nanda.domain) + '</span>' +
+                    '<div class="dx-order-btns">' +
+                        (i > 0 ? '<button class="order-btn" onclick="moveDx(' + i + ',-1)" title="Move up" aria-label="Move up">&#8593;</button>' : '') +
+                        (i < dxCards.length-1 ? '<button class="order-btn" onclick="moveDx(' + i + ',1)" title="Move down" aria-label="Move down">&#8595;</button>' : '') +
+                    '</div>' +
+                    '<button class="del-dx-btn" onclick="removeDx(' + i + ')" title="Remove diagnosis" aria-label="Remove diagnosis">&#128465;</button>' +
+                '</div>' +
+                '<div class="dx-card-body">' +
+                    '<div style="font-size:11px;color:var(--clx-text-muted);margin-bottom:8px;">Code: ' + escapeHtml(dx.nanda.code) + '</div>' +
+                    '<div class="dx-form-grid">' +
+                        '<div class="dx-field"><label class="dx-label">Related To (RT)</label><input type="text" class="dx-input" placeholder="e.g., decreased lung compliance, fluid overload" value="' + escapeHtml(dx.rt) + '" onchange="updateDxField(' + i + ',\'rt\',this.value)"></div>' +
+                        '<div class="dx-field"><label class="dx-label">As Evidenced By (AEB)</label><input type="text" class="dx-input" placeholder="e.g., crackles bilateral bases, SpO2 88%" value="' + escapeHtml(dx.aeb) + '" onchange="updateDxField(' + i + ',\'aeb\',this.value)"></div>' +
+                        '<div class="dx-field"><label class="dx-label">Short-Term Goal (measurable, time-bound)</label><input type="text" class="dx-input" placeholder="e.g., Patient will maintain SpO2 ≥92% within 4 hours" value="' + escapeHtml(dx.stGoal) + '" onchange="updateDxField(' + i + ',\'stGoal\',this.value)"></div>' +
+                        '<div class="dx-field"><label class="dx-label">Long-Term Goal</label><input type="text" class="dx-input" placeholder="e.g., Patient will demonstrate effective breathing technique by discharge" value="' + escapeHtml(dx.ltGoal) + '" onchange="updateDxField(' + i + ',\'ltGoal\',this.value)"></div>' +
+                    '</div>' +
+                    '<div style="margin-top:12px;">' +
+                        '<div class="dx-label" style="margin-bottom:8px;">Nursing Interventions & Rationale</div>' +
+                        '<div id="iv-list-' + i + '">' + interventionsHtml + '</div>' +
+                        '<button class="add-intervention-btn" onclick="addIntervention(' + i + ')">+ Add Intervention</button>' +
+                    '</div>' +
+                    '<div class="dx-field full" style="margin-top:12px;"><label class="dx-label">Evaluation</label><textarea class="dx-textarea" rows="2" placeholder="Outcome evaluation: Was the goal met? Partially met? Not met? Evidence?" onchange="updateDxField(' + i + ',\'evaluation\',this.value)">' + escapeHtml(dx.evaluation) + '</textarea></div>' +
+                '</div>' +
+            '</div>';
+        }
+
+        function updateDxField(i, field, val) { if (dxCards[i]) dxCards[i][field] = val; }
+        function updateInterventionText(i, j, val) { if (dxCards[i] && dxCards[i].interventions[j]) dxCards[i].interventions[j].text = val; }
+        function updateInterventionRationale(i, j, val) { if (dxCards[i] && dxCards[i].interventions[j]) dxCards[i].interventions[j].rationale = val; }
+
+        function addIntervention(i) {
+            if (!dxCards[i]) return;
+            if (dxCards[i].interventions.length >= 5) { showToast('Maximum 5 interventions per diagnosis.', 'warning'); return; }
+            dxCards[i].interventions.push({text:'',rationale:''});
+            renderDxCards();
+        }
+
+        function moveDx(i, dir) {
+            const j = i + dir;
+            if (j < 0 || j >= dxCards.length) return;
+            [dxCards[i], dxCards[j]] = [dxCards[j], dxCards[i]];
+            renderDxCards();
+        }
+
+        function removeDx(i) {
+            showConfirmModal('Remove Diagnosis', 'Remove this diagnosis from the plan?', function() {
+                dxCards.splice(i, 1);
+                renderDxCards();
+            }, { confirmText: 'Remove', danger: true });
+        }
+
+        function clearCpForm() {
+            showConfirmModal('Clear Form', 'Clear the entire care plan?', function() {
+                document.getElementById('cpScenario').value = '';
+                dxCards = [];
+                renderDxCards();
+                showToast('Care plan cleared.', 'success');
+            }, { confirmText: 'Clear', danger: true });
+        }
+
+        function getCpData() {
+            return {
+                scenario: document.getElementById('cpScenario').value.trim(),
+                diagnoses: dxCards.map(d => ({
+                    code: d.nanda.code, label: d.nanda.label, domain: d.nanda.domain,
+                    rt: d.rt, aeb: d.aeb, stGoal: d.stGoal, ltGoal: d.ltGoal,
+                    interventions: d.interventions, evaluation: d.evaluation
+                }))
+            };
+        }
+
+        function saveCpToFirebase() {
+            if (!currentUid) { showToast('Sign in to save care plans.', 'warning'); return; }
+            if (!dxCards.length) { showToast('Add at least one diagnosis before saving.', 'warning'); return; }
+            const data = getCpData();
+            const key = Date.now();
+            database.ref('carePlans/' + currentUid + '/' + key).set({
+                ...data,
+                createdAt: key,
+                createdBy: displayName
+            }).then(() => showToast('Care plan saved.', 'success'))
+              .catch(e => showToast('Save failed: ' + e.message, 'error'));
+        }
+
+        function showCpTab(tab) {
+            document.querySelectorAll('.cp-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.cp-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('cp-tab-' + tab).classList.add('active');
+            const tabs = document.querySelectorAll('.cp-tab');
+            const order = ['builder','saved'];
+            const idx = order.indexOf(tab);
+            if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+            if (tab === 'saved') loadSavedCps();
+        }
+
+        function loadSavedCps() {
+            if (!currentUid) { document.getElementById('cpSavedList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Sign in to view saved plans.</div>'; return; }
+            const el = document.getElementById('cpSavedList');
+            el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Loading…</div>';
+            database.ref('carePlans/' + currentUid).orderByKey().limitToLast(50).once('value').then(snap => {
+                const val = snap.val();
+                if (!val) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">No saved plans yet.</div>'; return; }
+                const items = Object.entries(val).reverse();
+                el.innerHTML = items.map(([key, data]) => {
+                    const date = new Date(parseInt(key)).toLocaleDateString();
+                    const dxCount = (data.diagnoses || []).length;
+                    const scenario = (data.scenario || '').substring(0, 80) + (data.scenario && data.scenario.length > 80 ? '…' : '');
+                    return '<div class="plan-item" onclick="loadCp(\'' + key + '\')">' +
+                        '<div class="plan-item-title">' + (scenario ? escapeHtml(scenario) : '(no scenario)') + ' <span style="color:var(--clx-text-muted);font-size:11px;">[' + dxCount + ' dx]</span></div>' +
+                        '<div class="plan-item-date">' + date + '</div>' +
+                        '<button class="plan-item-del" onclick="event.stopPropagation();deleteCp(\'' + key + '\')" title="Delete" aria-label="Delete plan">&#128465;</button>' +
+                    '</div>';
+                }).join('');
+            }).catch(() => { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Error loading plans.</div>'; });
+        }
+
+        function loadCp(key) {
+            database.ref('carePlans/' + currentUid + '/' + key).once('value').then(snap => {
+                const data = snap.val();
+                if (!data) return;
+                document.getElementById('cpScenario').value = data.scenario || '';
+                dxCards = (data.diagnoses || []).map(d => ({
+                    nanda: {code: d.code, label: d.label, domain: d.domain},
+                    rt: d.rt || '', aeb: d.aeb || '',
+                    stGoal: d.stGoal || '', ltGoal: d.ltGoal || '',
+                    interventions: d.interventions && d.interventions.length ? d.interventions : [{text:'',rationale:''}],
+                    evaluation: d.evaluation || ''
+                }));
+                renderDxCards();
+                showCpTab('builder');
+                showToast('Care plan loaded.', 'success');
+            });
+        }
+
+        function deleteCp(key) {
+            showConfirmModal('Delete Plan', 'Delete this care plan?', function() {
+                database.ref('carePlans/' + currentUid + '/' + key).remove().then(() => {
+                    showToast('Plan deleted.', 'success'); loadSavedCps();
+                });
+            }, { confirmText: 'Delete', danger: true });
+        }
+
+        function exportCpDocx() {
+            const data = getCpData();
+            if (!data.diagnoses.length) { showToast('Add at least one diagnosis before exporting.', 'warning'); return; }
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/docx@8.2.2/build/index.umd.js';
+            script.onload = function() {
+                const fsSrc = document.createElement('script');
+                fsSrc.src = 'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
+                fsSrc.onload = function() { doExportCpDocx(data); };
+                document.head.appendChild(fsSrc);
+            };
+            document.head.appendChild(script);
+        }
+
+        function doExportCpDocx(data) {
+            try {
+                const children = [];
+                children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'NURSING CARE PLAN',bold:true,size:32})], spacing:{after:200} }));
+                children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'EDUCATIONAL USE ONLY — NOT FOR ACTUAL CLINICAL USE',bold:true,size:18,color:'C62828'})], spacing:{after:100} }));
+                children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Generated: ' + new Date().toLocaleString(),size:18})], spacing:{after:100} }));
+                if (data.scenario) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Scenario: ' + data.scenario,size:20,italics:true})], spacing:{after:300} }));
+
+                data.diagnoses.forEach((dx, i) => {
+                    children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Priority ' + (i+1) + ': ' + dx.label,bold:true,size:24})], spacing:{after:120}, border:{bottom:{color:'0f7490',size:8,style:'single'}} }));
+                    children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'NANDA Code: ' + dx.code + ' | Domain: ' + dx.domain,size:18,color:'6b7280'})], spacing:{after:80} }));
+                    children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Nursing Diagnosis: ',bold:true,size:20}),new docx.TextRun({text:dx.label + (dx.rt?' related to '+dx.rt:'') + (dx.aeb?' as evidenced by '+dx.aeb:''),size:20})], spacing:{after:80} }));
+                    if (dx.stGoal) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Short-Term Goal: ',bold:true,size:20}),new docx.TextRun({text:dx.stGoal,size:20})], spacing:{after:60} }));
+                    if (dx.ltGoal) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Long-Term Goal: ',bold:true,size:20}),new docx.TextRun({text:dx.ltGoal,size:20})], spacing:{after:80} }));
+                    if (dx.interventions && dx.interventions.length) {
+                        children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Nursing Interventions & Rationale:',bold:true,size:20})], spacing:{before:80,after:60} }));
+                        dx.interventions.forEach((iv, j) => {
+                            if (iv.text) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:(j+1)+'. '+iv.text+(iv.rationale?' — Rationale: '+iv.rationale:''),size:19})], indent:{left:360}, spacing:{after:60} }));
+                        });
+                    }
+                    if (dx.evaluation) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Evaluation: ',bold:true,size:20}),new docx.TextRun({text:dx.evaluation,size:20})], spacing:{after:200} }));
+                });
+
+                const doc = new docx.Document({ sections:[{properties:{},children}] });
+                docx.Packer.toBlob(doc).then(blob => {
+                    saveAs(blob, 'CarePlan_' + new Date().toISOString().split('T')[0] + '.docx');
+                    showToast('Word document exported.', 'success');
+                });
+            } catch(e) { showToast('Export failed: ' + e.message, 'error'); }
+        }
+
+        // Init
+        renderDxCards();
+    </script>
+</body>
+</html>
