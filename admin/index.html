@@ -3396,17 +3396,21 @@
                     </thead>
                     <tbody id="pendingEmailsBody">`;
 
-                pending.forEach((p) => {
+                pending.forEach((p, i) => {
                     const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—';
-                    html += `<tr style="border-bottom:1px solid #f0f0f0;">
+                    html += `<tr id="pending-row-${i}" style="border-bottom:1px solid #f0f0f0;">
                         <td style="padding:10px 12px;">${escapeHtml(p.displayName || '—')}</td>
                         <td style="padding:10px 12px;">${escapeHtml(p.email)}</td>
                         <td style="padding:10px 12px;">${escapeHtml(p.role || '—')}</td>
                         <td style="padding:10px 12px;">${date}</td>
-                        <td style="padding:10px 12px;">
-                            <button onclick="sendSingleWelcomeEmail('${p.uid}','${escapeHtml(p.displayName || '')}','${escapeHtml(p.email)}',this)"
+                        <td style="padding:10px 12px; white-space:nowrap; display:flex; gap:6px;">
+                            <button onclick="sendSingleWelcomeEmail('${p.uid}','${escapeHtml(p.displayName || '')}','${escapeHtml(p.email)}',this,'pending-row-${i}')"
                                 style="background:#1f4e79; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">
                                 📤 Send
+                            </button>
+                            <button onclick="dismissPendingEmail('${p.uid}','pending-row-${i}')"
+                                style="background:#6c757d; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px;" title="Remove from pending list without sending">
+                                ✕
                             </button>
                         </td>
                     </tr>`;
@@ -3420,7 +3424,7 @@
             });
         }
 
-        async function sendSingleWelcomeEmail(uid, name, email, btn) {
+        async function sendSingleWelcomeEmail(uid, name, email, btn, rowId) {
             btn.disabled = true;
             btn.textContent = 'Sending...';
 
@@ -3430,19 +3434,35 @@
                     to_email: email,
                     reply_to: email,
                     login_link: 'https://bendbsn.com',
-                    message: `Your BendBSN account has been successfully created!\n\nPlease use your email address (${email}) and the password you created to log in.\n\nClick the link below to access your account.`
+                    message: `Hi ${name || email.split('@')[0]},\n\nYour BendBSN account is ready.\n\nTo get started:\n1. Go to https://bendbsn.com\n2. Click "Register" and sign up using this email address (${email})\n3. Create your password to activate your account\n\nOnce registered, you can log in anytime at https://bendbsn.com.`
                 };
                 await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
                 await userProfilesRef.child(uid).update({ welcomeEmailSent: true });
-                btn.textContent = '✅ Sent';
-                btn.style.background = '#28a745';
                 showToast('Welcome email sent to ' + email, 'success');
-                setTimeout(() => loadPendingWelcomeEmails(), 1500);
+                if (rowId) {
+                    const row = document.getElementById(rowId);
+                    if (row) row.remove();
+                }
+                updatePendingEmailsBadge();
             } catch (e) {
                 console.error('Send failed:', e);
                 btn.disabled = false;
                 btn.textContent = '📤 Send';
                 showToast('Failed to send to ' + email + ': ' + e.message, 'error');
+            }
+        }
+
+        async function dismissPendingEmail(uid, rowId) {
+            try {
+                await userProfilesRef.child(uid).update({ welcomeEmailSent: true });
+                if (rowId) {
+                    const row = document.getElementById(rowId);
+                    if (row) row.remove();
+                }
+                updatePendingEmailsBadge();
+                showToast('Removed from pending list', 'success');
+            } catch (e) {
+                showToast('Error dismissing: ' + e.message, 'error');
             }
         }
 
