@@ -666,6 +666,10 @@
             .nanda-list {
                 max-height: 180px !important;
             }
+            /* App-like flush layout */
+            .container { padding: 0 !important; max-width: 100% !important; }
+            .content { border-radius: 0 !important; padding: 12px !important; }
+            .resource-card { border-radius: 0 !important; }
         }
 
         /* Mobile responsive padding */
@@ -2163,6 +2167,175 @@
                         <strong>Remember:</strong> Always correlate EKG findings with patient assessment. "Treat the patient, not the monitor."
                     </p>
                     </div><!-- end card-content -->
+                </div>
+
+                <!-- ======================================================
+                     PHARMACOLOGY QUICK CARDS
+                ====================================================== -->
+                <div id="section-pharm-cards" class="card resource-card collapsible collapsed" data-tags="pharmacology drugs medication nursing considerations side effects">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>💊 Pharmacology Quick Cards</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content" style="max-height:none !important;">
+                        <p style="font-size:12px;color:#c62828;background:#ffebee;padding:8px;border-radius:6px;margin-bottom:12px;"><strong>Educational reference only.</strong> Verify all drug information with current clinical pharmacology resources before application.</p>
+                        <input type="text" id="pharmSearch" placeholder="Search by drug class or drug name…" oninput="filterPharmCards(this.value)"
+                            style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
+                        <div id="pharmGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+                    </div>
+                </div>
+
+                <!-- ======================================================
+                     DISEASE / CONDITION FAST CARDS
+                ====================================================== -->
+                <div id="section-disease-cards" class="card resource-card collapsible collapsed" data-tags="disease condition pathophysiology assessment nursing priority CHF MI stroke sepsis">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🏥 Disease / Condition Fast Cards</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content" style="max-height:none !important;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                            <input type="text" id="diseaseSearch" placeholder="Search conditions…" oninput="filterDiseaseCards()"
+                                style="flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                            <select id="diseaseSystemFilter" onchange="filterDiseaseCards()"
+                                style="padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                                <option value="">All Systems</option>
+                                <option>Cardiovascular</option>
+                                <option>Respiratory</option>
+                                <option>Endocrine</option>
+                                <option>Neurological</option>
+                                <option>Renal/GU</option>
+                                <option>GI/Hepatic</option>
+                                <option>Hematologic</option>
+                                <option>Infectious/Immune</option>
+                                <option>Electrolytes</option>
+                                <option>OB/Gyn</option>
+                            </select>
+                        </div>
+                        <div id="diseaseGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;"></div>
+                    </div>
+                </div>
+
+                <!-- ======================================================
+                     MNEMONICS & FRAMEWORKS
+                ====================================================== -->
+                <div id="section-mnemonics" class="card resource-card collapsible collapsed" data-tags="mnemonics frameworks SBAR OLDCARTS SOAP PIE assessment priority">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🧠 Mnemonics &amp; Frameworks</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content" style="max-height:none !important;">
+                        <input type="text" id="mnemonicSearch" placeholder="Search mnemonics…" oninput="filterMnemonics(this.value)"
+                            style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
+                        <div id="mnemonicGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+                    </div>
+                </div>
+
+                <!-- ======================================================
+                     PRE / PERI / POST PROCEDURE GUIDE
+                ====================================================== -->
+                <div id="section-procedure-guide" class="card resource-card collapsible collapsed" data-tags="procedure nursing care before during after foley IV catheter dressing">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>🔬 Pre/Peri/Post Procedure Guide</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content" style="max-height:none !important;">
+                        <input type="text" id="procedureSearch" placeholder="Search procedures…" oninput="filterProcedures(this.value)"
+                            style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
+                        <div id="procedureGrid" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
+                    </div>
+                </div>
+
+                <!-- ======================================================
+                     ECG / RHYTHM QUICK REFERENCE
+                ====================================================== -->
+                <div id="section-ecg-rhythms" class="card resource-card collapsible collapsed" data-tags="ECG EKG rhythm cardiac telemetry afib vtach vfib heart block">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>❤️ ECG / Rhythm Quick Reference</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content" style="max-height:none !important;">
+                        <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Stylized waveform representations for pattern recognition. Always correlate with clinical assessment.</p>
+                        <input type="text" id="ecgSearch" placeholder="Search rhythms…" oninput="filterEcgCards(this.value)"
+                            style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
+                        <div id="ecgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;"></div>
+                    </div>
+                </div>
+
+                <!-- ======================================================
+                     LAB VALUE TREND TRACKER
+                ====================================================== -->
+                <div id="section-lab-trend" class="card resource-card collapsible collapsed" data-tags="labs laboratory trend tracker values electrolytes CBC BMP">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <h2>📈 Lab Value Trend Tracker</h2>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content" style="max-height:none !important;">
+                        <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Session-based tracker (not saved to account). Add lab values across time points to spot trends. Export to CSV when done.</p>
+                        <!-- Add entry row -->
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 120px 1fr auto;gap:8px;align-items:end;margin-bottom:10px;flex-wrap:wrap;" id="labTrendAddRow">
+                            <div>
+                                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">Lab Name</div>
+                                <select id="ltLabName" style="width:100%;padding:7px 8px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                                    <option value="">Select…</option>
+                                    <optgroup label="CBC"><option>WBC</option><option>RBC</option><option>Hemoglobin</option><option>Hematocrit</option><option>Platelets</option></optgroup>
+                                    <optgroup label="BMP/CMP"><option>Sodium (Na)</option><option>Potassium (K)</option><option>Chloride (Cl)</option><option>CO2/Bicarb</option><option>BUN</option><option>Creatinine</option><option>Glucose</option><option>Calcium (Ca)</option><option>Magnesium (Mg)</option><option>Phosphorus</option></optgroup>
+                                    <optgroup label="LFTs"><option>ALT</option><option>AST</option><option>Alkaline Phosphatase</option><option>Total Bilirubin</option><option>Albumin</option></optgroup>
+                                    <optgroup label="Cardiac"><option>Troponin I</option><option>Troponin T</option><option>BNP</option><option>CK-MB</option></optgroup>
+                                    <optgroup label="Coagulation"><option>PT/INR</option><option>aPTT</option></optgroup>
+                                    <optgroup label="Other"><option>Lactate</option><option>Procalcitonin</option><option>HbA1c</option><option>TSH</option><option>Free T4</option><option>pH (ABG)</option><option>PaCO2</option><option>PaO2</option><option>HCO3</option></optgroup>
+                                </select>
+                            </div>
+                            <div>
+                                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">Value</div>
+                                <input type="number" id="ltValue" placeholder="e.g. 4.2" step="any" style="width:100%;padding:7px 8px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                            </div>
+                            <div>
+                                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">Date/Time</div>
+                                <input type="datetime-local" id="ltDateTime" style="width:100%;padding:7px 8px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                            </div>
+                            <div>
+                                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">Status</div>
+                                <select id="ltStatus" style="width:100%;padding:7px 8px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                                    <option value="normal">Normal</option>
+                                    <option value="low">Low</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">Note</div>
+                                <input type="text" id="ltNote" placeholder="Optional note…" style="width:100%;padding:7px 8px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                            </div>
+                            <div>
+                                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">&nbsp;</div>
+                                <button onclick="addLabTrendEntry()" style="padding:7px 14px;background:var(--clx-accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">+ Add</button>
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <input type="text" id="ltFilter" placeholder="Filter by lab name…" oninput="renderLabTrendTable()" style="padding:6px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;width:200px;">
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="exportLabTrendCsv()" style="padding:6px 12px;font-size:12px;font-weight:600;border:1px solid var(--clx-border);background:var(--clx-bg-surface);color:var(--clx-text-primary);border-radius:6px;cursor:pointer;font-family:inherit;">Export CSV</button>
+                                <button onclick="clearLabTrend()" style="padding:6px 12px;font-size:12px;font-weight:600;border:1px solid #fca5a5;background:var(--clx-bg-surface);color:#dc2626;border-radius:6px;cursor:pointer;font-family:inherit;">Clear All</button>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:12px;" id="labTrendTable">
+                                <thead><tr>
+                                    <th style="background:var(--clx-bg-surface-2);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);border-bottom:2px solid var(--clx-border);">Lab</th>
+                                    <th style="background:var(--clx-bg-surface-2);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);border-bottom:2px solid var(--clx-border);">Value</th>
+                                    <th style="background:var(--clx-bg-surface-2);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);border-bottom:2px solid var(--clx-border);">Trend</th>
+                                    <th style="background:var(--clx-bg-surface-2);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);border-bottom:2px solid var(--clx-border);">Status</th>
+                                    <th style="background:var(--clx-bg-surface-2);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);border-bottom:2px solid var(--clx-border);">Date/Time</th>
+                                    <th style="background:var(--clx-bg-surface-2);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clx-text-muted);border-bottom:2px solid var(--clx-border);">Note</th>
+                                    <th style="background:var(--clx-bg-surface-2);padding:7px 10px;border-bottom:2px solid var(--clx-border);"></th>
+                                </tr></thead>
+                                <tbody id="labTrendBody">
+                                    <tr><td colspan="7" style="padding:16px;text-align:center;color:var(--clx-text-muted);">No entries yet. Add lab values above.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Additional Resources -->
@@ -3997,6 +4170,421 @@ Generated: ${new Date().toLocaleString()}`;
             const label = document.querySelector('.clx-sidebar-toggle-label');
             if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
+    </script>
+
+    <script src="/shared/toast.js"></script>
+    <script src="/shared/header.js"></script>
+
+    <!-- ================================================================
+         NEW RESOURCE CARDS — Pharm, Disease, Mnemonics, Procedure, ECG, Lab Trend
+    ================================================================ -->
+    <script>
+    // ---- PHARMACOLOGY QUICK CARDS ----
+    const PHARM_DATA = [
+        {cls:'ACE Inhibitors',proto:'lisinopril',examples:'lisinopril, enalapril, ramipril, captopril',moa:'Block ACE, preventing conversion of angiotensin I to II → vasodilation, reduced aldosterone.',se:'Dry cough, hyperkalemia, hypotension (1st dose), angioedema (rare but serious), renal impairment.',nc:'Monitor BP, K+, SCr. Hold if K+ >5.5 or SCr rises >30%. Avoid in pregnancy (teratogen).',teach:'Take at same time daily. Rise slowly. Report swelling of lips/throat (angioedema). Avoid K+ supplements unless directed.',contra:'Pregnancy, bilateral renal artery stenosis, prior angioedema with ACE-I, concurrent neprilysin inhibitors.'},
+        {cls:'ARBs (Angiotensin Receptor Blockers)',proto:'losartan',examples:'losartan, valsartan, irbesartan, candesartan',moa:'Block AT1 angiotensin II receptors directly → vasodilation, similar to ACE-I without bradykinin accumulation.',se:'Hyperkalemia, hypotension, renal impairment. Rarely causes cough (vs. ACE-I).',nc:'Monitor BP, K+, SCr. Use as ACE-I alternative when cough is problematic.',teach:'Same precautions as ACE-I. Avoid in pregnancy.',contra:'Pregnancy, bilateral renal artery stenosis, concurrent ACE-I (not combination therapy).'},
+        {cls:'Beta Blockers',proto:'metoprolol',examples:'metoprolol, carvedilol, atenolol, propranolol, labetalol',moa:'Block beta-adrenergic receptors → decreased HR, contractility, BP, and renin release.',se:'Bradycardia, hypotension, fatigue, bronchospasm (non-selective), masking hypoglycemia symptoms.',nc:'Monitor HR/BP before administration. Hold if HR <60 or SBP <90. Never abruptly discontinue (rebound tachycardia).',teach:'Take as prescribed. Do not stop suddenly. Report HR <50 or new SOB.',contra:'Severe bradycardia, 2nd/3rd degree AV block, decompensated HF, reactive airway disease (non-selective types).'},
+        {cls:'Calcium Channel Blockers',proto:'amlodipine / diltiazem',examples:'amlodipine, nifedipine (dihydropyridines); diltiazem, verapamil (non-DHP)',moa:'Block L-type Ca2+ channels → vasodilation (DHPs) or reduced cardiac conduction and contractility (non-DHPs).',se:'Peripheral edema, reflex tachycardia (DHPs); bradycardia, constipation (non-DHPs); flushing, headache.',nc:'Monitor HR and BP. Non-DHPs: assess AV conduction. Grapefruit juice raises levels of some CCBs.',teach:'Report ankle swelling. Avoid grapefruit with some agents. Do not crush extended-release tablets.',contra:'Non-DHPs: severe bradycardia, heart block, decompensated HF, WPW.'},
+        {cls:'Diuretics — Loop',proto:'furosemide (Lasix)',examples:'furosemide, bumetanide, torsemide',moa:'Inhibit Na-K-2Cl cotransporter in loop of Henle → profound diuresis.',se:'Hypokalemia, hyponatremia, hypomagnesemia, ototoxicity (high IV doses), dehydration, metabolic alkalosis.',nc:'Monitor K+, Mg, BUN/SCr, weight, I&O. Replace electrolytes as ordered. IV push: ≤4 mg/min.',teach:'Take in AM to avoid nocturia. Report muscle cramps, dizziness, ringing ears. Weigh daily.',contra:'Anuria, sulfonamide allergy (furosemide); severe electrolyte depletion.'},
+        {cls:'Diuretics — Thiazide',proto:'hydrochlorothiazide (HCTZ)',examples:'hydrochlorothiazide, chlorthalidone, metolazone',moa:'Inhibit Na-Cl transporter in distal convoluted tubule → moderate diuresis.',se:'Hypokalemia, hyponatremia, hyperuricemia, hyperglycemia, hypercalcemia, photosensitivity.',nc:'Monitor K+, glucose, uric acid. Less effective when GFR <30. Can combine with loop diuretic.',teach:'Take in AM. Avoid prolonged sun exposure. Report muscle weakness.',contra:'Gout (relative), anuria, severe renal impairment.'},
+        {cls:'Diuretics — K-Sparing',proto:'spironolactone',examples:'spironolactone, eplerenone, amiloride, triamterene',moa:'Aldosterone antagonists (spiro/eplerenone) or block Na+ channels (amiloride/triamterene) in collecting duct → K+ retention.',se:'Hyperkalemia (main risk), gynecomastia/breast tenderness (spironolactone).',nc:'Monitor K+ closely. Avoid with ACE-I or ARBs unless specifically ordered. Hold if K+ >5.5.',teach:'Avoid K+ supplements and salt substitutes. Report weakness, palpitations (hyperkalemia signs).',contra:'Hyperkalemia, severe renal impairment, Addison\'s disease.'},
+        {cls:'Nitrates',proto:'nitroglycerin',examples:'nitroglycerin (SL, IV, patch, spray), isosorbide mononitrate/dinitrate',moa:'Release nitric oxide → venodilation (reduces preload) and coronary vasodilation. High doses also reduce afterload.',se:'Headache, hypotension, reflex tachycardia, flushing, tolerance with prolonged use.',nc:'SL: 3 doses 5 min apart, call 911 if no relief. IV: titrate to BP/pain. Patch: rotate sites, nitrate-free period (8–12h/day) to prevent tolerance.',teach:'SL: sit down before use. Store in dark, original glass bottle. Patch: wear 12–14h, then off. Report severe headache.',contra:'Concurrent PDE-5 inhibitors (sildenafil), severe hypotension, right ventricular MI (relative).'},
+        {cls:'Anticoagulants — Heparin',proto:'unfractionated heparin',examples:'UFH (IV/SQ), enoxaparin (Lovenox), dalteparin',moa:'Potentiate antithrombin III → inhibit thrombin (IIa) and factor Xa.',se:'Bleeding, HIT (immune thrombocytopenia — life-threatening), osteoporosis with long-term use.',nc:'UFH: monitor aPTT 1.5–2.5× control; platelet count q2–3 days for HIT. Antidote: protamine sulfate.',teach:'Report unusual bleeding, bruising. Inspect injection sites (SQ: rotate sites, 2 inches from navel).',contra:'Active uncontrolled bleeding, HIT history (for heparin products), severe thrombocytopenia.'},
+        {cls:'Anticoagulants — Warfarin',proto:'warfarin (Coumadin)',examples:'warfarin',moa:'Inhibit vitamin K–dependent clotting factors (II, VII, IX, X) and proteins C/S.',se:'Bleeding (INR-dependent risk), skin necrosis (protein C deficiency), teratogen.',nc:'Monitor INR; therapeutic range usually 2–3 (2.5–3.5 for mechanical valves). Many food and drug interactions. Antidote: vitamin K (phytonadione), FFP for urgent reversal.',teach:'Consistent vitamin K diet. No grapefruit. Report unusual bleeding. Wear medical alert ID.',contra:'Active bleeding, pregnancy (1st/3rd trimester), recent CNS surgery.'},
+        {cls:'Anticoagulants — DOACs',proto:'rivaroxaban / apixaban',examples:'rivaroxaban (Xarelto), apixaban (Eliquis), dabigatran (Pradaxa), edoxaban',moa:'Direct factor Xa inhibitors (rivaroxaban, apixaban, edoxaban) or thrombin inhibitor (dabigatran).',se:'Bleeding. Dabigatran: GI upset. Less dietary/drug interactions than warfarin.',nc:'No routine INR monitoring. Renal function monitoring (especially dabigatran). Antidotes: andexanet alfa (Xa inhibitors), idarucizumab (dabigatran).',teach:'Take as directed (some with food). Do not crush dabigatran capsules. Report bleeding.',contra:'Active bleeding, severe renal impairment (varies by agent), pregnancy.'},
+        {cls:'Antiplatelets',proto:'aspirin / clopidogrel',examples:'aspirin, clopidogrel (Plavix), ticagrelor, prasugrel',moa:'Aspirin: irreversibly inhibit COX-1 → reduced thromboxane A2. Clopidogrel/ticagrelor: block P2Y12 ADP receptor on platelets.',se:'Bleeding (especially GI with aspirin), bruising. Aspirin: tinnitus at high doses, Reye syndrome in children.',nc:'Hold 5–7 days pre-surgery (per order). Dual antiplatelet therapy (DAPT) after ACS/stent. Monitor for bleeding.',teach:'Take with food to reduce GI upset (aspirin). Do not stop without consulting provider (stent thrombosis risk).',contra:'Aspirin: active GI bleed, peptic ulcer, children with viral illness. Clopidogrel: active bleeding.'},
+        {cls:'Statins (HMG-CoA Reductase Inhibitors)',proto:'atorvastatin',examples:'atorvastatin (Lipitor), simvastatin, rosuvastatin, pravastatin, lovastatin',moa:'Inhibit HMG-CoA reductase → reduced hepatic cholesterol synthesis → upregulation of LDL receptors.',se:'Myopathy/rhabdomyolysis (rare but serious — monitor CK), hepatotoxicity, elevated glucose.',nc:'Monitor LFTs, CK if muscle symptoms. Drug interactions (especially simvastatin + CYP3A4 inhibitors).',teach:'Take at bedtime (most effective when liver makes cholesterol at night — exception: atorvastatin/rosuvastatin anytime). Report muscle pain/weakness. Avoid grapefruit juice.',contra:'Active liver disease, pregnancy/breastfeeding, unexplained transaminase elevations.'},
+        {cls:'Digoxin',proto:'digoxin',examples:'digoxin (Lanoxin)',moa:'Inhibit Na-K-ATPase pump → increased intracellular Ca2+ → positive inotropy. Also slows AV conduction (vagomimetic).',se:'Narrow therapeutic index. Toxicity: bradycardia, visual changes (yellow-green halos), nausea, arrhythmias.',nc:'Therapeutic level: 0.5–2 ng/mL. Hold if HR <60 (adults). Monitor K+ (hypokalemia potentiates toxicity). Antidote: digibind/digifab.',teach:'Take pulse before each dose. Report HR <60, visual changes, nausea. Consistent K+ intake.',contra:'Ventricular fibrillation, WPW (pre-excitation), digoxin toxicity, 2nd degree AV block (without pacemaker).'},
+        {cls:'Bronchodilators — Beta-2 Agonists',proto:'albuterol (SABA) / salmeterol (LABA)',examples:'albuterol, levalbuterol (SABAs); salmeterol, formoterol (LABAs)',moa:'Stimulate beta-2 receptors → bronchial smooth muscle relaxation → bronchodilation.',se:'Tachycardia, tremor, hypokalemia (with high doses), nervousness. SABAs: overuse worsens asthma outcomes.',nc:'SABAs: rescue (PRN). LABAs: maintenance only — never monotherapy in asthma. Monitor HR, K+ with frequent nebulization.',teach:'Shake inhaler. Rinse mouth after ICS use. SABAs: use only as rescue. Report increased use frequency.',contra:'LABAs as monotherapy in asthma without ICS.'},
+        {cls:'Corticosteroids — Systemic',proto:'prednisone / methylprednisolone',examples:'prednisone, methylprednisolone (Solu-Medrol), dexamethasone, hydrocortisone',moa:'Bind glucocorticoid receptors → suppress inflammatory cytokines, stabilize mast cells, reduce capillary permeability.',se:'Hyperglycemia, immunosuppression, adrenal suppression, osteoporosis (long-term), cushingoid features, mood changes, peptic ulcers.',nc:'Monitor glucose (especially diabetics). Taper when stopping long-term use (prevents adrenal crisis). Give with food.',teach:'Do not stop abruptly. Take with food. Report signs of infection. Carry steroid ID card if long-term use.',contra:'Active systemic infections (relative), live vaccines during therapy.'},
+        {cls:'Antibiotics — Penicillins',proto:'amoxicillin / ampicillin',examples:'amoxicillin, ampicillin, piperacillin-tazobactam (pip-tazo)',moa:'Inhibit bacterial cell wall synthesis by binding penicillin-binding proteins (PBPs) → bactericidal.',se:'Hypersensitivity/allergy, GI upset, diarrhea (C. diff risk), rash.',nc:'Cross-reactivity with cephalosporins (<2%). Obtain allergy history. C. diff precautions with prolonged use.',teach:'Complete full course. Report rash or breathing difficulty. Take amoxicillin with or without food.',contra:'Prior anaphylaxis to penicillin.'},
+        {cls:'Antibiotics — Vancomycin',proto:'vancomycin',examples:'vancomycin (IV), oral (for C. diff only)',moa:'Inhibit bacterial cell wall synthesis by binding D-Ala-D-Ala terminus → bactericidal (gram-positive, including MRSA).',se:'Nephrotoxicity, ototoxicity, Red Man Syndrome (vancomycin flush reaction — not allergy), thrombophlebitis.',nc:'Monitor trough levels (AUC/MIC-based dosing increasingly used). Infuse slowly (60–90 min for standard doses). Monitor SCr, BUN.',teach:'IV: report flushing/itching (slow infusion can help Red Man). Oral form only for C. diff (not absorbed systemically).',contra:'Previous anaphylaxis to vancomycin.'},
+        {cls:'Opioid Analgesics',proto:'morphine / oxycodone',examples:'morphine, oxycodone, hydrocodone, fentanyl, hydromorphone, codeine',moa:'Bind mu (and kappa/delta) opioid receptors in CNS → analgesia, euphoria, CNS/respiratory depression.',se:'Respiratory depression (main danger), constipation, N/V, sedation, urinary retention, physical dependence.',nc:'Assess pain, respiratory rate (hold if RR <12), LOC. Have naloxone available. Use bowel regimen prophylactically. Equianalgesic dosing when converting.',teach:'Do not drive. Avoid alcohol. Use stool softener/laxative. Report constipation, extreme drowsiness.',contra:'Acute asthma, respiratory depression without resuscitative equipment, concurrent MAOI use.'},
+        {cls:'NSAIDs',proto:'ibuprofen / ketorolac',examples:'ibuprofen, naproxen, ketorolac (Toradol), indomethacin, celecoxib',moa:'Inhibit COX-1 and COX-2 → reduced prostaglandin synthesis → anti-inflammatory, analgesic, antipyretic.',se:'GI ulceration/bleeding (COX-1 inhibition reduces protective mucus), renal impairment, platelet dysfunction, fluid retention, CV risk.',nc:'Use with food or PPI. Short-term use preferred. Monitor renal function. Avoid in CKD, elderly, HF.',teach:'Take with food. Avoid if kidney problems or on blood thinners. Report black tarry stools.',contra:'Active GI bleed, CKD (advanced), aspirin-exacerbated respiratory disease, 3rd trimester pregnancy.'},
+        {cls:'Insulin Types',proto:'regular / NPH / glargine',examples:'Rapid-acting: lispro, aspart, glulisine. Short: regular (R). Intermediate: NPH. Long: glargine (Lantus), detemir.',moa:'Bind insulin receptors → facilitate glucose uptake into cells, suppress hepatic glucose production.',se:'Hypoglycemia (main risk), lipodystrophy at injection sites, hypokalemia.',nc:'Check blood glucose before administration. Know onset/peak/duration for each type. Never mix glargine/detemir. Cold insulin = slower absorption.',teach:'Rotate injection sites. Keep glucose source available. Recognize and treat hypoglycemia.',contra:'Hypoglycemia.'},
+        {cls:'Oral Hypoglycemics — Metformin',proto:'metformin',examples:'metformin (Glucophage)',moa:'Decreases hepatic glucose production, improves insulin sensitivity, reduces GI glucose absorption.',se:'GI upset (take with food), lactic acidosis (rare, mainly with renal failure).',nc:'Hold 24–48h before contrast dye procedures and after until renal function confirmed normal. Avoid with eGFR <30.',teach:'Take with meals. Report unusual muscle pain, breathing difficulty (lactic acidosis warning).',contra:'eGFR <30, IV contrast administration, hepatic failure, excessive alcohol.'},
+        {cls:'Benzodiazepines',proto:'lorazepam / diazepam',examples:'lorazepam (Ativan), diazepam (Valium), alprazolam, clonazepam, midazolam',moa:'Enhance GABA-A receptor activity → CNS depression → anxiolytic, sedative, anticonvulsant, muscle relaxant effects.',se:'Sedation, respiratory depression, dependency, paradoxical agitation, amnesia.',nc:'Respiratory precautions especially with opioids (additive depression). Fall risk. Antidote: flumazenil (short-acting). CIWA protocol for alcohol withdrawal.',teach:'Do not stop abruptly (seizure risk). Avoid alcohol and CNS depressants. Do not drive.',contra:'Acute narrow-angle glaucoma, severe respiratory insufficiency, myasthenia gravis, pregnancy.'},
+        {cls:'Opioid Antagonist — Naloxone',proto:'naloxone (Narcan)',examples:'naloxone (IV, IM, IN, auto-injector)',moa:'Competitive antagonist at opioid receptors (mu, kappa, delta) → reverses opioid-induced CNS and respiratory depression.',se:'Acute opioid withdrawal (pain, agitation, N/V, tachycardia), re-narcotization (short half-life vs opioids).',nc:'Duration shorter than most opioids — monitor for re-sedation and redose or infuse as needed. Titrate carefully (don\'t fully reverse analgesia if patient in pain).',teach:'Family members of opioid users should know how to administer. IN or IM for home emergency use.',contra:'No absolute contraindications in life-threatening overdose.'},
+        {cls:'PPIs / H2 Blockers',proto:'omeprazole / famotidine',examples:'PPIs: omeprazole, pantoprazole, esomeprazole. H2: famotidine, ranitidine (discontinued).',moa:'PPIs: irreversibly inhibit H+/K+-ATPase (proton pump) → profound acid suppression. H2: block H2 histamine receptors → moderate acid reduction.',se:'PPIs (long-term): C. diff risk, hypomagnesemia, vitamin B12 deficiency, increased fracture risk. H2: headache, dizziness.',nc:'PPIs given 30–60 min before first meal. IV for acute GI bleed. Review need periodically (deprescribing).',teach:'Take PPI before first meal. Long-term use: discuss risk/benefit with provider.',contra:'No major absolute contraindications in short-term use.'},
+        {cls:'Antiemetics',proto:'ondansetron / promethazine',examples:'Ondansetron (Zofran), promethazine (Phenergan), metoclopramide, prochlorperazine, droperidol',moa:'Ondansetron: 5-HT3 antagonist. Promethazine: dopamine antagonist + H1 blocker. Metoclopramide: dopamine antagonist + prokinetic.',se:'Ondansetron: QT prolongation, constipation. Promethazine: sedation, respiratory depression (IV - boxed warning), extrapyramidal effects. Metoclopramide: tardive dyskinesia (long-term).',nc:'Promethazine IV: black box warning — do NOT administer IV push (tissue necrosis). Use deep IM or dilute IV piggyback. Monitor ECG with ondansetron.',teach:'Report involuntary movements (tardive dyskinesia). Avoid with CNS depressants.',contra:'Promethazine IV push, promethazine in children <2 years, ileus with metoclopramide.'},
+        {cls:'Immunosuppressants',proto:'tacrolimus / cyclosporine',examples:'tacrolimus, cyclosporine, mycophenolate, azathioprine, sirolimus, corticosteroids',moa:'Inhibit T-cell activation (calcineurin inhibitors: tacrolimus/cyclosporine) or proliferation (mycophenolate/azathioprine) → prevent rejection.',se:'Infection risk, nephrotoxicity (calcineurin inhibitors), hypertension, malignancy risk, metabolic effects.',nc:'Strict infection precautions. Monitor drug levels (tacrolimus, cyclosporine - narrow therapeutic window). Monitor renal function, CBC.',teach:'Take exactly as prescribed. Avoid live vaccines. Report any signs of infection promptly. Lifelong adherence.',contra:'Varies by agent; avoid live vaccines while immunosuppressed.'}
+    ];
+
+    function pharmCardHtml(d) {
+        return '<div class="pharm-card" data-search="' + escHtml(d.cls+' '+d.examples).toLowerCase() + '" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;overflow:hidden;">' +
+            '<div class="pharm-card-hd" style="background:var(--clx-accent);color:#fff;padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="togglePharmCard(this)">' +
+                '<div><div style="font-size:12px;font-weight:700;">' + escHtml(d.cls) + '</div><div style="font-size:10px;opacity:.8;">Prototype: ' + escHtml(d.proto) + '</div></div>' +
+                '<span style="font-size:10px;">▼</span>' +
+            '</div>' +
+            '<div class="pharm-card-body" style="display:none;padding:10px 12px;font-size:12px;line-height:1.6;">' +
+                '<div style="margin-bottom:6px;"><span style="font-weight:700;color:var(--clx-accent);">Examples:</span> ' + escHtml(d.examples) + '</div>' +
+                '<div style="margin-bottom:6px;"><span style="font-weight:700;">MOA:</span> ' + escHtml(d.moa) + '</div>' +
+                '<div style="margin-bottom:6px;"><span style="font-weight:700;color:#dc2626;">Side Effects:</span> ' + escHtml(d.se) + '</div>' +
+                '<div style="margin-bottom:6px;"><span style="font-weight:700;color:#0891b2;">Nursing Considerations:</span> ' + escHtml(d.nc) + '</div>' +
+                '<div style="margin-bottom:6px;"><span style="font-weight:700;color:#059669;">Patient Teaching:</span> ' + escHtml(d.teach) + '</div>' +
+                '<div><span style="font-weight:700;color:#7c3aed;">Contraindications:</span> ' + escHtml(d.contra) + '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function togglePharmCard(hd) { const body = hd.nextElementSibling; const open = body.style.display !== 'none'; body.style.display = open ? 'none' : 'block'; hd.querySelector('span').textContent = open ? '▼' : '▲'; }
+
+    function renderPharmCards(filter) {
+        const grid = document.getElementById('pharmGrid');
+        if (!grid) return;
+        const q = (filter || '').toLowerCase();
+        const filtered = q ? PHARM_DATA.filter(d => (d.cls+' '+d.examples).toLowerCase().includes(q)) : PHARM_DATA;
+        grid.innerHTML = filtered.map(pharmCardHtml).join('');
+    }
+    function filterPharmCards(q) { renderPharmCards(q); }
+
+    // Attach pharm card init when card is first expanded
+    document.addEventListener('DOMContentLoaded', function() {
+        const pharmCard = document.getElementById('section-pharm-cards');
+        if (pharmCard) {
+            const origToggle = pharmCard.querySelector('.card-header');
+            if (origToggle) {
+                const observer = new MutationObserver(function() {
+                    if (pharmCard.classList.contains('expanded')) {
+                        renderPharmCards('');
+                        renderDiseaseCards('','');
+                        renderMnemonics('');
+                        renderProcedureCards('');
+                        renderEcgCards('');
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(pharmCard, {attributes: true, attributeFilter: ['class']});
+            }
+        }
+        // Wire each card's expansion to init its content
+        ['section-disease-cards','section-mnemonics','section-procedure-guide','section-ecg-rhythms'].forEach(function(id) {
+            const card = document.getElementById(id);
+            if (!card) return;
+            const obs = new MutationObserver(function() {
+                if (card.classList.contains('expanded')) {
+                    if (id === 'section-disease-cards') renderDiseaseCards('','');
+                    if (id === 'section-mnemonics') renderMnemonics('');
+                    if (id === 'section-procedure-guide') renderProcedureCards('');
+                    if (id === 'section-ecg-rhythms') renderEcgCards('');
+                    obs.disconnect();
+                }
+            });
+            obs.observe(card, {attributes: true, attributeFilter: ['class']});
+        });
+        // Lab trend: set default datetime
+        const ltDt = document.getElementById('ltDateTime');
+        if (ltDt) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            ltDt.value = now.toISOString().slice(0,16);
+        }
+    });
+
+    function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ---- DISEASE / CONDITION FAST CARDS ----
+    const DISEASE_DATA = [
+        {name:'CHF (Congestive Heart Failure)',sys:'Cardiovascular',patho:'Cardiac output insufficient to meet metabolic demands; fluid backs up into pulmonary circulation (left-sided) or systemic circulation (right-sided).',ss:'SOB, orthopnea, PND, crackles, S3 gallop, JVD, peripheral edema, weight gain, fatigue.',dx:'BNP/proBNP elevated, CXR (cardiomegaly, Kerley B lines), echo (EF <40% in systolic HF), ECG.',priority:'Airway/breathing first, O2 if SpO2<90%, diuresis (furosemide), fluid restriction, daily weights.',meds:'Loop diuretics, ACE-I/ARBs, beta blockers, digoxin, spironolactone.',complications:'Pulmonary edema, cardiogenic shock, arrhythmias, renal failure, hepatic congestion.',edu:'Daily weights (report >2-3 lb gain in 24h), fluid restriction, low-sodium diet, medication adherence.'},
+        {name:'Acute MI (STEMI/NSTEMI)',sys:'Cardiovascular',patho:'Atherosclerotic plaque rupture → coronary artery thrombosis → myocardial ischemia/necrosis.',ss:'Crushing chest pain (may radiate to jaw/left arm), diaphoresis, N/V, dyspnea, sense of doom. Women: atypical (fatigue, jaw pain, nausea).',dx:'Troponin elevated (rises 3-4h, peaks 12-24h), ECG (STEMI: ST elevation; NSTEMI: ST depression/T-wave changes), CK-MB.',priority:'Oxygen if SpO2<90%, aspirin, nitroglycerin (if SBP>90), heparin, prepare for PCI (STEMI) or further evaluation.',meds:'Aspirin, P2Y12 inhibitors, anticoagulants, beta blockers, ACE-I, statins.',complications:'Cardiogenic shock, arrhythmias, heart failure, pericarditis, Dressler syndrome, papillary muscle rupture.',edu:'Heart-healthy diet, activity restrictions, cardiac rehab, medication adherence, smoking cessation.'},
+        {name:'Sepsis / Septic Shock',sys:'Infectious/Immune',patho:'Life-threatening organ dysfunction from dysregulated host response to infection → systemic vasodilation, hypoperfusion, cellular dysfunction.',ss:'Sepsis: suspected infection + SOFA ≥2. Shock: vasopressor required to maintain MAP ≥65 despite adequate resuscitation + lactate >2.',dx:'Lactate, blood cultures x2 (before antibiotics if possible), CBC, BMP, LFTs, procalcitonin, source identification.',priority:'Hour-1 Bundle: cultures, broad-spectrum antibiotics within 1h, 30mL/kg IV crystalloid, vasopressors if MAP<65, reassess lactate.',meds:'Broad-spectrum antibiotics (narrow with culture data), norepinephrine (vasopressor of choice), vasopressin, stress-dose steroids in refractory shock.',complications:'ARDS, AKI, DIC, MODS (multi-organ dysfunction syndrome), death.',edu:'Sepsis source prevention (CAUTI/CLABSI bundles), family communication, ICU follow-up.'},
+        {name:'COPD Exacerbation',sys:'Respiratory',patho:'Acute worsening of airflow limitation due to infection, air pollution, or other triggers → air trapping, hyperinflation, ventilation-perfusion mismatch.',ss:'Increased dyspnea, increased sputum (purulent), wheezing, decreased exercise tolerance, use of accessory muscles, cyanosis.',dx:'ABG (hypercapnia in severe cases), CXR (hyperinflation, infiltrate if pneumonia), peak flow, sputum culture.',priority:'Controlled O2 (target SpO2 88-92% to avoid hypercapnic drive suppression), bronchodilators, steroids, consider BiPAP.',meds:'SABAs (albuterol), ipratropium, systemic corticosteroids, antibiotics if purulent sputum or suspected infection.',complications:'Respiratory failure, pneumothorax, cor pulmonale, pulmonary hypertension.',edu:'Smoking cessation, inhaler technique, action plan for exacerbations, pulmonary rehab, influenza/pneumococcal vaccines.'},
+        {name:'Asthma (Acute Attack)',sys:'Respiratory',patho:'Reversible airway obstruction from bronchoconstriction, mucosal edema, and excessive mucus secretion triggered by allergens, exercise, or infection.',ss:'Wheezing (may be absent in severe attack — "silent chest"), coughing, dyspnea, accessory muscle use, pulsus paradoxus.',dx:'Peak expiratory flow (PEF), SpO2, ABG in severe cases.',priority:'O2, SABA (albuterol) q20 min x3, systemic corticosteroids, assess severity. Severe/not improving: IV magnesium sulfate, possible intubation.',meds:'SABAs, ipratropium, oral/IV corticosteroids, magnesium sulfate (severe), methylxanthines (rarely).',complications:'Status asthmaticus, respiratory failure, pneumothorax, barotrauma.',edu:'Trigger avoidance, correct inhaler technique, action plan, controller meds (ICS), peak flow monitoring.'},
+        {name:'DKA (Diabetic Ketoacidosis)',sys:'Endocrine',patho:'Insulin deficiency → hyperglycemia → fat breakdown → ketone production → metabolic acidosis. Osmotic diuresis → dehydration + electrolyte losses.',ss:'Nausea/vomiting, polydipsia/polyuria, abdominal pain, Kussmaul respirations, fruity breath, dehydration, altered mental status.',dx:'Glucose >250 (usually), ketones +, pH <7.3, bicarb <18, anion gap >12. K+ may appear normal/elevated initially (total body K+ is depleted).',priority:'IV fluid resuscitation (NS), insulin infusion (after K+ >3.5), potassium replacement, frequent glucose/electrolyte monitoring.',meds:'Regular insulin IV infusion, normal saline, potassium replacement, phosphate if <1.',complications:'Cerebral edema (especially in pediatrics), hypokalemia, hyponatremia, recurrent DKA.',edu:'Sick-day rules, never stop insulin during illness, glucose monitoring, ketone testing.'},
+        {name:'Stroke (Ischemic)',sys:'Neurological',patho:'Sudden occlusion of cerebral artery (thrombotic or embolic) → ischemia → infarction within hours without reperfusion.',ss:'FAST: Facial droop, Arm weakness, Speech difficulty, Time to call 911. Also: sudden vision changes, severe headache, ataxia.',dx:'CT head (rule out hemorrhage), MRI (sensitive for ischemia), CT angiography, ECG (A-fib), labs.',priority:'Time is brain! Last known well time, rapid CT, tPA eligibility assessment (within 4.5h window), BP management, stroke team activation.',meds:'tPA (alteplase) if eligible, aspirin (after 24h post-tPA), anticoagulation for cardioembolic, statins.',complications:'Hemorrhagic transformation, herniation, cerebral edema, dysphagia/aspiration, DVT.',edu:'Rehab plan, swallowing assessment, secondary prevention (anticoagulation for A-fib), lifestyle modification.'},
+        {name:'Pulmonary Embolism',sys:'Cardiovascular',patho:'Venous thrombus (usually from DVT) embolizes to pulmonary vasculature → obstruction → V/Q mismatch, right heart strain, possible circulatory collapse.',ss:'Sudden dyspnea, pleuritic chest pain, tachycardia, hemoptysis. Massive PE: hypotension, syncope, cardiac arrest.',dx:'D-dimer (screening), CT pulmonary angiography (gold standard), VQ scan, echocardiogram (right heart strain), troponin, BNP.',priority:'Oxygen, anticoagulation (heparin), assess for massive PE (hemodynamic instability = thrombolytics or embolectomy). Absolute bed rest initially.',meds:'UFH or LMWH, DOACs (for stable PE), thrombolytics (massive PE), IVC filter (if anticoagulation contraindicated).',complications:'Death, right heart failure, pulmonary hypertension, recurrent PE, post-PE syndrome.',edu:'Compression stockings, ambulation, anticoagulation adherence, report worsening dyspnea.'},
+        {name:'Acute Kidney Injury (AKI)',sys:'Renal/GU',patho:'Abrupt decline in kidney function → inability to excrete waste products, regulate fluid/electrolytes. Pre-renal (decreased perfusion), intrinsic renal, post-renal (obstruction).',ss:'Decreased UO (<0.5mL/kg/hr), rising BUN/creatinine, edema, hypertension, electrolyte abnormalities, metabolic acidosis.',dx:'BUN/SCr trend, urinalysis (casts), urine Na/FENa (pre- vs intrinsic), BMP, renal ultrasound.',priority:'Identify and treat cause (hydrate pre-renal, relieve obstruction), optimize hemodynamics, avoid nephrotoxins, strict I&O, monitor K+/ECG.',meds:'IV fluids (pre-renal), furosemide (if fluid overloaded), hold NSAIDs/ACE-I/contrast. Dialysis if severe.',complications:'Hyperkalemia, metabolic acidosis, fluid overload, uremia, progression to CKD.',edu:'Hydration, avoid nephrotoxins (NSAIDs, aminoglycosides), report decreased UO.'},
+        {name:'GI Bleed (Upper)',sys:'GI/Hepatic',patho:'Bleeding proximal to Treitz ligament (esophagus, stomach, duodenum). Common causes: peptic ulcer, esophageal varices, Mallory-Weiss tear.',ss:'Hematemesis, coffee-ground emesis, melena, tachycardia, hypotension, signs of hemodynamic instability.',dx:'CBC (H&H), BMP, coagulation, type & crossmatch, upper endoscopy (EGD - diagnostic & therapeutic).',priority:'Airway (aspiration risk), IV access x2 large-bore, fluid resuscitation, transfusion if Hgb <7 (8 for coronary disease), proton pump inhibitor, GI consult.',meds:'IV PPI (pantoprazole), octreotide (varices), antibiotics (variceal bleed in cirrhosis), vasopressin.',complications:'Hemorrhagic shock, aspiration, rebleeding, hepatic encephalopathy (cirrhosis).',edu:'Avoid NSAIDs/aspirin (if appropriate), alcohol cessation, follow-up endoscopy, H. pylori treatment.'},
+        {name:'Anaphylaxis',sys:'Infectious/Immune',patho:'Severe IgE-mediated hypersensitivity reaction → massive histamine release → systemic vasodilation, bronchospasm, increased vascular permeability.',ss:'Urticaria, angioedema, bronchospasm, hypotension, tachycardia, nausea, stridor. Onset within minutes.',dx:'Clinical diagnosis. No time for labs in acute phase. Consider tryptase level after stabilization.',priority:'IM epinephrine (thigh) IMMEDIATELY, call for help, lay flat/elevate legs (unless SOB), IV access, O2, diphenhydramine + corticosteroids are adjuncts ONLY.',meds:'Epinephrine 0.3mg IM (q5-15min), diphenhydramine, corticosteroids, albuterol (bronchospasm), IV fluids.',complications:'Respiratory arrest, cardiovascular collapse, biphasic reaction (2-72h later).',edu:'Avoid triggers, carry epinephrine auto-injector, medical alert ID, follow up with allergist, action plan for caregivers.'},
+        {name:'Preeclampsia / Eclampsia',sys:'OB/Gyn',patho:'Hypertension after 20 weeks gestation with end-organ involvement (proteinuria, thrombocytopenia, renal, liver, or neurologic features). Eclampsia: seizure in preeclamptic patient.',ss:'HTN (≥140/90), headache, visual changes, RUQ pain, edema, proteinuria. Severe: BP ≥160/110, platelets <100k, elevated LFTs, serum Cr >1.1.',dx:'BP readings, CBC, BMP, LFTs, 24h urine protein or spot ratio, fetal monitoring.',priority:'Magnesium sulfate (seizure prevention/treatment), antihypertensives (labetalol, hydralazine, nifedipine) if BP ≥160/110, fetal monitoring, delivery planning.',meds:'Magnesium sulfate (antidote: calcium gluconate), labetalol, hydralazine, nifedipine.',complications:'Eclampsia, HELLP syndrome, abruptio placentae, stroke, pulmonary edema, fetal compromise.',edu:'Home BP monitoring, warning signs (severe headache, visual changes, RUQ pain → call immediately), rest, close follow-up.'},
+        {name:'Hypo/Hypernatremia',sys:'Electrolytes',patho:'Hyponatremia: Na+ <135 — excess free water (SIADH) or deficit (GI loss, diuretics). Hypernatremia: Na+ >145 — water deficit relative to Na+ (diabetes insipidus, inadequate intake).',ss:'Hypo: confusion, seizures, headache, N/V (severe if acute). Hyper: thirst, dry mucous membranes, confusion, seizures (severe).',dx:'Serum Na+, serum osmolality, urine osmolality and Na+.',priority:'Hypo: correct slowly (≤8-10 mEq/L per 24h to avoid osmotic demyelination). Hyper: replace free water slowly (correct ≤0.5 mEq/L per hour).',meds:'Hypo: hypertonic saline (3%) for severe/symptomatic; fluid restriction for SIADH. Hyper: D5W or hypotonic saline, desmopressin (DI).',complications:'Osmotic demyelination syndrome (too-rapid correction of hyponatremia), cerebral edema.',edu:'Fluid intake guidance, medication adherence, follow-up lab monitoring.'},
+        {name:'Hypo/Hyperkalemia',sys:'Electrolytes',patho:'Hypokalemia: K+ <3.5 — GI losses, diuretics, vomiting. Hyperkalemia: K+ >5.5 — renal failure, ACE-I, hemolysis, acidosis.',ss:'Hypo: muscle weakness, cramps, constipation, dysrhythmias (U waves, PVCs). Hyper: weakness, ECG changes (peaked T, wide QRS, sine wave), cardiac arrest.',dx:'Serum K+, ECG, BMP.',priority:'Hypo: replace K+ (oral preferred if mild; IV for severe — max 10-20 mEq/hr with cardiac monitoring). Hyper: stabilize myocardium (calcium gluconate if ECG changes), shift K+ intracellularly (insulin + dextrose, bicarb), remove K+ (kayexalate, dialysis).',meds:'Hypo: KCl replacement. Hyper: calcium gluconate/chloride, insulin + D50, albuterol (shifts K+), sodium polystyrene, dialysis.',complications:'Potentially fatal cardiac arrhythmias in both extremes.',edu:'Dietary sources (hypokalemia: bananas, potatoes; hyperkalemia: avoid high-K foods), medication role.'},
+        {name:'Septic Shock',sys:'Infectious/Immune',patho:'See Sepsis — specifically refractory hypotension requiring vasopressors despite adequate fluid resuscitation + lactate >2 mmol/L.',ss:'MAP <65 mmHg despite 30 mL/kg fluids, signs of hypoperfusion (altered LOC, oliguria, cool mottled skin, elevated lactate).',dx:'Serial lactates, cultures, CBC, BMP, coagulation panel, organ function labs.',priority:'Hour-1 SEP-1 Bundle: cultures → antibiotics → 30 mL/kg fluids → vasopressors → remeasure lactate. ICU admission.',meds:'Norepinephrine (1st line vasopressor), vasopressin (adjunct), corticosteroids (refractory shock), broad-spectrum antibiotics.',complications:'ARDS, AKI, DIC, multi-organ failure, death (mortality 30-50%).',edu:'Family communication critical, ICU psychosis, delirium prevention, early mobilization when stable.'}
+    ];
+
+    function diseaseCardHtml(d) {
+        return '<div class="disease-card" data-system="' + escHtml(d.sys) + '" data-search="' + escHtml(d.name).toLowerCase() + '" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;overflow:hidden;">' +
+            '<div style="background:var(--clx-bg-surface-2);border-bottom:1px solid var(--clx-border);padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleDiseaseCard(this)">' +
+                '<div><div style="font-size:12px;font-weight:700;color:var(--clx-text-primary);">' + escHtml(d.name) + '</div><div style="font-size:10px;color:var(--clx-accent);">' + escHtml(d.sys) + '</div></div>' +
+                '<span style="font-size:10px;color:var(--clx-text-muted);">▼</span>' +
+            '</div>' +
+            '<div class="disease-card-body" style="display:none;padding:10px 12px;font-size:12px;line-height:1.6;">' +
+                '<div style="margin-bottom:5px;"><span style="font-weight:700;">Pathophysiology:</span> ' + escHtml(d.patho) + '</div>' +
+                '<div style="margin-bottom:5px;"><span style="font-weight:700;color:#dc2626;">Signs & Symptoms:</span> ' + escHtml(d.ss) + '</div>' +
+                '<div style="margin-bottom:5px;"><span style="font-weight:700;">Diagnostics:</span> ' + escHtml(d.dx) + '</div>' +
+                '<div style="margin-bottom:5px;"><span style="font-weight:700;color:#0891b2;">Nursing Priorities:</span> ' + escHtml(d.priority) + '</div>' +
+                '<div style="margin-bottom:5px;"><span style="font-weight:700;">Common Medications:</span> ' + escHtml(d.meds) + '</div>' +
+                '<div style="margin-bottom:5px;"><span style="font-weight:700;color:#d97706;">Complications:</span> ' + escHtml(d.complications) + '</div>' +
+                '<div><span style="font-weight:700;color:#059669;">Patient Education:</span> ' + escHtml(d.edu) + '</div>' +
+            '</div>' +
+        '</div>';
+    }
+    function toggleDiseaseCard(hd) { const body = hd.nextElementSibling; const open = body.style.display !== 'none'; body.style.display = open ? 'none' : 'block'; hd.querySelector('span').textContent = open ? '▼' : '▲'; }
+
+    function renderDiseaseCards(q, sys) {
+        const grid = document.getElementById('diseaseGrid');
+        if (!grid) return;
+        const query = (q !== undefined ? q : (document.getElementById('diseaseSearch') ? document.getElementById('diseaseSearch').value : '')).toLowerCase();
+        const sysFilter = sys !== undefined ? sys : (document.getElementById('diseaseSystemFilter') ? document.getElementById('diseaseSystemFilter').value : '');
+        const filtered = DISEASE_DATA.filter(d => {
+            const matchQ = !query || d.name.toLowerCase().includes(query);
+            const matchSys = !sysFilter || d.sys === sysFilter;
+            return matchQ && matchSys;
+        });
+        grid.innerHTML = filtered.length ? filtered.map(diseaseCardHtml).join('') : '<div style="padding:16px;text-align:center;color:var(--clx-text-muted);">No conditions match your filter.</div>';
+    }
+    function filterDiseaseCards() {
+        const q = document.getElementById('diseaseSearch') ? document.getElementById('diseaseSearch').value : '';
+        const sys = document.getElementById('diseaseSystemFilter') ? document.getElementById('diseaseSystemFilter').value : '';
+        renderDiseaseCards(q, sys);
+    }
+
+    // ---- MNEMONICS ----
+    const MNEMONIC_DATA = [
+        {cat:'Assessment',name:'OLDCARTS',desc:'Pain/symptom history',letters:[['O','Onset — when did it start?'],['L','Location — where exactly?'],['D','Duration — constant or intermittent?'],['C','Character — sharp, dull, burning?'],['A','Aggravating factors — what makes it worse?'],['R','Relieving factors — what helps?'],['T','Timing — any pattern?'],['S','Severity — rate 0-10']]},
+        {cat:'Assessment',name:'OPQRST',desc:'Pain assessment',letters:[['O','Onset'],['P','Provocation/Palliation'],['Q','Quality (describe the pain)'],['R','Region/Radiation'],['S','Severity (0-10)'],['T','Timing']]},
+        {cat:'Assessment',name:'SAMPLE',desc:'Emergency history',letters:[['S','Signs & Symptoms'],['A','Allergies'],['M','Medications'],['P','Past medical history'],['L','Last oral intake'],['E','Events leading up to']]},
+        {cat:'Communication',name:'SBAR',desc:'Clinical handoff',letters:[['S','Situation — what is happening now?'],['B','Background — relevant history/context'],['A','Assessment — what do you think is going on?'],['R','Recommendation — what do you need?']]},
+        {cat:'Communication',name:'CUS',desc:'Assertive communication tool',letters:[['C','I am Concerned'],['U','I am Uncomfortable'],['S','This is a Safety issue']]},
+        {cat:'Communication',name:'AIDET',desc:'Patient communication framework',letters:[['A','Acknowledge — greet patient by name'],['I','Introduce yourself'],['D','Duration — set time expectations'],['E','Explanation — what will happen'],['T','Thank You']]},
+        {cat:'Priority',name:'ABC',desc:'Life-threatening priority',letters:[['A','Airway — is it patent?'],['B','Breathing — adequate rate/depth?'],['C','Circulation — pulse, BP, perfusion']]},
+        {cat:'Medication Safety',name:'6 Rights',desc:'Before every medication',letters:[['1','Right Patient (2 identifiers)'],['2','Right Drug'],['3','Right Dose'],['4','Right Route'],['5','Right Time'],['6','Right Documentation'],['7','Right Reason'],['8','Right Response'],['9','Right to Refuse']]},
+        {cat:'Documentation',name:'SOAP',desc:'Structured note format',letters:[['S','Subjective — patient\'s own words'],['O','Objective — measurable findings'],['A','Assessment — nurse\'s interpretation/concerns'],['P','Plan — nursing interventions, follow-up']]},
+        {cat:'Documentation',name:'SBAR',desc:'Handoff communication',letters:[['S','Situation'],['B','Background'],['A','Assessment'],['R','Recommendation']]},
+        {cat:'Documentation',name:'PIE',desc:'Focus charting variant',letters:[['P','Problem — identified nursing problem'],['I','Intervention — actions taken'],['E','Evaluation — patient response']]},
+        {cat:'Documentation',name:'DAR',desc:'Focus charting',letters:[['D','Data — subjective and objective findings'],['A','Action — nursing interventions performed'],['R','Response — patient\'s response to intervention']]},
+        {cat:'Lab',name:'ROME',desc:'Acid-base interpretation',letters:[['R','Respiratory = Opposite (pH up → CO2 down)'],['O','Metabolic = Equal (pH up → bicarb up)'],['M','(bridge letter)'],['E','(bridge letter)']]},
+        {cat:'Lab',name:'MUDPILES',desc:'Anion gap metabolic acidosis causes',letters:[['M','Methanol'],['U','Uremia'],['D','DKA'],['P','Propylene glycol / Paraldehyde'],['I','Isoniazid / Iron'],['L','Lactic acidosis'],['E','Ethylene glycol'],['S','Salicylates']]},
+        {cat:'Clinical',name:'RACE',desc:'Fire response',letters:[['R','Rescue — remove people from immediate danger'],['A','Alarm — activate fire alarm, call 911'],['C','Confine — close doors to contain fire'],['E','Extinguish / Evacuate']]},
+        {cat:'Clinical',name:'PASS',desc:'Fire extinguisher',letters:[['P','Pull the pin'],['A','Aim at the base of the fire'],['S','Squeeze the handle'],['S','Sweep side to side']]},
+        {cat:'Assessment',name:'HEAD-TO-TOE',desc:'Systematic assessment order',letters:[['1','General appearance, LOC'],['2','HEENT (head, eyes, ears, nose, throat)'],['3','Neck (lymph nodes, trachea, JVD)'],['4','Chest/Respiratory (inspection, palpation, percussion, auscultation)'],['5','Cardiovascular (heart sounds, pulses, cap refill)'],['6','Abdomen (inspection, auscultation, palpation, percussion)'],['7','GU/GI (output, characteristics)'],['8','Musculoskeletal (strength, ROM)'],['9','Neurological (cranial nerves, sensation, reflexes)'],['10','Skin (color, turgor, wounds)']]}
+    ];
+
+    function mnemonicCardHtml(m) {
+        const lettersHtml = m.letters.map(l => '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--clx-border);align-items:flex-start;">' +
+            '<span style="width:28px;height:22px;background:var(--clx-accent);color:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">' + escHtml(l[0]) + '</span>' +
+            '<span style="font-size:12px;color:var(--clx-text-primary);line-height:1.4;padding-top:2px;">' + escHtml(l[1]) + '</span>' +
+        '</div>').join('');
+        return '<div class="mnemonic-card" data-cat="' + escHtml(m.cat) + '" data-search="' + escHtml(m.name+' '+m.desc+' '+m.cat).toLowerCase() + '" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;overflow:hidden;">' +
+            '<div style="background:var(--clx-bg-surface-2);border-bottom:1px solid var(--clx-border);padding:9px 12px;">' +
+                '<div style="font-size:14px;font-weight:800;color:var(--clx-accent);">' + escHtml(m.name) + '</div>' +
+                '<div style="font-size:11px;color:var(--clx-text-muted);">' + escHtml(m.cat) + ' — ' + escHtml(m.desc) + '</div>' +
+            '</div>' +
+            '<div style="padding:10px 12px;">' + lettersHtml + '</div>' +
+        '</div>';
+    }
+
+    function renderMnemonics(q) {
+        const grid = document.getElementById('mnemonicGrid');
+        if (!grid) return;
+        const query = (q || '').toLowerCase();
+        const filtered = query ? MNEMONIC_DATA.filter(m => (m.name+' '+m.desc+' '+m.cat).toLowerCase().includes(query)) : MNEMONIC_DATA;
+        grid.innerHTML = filtered.map(mnemonicCardHtml).join('');
+    }
+    function filterMnemonics(q) { renderMnemonics(q); }
+
+    // ---- PRE/PERI/POST PROCEDURE GUIDE ----
+    const PROCEDURE_DATA = [
+        {name:'IV Insertion',pre:['Verify order and indication','Check allergies (latex, iodine)','Gather supplies (appropriate gauge catheter, tourniquet, antiseptic, IV tubing, flush)','Explain procedure to patient','Select appropriate site (AC, forearm, dorsal hand — avoid fistula side, mastectomy side)'],peri:['Apply tourniquet 3-4 inches above site','Cleanse site with chlorhexidine (or alcohol) — allow to dry completely','Insert bevel up at 15-30° angle','Confirm blood return, advance catheter, release tourniquet','Secure and dress site, flush to confirm patency'],post:['Label IV site with date, time, gauge, initials','Document site, gauge, attempts, flush status','Assess site for infiltration/phlebitis at each shift','Change peripheral IV q72-96h per protocol']},
+        {name:'Foley Catheter Insertion',pre:['Verify order (strict indication required — CAUTI prevention)','Gather sterile catheter kit, appropriate size (14-16Fr adult)','Explain procedure, ensure privacy','Position: female supine with knees bent; male supine'],peri:['Maintain strict sterile field throughout','Female: identify urethral meatus (not vaginal opening)','Male: hold penis at 90° angle, retract foreskin','Insert until urine flows, advance 1-2 cm more, inflate balloon with prescribed volume','Confirm urine drainage, secure catheter to thigh'],post:['Keep drainage bag below bladder at all times','Maintain closed drainage system — never disconnect','Assess urine color, clarity, output every shift','Document insertion date, catheter size, balloon size, appearance of urine','Reassess necessity DAILY — remove ASAP']},
+        {name:'NG Tube Insertion',pre:['Verify order, determine purpose (feeding vs. decompression)','Gather supplies, determine insertion length (nose to ear to xiphoid + 4 inches)','Assess for nasal deformity, facial fractures (contraindications)','Explain procedure (most patients find this uncomfortable)'],peri:['Lubricate tube with water-soluble lubricant','Insert through nostril, angle downward and back','Ask alert patients to swallow (with small sips of water) as tube passes pharynx','Advance to predetermined mark, do NOT force','Confirm placement: aspirate and check pH (<5 gastric), CXR (most reliable for feeding tubes)'],post:['Secure tube to nose, avoid pressure on nares','Mark tube at exit point, document external length','Confirm placement before each feeding or medication','Assess for respiratory distress (may indicate misplacement)']},
+        {name:'Blood Transfusion',pre:['Obtain informed consent','Type and crossmatch, obtain blood product from blood bank per policy','Two nurses verify: patient ID x2, blood type, unit number, expiration date','Check vital signs baseline, assess for active fever (delay if >38°C unless ordered)','Obtain IV access (18g or larger preferred, 20g minimum)'],peri:['Prime tubing with normal saline (do NOT use D5W with blood products)','Start infusion slowly for first 15 min — remain with patient (most reactions occur early)','Vital signs: baseline, 15 min after start, end, 1h post q15-30 min during','Monitor for signs of transfusion reaction throughout'],post:['Document: time started/ended, volume infused, vital signs, patient response','Monitor for delayed reactions (24-72h)','Flush IV with NS after completion','Return blood bag to blood bank if reaction occurs']},
+        {name:'Wound Care / Dressing Change',pre:['Review order for wound type and dressing specification','Gather supplies, maintain sterile technique for surgical wounds; clean technique for chronic wounds','Assess pain level, administer pre-procedure analgesic if ordered','Explain procedure, ensure adequate lighting and positioning'],peri:['Remove old dressing without pulling wound edges — note character of drainage','Assess wound bed (color, tissue type, dimensions), wound edges, periwound skin','Cleanse wound per order (NS, wound cleanser — not hydrogen peroxide on granulating tissue)','Apply dressing per wound type (moist wound healing principle)','Document wound assessment in detail'],post:['Label dressing with date, time, initials','Document: wound size (L×W×D), tissue type, exudate, odor, periwound condition','Schedule next dressing change','Reassess pain control']}
+    ];
+
+    function procedureCardHtml(p) {
+        const colStyle = 'flex:1;min-width:0;';
+        const colHdStyle = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:6px 10px;color:#fff;';
+        const listStyle = 'padding:8px 10px;';
+        const liStyle = 'font-size:12px;color:var(--clx-text-primary);line-height:1.5;padding:3px 0;border-bottom:1px solid var(--clx-border);display:flex;gap:6px;';
+        const colHdColors = ['#0f7490','#059669','#7c3aed'];
+        const cols = [['Before',p.pre],['During',p.peri],['After',p.post]];
+        return '<div class="procedure-card" data-search="' + escHtml(p.name).toLowerCase() + '" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;overflow:hidden;">' +
+            '<div style="background:var(--clx-bg-surface-2);padding:10px 14px;font-size:13px;font-weight:700;color:var(--clx-text-primary);">' + escHtml(p.name) + '</div>' +
+            '<div style="display:flex;gap:0;overflow-x:auto;">' +
+                cols.map((col,i) => '<div style="' + colStyle + '">' +
+                    '<div style="' + colHdStyle + 'background:' + colHdColors[i] + ';">' + escHtml(col[0]) + '</div>' +
+                    '<div style="' + listStyle + '">' + col[1].map((item,j) => '<div style="' + liStyle + (j===col[1].length-1?'border-bottom:none;':'') + '"><span style="color:var(--clx-accent);font-weight:700;flex-shrink:0;">•</span>' + escHtml(item) + '</div>').join('') + '</div>' +
+                '</div>').join('') +
+            '</div>' +
+        '</div>';
+    }
+
+    function renderProcedureCards(q) {
+        const grid = document.getElementById('procedureGrid');
+        if (!grid) return;
+        const query = (q || '').toLowerCase();
+        const filtered = query ? PROCEDURE_DATA.filter(p => p.name.toLowerCase().includes(query)) : PROCEDURE_DATA;
+        grid.innerHTML = filtered.map(procedureCardHtml).join('');
+    }
+    function filterProcedures(q) { renderProcedureCards(q); }
+
+    // ---- ECG / RHYTHM DATA ----
+    const ECG_DATA = [
+        {name:'Normal Sinus Rhythm',rate:'60-100 bpm',reg:'Regular',p:'Upright, 1 before each QRS',pr:'0.12-0.20 sec (3-5 small boxes)',qrs:'<0.12 sec (narrow)',wave:'NSR',features:'Consistent P-P and R-R intervals. All measurements within normal limits.',hemo:'Normal — adequate cardiac output.',response:'No treatment needed. Reassess if patient symptomatic.'},
+        {name:'Sinus Bradycardia',rate:'<60 bpm',reg:'Regular',p:'Normal, 1:1',pr:'Normal',qrs:'Normal (<0.12)',wave:'BRAD',features:'All normal except rate <60. May be normal in athletes.',hemo:'Usually adequate. Symptomatic if rate <40-50.',response:'Assess symptoms. If symptomatic: atropine 0.5mg IV, consider pacing. Treat underlying cause.'},
+        {name:'Sinus Tachycardia',rate:'100-180 bpm',reg:'Regular',p:'Normal, may merge with T',pr:'May shorten at very fast rates',qrs:'Normal',wave:'TACH',features:'Rate >100. Common physiologic response.',hemo:'Usually adequate. Prolonged tachycardia reduces diastolic filling.',response:'Treat underlying cause (pain, fever, dehydration, anxiety, hypoxia). Not treated pharmacologically unless underlying cause addressed.'},
+        {name:'Atrial Fibrillation',rate:'Atrial 350-600, ventricular variable (uncontrolled >100, controlled <100)',reg:'Irregularly irregular',p:'No discrete P waves — chaotic baseline (f waves)',pr:'Not measurable',qrs:'Normal unless aberrant conduction',wave:'AFIB',features:'Classic "irregularly irregular" rhythm. No true P waves.',hemo:'Loss of atrial kick (~15-20% CO), rapid ventricular response worsens tolerance.',response:'Rate control (beta blocker, CCB), rhythm control, anticoagulation (stroke prevention). ACLS if unstable: synchronized cardioversion.'},
+        {name:'Atrial Flutter',rate:'Atrial 250-350 (classic 300), ventricular usually 75-150',reg:'Regular or regularly irregular (ratio)',p:'Sawtooth flutter waves (F waves) — best in II, III, aVF',pr:'Varies with block ratio',qrs:'Normal',wave:'AFLUT',features:'Classic "sawtooth" pattern. 2:1 block most common → rate ~150.',hemo:'Usually tolerated. Rapid rates reduce CO.',response:'Rate control, cardioversion, ablation. Anticoagulation similar to A-fib.'},
+        {name:'SVT (AVNRT)',rate:'150-250 bpm',reg:'Regular',p:'May be hidden in QRS or retrograde (after QRS)',pr:'Very short or unmeasurable',qrs:'Usually narrow',wave:'SVT',features:'Sudden onset and termination ("paroxysmal"). Narrow complex usually.',hemo:'Depends on rate and duration. May cause hypotension.',response:'Stable: vagal maneuvers, adenosine 6mg rapid IV push (flush immediately). Unstable: synchronized cardioversion.'},
+        {name:'PVCs',rate:'Underlying rate variable',reg:'Irregular when PVC occurs',p:'No P wave before PVC',pr:'N/A for PVC',qrs:'Wide (>0.12 sec), bizarre morphology',wave:'PVC',features:'Early wide beat, followed by compensatory pause. Unifocal: same morphology. Multifocal: varying morphology.',hemo:'Usually no hemodynamic compromise unless frequent (>6-10/min) or in runs.',response:'Identify/treat cause (hypokalemia, hypoxia, caffeine, ischemia). Treat if symptomatic or in runs (lidocaine, amiodarone). If on cardiac monitor: ACLS protocol if deteriorates.'},
+        {name:'Ventricular Tachycardia',rate:'100-250 bpm',reg:'Regular',p:'Not associated with QRS',pr:'N/A',qrs:'Wide (>0.12), monomorphic or polymorphic (Torsades)',wave:'VTACH',features:'3+ consecutive PVCs. Monomorphic or polymorphic (Torsades de Pointes).',hemo:'Potentially fatal. May deteriorate to VF.',response:'Pulseless VT: CPR + defibrillation. Stable VT: amiodarone, lidocaine, or synchronized cardioversion.'},
+        {name:'Ventricular Fibrillation',rate:'No organized rate',reg:'Chaotic, irregular',p:'No P waves',pr:'None',qrs:'No identifiable QRS',wave:'VFIB',features:'Completely disorganized electrical activity. No effective cardiac output.',hemo:'Cardiac arrest — immediately life-threatening.',response:'CPR immediately, defibrillation ASAP, epinephrine 1mg IV q3-5min, amiodarone or lidocaine. ACLS protocol.'},
+        {name:'Asystole',rate:'No rate',reg:'None',p:'None',pr:'None',qrs:'None (flat line)',wave:'ASYS',features:'Complete absence of electrical activity. Confirm in 2 leads.',hemo:'Cardiac arrest.',response:'CPR, epinephrine 1mg IV q3-5min, treat reversible causes (Hs & Ts). No defibrillation for asystole.'},
+        {name:'1st Degree AV Block',rate:'Usually 60-100',reg:'Regular',p:'Normal',pr:'>0.20 sec (>5 small boxes)',qrs:'Normal',wave:'1AVB',features:'Prolonged PR interval — consistent. Every P has a QRS.',hemo:'Not significant hemodynamically.',response:'No treatment required. Monitor for progression. Identify cause (medications, inferior MI).'},
+        {name:'2nd Degree AV Block — Type I (Wenckebach)',rate:'Atrial normal, ventricular slightly slower',reg:'Irregular (group beating)',p:'Normal, each has a QRS until dropped',pr:'Progressive lengthening until QRS dropped, then resets',qrs:'Normal when present',wave:'WENK',features:'"Longer longer longer drop, then you have a Wenckebach."',hemo:'Usually tolerated. May cause symptomatic bradycardia.',response:'If asymptomatic: observe. Symptomatic: atropine. May need pacing.'},
+        {name:'2nd Degree AV Block — Type II (Mobitz II)',rate:'Atrial normal, ventricular slower',reg:'Regular until dropped beat',p:'Consistent P waves',pr:'Constant PR, then sudden non-conducted P (no QRS)',qrs:'Normal or wide (BBB pattern)',wave:'MOB2',features:'More dangerous than Type I. Can progress to 3rd degree without warning.',hemo:'Significant — can compromise CO.',response:'Transcutaneous pacing on standby. Permanent pacemaker often required. Atropine not reliable.'},
+        {name:'3rd Degree (Complete Heart Block)',rate:'Atrial 60-100, ventricular 20-60 (escape)',reg:'Both regular but independent',p:'Present but no relationship to QRS',pr:'No relationship (varies completely)',qrs:'Wide if ventricular escape; narrow if junctional',wave:'CHB',features:'Complete dissociation between P waves and QRS. P waves "march through" QRS complexes.',hemo:'Often symptomatic — CO depends on escape rate.',response:'Transcutaneous pacing immediately if symptomatic. Atropine (may not work on ventricular escape). Transvenous/permanent pacing.'},
+        {name:'Atrial Fibrillation with RVR',rate:'>100 ventricular',reg:'Irregularly irregular',p:'Fibrillatory baseline',pr:'N/A',qrs:'Normal width usually',wave:'AFIB',features:'A-fib with rapid ventricular response — common presentation in emergency.',hemo:'Tolerated variably — may cause hypotension, HF symptoms.',response:'Rate control: metoprolol, diltiazem, or digoxin. Anticoagulation. Cardioversion if unstable.'}
+    ];
+
+    function drawEcgWaveform(type) {
+        const waveforms = {
+            'NSR': 'M0,25 L20,25 L25,10 L30,35 L35,25 L50,25 L55,23 L60,15 L65,25 L80,25 L85,10 L90,35 L95,25 L110,25',
+            'BRAD': 'M0,25 L35,25 L40,10 L45,35 L50,25 L95,25 L100,10 L105,35 L110,25',
+            'TACH': 'M0,25 L12,25 L17,10 L22,35 L27,25 L42,25 L47,10 L52,35 L57,25 L72,25 L77,10 L82,35 L87,25 L102,25 L107,10 L112,35',
+            'AFIB': 'M0,25 L5,22 L10,27 L15,23 L20,26 L25,22 L28,8 L32,38 L36,25 L40,23 L45,26 L50,22 L55,27 L60,9 L64,37 L68,25 L73,23 L78,27 L83,22 L88,25 L93,23',
+            'AFLUT': 'M0,25 L8,15 L16,35 L24,15 L32,35 L40,15 L42,8 L46,37 L50,25 L56,15 L64,35 L72,15 L80,35 L88,15 L90,8 L94,37 L98,25 L104,15 L112,35',
+            'SVT': 'M0,25 L8,25 L13,8 L18,37 L23,25 L36,25 L41,8 L46,37 L51,25 L64,25 L69,8 L74,37 L79,25 L92,25 L97,8 L102,37 L107,25',
+            'PVC': 'M0,25 L30,25 L35,10 L40,35 L45,25 L55,4 L62,42 L69,20 L76,30 L82,25 L112,25',
+            'VTACH': 'M0,25 L8,8 L16,38 L24,8 L32,38 L40,8 L48,38 L56,8 L64,38 L72,8 L80,38 L88,8 L96,38 L104,8 L112,38',
+            'VFIB': 'M0,25 L4,16 L8,31 L13,18 L17,35 L22,12 L28,38 L34,20 L40,8 L47,37 L53,15 L60,32 L66,19 L73,42 L79,10 L85,33 L91,22 L98,38 L104,14 L110,29',
+            'ASYS': 'M0,25 L112,25',
+            '1AVB': 'M0,25 L15,25 L22,22 L28,25 L40,25 L45,10 L50,35 L55,25 L70,25 L77,22 L83,25 L95,25 L100,10 L105,35 L110,25',
+            'WENK': 'M0,25 L12,22 L17,25 L25,25 L30,10 L35,35 L40,25 L55,21 L62,25 L67,10 L72,35 L77,25 L93,20 L100,25 L112,25',
+            'MOB2': 'M0,25 L12,22 L18,25 L30,25 L35,10 L40,35 L45,25 L57,22 L63,25 L112,25',
+            'CHB': 'M0,25 L8,23 L13,25 L30,25 L35,8 L40,38 L45,25 L60,25 L65,23 L70,25 L95,25 L100,8 L105,38 L110,25'
+        };
+        const d = waveforms[type] || waveforms['NSR'];
+        return '<svg viewBox="0 0 112 50" width="100%" height="44" style="display:block;" xmlns="http://www.w3.org/2000/svg">' +
+            '<rect width="112" height="50" fill="var(--clx-bg-surface-2)" rx="3"/>' +
+            '<line x1="0" y1="25" x2="112" y2="25" stroke="var(--clx-border)" stroke-width="0.5"/>' +
+            '<path d="' + d + '" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '</svg>';
+    }
+
+    function ecgCardHtml(r) {
+        return '<div class="ecg-card" data-search="' + escHtml(r.name).toLowerCase() + '" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;overflow:hidden;cursor:pointer;" onclick="toggleEcgCard(this)">' +
+            '<div style="padding:8px 12px;background:var(--clx-bg-surface-2);border-bottom:1px solid var(--clx-border);display:flex;justify-content:space-between;align-items:center;">' +
+                '<div style="font-size:12px;font-weight:700;color:var(--clx-text-primary);">' + escHtml(r.name) + '</div>' +
+                '<span style="font-size:10px;color:var(--clx-text-muted);">▼</span>' +
+            '</div>' +
+            '<div style="padding:8px 12px;">' + drawEcgWaveform(r.wave) + '</div>' +
+            '<div class="ecg-detail" style="display:none;padding:8px 12px 10px;font-size:12px;line-height:1.6;border-top:1px solid var(--clx-border);">' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;">' +
+                    '<div><span style="font-weight:700;">Rate:</span> ' + escHtml(r.rate) + '</div>' +
+                    '<div><span style="font-weight:700;">Regularity:</span> ' + escHtml(r.reg) + '</div>' +
+                    '<div><span style="font-weight:700;">P Waves:</span> ' + escHtml(r.p) + '</div>' +
+                    '<div><span style="font-weight:700;">PR Interval:</span> ' + escHtml(r.pr) + '</div>' +
+                    '<div><span style="font-weight:700;">QRS:</span> ' + escHtml(r.qrs) + '</div>' +
+                '</div>' +
+                '<div style="margin-top:6px;"><span style="font-weight:700;">Key Features:</span> ' + escHtml(r.features) + '</div>' +
+                '<div style="margin-top:4px;"><span style="font-weight:700;color:#dc2626;">Hemodynamic Effect:</span> ' + escHtml(r.hemo) + '</div>' +
+                '<div style="margin-top:4px;"><span style="font-weight:700;color:#0891b2;">Nursing Response:</span> ' + escHtml(r.response) + '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function toggleEcgCard(card) {
+        const detail = card.querySelector('.ecg-detail');
+        const arrow = card.querySelector('span[style*="10px"]');
+        if (!detail) return;
+        const open = detail.style.display !== 'none';
+        detail.style.display = open ? 'none' : 'block';
+        if (arrow) arrow.textContent = open ? '▼' : '▲';
+    }
+
+    function renderEcgCards(q) {
+        const grid = document.getElementById('ecgGrid');
+        if (!grid) return;
+        const query = (q || '').toLowerCase();
+        const filtered = query ? ECG_DATA.filter(r => r.name.toLowerCase().includes(query)) : ECG_DATA;
+        grid.innerHTML = filtered.map(ecgCardHtml).join('');
+    }
+    function filterEcgCards(q) { renderEcgCards(q); }
+
+    // ---- LAB TREND TRACKER ----
+    let labTrendEntries = JSON.parse(localStorage.getItem('bsn_lab_trend') || '[]');
+
+    function addLabTrendEntry() {
+        const labName = document.getElementById('ltLabName').value;
+        const value = document.getElementById('ltValue').value.trim();
+        const dateTime = document.getElementById('ltDateTime').value;
+        const status = document.getElementById('ltStatus').value;
+        const note = document.getElementById('ltNote').value.trim();
+        if (!labName) { if (typeof showToast === 'function') showToast('Select a lab name.','warning'); return; }
+        if (!value || isNaN(parseFloat(value))) { if (typeof showToast === 'function') showToast('Enter a numeric value.','warning'); return; }
+        if (!dateTime) { if (typeof showToast === 'function') showToast('Select a date/time.','warning'); return; }
+        labTrendEntries.push({id: Date.now(), labName, value: parseFloat(value), dateTime, status, note});
+        localStorage.setItem('bsn_lab_trend', JSON.stringify(labTrendEntries));
+        renderLabTrendTable();
+        document.getElementById('ltValue').value = '';
+        document.getElementById('ltNote').value = '';
+        if (typeof showToast === 'function') showToast('Entry added.','success');
+    }
+
+    function deleteLabTrendEntry(id) {
+        labTrendEntries = labTrendEntries.filter(e => e.id !== id);
+        localStorage.setItem('bsn_lab_trend', JSON.stringify(labTrendEntries));
+        renderLabTrendTable();
+    }
+
+    function renderLabTrendTable() {
+        const tbody = document.getElementById('labTrendBody');
+        if (!tbody) return;
+        const q = (document.getElementById('ltFilter') ? document.getElementById('ltFilter').value : '').toLowerCase();
+        let entries = labTrendEntries.filter(e => !q || e.labName.toLowerCase().includes(q));
+        entries.sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+        if (!entries.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--clx-text-muted);">No entries yet.</td></tr>';
+            return;
+        }
+        const statusColors = {normal:'#059669',low:'#0891b2',high:'#d97706',critical:'#dc2626'};
+        const statusBgs = {normal:'#d1fae5',low:'#e0f2fe',high:'#fef3c7',critical:'#fee2e2'};
+        tbody.innerHTML = entries.map((e,i) => {
+            const prev = entries.slice(0,i).filter(p => p.labName === e.labName).pop();
+            let trend = '—';
+            if (prev && prev.value !== undefined) {
+                if (e.value > prev.value) trend = '<span style="color:#dc2626;">&#8593;</span>';
+                else if (e.value < prev.value) trend = '<span style="color:#059669;">&#8595;</span>';
+                else trend = '<span style="color:var(--clx-text-muted);">&#8594;</span>';
+            }
+            const sc = statusColors[e.status] || '#6b7280';
+            const sbg = statusBgs[e.status] || '#f3f4f6';
+            return '<tr><td style="font-weight:600;color:var(--clx-text-primary);">' + escHtml(e.labName) + '</td>' +
+                '<td style="font-weight:700;color:' + sc + ';">' + escHtml(String(e.value)) + '</td>' +
+                '<td style="text-align:center;">' + trend + '</td>' +
+                '<td><span style="padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;background:' + sbg + ';color:' + sc + ';">' + escHtml(e.status) + '</span></td>' +
+                '<td style="white-space:nowrap;font-size:11px;">' + escHtml(e.dateTime.replace('T',' ')) + '</td>' +
+                '<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(e.note) + '">' + escHtml(e.note || '—') + '</td>' +
+                '<td><button onclick="deleteLabTrendEntry(' + e.id + ')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:13px;padding:2px 5px;" aria-label="Delete">&#128465;</button></td></tr>';
+        }).join('');
+    }
+
+    function clearLabTrend() {
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal('Clear Lab Trend', 'Remove all lab trend entries?', function() {
+                labTrendEntries = [];
+                localStorage.removeItem('bsn_lab_trend');
+                renderLabTrendTable();
+            }, { confirmText: 'Clear', danger: true });
+        }
+    }
+
+    function exportLabTrendCsv() {
+        if (!labTrendEntries.length) { if (typeof showToast === 'function') showToast('No entries to export.','warning'); return; }
+        const header = ['Lab Name','Value','Status','DateTime','Note'];
+        const rows = labTrendEntries.map(e => [e.labName,e.value,e.status,e.dateTime,e.note].map(v => '"' + String(v||'').replace(/"/g,'""') + '"'));
+        const csv = [header,...rows].map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv],{type:'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'LabTrend_' + new Date().toISOString().split('T')[0] + '.csv';
+        a.click(); URL.revokeObjectURL(url);
+    }
+
+    // Render lab trend table on page load if any entries
+    if (labTrendEntries.length) renderLabTrendTable();
     </script>
 
     <script src="/shared/toast.js"></script>
