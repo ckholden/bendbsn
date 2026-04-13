@@ -13,26 +13,23 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
-    <title>Clinical Assessment Packet - BendBSN</title>
+    <title>Clinical Assessment — BendBSN</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; min-height: 100dvh; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--clx-bg-canvas, #f0f4f8); }
         .coming-soon-wrap {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 60vh; text-align: center; padding: 40px 20px;
+            min-height: 50vh; text-align: center; padding: 40px 20px;
         }
         .coming-soon-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.8; }
         .coming-soon-title { font-size: 28px; font-weight: 700; color: var(--clx-text-primary, #1a3a5c); margin-bottom: 12px; }
         .coming-soon-subtitle { font-size: 16px; color: var(--clx-text-secondary, #5a6f7d); max-width: 480px; line-height: 1.5; margin-bottom: 24px; }
         .coming-soon-features {
             text-align: left; max-width: 400px; margin: 0 auto 32px; padding: 20px;
-            background: var(--clx-bg-surface-2, #f0f4f8); border-radius: 12px; border: 1px solid var(--clx-border, #d1d5db);
+            background: var(--clx-bg-surface, #fff); border-radius: 12px; border: 1px solid var(--clx-border, #d1d5db);
         }
         .coming-soon-features h4 { font-size: 13px; font-weight: 700; color: var(--clx-text-secondary, #5a6f7d); text-transform: uppercase; margin-bottom: 10px; }
         .coming-soon-features li { font-size: 14px; color: var(--clx-text-primary, #1a3a5c); margin-bottom: 6px; list-style: none; padding-left: 20px; position: relative; }
@@ -42,31 +39,98 @@
     </style>
 </head>
 <body>
-    <!-- Quick nav links for new tool pages -->
-    <div style="padding:10px 20px;background:var(--clx-bg-surface,#f8fafc);border-bottom:1px solid var(--clx-border,#e2e8f0);display:flex;flex-wrap:wrap;gap:8px;font-size:13px;">
-        <a href="/sbar/" style="color:var(--clx-accent,#0f7490);text-decoration:none;padding:4px 10px;border:1px solid var(--clx-border,#e2e8f0);border-radius:6px;">📋 SBAR</a>
-        <a href="/careplan/" style="color:var(--clx-accent,#0f7490);text-decoration:none;padding:4px 10px;border:1px solid var(--clx-border,#e2e8f0);border-radius:6px;">🗂️ Care Plans</a>
-        <a href="/rotationlog/" style="color:var(--clx-accent,#0f7490);text-decoration:none;padding:4px 10px;border:1px solid var(--clx-border,#e2e8f0);border-radius:6px;">🏥 Rotation Log</a>
-        <a href="/profile/" style="color:var(--clx-accent,#0f7490);text-decoration:none;padding:4px 10px;border:1px solid var(--clx-border,#e2e8f0);border-radius:6px;">👤 Profile</a>
-    </div>
-    <div class="coming-soon-wrap">
-        <div class="coming-soon-icon">&#128203;</div>
-        <h1 class="coming-soon-title">Clinical Assessment Packet</h1>
-        <p class="coming-soon-subtitle">
-            This feature is being redesigned with improved workflows and better documentation tools. Check back soon!
-        </p>
-        <div class="coming-soon-features">
-            <h4>Coming Features</h4>
-            <ul>
-                <li>Multi-tab clinical assessment builder</li>
-                <li>Patient info, assessments, labs & meds</li>
-                <li>Nursing diagnoses & care plans</li>
-                <li>SBAR communication templates</li>
-                <li>Discharge planning documentation</li>
-                <li>PDF and Word export</li>
-            </ul>
+    <header class="site-header">
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
+        <div class="header-actions">
+            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
         </div>
-        <a href="/home/" class="back-btn">Back to Dashboard</a>
-    </div>
+    </header>
+
+    <div class="clx-shell">
+    <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
+        <div class="clx-sidebar-section">Navigation</div>
+        <a href="/home/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🏠</span><span class="clx-sidebar-label">Home</span></a>
+        <a href="/app/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📝</span><span class="clx-sidebar-label">RN Notes</span></a>
+        <a href="/chat/" class="clx-sidebar-item" target="_blank"><span class="clx-sidebar-icon">💬</span><span class="clx-sidebar-label">Chat</span></a>
+        <a href="/ai/" class="clx-sidebar-item" target="_blank"><span class="clx-sidebar-icon">🩺</span><span class="clx-sidebar-label">AI Assistant</span></a>
+        <a href="/community/" class="clx-sidebar-item"><span class="clx-sidebar-icon">👥</span><span class="clx-sidebar-label">Community</span></a>
+        <a href="/resources/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📚</span><span class="clx-sidebar-label">Resources</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
+        <a href="/sbar/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📋</span><span class="clx-sidebar-label">SBAR Handoff</span></a>
+        <a href="/careplan/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🗂️</span><span class="clx-sidebar-label">Care Plans</span></a>
+        <a href="/rotationlog/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🕐</span><span class="clx-sidebar-label">Rotation Log</span></a>
+        <a href="/profile/" class="clx-sidebar-item"><span class="clx-sidebar-icon">👤</span><span class="clx-sidebar-label">Profile</span></a>
+        <a href="/clinical/" class="clx-sidebar-item active"><span class="clx-sidebar-icon">📋</span><span class="clx-sidebar-label">Clinical Packet</span></a>
+        <a href="/apa/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📄</span><span class="clx-sidebar-label">APA Generator</span></a>
+        <a href="/labsched/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🗓️</span><span class="clx-sidebar-label">Lab Sched</span></a>
+        <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+        <button class="clx-sidebar-item" onclick="toggleDarkMode()"><span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span><span class="clx-sidebar-label">Theme</span></button>
+        <button class="clx-sidebar-item" onclick="lockScreen()"><span class="clx-sidebar-icon">🔒</span><span class="clx-sidebar-label">Lock</span></button>
+        <button class="clx-sidebar-item" onclick="logout()"><span class="clx-sidebar-icon">🚪</span><span class="clx-sidebar-label">Logout</span></button>
+        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><span class="clx-sidebar-icon">&#9658;</span><span class="clx-sidebar-toggle-label">Expand</span></button>
+    </aside>
+    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <main class="clx-main" role="main">
+        <div class="coming-soon-wrap">
+            <div class="coming-soon-icon">&#128203;</div>
+            <h1 class="coming-soon-title">Clinical Assessment Packet</h1>
+            <p class="coming-soon-subtitle">
+                This feature is being redesigned with improved workflows and better documentation tools. Check back soon!
+            </p>
+            <div class="coming-soon-features">
+                <h4>Coming Features</h4>
+                <ul>
+                    <li>Multi-tab clinical assessment builder</li>
+                    <li>Patient info, assessments, labs &amp; meds</li>
+                    <li>Nursing diagnoses &amp; care plans</li>
+                    <li>SBAR communication templates</li>
+                    <li>Discharge planning documentation</li>
+                    <li>PDF and Word export</li>
+                </ul>
+            </div>
+            <a href="/home/" class="back-btn">Back to Dashboard</a>
+        </div>
+    </main>
+    </div><!-- /clx-shell -->
+
+    <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+        <a href="/home/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">🏠</span><span>Home</span></a>
+        <a href="/app/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">📝</span><span>Notes</span></a>
+        <a href="/chat/" class="clx-mobile-nav-item" target="_blank"><span class="clx-mobile-nav-icon">💬</span><span>Chat</span></a>
+        <a href="/ai/" class="clx-mobile-nav-item" target="_blank"><span class="clx-mobile-nav-icon">🤖</span><span>AI</span></a>
+        <a href="/profile/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">👤</span><span>Profile</span></a>
+    </nav>
+
+    <script src="/shared/header.js"></script>
+    <script src="/shared/toast.js"></script>
+    <script>
+        function initTheme() {
+            const t = localStorage.getItem('bsn9b_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function toggleDarkMode() {
+            const cur = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('bsn9b_theme', next);
+            const icon = document.getElementById('sidebarThemeIcon');
+            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+        }
+        let sidebarOpen = false;
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            document.getElementById('appSidebar').classList.toggle('mobile-open', sidebarOpen);
+            document.getElementById('sidebarBackdrop').classList.toggle('visible', sidebarOpen);
+        }
+        function lockScreen() { localStorage.removeItem('bendbsn_auth'); window.location.href = '/'; }
+        function logout() {
+            ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
+            window.location.href = '/';
+        }
+        initTheme();
+    </script>
 </body>
 </html>

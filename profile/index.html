@@ -256,6 +256,21 @@
             <div class="prof-card-bd">
                 <div class="prof-setting-row">
                     <div>
+                        <div class="prof-setting-label">Student Year / Role</div>
+                        <div class="prof-setting-sub">Updates your credential badge throughout the app</div>
+                    </div>
+                    <select id="roleSelect" onchange="saveRole(this.value)" style="padding:5px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;cursor:pointer;">
+                        <option value="Student Nurse Year 1">SN1 — Year 1</option>
+                        <option value="Student Nurse Year 2">SN2 — Year 2</option>
+                        <option value="Student Nurse Year 3">SN3 — Year 3</option>
+                        <option value="Student Nurse Year 4">SN4 — Year 4</option>
+                        <option value="RN">RN</option>
+                        <option value="BSN RN">BSN RN</option>
+                        <option value="Instructor">Instructor</option>
+                    </select>
+                </div>
+                <div class="prof-setting-row">
+                    <div>
                         <div class="prof-setting-label">Dark Mode</div>
                         <div class="prof-setting-sub">Switch between light and dark themes</div>
                     </div>
@@ -397,7 +412,14 @@
             if (!currentUid) { roleEl.textContent = 'Unknown'; return; }
             database.ref('userProfiles/' + currentUid).once('value').then(snap => {
                 const profile = snap.val() || {};
-                roleEl.textContent = profile.role || profile.role_label || 'Student';
+                const role = profile.role || profile.role_label || 'Student Nurse Year 1';
+                roleEl.textContent = role;
+                // Set dropdown to current role
+                const sel = document.getElementById('roleSelect');
+                if (sel) {
+                    const match = Array.from(sel.options).find(o => o.value === role);
+                    if (match) sel.value = role;
+                }
                 if (profile.createdAt) {
                     const d = new Date(profile.createdAt);
                     sinceEl.textContent = 'Member since: ' + d.toLocaleDateString('en-US', {month:'long', year:'numeric'});
@@ -461,6 +483,14 @@
                 database.ref('userProfiles/' + currentUid).update({ displayName: newName }).catch(() => {});
             }
             showToast('Display name updated.', 'success');
+        }
+
+        function saveRole(role) {
+            if (!currentUid) { showToast('Not logged in.', 'warning'); return; }
+            database.ref('userProfiles/' + currentUid).update({ role: role }).then(() => {
+                document.getElementById('profRoleBadge').textContent = role;
+                showToast('Role updated to ' + role + '.', 'success');
+            }).catch(() => showToast('Failed to save role.', 'error'));
         }
 
         document.getElementById('profNameInput').addEventListener('keydown', function(e) {
