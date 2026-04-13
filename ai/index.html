@@ -304,6 +304,72 @@
         .ai-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
         .ai-panel.active { display: flex; }
 
+        /* ========== NCLEX TRACKER ========== */
+        .tracker-header {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .tracker-progress-bar-wrap {
+            height: 8px; background: var(--border);
+            border-radius: 4px; overflow: hidden; margin: 6px 0 4px;
+        }
+        .tracker-progress-bar-fill {
+            height: 100%; background: #22c55e;
+            border-radius: 4px; transition: width 0.4s ease;
+        }
+        .tracker-stats {
+            font-size: 12px; color: var(--text-secondary);
+            display: flex; justify-content: space-between;
+        }
+        .tracker-legend {
+            display: flex; gap: 8px; flex-wrap: wrap;
+            padding: 8px 14px; border-bottom: 1px solid var(--border);
+            background: var(--bg-primary); flex-shrink: 0; font-size: 11px;
+            align-items: center;
+        }
+        .tracker-grid {
+            flex: 1; overflow-y: auto; padding: 12px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            align-content: start;
+        }
+        @media (max-width: 480px) { .tracker-grid { grid-template-columns: 1fr; } }
+        .tracker-card {
+            background: var(--bg-primary); border: 1.5px solid var(--border);
+            border-radius: 10px; padding: 11px; cursor: pointer;
+            transition: border-color 0.15s, transform 0.1s;
+            user-select: none;
+        }
+        .tracker-card:hover { transform: translateY(-1px); }
+        .tracker-card:active { transform: scale(0.97); }
+        .tracker-card[data-status="studying"] { border-color: #f59e0b; }
+        .tracker-card[data-status="needs_review"] { border-color: #ef4444; }
+        .tracker-card[data-status="mastered"] { border-color: #22c55e; background: #f0fdf4; }
+        [data-theme="dark"] .tracker-card[data-status="mastered"] { background: #052e16; }
+        .tracker-topic-name {
+            font-size: 13px; font-weight: 600; color: var(--text-primary);
+            margin-bottom: 6px; line-height: 1.3;
+        }
+        .tracker-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+        }
+        .tracker-badge.not_started { background: var(--bg-secondary); color: var(--text-secondary); }
+        .tracker-badge.studying { background: #fef3c7; color: #92400e; }
+        .tracker-badge.needs_review { background: #fef2f2; color: #991b1b; }
+        .tracker-badge.mastered { background: #f0fdf4; color: #166534; }
+        [data-theme="dark"] .tracker-badge.studying { background: #3b2e0a; color: #fbbf24; }
+        [data-theme="dark"] .tracker-badge.needs_review { background: #2d0707; color: #fca5a5; }
+        [data-theme="dark"] .tracker-badge.mastered { background: #052e16; color: #86efac; }
+        .tracker-note-input {
+            width: 100%; margin-top: 7px; padding: 5px 7px;
+            border: 1px solid var(--border); border-radius: 6px;
+            font-size: 11px; background: var(--bg-input); color: var(--text-primary);
+            resize: none; height: 38px; line-height: 1.3; display: block;
+        }
+        .tracker-note-input::placeholder { color: var(--text-secondary); }
+
         /* ========== NCLEX QUIZ ========== */
         .quiz-score-bar {
             display: flex; align-items: center; justify-content: space-between;
@@ -510,6 +576,7 @@
             <button class="ai-tab" data-tab="quiz" onclick="switchAITab('quiz')">&#129534; NCLEX Quiz</button>
             <button class="ai-tab" data-tab="careplan" onclick="switchAITab('careplan')">&#128203; Care Plan</button>
             <button class="ai-tab" data-tab="ngn" onclick="switchAITab('ngn')">&#127981; NGN Practice</button>
+            <button class="ai-tab" data-tab="tracker" onclick="switchAITab('tracker')">&#128202; Tracker</button>
         </div>
 
         <!-- Chat Panel -->
@@ -618,6 +685,28 @@
             <div class="cp-output" id="ngnOutput" style="flex:1;overflow-y:auto;">
                 <div class="cp-idle">Select a question type and enter a clinical topic, then tap <strong>Generate NGN Question</strong>.<br>NGN-style questions prepare you for Next Generation NCLEX critical thinking.</div>
             </div>
+        </div>
+
+        <!-- NCLEX Study Tracker Panel -->
+        <div id="aiTrackerPanel" class="ai-panel">
+            <div class="tracker-header">
+                <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:4px;">&#128202; NCLEX Study Tracker</div>
+                <div class="tracker-progress-bar-wrap">
+                    <div class="tracker-progress-bar-fill" id="trackerProgressFill" style="width:0%"></div>
+                </div>
+                <div class="tracker-stats">
+                    <span id="trackerStatsText">0 of 16 topics mastered</span>
+                    <span id="trackerStudyingText">0 studying &middot; 0 need review</span>
+                </div>
+            </div>
+            <div class="tracker-legend">
+                <span class="tracker-badge not_started">&#11036; Not Started</span>
+                <span class="tracker-badge studying">&#128214; Studying</span>
+                <span class="tracker-badge needs_review">&#9888;&#65039; Review</span>
+                <span class="tracker-badge mastered">&#9989; Mastered</span>
+                <span style="margin-left:auto;color:var(--text-secondary);font-style:italic;">Tap card to cycle</span>
+            </div>
+            <div class="tracker-grid" id="trackerGrid"></div>
         </div>
     </div>
 
@@ -744,12 +833,117 @@ Important guidelines:
 - When discussing medications, always mention common nursing considerations
 - For NCLEX questions, provide the answer AND detailed rationales for all options`;
 
+        // ========== UTILITIES ==========
+        function escapeHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
         // ========== TAB SWITCHING ==========
         function switchAITab(tab) {
-            const panelMap = { chat: 'aiChatPanel', quiz: 'aiQuizPanel', careplan: 'aiCarePlanPanel', ngn: 'aiNgnPanel' };
+            const panelMap = { chat: 'aiChatPanel', quiz: 'aiQuizPanel', careplan: 'aiCarePlanPanel', ngn: 'aiNgnPanel', tracker: 'aiTrackerPanel' };
             document.querySelectorAll('.ai-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
             document.querySelectorAll('.ai-panel').forEach(p => p.classList.toggle('active', p.id === panelMap[tab]));
             if (tab === 'chat') document.getElementById('aiInput')?.focus();
+            if (tab === 'tracker' && !trackerLoaded) loadTrackerData();
+        }
+
+        // ========== NCLEX STUDY TRACKER ==========
+        const TRACKER_TOPICS = [
+            'Cardiovascular','Respiratory','Neurological','Musculoskeletal',
+            'Gastrointestinal','Renal / Urinary','Endocrine','Hematology',
+            'Infection Control','Pharmacology','Mental Health','Maternal / OB',
+            'Pediatrics','Lab Values','Patient Safety','Ethics / Legal'
+        ];
+        const TRACKER_STATUSES = ['not_started','studying','needs_review','mastered'];
+        const TRACKER_LABELS = {
+            not_started: '\u2B1C Not Started',
+            studying: '\uD83D\uDCD6 Studying',
+            needs_review: '\u26A0\uFE0F Review',
+            mastered: '\u2705 Mastered'
+        };
+        let trackerData = {};
+        let trackerUid = null;
+        let trackerLoaded = false;
+        let trackerSaveTimer = null;
+
+        function trackerKey(name) {
+            return name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        }
+
+        function loadTrackerData() {
+            trackerLoaded = true;
+            trackerUid = localStorage.getItem('bendbsn_uid');
+            if (!trackerUid) { renderTrackerGrid(); return; }
+            database.ref('nclexProgress/' + trackerUid).once('value').then(snap => {
+                trackerData = snap.val() || {};
+                renderTrackerGrid();
+            }).catch(() => renderTrackerGrid());
+        }
+
+        function saveTrackerData() {
+            if (!trackerUid) return;
+            clearTimeout(trackerSaveTimer);
+            trackerSaveTimer = setTimeout(() => {
+                database.ref('nclexProgress/' + trackerUid).set(trackerData).catch(() => {});
+            }, 800);
+        }
+
+        function cycleTrackerStatus(key) {
+            const cur = (trackerData[key] || {}).status || 'not_started';
+            const next = TRACKER_STATUSES[(TRACKER_STATUSES.indexOf(cur) + 1) % TRACKER_STATUSES.length];
+            if (!trackerData[key]) trackerData[key] = {};
+            trackerData[key].status = next;
+            trackerData[key].updatedAt = Date.now();
+            saveTrackerData();
+            const card = document.querySelector('.tracker-card[data-key="' + key + '"]');
+            if (card) {
+                card.dataset.status = next;
+                const badge = card.querySelector('.tracker-badge');
+                if (badge) { badge.className = 'tracker-badge ' + next; badge.textContent = TRACKER_LABELS[next]; }
+            }
+            updateTrackerStats();
+        }
+
+        function saveTrackerNote(key, note) {
+            if (!trackerData[key]) trackerData[key] = {};
+            trackerData[key].note = note;
+            trackerData[key].updatedAt = Date.now();
+            saveTrackerData();
+        }
+
+        function renderTrackerGrid() {
+            const grid = document.getElementById('trackerGrid');
+            if (!grid) return;
+            grid.innerHTML = TRACKER_TOPICS.map(topic => {
+                const key = trackerKey(topic);
+                const entry = trackerData[key] || {};
+                const status = entry.status || 'not_started';
+                const note = escapeHtml(entry.note || '');
+                return `<div class="tracker-card" data-key="${key}" data-status="${status}" onclick="cycleTrackerStatus('${key}')">
+                    <div class="tracker-topic-name">${escapeHtml(topic)}</div>
+                    <span class="tracker-badge ${status}">${TRACKER_LABELS[status]}</span>
+                    <textarea class="tracker-note-input" placeholder="Notes..." onclick="event.stopPropagation()" onchange="saveTrackerNote('${key}',this.value)">${note}</textarea>
+                </div>`;
+            }).join('');
+            updateTrackerStats();
+        }
+
+        function updateTrackerStats() {
+            let mastered = 0, studying = 0, review = 0;
+            TRACKER_TOPICS.forEach(t => {
+                const s = (trackerData[trackerKey(t)] || {}).status || 'not_started';
+                if (s === 'mastered') mastered++;
+                else if (s === 'studying') studying++;
+                else if (s === 'needs_review') review++;
+            });
+            const total = TRACKER_TOPICS.length;
+            const pct = Math.round((mastered / total) * 100);
+            const fill = document.getElementById('trackerProgressFill');
+            const statsText = document.getElementById('trackerStatsText');
+            const studyingText = document.getElementById('trackerStudyingText');
+            if (fill) fill.style.width = pct + '%';
+            if (statsText) statsText.textContent = mastered + ' of ' + total + ' topics mastered (' + pct + '%)';
+            if (studyingText) studyingText.textContent = studying + ' studying \u00B7 ' + review + ' need review';
         }
 
         function aiQuickAction(type) {
