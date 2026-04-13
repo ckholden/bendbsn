@@ -1642,6 +1642,74 @@
             if (modal) modal.classList.remove('open');
         };
         // ===== END PWA INSTALL BANNER =====
+
+        // ===== ONBOARDING TOUR =====
+        (function() {
+            if (localStorage.getItem('bendbsn_onboarded') === 'true') return;
+
+            const steps = [
+                {
+                    icon: '🩺',
+                    title: 'Welcome to BendBSN!',
+                    body: 'Your all-in-one nursing education companion. Let\'s take a quick 3-step tour so you know where everything lives.',
+                    btn: 'Next →'
+                },
+                {
+                    icon: '📋',
+                    title: 'RN Notes — Your Documentation Hub',
+                    body: 'Tap <strong>RN Notes</strong> in the bottom nav to open the note generator. Build Head-to-Toe assessments, SOAP, DAR, SBAR, and more — then export to Word or PDF.',
+                    btn: 'Next →'
+                },
+                {
+                    icon: '📚',
+                    title: 'Resources, AI & Community',
+                    body: '<strong>Resources</strong> has drug cards, disease fast cards, ECG reference, lab values, and clinical calculators — all offline.<br><br><strong>AI</strong> generates NCLEX practice questions including Next-Gen format.<br><br><strong>Community</strong> is where your classmates post tips, questions, and announcements.',
+                    btn: 'Get Started 🎉'
+                }
+            ];
+
+            let step = 0;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'onboardOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+            function render() {
+                const s = steps[step];
+                overlay.innerHTML = `
+                    <div style="background:var(--clx-bg-surface,#fff);border-radius:16px;max-width:420px;width:100%;padding:30px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="font-size:48px;margin-bottom:12px;">${s.icon}</div>
+                        <h2 style="margin:0 0 10px;font-size:18px;color:var(--clx-text-primary,#111);">${s.title}</h2>
+                        <p style="font-size:14px;color:var(--clx-text-secondary,#555);line-height:1.6;margin:0 0 20px;">${s.body}</p>
+                        <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
+                            <button onclick="window._onboardSkip()" style="background:none;border:none;color:var(--clx-text-muted,#999);font-size:13px;cursor:pointer;padding:8px 14px;">Skip tour</button>
+                            <button onclick="window._onboardNext()" style="background:var(--clx-accent,#1f4e79);color:white;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">${s.btn}</button>
+                        </div>
+                        <div style="margin-top:16px;display:flex;gap:6px;justify-content:center;">
+                            ${steps.map((_,i) => `<div style="width:8px;height:8px;border-radius:50%;background:${i===step?'var(--clx-accent,#1f4e79)':'var(--clx-border,#ddd)'};"></div>`).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            window._onboardNext = function() {
+                step++;
+                if (step >= steps.length) {
+                    localStorage.setItem('bendbsn_onboarded', 'true');
+                    overlay.remove();
+                } else {
+                    render();
+                }
+            };
+
+            window._onboardSkip = function() {
+                localStorage.setItem('bendbsn_onboarded', 'true');
+                overlay.remove();
+            };
+
+            render();
+            document.body.appendChild(overlay);
+        })();
+        // ===== END ONBOARDING TOUR =====
     </script>
 </body>
 </html>

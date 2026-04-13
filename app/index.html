@@ -944,6 +944,22 @@
             </select>
         </div>
         <div class="form-container">
+            <!-- Instructor Feedback Banner (shown after loading a reviewed doc) -->
+            <div id="feedbackBanner" style="display:none; margin-bottom:10px; border-radius:8px; overflow:hidden; border:1px solid var(--clx-border);">
+                <div id="feedbackBannerHeader" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; cursor:pointer;" onclick="toggleFeedbackBanner()">
+                    <span style="font-weight:600; font-size:13px;">📝 Instructor Feedback</span>
+                    <span id="feedbackBannerChevron" style="font-size:12px; color:var(--clx-text-muted);">▼ Show</span>
+                </div>
+                <div id="feedbackBannerBody" style="display:none; padding:12px 14px; border-top:1px solid var(--clx-border); font-size:13px;">
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
+                        <span id="feedbackScore" style="font-weight:600;"></span>
+                        <span id="feedbackReviewer" style="color:var(--clx-text-muted);"></span>
+                        <span id="feedbackDate" style="color:var(--clx-text-muted);"></span>
+                    </div>
+                    <div id="feedbackComment" style="background:var(--clx-bg-surface-2); border-radius:6px; padding:10px; line-height:1.6; white-space:pre-wrap;"></div>
+                </div>
+            </div>
+
             <!-- C7: Compact HIPAA notice -->
             <div class="hipaa-notice">
                 <span>⚠</span>
@@ -3269,6 +3285,13 @@
                 patientName: formData.patientId || 'Unknown Patient'
             };
 
+            // If offline, queue the save and retry when back online
+            if (!navigator.onLine) {
+                try { localStorage.setItem('bendbsn_queued_save', JSON.stringify(docData)); } catch(e) {}
+                showToast('📵 Offline — note saved locally. Will sync when back online.', 'warning');
+                return;
+            }
+
             try {
                 const userDocsRef = getUserDocsRef();
                 if (!userDocsRef) {
@@ -3281,9 +3304,26 @@
                 showToast('Document saved successfully!', 'success');
             } catch (error) {
                 console.error('Error saving document:', error);
-                showToast('Failed to save document: ' + error.message, 'error');
+                // On network error, queue locally
+                try { localStorage.setItem('bendbsn_queued_save', JSON.stringify(docData)); } catch(e) {}
+                showToast('Save failed — note queued locally and will sync when reconnected.', 'warning');
             }
         }
+
+        // Sync queued save when back online
+        window.addEventListener('online', async function() {
+            const queued = localStorage.getItem('bendbsn_queued_save');
+            if (!queued) return;
+            try {
+                const docData = JSON.parse(queued);
+                const userDocsRef = getUserDocsRef();
+                if (userDocsRef) {
+                    await userDocsRef.push(docData);
+                    localStorage.removeItem('bendbsn_queued_save');
+                    showToast('✅ Back online — note synced to Firebase!', 'success');
+                }
+            } catch(e) { /* retry next time */ }
+        });
 
         // Open history modal and load documents
         function openHistoryModal() {
@@ -3327,6 +3367,7 @@
                 savedDocuments.sort((a, b) => b.createdAt - a.createdAt);
 
                 renderHistoryList(savedDocuments);
+                loadFeedbackBadges(savedDocuments);
             } catch (error) {
                 console.error('Error loading history:', error);
                 const errorP = document.createElement('p');
@@ -3348,6 +3389,23 @@
         }
 
         // Render the history list
+        // Cache of docIds that have feedback (populated async)
+        let _feedbackDocIds = new Set();
+
+        async function loadFeedbackBadges(docs) {
+            const email = localStorage.getItem('bendbsn_user') || '';
+            if (!email || !docs.length) return;
+            const key = sanitizeEmailForFeedback(email);
+            try {
+                const snap = await database.ref('documentFeedback/' + key).once('value');
+                if (!snap.exists()) return;
+                const fbData = snap.val() || {};
+                _feedbackDocIds = new Set(Object.keys(fbData));
+                // Re-render to show badges
+                renderHistoryList(docs);
+            } catch(e) { /* silent */ }
+        }
+
         function renderHistoryList(docs) {
             const historyList = document.getElementById('historyList');
             const noteTypeNames = {dar:'DAR', darp:'DARP', soap:'SOAP', soapie:'SOAPIE', sbar:'SBAR', pie:'PIE', h2t:'Head-to-Toe', narrative:'Narrative'};
@@ -3367,9 +3425,10 @@
                     <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 15px; margin-bottom: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                             <div style="flex: 1; min-width: 200px;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap:wrap;">
                                     <span style="background: var(--accent); color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${escapeHtml(noteTypeNames[doc.noteType] || doc.noteType || '')}</span>
                                     <span style="color: var(--text-secondary); font-size: 12px;">${dateStr} at ${timeStr}</span>
+                                    ${_feedbackDocIds.has(doc.id) ? '<span style="background:#2e7d32;color:white;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;">📝 Feedback</span>' : ''}
                                 </div>
                                 <div style="color: var(--text-primary); font-weight: 600; font-size: 14px; margin-bottom: 4px;">
                                     ${escapeHtml(doc.patientName || 'Unknown Patient')}
@@ -3552,6 +3611,8 @@
             // Close the modal
             document.getElementById('historyModal').classList.add('hidden');
             showToast('Document loaded successfully!', 'success');
+            // Check for instructor feedback on this document
+            checkDocumentFeedback(docId);
             // Refresh H2T completion indicators after load
             document.querySelectorAll('.h2t-section textarea').forEach(ta => {
                 const sec = ta.closest('.h2t-section');
@@ -3562,6 +3623,70 @@
                         showToast('Error loading document. Please try again.', 'error');
                     }
                 });
+        }
+
+        // ===== INSTRUCTOR FEEDBACK =====
+        function sanitizeEmailForFeedback(email) {
+            return (email || '').replace(/\./g, '_').replace(/@/g, '_at_');
+        }
+
+        function toggleFeedbackBanner() {
+            const body = document.getElementById('feedbackBannerBody');
+            const chevron = document.getElementById('feedbackBannerChevron');
+            const open = body.style.display === 'none';
+            body.style.display = open ? 'block' : 'none';
+            chevron.textContent = open ? '▲ Hide' : '▼ Show';
+        }
+
+        function showFeedbackBanner(fb) {
+            const banner = document.getElementById('feedbackBanner');
+            const header = document.getElementById('feedbackBannerHeader');
+            const scoreEl = document.getElementById('feedbackScore');
+            const reviewerEl = document.getElementById('feedbackReviewer');
+            const dateEl = document.getElementById('feedbackDate');
+            const commentEl = document.getElementById('feedbackComment');
+
+            // Color banner by result
+            let color = '#1f4e79'; // default blue
+            let scoreText = '';
+            if (fb.score !== undefined && fb.score !== null && fb.score !== '') {
+                const s = Number(fb.score);
+                color = s >= 80 ? '#2e7d32' : s >= 65 ? '#e65100' : '#c62828';
+                scoreText = 'Score: ' + s + '/100';
+            } else if (fb.passFail === 'pass') {
+                color = '#2e7d32'; scoreText = '✅ Pass';
+            } else if (fb.passFail === 'fail') {
+                color = '#c62828'; scoreText = '❌ Needs Revision';
+            }
+
+            header.style.background = color;
+            header.style.color = 'white';
+            document.getElementById('feedbackBannerChevron').style.color = 'rgba(255,255,255,0.8)';
+            scoreEl.textContent = scoreText;
+            scoreEl.style.color = 'white';
+            reviewerEl.textContent = fb.reviewedBy ? 'Reviewed by: ' + escapeHtml(fb.reviewedBy) : '';
+            dateEl.textContent = fb.reviewedAt ? new Date(fb.reviewedAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '';
+            commentEl.textContent = fb.feedback || '(No comment left)';
+
+            // Auto-open body
+            document.getElementById('feedbackBannerBody').style.display = 'block';
+            document.getElementById('feedbackBannerChevron').textContent = '▲ Hide';
+            banner.style.display = 'block';
+        }
+
+        function hideFeedbackBanner() {
+            document.getElementById('feedbackBanner').style.display = 'none';
+        }
+
+        async function checkDocumentFeedback(docId) {
+            hideFeedbackBanner();
+            const email = localStorage.getItem('bendbsn_user') || '';
+            if (!email || !docId) return;
+            const key = sanitizeEmailForFeedback(email);
+            try {
+                const snap = await database.ref('documentFeedback/' + key + '/' + docId).once('value');
+                if (snap.exists()) showFeedbackBanner(snap.val());
+            } catch(e) { /* silent */ }
         }
 
         // Delete a document
@@ -6473,7 +6598,7 @@
         });
 
         // Periodic backup save every 30 seconds
-        setInterval(saveDraft, 30000);
+        setInterval(saveDraft, 15000); // Reduced from 30s to 15s for better offline safety
 
         // ====== ROLE SYSTEM (C4) ======
         let _rolesConfig = {};
@@ -6975,6 +7100,8 @@
                 renderSavedLines();
                 // Clear the saved draft so old content doesn't restore on reload or note-type switch
                 clearDraft(currentNoteType);
+                // Hide any loaded feedback banner
+                hideFeedbackBanner();
             }, { danger: true });
         }
 
