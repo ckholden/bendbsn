@@ -78,20 +78,24 @@
             border-radius: 0 0 16px 16px;
         }
         .grid {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
             width: 100%;
+            align-items: start;
         }
-        .grid > * {
-            width: 100%;
-        }
+        .grid > * { width: 100%; }
+        .resource-card.full-width { grid-column: 1 / -1; }
+        @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
         .resource-navigator {
             background: var(--clx-bg-surface-2, #f5f8fa);
             border: 1px solid var(--clx-border, #d1dce8);
             border-radius: 10px;
             padding: 16px;
             margin-bottom: 20px;
+            position: sticky;
+            top: 56px;
+            z-index: 100;
         }
         .resource-meta {
             display: flex;
@@ -136,25 +140,52 @@
         .resource-card.collapsible {
             padding: 0;
             overflow: hidden;
-            border-radius: 10px;
+            border-radius: 12px;
             border: 1px solid var(--clx-border, #d1dce8);
             background: var(--clx-bg-surface, #ffffff);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
             display: block;
             cursor: default;
-            margin-bottom: 12px;
+            margin-bottom: 0;
+            border-top: 3px solid var(--rc-accent, #1f4e79);
         }
-        .resource-card.collapsible:after {
-            content: none;
-        }
+        .resource-card.collapsible:after { content: none; }
         .resource-card.collapsible:hover {
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
         .resource-card.collapsible.expanded {
-            border-color: var(--clx-accent, #0f7490);
+            border-color: var(--rc-accent, #1f4e79);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
+        /* Category accent colors */
+        .resource-card[data-category="drug"] { --rc-accent: #7b1fa2; }
+        .resource-card[data-category="clinical"] { --rc-accent: #1565c0; }
+        .resource-card[data-category="condition"] { --rc-accent: #c62828; }
+        .resource-card[data-category="calculator"] { --rc-accent: #e65100; }
+        .resource-card[data-category="study"] { --rc-accent: #2e7d32; }
+        /* Category badge in header */
+        .rc-category-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 8px;
+            background: var(--rc-accent, #1f4e79);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            flex-shrink: 0;
+        }
+        /* Card subtitle */
+        .rc-subtitle {
+            font-size: 11px;
+            color: var(--clx-text-muted);
+            font-weight: 400;
+            margin-top: 2px;
+            display: block;
+        }
+        .resource-card.collapsible.expanded .rc-subtitle { display: none; }
         .resource-card.collapsible .card-header {
             display: flex;
             justify-content: space-between;
@@ -1126,23 +1157,21 @@
                     <button type="button" onclick="clearResourceSearch()">Clear</button>
                 </div>
                 <div class="resource-filters">
-                    <button type="button" class="resource-chip active" onclick="setResourceFilter('all', this)">All</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('drugs', this)">Drugs</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('labs', this)">Labs</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('vitals', this)">Vitals</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('calculations', this)">Calculations</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('clinical', this)">Clinical Skills</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('sbar', this)">SBAR</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('checklists', this)">Checklists</button>
-                    <button type="button" class="resource-chip" onclick="setResourceFilter('study', this)">Study</button>
+                    <button type="button" class="resource-chip active" onclick="setCategoryFilter('all', this)">All</button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('drug', this)" style="--chip-color:#7b1fa2;">💊 Drug Reference</button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('clinical', this)" style="--chip-color:#1565c0;">🩺 Clinical</button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('condition', this)" style="--chip-color:#c62828;">🏥 Conditions</button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('calculator', this)" style="--chip-color:#e65100;">🧮 Calculators</button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('study', this)" style="--chip-color:#2e7d32;">📖 Study Tools</button>
                 </div>
             </div>
 
             <div class="grid" id="resourceGrid">
                 <!-- Drug Information -->
-                <div id="section-drug-lookup" class="card resource-card collapsible collapsed" data-tags="drugs medication pharma reference">
+                <div id="section-drug-lookup" class="card resource-card collapsible collapsed full-width" data-tags="drugs medication pharma reference" data-category="drug">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>💊 Drug Information</h2>
+                        <div style="flex:1;min-width:0;"><h2>💊 Drug Information<span class="rc-subtitle">Search medications via DailyMed &amp; Drugs.com</span></h2></div>
+                        <span class="rc-category-badge">Drug Ref</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1170,9 +1199,12 @@
                 </div>
 
                 <!-- Lab Values -->
-                <div id="labValuesCard" class="card resource-card collapsible collapsed" data-tags="labs cbc bmp abg coagulation cardiac reference">
+                <div id="labValuesCard" class="card resource-card collapsible collapsed full-width" data-tags="labs cbc bmp abg coagulation cardiac reference" data-category="clinical">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>🔬 Lab Values Reference</h2>
+                        <div style="flex:1;min-width:0;"><h2>🔬 Lab Values Reference<span class="rc-subtitle">Normal ranges for CBC, CMP, ABG, coagulation, cardiac panels</span></h2></div>
+                        <span class="rc-category-badge">Clinical</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1195,9 +1227,12 @@
                     </div>
 
                 <!-- ABG Tic-Tac-Toe Interpreter -->
-                <div id="section-abg-interpreter" class="card resource-card collapsible collapsed" data-tags="abg arterial blood gas interpretation respiratory tic-tac-toe acid base">
+                <div id="section-abg-interpreter" class="card resource-card collapsible collapsed" data-tags="abg arterial blood gas interpretation respiratory tic-tac-toe acid base" data-category="calculator">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>🫁 ABG Tic-Tac-Toe Interpreter</h2>
+                        <div style="flex:1;min-width:0;"><h2>🫁 ABG Tic-Tac-Toe Interpreter<span class="rc-subtitle">Enter pH, PaCO₂, HCO₃ for instant acid-base interpretation</span></h2></div>
+                        <span class="rc-category-badge">Calculator</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1282,9 +1317,12 @@
                 </div>
 
                 <!-- Vital Signs -->
-                <div id="section-vital-signs" class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges">
+                <div id="section-vital-signs" class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges" data-category="clinical">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>❤️ Vital Signs Normal Ranges</h2>
+                        <div style="flex:1;min-width:0;"><h2>❤️ Vital Signs Normal Ranges<span class="rc-subtitle">Adult BP, HR, RR, temp, SpO₂ with clinical notes</span></h2></div>
+                        <span class="rc-category-badge">Clinical</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1309,9 +1347,12 @@
                 </div>
 
                 <!-- IV Calculations -->
-                <div id="section-iv-drip" class="card resource-card collapsible collapsed" data-tags="calculations iv drip math clinical">
+                <div id="section-iv-drip" class="card resource-card collapsible collapsed" data-tags="calculations iv drip math clinical" data-category="calculator">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>💉 IV Drip Rate Calculator</h2>
+                        <div style="flex:1;min-width:0;"><h2>💉 IV Drip Rate Calculator<span class="rc-subtitle">Volume, time &amp; drop factor → gtts/min or mL/hr</span></h2></div>
+                        <span class="rc-category-badge">Calculator</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1351,9 +1392,12 @@
                 </div>
 
                 <!-- Dosage Calculator -->
-                <div id="section-dosage-calculator" class="card resource-card collapsible collapsed" data-tags="calculations dosage math meds">
+                <div id="section-dosage-calculator" class="card resource-card collapsible collapsed" data-tags="calculations dosage math meds" data-category="calculator">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>💊 Dosage Calculator</h2>
+                        <div style="flex:1;min-width:0;"><h2>💊 Dosage Calculator<span class="rc-subtitle">D/H×Q and weight-based dosing formulas</span></h2></div>
+                        <span class="rc-category-badge">Calculator</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1402,9 +1446,12 @@
                 </div>
 
                 <!-- Common Abbreviations -->
-                <div id="section-abbreviations" class="card resource-card collapsible collapsed" data-tags="study abbreviations documentation">
+                <div id="section-abbreviations" class="card resource-card collapsible collapsed" data-tags="study abbreviations documentation" data-category="study">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>📝 Common Abbreviations</h2>
+                        <div style="flex:1;min-width:0;"><h2>📝 Common Abbreviations<span class="rc-subtitle">AC, BID, PO, PRN, STAT, I&amp;O and 20+ more</span></h2></div>
+                        <span class="rc-category-badge">Study</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1438,9 +1485,12 @@
                 </div>
 
                 <!-- Clinical Prep -->
-                <div id="section-clinical-prep" class="card resource-card collapsible collapsed" data-tags="clinical study sim prep planner">
+                <div id="section-clinical-prep" class="card resource-card collapsible collapsed" data-tags="clinical study sim prep planner" data-category="study">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>🗂️ Clinical Prep & Sim Lab</h2>
+                        <div style="flex:1;min-width:0;"><h2>🗂️ Clinical Prep &amp; Sim Lab<span class="rc-subtitle">Pre-clinical checklists, sim scenarios &amp; shift prep</span></h2></div>
+                        <span class="rc-category-badge">Study</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1466,9 +1516,12 @@
                 </div>
 
                 <!-- Clinical Toolkit -->
-                <div id="section-clinical-toolkit" class="card resource-card collapsible collapsed" data-tags="clinical toolkit vitals pain apgar sbar handoff">
+                <div id="section-clinical-toolkit" class="card resource-card collapsible collapsed full-width" data-tags="clinical toolkit vitals pain apgar sbar handoff" data-category="clinical">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>🩺 Clinical Toolkit</h2>
+                        <div style="flex:1;min-width:0;"><h2>🩺 Clinical Toolkit<span class="rc-subtitle">APGAR, Glasgow, FLACC pain scale, SBAR template &amp; checklists</span></h2></div>
+                        <span class="rc-category-badge">Clinical</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -2172,9 +2225,12 @@
                 <!-- ======================================================
                      PHARMACOLOGY QUICK CARDS
                 ====================================================== -->
-                <div id="section-pharm-cards" class="card resource-card collapsible collapsed" data-tags="pharmacology drugs medication nursing considerations side effects">
+                <div id="section-pharm-cards" class="card resource-card collapsible collapsed full-width" data-tags="pharmacology drugs medication nursing considerations side effects" data-category="drug">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>💊 Pharmacology Quick Cards</h2>
+                        <div style="flex:1;min-width:0;"><h2>💊 Pharmacology Quick Cards<span class="rc-subtitle">27 drug classes — mechanisms, side effects, nursing considerations</span></h2></div>
+                        <span class="rc-category-badge">Drug Ref</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2188,9 +2244,12 @@
                 <!-- ======================================================
                      DISEASE / CONDITION FAST CARDS
                 ====================================================== -->
-                <div id="section-disease-cards" class="card resource-card collapsible collapsed" data-tags="disease condition pathophysiology assessment nursing priority CHF MI stroke sepsis">
+                <div id="section-disease-cards" class="card resource-card collapsible collapsed full-width" data-tags="disease condition pathophysiology assessment nursing priority CHF MI stroke sepsis" data-category="condition">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>🏥 Disease / Condition Fast Cards</h2>
+                        <div style="flex:1;min-width:0;"><h2>🏥 Disease / Condition Fast Cards<span class="rc-subtitle">40+ conditions — patho, S&amp;S, nursing priorities, meds</span></h2></div>
+                        <span class="rc-category-badge">Conditions</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2219,9 +2278,12 @@
                 <!-- ======================================================
                      MNEMONICS & FRAMEWORKS
                 ====================================================== -->
-                <div id="section-mnemonics" class="card resource-card collapsible collapsed" data-tags="mnemonics frameworks SBAR OLDCARTS SOAP PIE assessment priority">
+                <div id="section-mnemonics" class="card resource-card collapsible collapsed full-width" data-tags="mnemonics frameworks SBAR OLDCARTS SOAP PIE assessment priority" data-category="study">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>🧠 Mnemonics &amp; Frameworks</h2>
+                        <div style="flex:1;min-width:0;"><h2>🧠 Mnemonics &amp; Frameworks<span class="rc-subtitle">OLDCARTS, SBAR, 6 Rights, ROME, MUDPILES &amp; more</span></h2></div>
+                        <span class="rc-category-badge">Study</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2234,9 +2296,12 @@
                 <!-- ======================================================
                      PRE / PERI / POST PROCEDURE GUIDE
                 ====================================================== -->
-                <div id="section-procedure-guide" class="card resource-card collapsible collapsed" data-tags="procedure nursing care before during after foley IV catheter dressing">
+                <div id="section-procedure-guide" class="card resource-card collapsible collapsed full-width" data-tags="procedure nursing care before during after foley IV catheter dressing" data-category="clinical">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>🔬 Pre/Peri/Post Procedure Guide</h2>
+                        <div style="flex:1;min-width:0;"><h2>🔬 Pre/Peri/Post Procedure Guide<span class="rc-subtitle">Nursing actions before, during &amp; after 20+ procedures</span></h2></div>
+                        <span class="rc-category-badge">Clinical</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2249,9 +2314,12 @@
                 <!-- ======================================================
                      ECG / RHYTHM QUICK REFERENCE
                 ====================================================== -->
-                <div id="section-ecg-rhythms" class="card resource-card collapsible collapsed" data-tags="ECG EKG rhythm cardiac telemetry afib vtach vfib heart block">
+                <div id="section-ecg-rhythms" class="card resource-card collapsible collapsed full-width" data-tags="ECG EKG rhythm cardiac telemetry afib vtach vfib heart block" data-category="clinical">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>❤️ ECG / Rhythm Quick Reference</h2>
+                        <div style="flex:1;min-width:0;"><h2>❤️ ECG / Rhythm Quick Reference<span class="rc-subtitle">20 rhythms with waveforms, criteria &amp; nursing response</span></h2></div>
+                        <span class="rc-category-badge">Clinical</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2913,6 +2981,7 @@
         }
 
         let activeResourceFilter = 'all';
+        let activeCategoryFilter = 'all';
 
         function updateResourceCount(visible, total) {
             const countEl = document.getElementById('resourceCount');
@@ -2927,10 +2996,12 @@
             let visible = 0;
             cards.forEach(card => {
                 const tags = (card.dataset.tags || '').toLowerCase();
+                const category = (card.dataset.category || '').toLowerCase();
                 const text = card.textContent.toLowerCase();
                 const matchesTag = activeResourceFilter === 'all' || tags.includes(activeResourceFilter);
+                const matchesCategory = activeCategoryFilter === 'all' || category === activeCategoryFilter;
                 const matchesQuery = !q || tags.includes(q) || text.includes(q);
-                const show = matchesTag && matchesQuery;
+                const show = matchesTag && matchesCategory && matchesQuery;
                 card.classList.toggle('hidden', !show);
                 if (show) visible += 1;
             });
@@ -2939,6 +3010,19 @@
 
         function setResourceFilter(tag, button) {
             activeResourceFilter = tag;
+            document.querySelectorAll('.resource-chip').forEach(chip => {
+                chip.classList.remove('active');
+                chip.setAttribute('aria-pressed', 'false');
+            });
+            if (button) {
+                button.classList.add('active');
+                button.setAttribute('aria-pressed', 'true');
+            }
+            filterResources();
+        }
+
+        function setCategoryFilter(category, button) {
+            activeCategoryFilter = category;
             document.querySelectorAll('.resource-chip').forEach(chip => {
                 chip.classList.remove('active');
                 chip.setAttribute('aria-pressed', 'false');
