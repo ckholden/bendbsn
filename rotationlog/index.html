@@ -1038,17 +1038,45 @@
                 if (year.length === 2) year = '20' + year;
                 return year + '-' + month + '-' + day;
             }
+            // MM-DD-YY or MM-DD-YYYY
+            const m2 = str.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
+            if (m2) {
+                const month = m2[1].padStart(2, '0');
+                const day = m2[2].padStart(2, '0');
+                let year = m2[3];
+                if (year.length === 2) year = '20' + year;
+                return year + '-' + month + '-' + day;
+            }
+            return null;
+        }
+
+        function parseTime(t) {
+            t = t.trim().replace(/\s/g, '');
+            // HH:MM
+            let m = t.match(/^(\d{1,2}):(\d{2})$/);
+            if (m) return { h: parseInt(m[1]), min: parseInt(m[2]), str: m[1].padStart(2,'0') + ':' + m[2] };
+            // HHMM (4 digits, real-world military format)
+            m = t.match(/^(\d{2})(\d{2})$/);
+            if (m) return { h: parseInt(m[1]), min: parseInt(m[2]), str: m[1] + ':' + m[2] };
+            // HMM (3 digits e.g. 630)
+            m = t.match(/^(\d)(\d{2})$/);
+            if (m) return { h: parseInt(m[1]), min: parseInt(m[2]), str: '0' + m[1] + ':' + m[2] };
             return null;
         }
 
         function calcBulkHours(start, end) {
-            const [sh, sm] = start.split(':').map(Number);
-            const [eh, em] = end.split(':').map(Number);
-            if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return null;
-            let startMins = sh * 60 + sm;
-            let endMins = eh * 60 + em;
+            const s = parseTime(start);
+            const e = parseTime(end);
+            if (!s || !e) return null;
+            let startMins = s.h * 60 + s.min;
+            let endMins = e.h * 60 + e.min;
             if (endMins <= startMins) endMins += 24 * 60; // overnight
             return Math.round((endMins - startMins) / 60 * 100) / 100;
+        }
+
+        function normalizeBulkTime(t) {
+            const p = parseTime(t);
+            return p ? p.str : t;
         }
 
         async function submitBulkAdd() {
@@ -1062,7 +1090,9 @@
             if (!unit) { showToast('Please enter a unit/dept.', 'warning'); return; }
             if (!shiftStart || !shiftEnd) { showToast('Please enter shift start and end times.', 'warning'); return; }
             const hours = calcBulkHours(shiftStart, shiftEnd);
-            if (!hours) { showToast('Invalid shift times — use HH:MM format.', 'warning'); return; }
+            if (!hours) { showToast('Invalid shift times — use HHMM or HH:MM format.', 'warning'); return; }
+            const normStart = normalizeBulkTime(shiftStart);
+            const normEnd = normalizeBulkTime(shiftEnd);
             if (!datesRaw) { showToast('Please enter at least one date.', 'warning'); return; }
             if (!currentUid) { showToast('Not signed in.', 'warning'); return; }
 
@@ -1082,7 +1112,7 @@
             for (const date of dates) {
                 const entryId = Date.now().toString() + '_' + Math.random().toString(36).slice(2, 7);
                 const entry = {
-                    date, facility, unit, shiftStart, shiftEnd, hours,
+                    date, facility, unit, shiftStart: normStart, shiftEnd: normEnd, hours,
                     shift: '', preceptor: '', population: '', skills: [], notes: '',
                     createdAt: Date.now()
                 };
@@ -1138,12 +1168,12 @@
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div>
-                        <label class="rl-label">Shift Start (24h)</label>
-                        <input id="bulkShiftStart" class="rl-input" type="text" placeholder="e.g. 06:00" maxlength="5">
+                        <label class="rl-label">Shift Start (0600 or 06:00)</label>
+                        <input id="bulkShiftStart" class="rl-input" type="text" placeholder="e.g. 0600" maxlength="5">
                     </div>
                     <div>
-                        <label class="rl-label">Shift End (24h)</label>
-                        <input id="bulkShiftEnd" class="rl-input" type="text" placeholder="e.g. 14:30" maxlength="5">
+                        <label class="rl-label">Shift End (1430 or 14:30)</label>
+                        <input id="bulkShiftEnd" class="rl-input" type="text" placeholder="e.g. 1430" maxlength="5">
                     </div>
                 </div>
                 <div>
