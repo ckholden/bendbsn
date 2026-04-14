@@ -150,6 +150,21 @@
         .toggle-switch input:checked + .toggle-track { background: var(--clx-accent); }
         .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); }
 
+        .phrase-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 7px 10px; border: 1px solid var(--clx-border);
+            border-radius: 7px; background: var(--clx-bg-surface-2);
+        }
+        .phrase-shortcut {
+            font-family: monospace; font-size: 12px; font-weight: 700;
+            color: var(--clx-accent); background: var(--clx-accent-subtle);
+            padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+        }
+        .phrase-expansion {
+            flex: 1; font-size: 13px; color: var(--clx-text-secondary);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
         @media (max-width: 500px) {
             .prof-hero { flex-direction: column; text-align: center; }
             .prof-stats-grid { grid-template-columns: 1fr 1fr; }
@@ -305,6 +320,26 @@
             </div>
         </div>
 
+        <!-- Smart Phrases -->
+        <div class="prof-card">
+            <div class="prof-card-hd">My Smart Phrases</div>
+            <div class="prof-card-bd">
+                <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:12px;">Type a shortcut (e.g. <code style="background:var(--clx-bg-surface-2);padding:1px 5px;border-radius:4px;">.vs</code>) in any note field and it auto-expands. Global phrases from your instructor are always available.</p>
+                <div id="myPhrasesList" style="margin-bottom:14px;display:flex;flex-direction:column;gap:6px;"></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                        <label style="font-size:11px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Shortcut</label>
+                        <input id="newPhraseShortcut" type="text" placeholder=".myshortcut" style="width:140px;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:monospace;">
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:160px;">
+                        <label style="font-size:11px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Expansion text</label>
+                        <input id="newPhraseText" type="text" placeholder="Text that replaces the shortcut" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                    </div>
+                    <button class="prof-edit-btn" onclick="addMyPhrase()" style="padding:7px 14px;font-size:13px;height:34px;align-self:flex-end;">+ Add</button>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /prof-page -->
     </main>
     </div><!-- /clx-shell -->
@@ -412,7 +447,15 @@
             if (!currentUid) { roleEl.textContent = 'Unknown'; return; }
             database.ref('userProfiles/' + currentUid).once('value').then(snap => {
                 const profile = snap.val() || {};
-                const role = profile.role || profile.role_label || 'Student Nurse Year 1';
+                // Build display role string from whatever fields are set
+                let role = profile.role;
+                if (!role && profile.role_id === 'student_nurse' && profile.role_year) {
+                    role = 'Student Nurse ' + profile.role_year;
+                }
+                if (!role && profile.role_label) {
+                    role = profile.role_year ? profile.role_label + ' ' + profile.role_year : profile.role_label;
+                }
+                role = role || 'Student Nurse Year 1';
                 roleEl.textContent = role;
                 // Set dropdown to current role
                 const sel = document.getElementById('roleSelect');
@@ -485,12 +528,80 @@
             showToast('Display name updated.', 'success');
         }
 
+        const ROLE_MAP = {
+            'Student Nurse Year 1': { role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 1' },
+            'Student Nurse Year 2': { role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 2' },
+            'Student Nurse Year 3': { role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 3' },
+            'Student Nurse Year 4': { role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 4' },
+            'RN':         { role_id: 'rn',         role_label: 'RN',          role_year: null },
+            'BSN RN':     { role_id: 'bsn_rn',     role_label: 'BSN, RN',     role_year: null },
+            'Instructor': { role_id: 'instructor',  role_label: 'Instructor',  role_year: null }
+        };
+
         function saveRole(role) {
-            if (!currentUid) { showToast('Not logged in.', 'warning'); return; }
-            database.ref('userProfiles/' + currentUid).update({ role: role }).then(() => {
+            const mapped = ROLE_MAP[role];
+            if (!mapped) { showToast('Unknown role.', 'warning'); return; }
+            const authUid = (firebase.auth().currentUser || {}).uid || currentUid;
+            if (!authUid) { showToast('Not logged in.', 'warning'); return; }
+            database.ref('userProfiles/' + authUid).update({
+                role: role,
+                role_id: mapped.role_id,
+                role_label: mapped.role_label,
+                role_year: mapped.role_year
+            }).then(() => {
                 document.getElementById('profRoleBadge').textContent = role;
                 showToast('Role updated to ' + role + '.', 'success');
-            }).catch(() => showToast('Failed to save role.', 'error'));
+            }).catch(err => {
+                console.error('saveRole failed:', err);
+                showToast('Failed to save role. Try refreshing the page.', 'error');
+            });
+        }
+
+        // ========== SMART PHRASES ==========
+        const PHRASES_KEY = 'bendbsn_custom_phrases';
+
+        function loadMyPhrases() {
+            let phrases = {};
+            try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
+            const list = document.getElementById('myPhrasesList');
+            const keys = Object.keys(phrases);
+            if (!keys.length) {
+                list.innerHTML = '<div style="color:var(--clx-text-muted);font-size:13px;padding:6px 0;">No custom phrases yet. Add one below.</div>';
+                return;
+            }
+            list.innerHTML = keys.map(k => `
+                <div class="phrase-row">
+                    <code class="phrase-shortcut">${escapeHtml(k)}</code>
+                    <span class="phrase-expansion">${escapeHtml(phrases[k])}</span>
+                    <button class="prof-edit-btn" style="color:#dc2626;border-color:#fca5a5;flex-shrink:0;" onclick="deleteMyPhrase('${escapeHtml(k).replace(/'/g,"\\'")}')">Delete</button>
+                </div>`).join('');
+        }
+
+        function addMyPhrase() {
+            const shortcutEl = document.getElementById('newPhraseShortcut');
+            const textEl = document.getElementById('newPhraseText');
+            let shortcut = shortcutEl.value.trim();
+            const text = textEl.value.trim();
+            if (!shortcut || !text) { showToast('Both shortcut and expansion are required.', 'warning'); return; }
+            if (!shortcut.startsWith('.')) shortcut = '.' + shortcut;
+            if (shortcut.length < 2) { showToast('Shortcut must be at least 2 characters (e.g. .vs)', 'warning'); return; }
+            let phrases = {};
+            try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
+            phrases[shortcut] = text;
+            localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
+            shortcutEl.value = '';
+            textEl.value = '';
+            loadMyPhrases();
+            showToast('Phrase "' + shortcut + '" saved.', 'success');
+        }
+
+        function deleteMyPhrase(shortcut) {
+            let phrases = {};
+            try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
+            delete phrases[shortcut];
+            localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
+            loadMyPhrases();
+            showToast('Phrase deleted.', 'success');
         }
 
         document.getElementById('profNameInput').addEventListener('keydown', function(e) {
@@ -499,6 +610,7 @@
         });
 
         loadProfile();
+        loadMyPhrases();
     </script>
 </body>
 </html>
