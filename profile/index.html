@@ -372,8 +372,9 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        const THEME_KEY = 'bendbsn_theme'; // matches shared/header.js
         function initTheme() {
-            const t = localStorage.getItem('bsn9b_theme') || 'light';
+            const t = localStorage.getItem(THEME_KEY) || 'light';
             document.documentElement.setAttribute('data-theme', t);
             const icon = document.getElementById('sidebarThemeIcon');
             if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
@@ -384,7 +385,7 @@
             const current = document.documentElement.getAttribute('data-theme') || 'light';
             const next = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('bsn9b_theme', next);
+            localStorage.setItem(THEME_KEY, next);
             const icon = document.getElementById('sidebarThemeIcon');
             if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
             const toggle = document.getElementById('darkModeToggle');
@@ -393,11 +394,17 @@
         function toggleDarkModeFromProfile(checked) {
             const next = checked ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('bsn9b_theme', next);
+            localStorage.setItem(THEME_KEY, next);
             const icon = document.getElementById('sidebarThemeIcon');
             if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
         }
         initTheme();
+
+        // ── Auth state — resolved before any click is possible ──
+        let _profileAuthUser = null;
+        firebase.auth().onAuthStateChanged(function(user) {
+            _profileAuthUser = user;
+        });
 
         let sidebarOpen = false;
         function toggleSidebar() {
@@ -522,20 +529,9 @@
             document.getElementById('profAvatar').textContent = getInitials(newName);
             cancelEditName();
 
-            // Update Firebase — wait for auth to hydrate before writing
-            function writeDisplayName(uid) {
-                if (!uid) return;
-                database.ref('userProfiles/' + uid).update({ displayName: newName }).catch(() => {});
-            }
-            const u = firebase.auth().currentUser;
-            if (u) {
-                writeDisplayName(u.uid);
-            } else {
-                const unsub = firebase.auth().onAuthStateChanged(function(au) {
-                    unsub();
-                    writeDisplayName(au ? au.uid : currentUid);
-                });
-            }
+            // Update Firebase using already-resolved auth user
+            const uid = (_profileAuthUser && _profileAuthUser.uid) || currentUid;
+            if (uid) database.ref('userProfiles/' + uid).update({ displayName: newName }).catch(() => {});
             showToast('Display name updated.', 'success');
         }
 
@@ -552,33 +548,20 @@
         function saveRole(role) {
             const mapped = ROLE_MAP[role];
             if (!mapped) { showToast('Unknown role.', 'warning'); return; }
-
-            function doWrite(uid) {
-                if (!uid) { showToast('Not logged in — please refresh.', 'warning'); return; }
-                database.ref('userProfiles/' + uid).update({
-                    role: role,
-                    role_id: mapped.role_id,
-                    role_label: mapped.role_label,
-                    role_year: mapped.role_year
-                }).then(() => {
-                    document.getElementById('profRoleBadge').textContent = role;
-                    showToast('Role updated to ' + role + '.', 'success');
-                }).catch(err => {
-                    console.error('saveRole failed:', err);
-                    showToast('Failed to save role. Try refreshing the page.', 'error');
-                });
-            }
-
-            const user = firebase.auth().currentUser;
-            if (user) {
-                doWrite(user.uid);
-            } else {
-                // Auth not yet hydrated from persisted session — wait once
-                const unsub = firebase.auth().onAuthStateChanged(u => {
-                    unsub();
-                    doWrite(u ? u.uid : currentUid);
-                });
-            }
+            const uid = (_profileAuthUser && _profileAuthUser.uid) || currentUid;
+            if (!uid) { showToast('Not logged in — please refresh.', 'warning'); return; }
+            database.ref('userProfiles/' + uid).update({
+                role: role,
+                role_id: mapped.role_id,
+                role_label: mapped.role_label,
+                role_year: mapped.role_year
+            }).then(() => {
+                document.getElementById('profRoleBadge').textContent = role;
+                showToast('Role updated to ' + role + '.', 'success');
+            }).catch(err => {
+                console.error('saveRole failed:', err.code, err.message);
+                showToast('Save failed (' + (err.code || 'unknown') + '). Check console.', 'error');
+            });
         }
 
         // ========== SMART PHRASES ==========

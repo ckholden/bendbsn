@@ -235,9 +235,20 @@
                             <option>Nights (1900–0700)</option>
                         </select>
                     </div>
-                    <div class="rl-field">
-                        <label class="rl-label" for="rlHours">Hours</label>
-                        <input type="number" id="rlHours" class="rl-input" placeholder="e.g., 8" min="0.5" max="24" step="0.5">
+                    <div class="rl-field full" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:flex-end;">
+                        <div>
+                            <label class="rl-label" for="rlShiftStart">Shift Start (24h)</label>
+                            <input type="text" id="rlShiftStart" class="rl-input" placeholder="e.g. 07:00" maxlength="5" oninput="calcShiftHours()">
+                        </div>
+                        <div>
+                            <label class="rl-label" for="rlShiftEnd">Shift End (24h)</label>
+                            <input type="text" id="rlShiftEnd" class="rl-input" placeholder="e.g. 19:00" maxlength="5" oninput="calcShiftHours()">
+                        </div>
+                        <div style="text-align:center;padding-bottom:6px;min-width:52px;">
+                            <div id="rlCalcHours" style="font-size:20px;font-weight:800;color:var(--clx-accent);line-height:1;">—</div>
+                            <div style="font-size:10px;color:var(--clx-text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">hrs</div>
+                        </div>
+                        <input type="hidden" id="rlHours">
                     </div>
                     <div class="rl-field">
                         <label class="rl-label" for="rlPreceptor">Preceptor Name (optional)</label>
@@ -533,12 +544,39 @@
             return Array.from(document.querySelectorAll('.skill-chip input:checked')).map(cb => cb.value);
         }
 
+        function calcShiftHours() {
+            const start = (document.getElementById('rlShiftStart').value || '').trim();
+            const end = (document.getElementById('rlShiftEnd').value || '').trim();
+            const display = document.getElementById('rlCalcHours');
+            const hidden = document.getElementById('rlHours');
+            if (!start || !end || !/^\d{1,2}:\d{2}$/.test(start) || !/^\d{1,2}:\d{2}$/.test(end)) {
+                display.textContent = '—';
+                hidden.value = '';
+                return;
+            }
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em) || sh > 23 || eh > 23 || sm > 59 || em > 59) {
+                display.textContent = '!';
+                hidden.value = '';
+                return;
+            }
+            let startMins = sh * 60 + sm;
+            let endMins = eh * 60 + em;
+            if (endMins <= startMins) endMins += 24 * 60; // overnight
+            const hrs = (endMins - startMins) / 60;
+            display.textContent = hrs % 1 === 0 ? hrs : hrs.toFixed(1);
+            hidden.value = hrs;
+        }
+
         function addRlEntry() {
             const date = document.getElementById('rlDate').value;
             const facility = document.getElementById('rlFacility').value.trim();
             const unit = document.getElementById('rlUnit').value;
             const unitOther = document.getElementById('rlUnitOther').value.trim();
             const shift = document.getElementById('rlShift').value;
+            const shiftStart = document.getElementById('rlShiftStart').value.trim();
+            const shiftEnd = document.getElementById('rlShiftEnd').value.trim();
             const hours = parseFloat(document.getElementById('rlHours').value);
             const preceptor = document.getElementById('rlPreceptor').value.trim();
             const population = document.getElementById('rlPopulation').value.trim();
@@ -550,14 +588,15 @@
             if (!date) { showToast('Please select a date.', 'warning'); return; }
             if (!facility) { showToast('Please enter a facility name.', 'warning'); return; }
             if (!unit) { showToast('Please select a unit.', 'warning'); return; }
-            if (!hours || isNaN(hours) || hours <= 0) { showToast('Please enter valid hours.', 'warning'); return; }
+            if (!shiftStart || !shiftEnd) { showToast('Please enter shift start and end times.', 'warning'); return; }
+            if (!hours || isNaN(hours) || hours <= 0) { showToast('Invalid shift times — check format (HH:MM).', 'warning'); return; }
 
             if (!currentUid) { showToast('Sign in to save entries.', 'warning'); return; }
 
             const entryId = Date.now().toString();
             const entry = {
                 date, facility, unit: unit === 'Other' ? unitOther : unit,
-                shift, hours, preceptor, population, skills, notes,
+                shift, shiftStart, shiftEnd, hours, preceptor, population, skills, notes,
                 createdAt: Date.now()
             };
             database.ref('rotationLog/' + currentUid + '/' + entryId).set(entry).then(() => {
@@ -585,7 +624,10 @@
             document.getElementById('rlUnit').value = '';
             document.getElementById('rlUnitOther').value = '';
             document.getElementById('rlShift').value = '';
+            document.getElementById('rlShiftStart').value = '';
+            document.getElementById('rlShiftEnd').value = '';
             document.getElementById('rlHours').value = '';
+            document.getElementById('rlCalcHours').textContent = '—';
             document.getElementById('rlPreceptor').value = '';
             document.getElementById('rlPopulation').value = '';
             document.getElementById('rlSkillOther').value = '';
