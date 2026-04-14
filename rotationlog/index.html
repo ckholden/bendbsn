@@ -294,6 +294,7 @@
                 </div>
                 <div class="rl-actions">
                     <button class="rl-btn primary" onclick="addRlEntry()">Add Entry</button>
+                    <button class="rl-btn" onclick="openBulkAddModal()">&#128203; Bulk Add</button>
                     <button class="rl-btn" onclick="clearRlForm()">Clear</button>
                 </div>
             </div>
@@ -465,18 +466,19 @@
         const database = firebase.database();
 
         function initTheme() {
-            const t = localStorage.getItem('bsn9b_theme') || 'light';
+            const t = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', t);
-            const icon = document.getElementById('sidebarThemeIcon');
-            if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
         }
         function toggleDarkMode() {
-            const current = document.documentElement.getAttribute('data-theme') || 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('bsn9b_theme', next);
-            const icon = document.getElementById('sidebarThemeIcon');
-            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+            if (window.setTheme) {
+                const current = window.getTheme ? window.getTheme() : (document.documentElement.getAttribute('data-theme') || 'light');
+                window.setTheme(current === 'dark' ? 'light' : 'dark');
+            } else {
+                const current = document.documentElement.getAttribute('data-theme') || 'light';
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('bendbsn_theme', next);
+            }
         }
         initTheme();
 
@@ -1012,8 +1014,148 @@
 
         // ========== END LAB TRACKER ==========
 
+        // ========== BULK ADD ==========
+
+        function openBulkAddModal() {
+            document.getElementById('bulkAddModal').style.display = 'flex';
+        }
+
+        function closeBulkAddModal() {
+            document.getElementById('bulkAddModal').style.display = 'none';
+        }
+
+        function parseBulkDate(str) {
+            str = str.trim();
+            if (!str) return null;
+            // YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+            // MM/DD/YYYY or MM/DD/YY
+            const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+            if (m) {
+                const month = m[1].padStart(2, '0');
+                const day = m[2].padStart(2, '0');
+                let year = m[3];
+                if (year.length === 2) year = '20' + year;
+                return year + '-' + month + '-' + day;
+            }
+            return null;
+        }
+
+        function calcBulkHours(start, end) {
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return null;
+            let startMins = sh * 60 + sm;
+            let endMins = eh * 60 + em;
+            if (endMins <= startMins) endMins += 24 * 60; // overnight
+            return Math.round((endMins - startMins) / 60 * 100) / 100;
+        }
+
+        async function submitBulkAdd() {
+            const facility = document.getElementById('bulkFacility').value.trim();
+            const unit = document.getElementById('bulkUnit').value.trim();
+            const shiftStart = document.getElementById('bulkShiftStart').value.trim();
+            const shiftEnd = document.getElementById('bulkShiftEnd').value.trim();
+            const datesRaw = document.getElementById('bulkDates').value.trim();
+
+            if (!facility) { showToast('Please enter a facility name.', 'warning'); return; }
+            if (!unit) { showToast('Please enter a unit/dept.', 'warning'); return; }
+            if (!shiftStart || !shiftEnd) { showToast('Please enter shift start and end times.', 'warning'); return; }
+            const hours = calcBulkHours(shiftStart, shiftEnd);
+            if (!hours) { showToast('Invalid shift times — use HH:MM format.', 'warning'); return; }
+            if (!datesRaw) { showToast('Please enter at least one date.', 'warning'); return; }
+            if (!currentUid) { showToast('Not signed in.', 'warning'); return; }
+
+            const lines = datesRaw.split('\n').map(l => l.trim()).filter(Boolean);
+            const dates = [];
+            for (const line of lines) {
+                const d = parseBulkDate(line);
+                if (!d) { showToast('Could not parse date: "' + line + '"', 'warning'); return; }
+                dates.push(d);
+            }
+
+            const btn = document.getElementById('bulkAddSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Adding…';
+
+            let added = 0;
+            for (const date of dates) {
+                const entryId = Date.now().toString() + '_' + Math.random().toString(36).slice(2, 7);
+                const entry = {
+                    date, facility, unit, shiftStart, shiftEnd, hours,
+                    shift: '', preceptor: '', population: '', skills: [], notes: '',
+                    createdAt: Date.now()
+                };
+                try {
+                    await database.ref('rotationLog/' + currentUid + '/' + entryId).set(entry);
+                    rlEntries.push({...entry, _id: entryId});
+                    added++;
+                } catch(e) {
+                    showToast('Failed on ' + date + ': ' + e.message, 'error');
+                    break;
+                }
+                // small delay to avoid duplicate IDs from Date.now()
+                await new Promise(r => setTimeout(r, 5));
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Add Entries';
+            if (added > 0) {
+                renderRlTable();
+                updateRlStats();
+                closeBulkAddModal();
+                // Clear form for next use
+                document.getElementById('bulkFacility').value = '';
+                document.getElementById('bulkUnit').value = '';
+                document.getElementById('bulkShiftStart').value = '';
+                document.getElementById('bulkShiftEnd').value = '';
+                document.getElementById('bulkDates').value = '';
+                showToast(added + ' entr' + (added === 1 ? 'y' : 'ies') + ' added.', 'success');
+            }
+        }
+
+        // ========== END BULK ADD ==========
+
         // Init
         loadRlEntries();
     </script>
+
+    <!-- Bulk Add Modal -->
+    <div id="bulkAddModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:var(--clx-bg-surface);border-radius:12px;width:100%;max-width:480px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <h3 style="font-size:16px;font-weight:700;color:var(--clx-text-primary);">&#128203; Bulk Add Entries</h3>
+                <button onclick="closeBulkAddModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--clx-text-muted);line-height:1;">&times;</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <div>
+                    <label class="rl-label">Facility</label>
+                    <input id="bulkFacility" class="rl-input" type="text" placeholder="e.g. St. Charles Medical Center">
+                </div>
+                <div>
+                    <label class="rl-label">Unit / Dept</label>
+                    <input id="bulkUnit" class="rl-input" type="text" placeholder="e.g. Med-Surg, ICU, SNF">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label class="rl-label">Shift Start (24h)</label>
+                        <input id="bulkShiftStart" class="rl-input" type="text" placeholder="e.g. 06:00" maxlength="5">
+                    </div>
+                    <div>
+                        <label class="rl-label">Shift End (24h)</label>
+                        <input id="bulkShiftEnd" class="rl-input" type="text" placeholder="e.g. 14:30" maxlength="5">
+                    </div>
+                </div>
+                <div>
+                    <label class="rl-label">Dates (one per line — MM/DD/YY or YYYY-MM-DD)</label>
+                    <textarea id="bulkDates" class="rl-textarea" rows="8" placeholder="10/28/25&#10;11/04/25&#10;11/18/25"></textarea>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+                <button id="bulkAddSubmitBtn" class="rl-btn primary" onclick="submitBulkAdd()" style="flex:1;">Add Entries</button>
+                <button class="rl-btn" onclick="closeBulkAddModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

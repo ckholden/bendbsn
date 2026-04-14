@@ -427,18 +427,19 @@
         const database = firebase.database();
 
         function initTheme() {
-            const t = localStorage.getItem('bsn9b_theme') || 'light';
+            const t = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', t);
-            const icon = document.getElementById('sidebarThemeIcon');
-            if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
         }
         function toggleDarkMode() {
-            const current = document.documentElement.getAttribute('data-theme') || 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('bsn9b_theme', next);
-            const icon = document.getElementById('sidebarThemeIcon');
-            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+            if (window.setTheme) {
+                const current = window.getTheme ? window.getTheme() : (document.documentElement.getAttribute('data-theme') || 'light');
+                window.setTheme(current === 'dark' ? 'light' : 'dark');
+            } else {
+                const current = document.documentElement.getAttribute('data-theme') || 'light';
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('bendbsn_theme', next);
+            }
         }
         initTheme();
 
