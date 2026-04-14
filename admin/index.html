@@ -329,6 +329,10 @@
             <span class="clx-sidebar-label">Profile</span>
         </a>
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
+        <button class="clx-sidebar-item" onclick="openTicketModal()">
+            <span class="clx-sidebar-icon">🎫</span>
+            <span class="clx-sidebar-label">Feedback</span>
+        </button>
         <button class="clx-sidebar-item" onclick="logout()">
             <span class="clx-sidebar-icon">🚪</span>
             <span class="clx-sidebar-label">Logout</span>
@@ -365,7 +369,7 @@
         </div>
 
         <!-- Quick Stats -->
-        <div class="stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+        <div class="stat-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px;">
             <div class="stat-box" style="border-left: 3px solid #28a745;">
                 <div class="stat-number" id="statOnline" style="color: #28a745;">0</div>
                 <div class="stat-label">Online</div>
@@ -382,6 +386,10 @@
                 <div class="stat-number" id="statPosts" style="color: #6f42c1;">0</div>
                 <div class="stat-label">Posts</div>
             </div>
+            <div class="stat-box" style="border-left: 3px solid #e67e22;">
+                <div class="stat-number" id="statOpenTickets" style="color: #e67e22;">0</div>
+                <div class="stat-label">Open Tickets</div>
+            </div>
         </div>
 
         <!-- Action Bar -->
@@ -396,6 +404,8 @@
             <span style="color: var(--clx-border); margin: 0 2px;">|</span>
             <button class="btn btn-secondary btn-sm" onclick="showSmartPhrases()">Smart Phrases</button>
             <button class="btn btn-secondary btn-sm" onclick="showCommunityStats()">Community Stats</button>
+            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
+            <button class="btn btn-secondary btn-sm" onclick="showTicketsPanel()">🎫 Tickets</button>
             <button class="btn btn-secondary btn-sm" onclick="normalizeUserRoles()">Normalize Roles</button>
         </div>
 
@@ -826,6 +836,69 @@
                         <div class="icon">&#128196;</div>
                         <p>Loading submissions...</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- IT Tickets Card -->
+            <div class="card" id="ticketsPanelCard" style="grid-column: 1 / -1; display:none; margin-top:16px;">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>🎫 IT Tickets / Feedback</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="ticketStatusFilter" onchange="loadTickets()" style="padding:4px 8px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                            <option value="all">All</option>
+                            <option value="open">Open</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                        <button class="refresh-btn" onclick="loadTickets()">&#x21bb;</button>
+                    </div>
+                </div>
+                <div class="card-body" id="ticketsList">
+                    <div class="empty-state"><p>Loading tickets...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IT Ticket Detail Modal -->
+    <div id="itTicketDetailModal" class="bsn-modal-overlay" style="display:none;z-index:9200;" onclick="if(event.target===this)closeTicketDetail()">
+        <div class="bsn-confirm-modal" style="max-width:560px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h2 style="font-size:16px;font-weight:700;" id="ticketDetailTitle">Ticket</h2>
+                <button onclick="closeTicketDetail()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted);">&times;</button>
+            </div>
+            <div id="ticketDetailMeta" style="font-size:12px;color:var(--clx-text-muted);margin-bottom:14px;display:flex;gap:12px;flex-wrap:wrap;"></div>
+            <div style="background:var(--clx-bg-surface-2,#1e2b3a);border:1px solid var(--clx-border);border-radius:6px;padding:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto;margin-bottom:14px;" id="ticketDetailMessage"></div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:var(--clx-text-secondary);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Status</label>
+                    <select id="ticketDetailStatus" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="done">Done</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:var(--clx-text-secondary);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Phase</label>
+                    <select id="ticketDetailPhase" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                        <option value="1">Phase 1 — Triage</option>
+                        <option value="2">Phase 2 — In Work</option>
+                        <option value="3">Phase 3 — Complete</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <label style="font-size:11px;font-weight:700;color:var(--clx-text-secondary);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Admin Notes</label>
+                <textarea id="ticketDetailNotes" rows="3" placeholder="Internal notes, resolution steps..." style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);resize:vertical;"></textarea>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <button class="btn btn-danger btn-sm" onclick="deleteTicket()">Delete</button>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-secondary btn-sm" onclick="closeTicketDetail()">Cancel</button>
+                    <button class="btn btn-primary btn-sm" onclick="saveTicketDetail()">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -3914,6 +3987,152 @@
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
         // ====== END ROLE CONFIGURATION ======
+
+        // ===== IT TICKETS =====
+        const appTicketsRef = database.ref('appTickets');
+        let _currentTicketId = null;
+
+        function showTicketsPanel() {
+            const card = document.getElementById('ticketsPanelCard');
+            if (!card) return;
+            card.style.display = '';
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            loadTickets();
+        }
+
+        function loadTickets() {
+            const container = document.getElementById('ticketsList');
+            if (!container) return;
+            container.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+            const filter = (document.getElementById('ticketStatusFilter') || {}).value || 'all';
+
+            appTicketsRef.orderByChild('timestamp').once('value').then(snap => {
+                const tickets = [];
+                snap.forEach(child => {
+                    tickets.push({ id: child.key, ...child.val() });
+                });
+                tickets.reverse(); // newest first
+
+                // Update stat
+                const openCount = tickets.filter(t => t.status === 'open').length;
+                const statEl = document.getElementById('statOpenTickets');
+                if (statEl) {
+                    statEl.textContent = openCount;
+                    statEl.style.color = openCount > 0 ? '#e67e22' : 'var(--clx-text-muted)';
+                }
+
+                const filtered = filter === 'all' ? tickets : tickets.filter(t => t.status === filter);
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No tickets found.</p></div>';
+                    return;
+                }
+
+                const statusColors = { open: '#e74c3c', in_progress: '#f39c12', done: '#27ae60' };
+                const statusLabels = { open: 'Open', in_progress: 'In Progress', done: 'Done' };
+                const priorityColors = { Low: '#6c757d', Medium: '#f39c12', High: '#e74c3c' };
+
+                let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+                    + '<thead><tr style="border-bottom:2px solid var(--clx-border);text-align:left;">'
+                    + '<th style="padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">From</th>'
+                    + '<th style="padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">Category</th>'
+                    + '<th style="padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">Priority</th>'
+                    + '<th style="padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">Preview</th>'
+                    + '<th style="padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">Phase</th>'
+                    + '<th style="padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">Status</th>'
+                    + '<th style="padding:8px 10px;"></th>'
+                    + '</tr></thead><tbody>';
+
+                filtered.forEach(t => {
+                    const statusColor = statusColors[t.status] || '#999';
+                    const statusLabel = statusLabels[t.status] || t.status;
+                    const priorityColor = priorityColors[t.priority] || '#999';
+                    const preview = (t.message || '').substring(0, 60) + ((t.message || '').length > 60 ? '\u2026' : '');
+                    const date = new Date(t.timestamp).toLocaleDateString();
+                    html += '<tr style="border-bottom:1px solid var(--clx-border);cursor:pointer;" onclick="viewTicket(\'' + t.id + '\')" onmouseover="this.style.background=\'var(--clx-bg-surface)\'" onmouseout="this.style.background=\'\'">'
+                        + '<td style="padding:8px 10px;"><div style="font-weight:600;">' + escapeHtml(t.name || '\u2014') + '</div><div style="font-size:11px;color:var(--clx-text-muted);">' + date + '</div></td>'
+                        + '<td style="padding:8px 10px;">' + escapeHtml(t.category || '\u2014') + '</td>'
+                        + '<td style="padding:8px 10px;"><span style="color:' + priorityColor + ';font-weight:600;font-size:12px;">' + escapeHtml(t.priority || '\u2014') + '</span></td>'
+                        + '<td style="padding:8px 10px;color:var(--clx-text-secondary);max-width:220px;">' + escapeHtml(preview) + '</td>'
+                        + '<td style="padding:8px 10px;font-size:12px;color:var(--clx-text-muted);">Phase ' + (t.phase || 1) + '</td>'
+                        + '<td style="padding:8px 10px;"><span style="background:' + statusColor + '22;color:' + statusColor + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">' + statusLabel + '</span></td>'
+                        + '<td style="padding:8px 10px;"><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();viewTicket(\'' + t.id + '\')">View</button></td>'
+                        + '</tr>';
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            }).catch(() => {
+                container.innerHTML = '<div class="empty-state"><p>Failed to load tickets.</p></div>';
+            });
+        }
+
+        function viewTicket(id) {
+            _currentTicketId = id;
+            appTicketsRef.child(id).once('value').then(snap => {
+                const t = snap.val();
+                if (!t) return;
+                const date = new Date(t.timestamp).toLocaleString();
+                document.getElementById('ticketDetailTitle').textContent = t.category + ' \u2014 ' + t.priority + ' Priority';
+                document.getElementById('ticketDetailMeta').innerHTML =
+                    '<span>\ud83d\udc64 ' + escapeHtml(t.name || '\u2014') + '</span>'
+                    + '<span>\ud83d\udce7 ' + escapeHtml(t.email || '\u2014') + '</span>'
+                    + '<span>\ud83d\udd50 ' + date + '</span>';
+                document.getElementById('ticketDetailMessage').textContent = t.message || '';
+                document.getElementById('ticketDetailStatus').value = t.status || 'open';
+                document.getElementById('ticketDetailPhase').value = String(t.phase || 1);
+                document.getElementById('ticketDetailNotes').value = t.adminNotes || '';
+                document.getElementById('itTicketDetailModal').style.display = 'flex';
+            });
+        }
+
+        function closeTicketDetail() {
+            document.getElementById('itTicketDetailModal').style.display = 'none';
+            _currentTicketId = null;
+        }
+
+        function saveTicketDetail() {
+            if (!_currentTicketId) return;
+            const status = document.getElementById('ticketDetailStatus').value;
+            const phase = parseInt(document.getElementById('ticketDetailPhase').value);
+            const adminNotes = document.getElementById('ticketDetailNotes').value.trim();
+            appTicketsRef.child(_currentTicketId).update({ status, phase, adminNotes })
+                .then(() => {
+                    closeTicketDetail();
+                    loadTickets();
+                    if (typeof showToast === 'function') showToast('Ticket updated.', 'success');
+                });
+        }
+
+        function deleteTicket() {
+            if (!_currentTicketId) return;
+            showConfirmModal('Delete Ticket', 'Permanently delete this ticket?', function() {
+                appTicketsRef.child(_currentTicketId).remove().then(() => {
+                    closeTicketDetail();
+                    loadTickets();
+                    if (typeof showToast === 'function') showToast('Ticket deleted.', 'success');
+                });
+            }, { danger: true, confirmText: 'Delete' });
+        }
+
+        // Listen for open tickets → update badge
+        appTicketsRef.orderByChild('status').equalTo('open').on('value', snap => {
+            const count = snap.numChildren();
+            const statEl = document.getElementById('statOpenTickets');
+            if (statEl) {
+                statEl.textContent = count;
+                statEl.style.color = count > 0 ? '#e67e22' : 'var(--clx-text-muted)';
+            }
+        });
+
+        // ESC key closes ticket detail modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('itTicketDetailModal');
+                if (modal && modal.style.display !== 'none') closeTicketDetail();
+            }
+        });
+        // ===== END IT TICKETS =====
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>

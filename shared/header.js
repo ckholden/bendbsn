@@ -549,3 +549,144 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         if (e.key === 'bendbsn_chat_unread') updateBadge();
     });
 })();
+
+// ===== IT TICKET / FEEDBACK MODAL =====
+(function () {
+    'use strict';
+
+    var isLoginPage = location.pathname === '/' || location.pathname === '/index.html';
+    if (isLoginPage) return;
+
+    // ── Inject EmailJS if not already loaded ──────────────
+    if (!window.emailjs) {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+        document.head.appendChild(s);
+    }
+
+    // ── Inject modal HTML ─────────────────────────────────
+    var modalHtml = '<div id="itTicketModal" class="bsn-modal-overlay" style="display:none;z-index:9500;" onclick="if(event.target===this)closeTicketModal()">'
+        + '<div class="bsn-confirm-modal" style="max-width:480px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
+        + '<h2 style="font-size:16px;font-weight:700;margin:0;">Submit Feedback / Report</h2>'
+        + '<button onclick="closeTicketModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted,#718096);line-height:1;">&times;</button>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">'
+        + '<div>'
+        + '<label style="font-size:11px;font-weight:700;color:var(--clx-text-secondary,#a0aec0);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Category</label>'
+        + '<select id="itTicketCategory" style="width:100%;padding:8px 10px;border:1px solid var(--clx-border,rgba(255,255,255,0.12));border-radius:6px;font-size:13px;background:var(--clx-bg-surface,#1a2744);color:var(--clx-text-primary,#fff);font-family:inherit;">'
+        + '<option value="Bug Report">Bug Report</option>'
+        + '<option value="Feature Request">Feature Request</option>'
+        + '<option value="General Feedback">General Feedback</option>'
+        + '</select>'
+        + '</div>'
+        + '<div>'
+        + '<label style="font-size:11px;font-weight:700;color:var(--clx-text-secondary,#a0aec0);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Priority</label>'
+        + '<select id="itTicketPriority" style="width:100%;padding:8px 10px;border:1px solid var(--clx-border,rgba(255,255,255,0.12));border-radius:6px;font-size:13px;background:var(--clx-bg-surface,#1a2744);color:var(--clx-text-primary,#fff);font-family:inherit;">'
+        + '<option value="Low">Low</option>'
+        + '<option value="Medium" selected>Medium</option>'
+        + '<option value="High">High</option>'
+        + '</select>'
+        + '</div>'
+        + '</div>'
+        + '<div style="margin-bottom:16px;">'
+        + '<label style="font-size:11px;font-weight:700;color:var(--clx-text-secondary,#a0aec0);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Message</label>'
+        + '<textarea id="itTicketMessage" rows="5" placeholder="Describe the issue or idea in detail..." style="width:100%;padding:8px 10px;border:1px solid var(--clx-border,rgba(255,255,255,0.12));border-radius:6px;font-size:13px;background:var(--clx-bg-surface,#1a2744);color:var(--clx-text-primary,#fff);resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>'
+        + '</div>'
+        + '<div class="bsn-modal-btns">'
+        + '<button class="bsn-btn-cancel" onclick="closeTicketModal()">Cancel</button>'
+        + '<button class="bsn-btn-confirm" onclick="submitTicket()" style="background:#3b82f6;border-color:#3b82f6;">Submit</button>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = modalHtml;
+    document.body.appendChild(wrapper.firstChild);
+
+    // ── ESC key closes modal ──────────────────────────────
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            var modal = document.getElementById('itTicketModal');
+            if (modal && modal.style.display !== 'none') closeTicketModal();
+        }
+    });
+
+    // ── Global functions ──────────────────────────────────
+    window.openTicketModal = function () {
+        var modal = document.getElementById('itTicketModal');
+        if (!modal) return;
+        var cat = document.getElementById('itTicketCategory');
+        var pri = document.getElementById('itTicketPriority');
+        var msg = document.getElementById('itTicketMessage');
+        if (cat) cat.value = 'Bug Report';
+        if (pri) pri.value = 'Medium';
+        if (msg) msg.value = '';
+        modal.style.display = 'flex';
+        if (msg) setTimeout(function () { msg.focus(); }, 50);
+    };
+
+    window.closeTicketModal = function () {
+        var modal = document.getElementById('itTicketModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.submitTicket = async function () {
+        var category = (document.getElementById('itTicketCategory') || {}).value || '';
+        var priority = (document.getElementById('itTicketPriority') || {}).value || '';
+        var message = ((document.getElementById('itTicketMessage') || {}).value || '').trim();
+
+        if (!message) {
+            if (typeof showToast === 'function') {
+                showToast('Please describe the issue or idea before submitting.', 'warning');
+            }
+            return;
+        }
+
+        var ticket = {
+            uid: localStorage.getItem('bendbsn_uid') || '',
+            name: localStorage.getItem('bendbsn_displayName') || '',
+            email: localStorage.getItem('bendbsn_user') || '',
+            category: category,
+            priority: priority,
+            message: message,
+            timestamp: Date.now(),
+            status: 'open',
+            phase: 1,
+            adminNotes: '',
+            emailNotified: false
+        };
+
+        try {
+            var ref = firebase.database().ref('appTickets').push();
+            await ref.set(ticket);
+            var ticketKey = ref.key;
+
+            // Try EmailJS notification — graceful failure
+            try {
+                if (window.emailjs) {
+                    var emailParams = {
+                        to_email: 'christiankholden@gmail.com',
+                        subject: '[BendBSN Ticket] ' + category + ' \u2014 ' + priority + ' priority',
+                        message: ticket.name + ' submitted a ' + category + ':\n\n' + message + '\n\nPriority: ' + priority
+                    };
+                    await window.emailjs.send('service_2dw80zz', 'template_ty32lyw', emailParams, 'Paf-N3lByYsImp0af');
+                    firebase.database().ref('appTickets/' + ticketKey).update({ emailNotified: true });
+                }
+            } catch (emailErr) {
+                console.warn('EmailJS notification failed (non-fatal):', emailErr);
+            }
+
+            window.closeTicketModal();
+            if (typeof showToast === 'function') {
+                showToast('Feedback submitted. Thank you!', 'success');
+            }
+        } catch (err) {
+            console.error('submitTicket error:', err);
+            if (typeof showToast === 'function') {
+                showToast('Failed to submit ticket. Please try again.', 'error');
+            }
+        }
+    };
+})();
+// ===== END IT TICKET / FEEDBACK MODAL =====
