@@ -314,7 +314,8 @@
                                 <th onclick="sortRlTable('date')" style="cursor:pointer;">Date &#8597;</th>
                                 <th onclick="sortRlTable('facility')" style="cursor:pointer;">Facility &#8597;</th>
                                 <th>Unit</th>
-                                <th>Shift</th>
+                                <th>Start</th>
+                                <th>End</th>
                                 <th onclick="sortRlTable('hours')" style="cursor:pointer;">Hrs &#8597;</th>
                                 <th>Skills</th>
                                 <th>Notes</th>
@@ -660,7 +661,7 @@
                 return 0;
             });
             if (!filtered.length) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--clx-text-muted);">' + (rlEntries.length ? 'No results match your search.' : 'No entries yet. Add your first rotation above.') + '</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--clx-text-muted);">' + (rlEntries.length ? 'No results match your search.' : 'No entries yet. Add your first rotation above.') + '</td></tr>';
                 return;
             }
             tbody.innerHTML = filtered.map(e => {
@@ -669,8 +670,9 @@
                     '<td>' + escapeHtml(e.date) + '</td>' +
                     '<td>' + escapeHtml(e.facility) + '</td>' +
                     '<td>' + escapeHtml(e.unit) + '</td>' +
-                    '<td style="white-space:nowrap;">' + escapeHtml((e.shift||'').split(' ')[0]) + '</td>' +
-                    '<td>' + escapeHtml(String(e.hours)) + '</td>' +
+                    '<td style="white-space:nowrap;font-variant-numeric:tabular-nums;">' + escapeHtml(e.shiftStart || '—') + '</td>' +
+                    '<td style="white-space:nowrap;font-variant-numeric:tabular-nums;">' + escapeHtml(e.shiftEnd || '—') + '</td>' +
+                    '<td style="font-weight:600;">' + escapeHtml(String(e.hours)) + '</td>' +
                     '<td>' + skillsHtml + '</td>' +
                     '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(e.notes) + '">' + escapeHtml(e.notes || '—') + '</td>' +
                     '<td><button onclick="deleteRlEntry(\'' + e._id + '\')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:14px;padding:2px 6px;border-radius:4px;" title="Delete" aria-label="Delete">&#128465;</button></td>' +

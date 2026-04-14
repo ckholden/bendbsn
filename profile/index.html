@@ -402,8 +402,15 @@
 
         // ── Auth state — resolved before any click is possible ──
         let _profileAuthUser = null;
+        let _profileLoaded = false;
         firebase.auth().onAuthStateChanged(function(user) {
             _profileAuthUser = user;
+            // Load profile once auth is resolved (ensures UID is available for Firebase reads)
+            if (!_profileLoaded) {
+                _profileLoaded = true;
+                loadProfile();
+                loadMyPhrases();
+            }
         });
 
         let sidebarOpen = false;
@@ -452,8 +459,9 @@
             avatarEl.style.background = getAvatarColor(displayName);
             avatarEl.textContent = getInitials(displayName);
 
-            if (!currentUid) { roleEl.textContent = 'Unknown'; return; }
-            database.ref('userProfiles/' + currentUid).once('value').then(snap => {
+            const profileUid = (_profileAuthUser && _profileAuthUser.uid) || currentUid;
+            if (!profileUid) { roleEl.textContent = 'Unknown'; return; }
+            database.ref('userProfiles/' + profileUid).once('value').then(snap => {
                 const profile = snap.val() || {};
                 // Build display role string from whatever fields are set
                 let role = profile.role;
@@ -616,8 +624,7 @@
             if (e.key === 'Escape') cancelEditName();
         });
 
-        loadProfile();
-        loadMyPhrases();
+        // loadProfile() and loadMyPhrases() are called inside onAuthStateChanged above
     </script>
 </body>
 </html>
