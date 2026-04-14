@@ -521,9 +521,19 @@
             document.getElementById('profAvatar').textContent = getInitials(newName);
             cancelEditName();
 
-            // Update Firebase
-            if (currentUid) {
-                database.ref('userProfiles/' + currentUid).update({ displayName: newName }).catch(() => {});
+            // Update Firebase — wait for auth to hydrate before writing
+            function writeDisplayName(uid) {
+                if (!uid) return;
+                database.ref('userProfiles/' + uid).update({ displayName: newName }).catch(() => {});
+            }
+            const u = firebase.auth().currentUser;
+            if (u) {
+                writeDisplayName(u.uid);
+            } else {
+                const unsub = firebase.auth().onAuthStateChanged(function(au) {
+                    unsub();
+                    writeDisplayName(au ? au.uid : currentUid);
+                });
             }
             showToast('Display name updated.', 'success');
         }
@@ -541,20 +551,33 @@
         function saveRole(role) {
             const mapped = ROLE_MAP[role];
             if (!mapped) { showToast('Unknown role.', 'warning'); return; }
-            const authUid = (firebase.auth().currentUser || {}).uid || currentUid;
-            if (!authUid) { showToast('Not logged in.', 'warning'); return; }
-            database.ref('userProfiles/' + authUid).update({
-                role: role,
-                role_id: mapped.role_id,
-                role_label: mapped.role_label,
-                role_year: mapped.role_year
-            }).then(() => {
-                document.getElementById('profRoleBadge').textContent = role;
-                showToast('Role updated to ' + role + '.', 'success');
-            }).catch(err => {
-                console.error('saveRole failed:', err);
-                showToast('Failed to save role. Try refreshing the page.', 'error');
-            });
+
+            function doWrite(uid) {
+                if (!uid) { showToast('Not logged in — please refresh.', 'warning'); return; }
+                database.ref('userProfiles/' + uid).update({
+                    role: role,
+                    role_id: mapped.role_id,
+                    role_label: mapped.role_label,
+                    role_year: mapped.role_year
+                }).then(() => {
+                    document.getElementById('profRoleBadge').textContent = role;
+                    showToast('Role updated to ' + role + '.', 'success');
+                }).catch(err => {
+                    console.error('saveRole failed:', err);
+                    showToast('Failed to save role. Try refreshing the page.', 'error');
+                });
+            }
+
+            const user = firebase.auth().currentUser;
+            if (user) {
+                doWrite(user.uid);
+            } else {
+                // Auth not yet hydrated from persisted session — wait once
+                const unsub = firebase.auth().onAuthStateChanged(u => {
+                    unsub();
+                    doWrite(u ? u.uid : currentUid);
+                });
+            }
         }
 
         // ========== SMART PHRASES ==========
