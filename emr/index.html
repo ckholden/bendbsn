@@ -311,8 +311,13 @@
         .btn:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
         .btn.primary { background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490); }
         .btn.primary:hover { background: var(--clx-accent-hover, #0c5d75); border-color: var(--clx-accent-hover, #0c5d75); }
-        .btn.danger { background: #dc2626; color: #fff; border-color: #dc2626; }
-        .btn.danger:hover { background: #b91c1c; border-color: #b91c1c; }
+        .btn.danger { background: #fff; color: #b91c1c; border-color: #fca5a5; }
+        .btn.danger:hover { background: #fef2f2; border-color: #dc2626; color: #7f1d1d; }
+        [data-theme="dark"] .btn.danger { background: rgba(220,38,38,0.12); color: #fca5a5; border-color: rgba(220,38,38,0.5); }
+        [data-theme="dark"] .btn.danger:hover { background: rgba(220,38,38,0.22); color: #fecaca; }
+        /* Solid destructive variant (for Confirm Discharge in flow modals) */
+        .btn.danger-solid { background: #dc2626; color: #fff; border-color: #dc2626; }
+        .btn.danger-solid:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
         .btn.warn { background: #d97706; color: #fff; border-color: #d97706; }
         .btn.warn:hover { background: #b45309; border-color: #b45309; }
         .btn.sm { padding: 5px 10px; font-size: 12px; }
@@ -561,6 +566,209 @@
         .seed-banner.visible { display: block; }
         [data-theme="dark"] .seed-banner { background: rgba(249,115,22,0.12); color: #fdba74; border-color: rgba(249,115,22,0.3); }
 
+        /* ---- Phase 2: Flow modal (search, wizards) ---- */
+        .flow-modal { max-width: 640px; }
+        .flow-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+        .flow-header h2 { font-size: 17px; margin: 0; }
+        .flow-close {
+            background: none; border: none; font-size: 22px; cursor: pointer;
+            color: var(--clx-text-muted, #718096); line-height: 1; padding: 0 4px;
+        }
+        .flow-close:hover { color: var(--clx-text-primary); }
+
+        .flow-step-dots { display: flex; gap: 6px; margin: 4px 0 14px; }
+        .flow-step-dot {
+            width: 26px; height: 4px; border-radius: 2px; background: var(--clx-border, #d1dce8);
+        }
+        .flow-step-dot.active { background: var(--clx-accent, #0f7490); }
+        .flow-step-dot.done { background: #16a34a; }
+
+        .flow-search-input {
+            width: 100%; padding: 10px 12px; font-size: 15px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+            font-family: inherit; margin-bottom: 10px;
+        }
+        .flow-search-input:focus { outline: 2px solid var(--clx-focus, #0f7490); outline-offset: 1px; }
+
+        .flow-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--clx-border); }
+        .flow-tab-btn {
+            padding: 6px 12px; font-size: 12px; font-weight: 600;
+            background: none; border: none; color: var(--clx-text-secondary, #4a5568);
+            border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit;
+            margin-bottom: -1px;
+        }
+        .flow-tab-btn.active { color: var(--clx-accent, #0f7490); border-bottom-color: var(--clx-accent, #0f7490); }
+
+        .flow-results-list { max-height: 340px; overflow-y: auto; margin-bottom: 10px; }
+        .flow-pt-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px; margin-bottom: 6px; cursor: pointer;
+            background: var(--clx-bg-surface-2, #f5f8fa); transition: border-color 0.15s, background 0.15s;
+        }
+        .flow-pt-row:hover { border-color: var(--clx-accent, #0f7490); background: var(--clx-bg-surface, #fff); }
+        .flow-pt-row .pt-main { flex: 1; min-width: 0; }
+        .flow-pt-row .pt-name-row { font-size: 14px; font-weight: 600; color: var(--clx-text-primary); margin-bottom: 2px; }
+        .flow-pt-row .pt-meta-row { font-size: 11px; color: var(--clx-text-muted, #718096); }
+        .flow-pt-row .pt-status {
+            font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; margin-left: 10px;
+        }
+        .flow-pt-row .pt-status.admitted { background: #dcfce7; color: #166534; }
+        .flow-pt-row .pt-status.inactive { background: #fef9c3; color: #854d0e; }
+
+        [data-theme="dark"] .flow-pt-row .pt-status.admitted { background: rgba(34,197,94,0.18); color: #86efac; }
+        [data-theme="dark"] .flow-pt-row .pt-status.inactive { background: rgba(234,179,8,0.18); color: #fde68a; }
+
+        .flow-empty-msg { padding: 28px; text-align: center; color: var(--clx-text-muted, #718096); font-size: 13px; }
+
+        .flow-form-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px 14px; margin-bottom: 10px;
+        }
+        .flow-form-grid .ff-field { display: flex; flex-direction: column; }
+        .flow-form-grid label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 3px;
+        }
+        .flow-form-grid input, .flow-form-grid select, .flow-form-grid textarea {
+            padding: 8px 10px; font-size: 13px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+            font-family: inherit;
+        }
+        .flow-form-grid .ff-field.full-row { grid-column: 1 / -1; }
+        .flow-form-grid textarea { resize: vertical; min-height: 56px; }
+
+        .esi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px; }
+        .esi-btn {
+            padding: 8px 4px; border: 1px solid var(--clx-border, #d1dce8); background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary); border-radius: 6px; cursor: pointer;
+            font-family: inherit; font-size: 11px; line-height: 1.25;
+        }
+        .esi-btn .esi-num { display: block; font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+        .esi-btn.esi-1 { border-left: 4px solid #dc2626; }
+        .esi-btn.esi-2 { border-left: 4px solid #f97316; }
+        .esi-btn.esi-3 { border-left: 4px solid #eab308; }
+        .esi-btn.esi-4 { border-left: 4px solid #84cc16; }
+        .esi-btn.esi-5 { border-left: 4px solid #16a34a; }
+        .esi-btn.selected {
+            background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490); border-left-color: #fff;
+        }
+
+        /* Historical banner */
+        .historical-banner {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-left: 4px solid #f97316;
+            color: #9a3412;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .historical-banner .hb-icon { font-size: 16px; }
+        .historical-banner .hb-text { flex: 1; }
+        [data-theme="dark"] .historical-banner {
+            background: rgba(249,115,22,0.12); color: #fdba74; border-color: rgba(249,115,22,0.3);
+        }
+
+        /* Encounters tab */
+        .enc-row {
+            display: flex;
+            gap: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            background: var(--clx-bg-surface, #fff);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .enc-row:hover { border-color: var(--clx-accent); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+        .enc-row.current { border-left: 4px solid #16a34a; }
+        .enc-row.historical { border-left: 4px solid #9ca3af; }
+        .enc-row.viewing { background: var(--clx-accent-subtle, #e0f2f8); border-color: var(--clx-accent); }
+        .enc-row .enc-main { flex: 1; min-width: 0; }
+        .enc-row .enc-date-line { font-size: 13px; font-weight: 600; color: var(--clx-text-primary); margin-bottom: 2px; }
+        .enc-row .enc-sub { font-size: 11px; color: var(--clx-text-muted, #718096); }
+        .enc-row .enc-dx-line { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-top: 4px; }
+        .enc-row .enc-badge {
+            font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; flex-shrink: 0;
+        }
+        .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
+        .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
+
+        /* Pending transfer chip on bed card */
+        .pending-chip {
+            display: inline-block;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+            padding: 2px 6px; border-radius: 4px;
+            background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa;
+            margin-top: 6px;
+        }
+        [data-theme="dark"] .pending-chip { background: rgba(249,115,22,0.14); color: #fdba74; border-color: rgba(249,115,22,0.4); }
+        .bed-card.pending-transfer { border-left: 4px solid #f97316; }
+
+        /* Pending transfer banner on sender's chart (separate from historical banner) */
+        .pending-banner {
+            background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316;
+            color: #9a3412; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 10px; font-size: 13px;
+        }
+        [data-theme="dark"] .pending-banner { background: rgba(249,115,22,0.12); color: #fdba74; border-color: rgba(249,115,22,0.3); }
+
+        /* Waiting Room rows */
+        .wr-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        .wr-row:last-child { border-bottom: none; }
+        .wr-acuity {
+            width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; font-size: 14px; flex-shrink: 0;
+        }
+        .wr-main { flex: 1; min-width: 0; }
+        .wr-name { font-size: 14px; font-weight: 600; color: var(--clx-text-primary); }
+        .wr-meta { font-size: 11px; font-weight: 400; color: var(--clx-text-muted, #718096); margin-left: 6px; }
+        .wr-cc { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-top: 2px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .wr-wait { font-size: 11px; color: var(--clx-text-muted, #718096); text-align: right; flex-shrink: 0; }
+        .wr-wait .wr-mins { font-weight: 600; color: var(--clx-text-secondary, #4a5568); }
+        .wr-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            .wr-row { flex-wrap: wrap; }
+            .wr-wait { order: 3; width: 100%; text-align: left; }
+            .wr-actions { order: 4; width: 100%; margin-top: 4px; }
+        }
+
+        /* Handoff SBAR modal sections */
+        .sbar-section {
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+        }
+        .sbar-section .sbar-label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--clx-accent, #0f7490); margin-bottom: 4px;
+        }
+        .sbar-section .sbar-body {
+            font-size: 13px; line-height: 1.5; color: var(--clx-text-primary); white-space: pre-wrap;
+        }
+        .sbar-section textarea {
+            width: 100%; min-height: 60px; padding: 6px 8px; font-size: 13px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 4px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+            font-family: inherit; resize: vertical;
+        }
+
         /* ---- Mobile tweaks ---- */
         @media (max-width: 480px) {
             .emr-title-bar h1 { font-size: 17px; }
@@ -569,6 +777,9 @@
             .chart-tab { padding: 8px 10px; font-size: 12px; }
             .emr-panel-bd { padding: 12px; }
             .adm-modal { padding: 14px 16px; max-height: 96vh; }
+            .esi-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+            .esi-btn { padding: 6px 2px; font-size: 10px; }
+            .esi-btn .esi-num { font-size: 14px; }
         }
     </style>
 </head>
@@ -612,9 +823,17 @@
             </button>
 
             <div class="clx-sidebar-section" style="margin-top:10px;">Workflows</div>
-            <button class="clx-sidebar-item" disabled style="opacity:0.55;cursor:not-allowed;" title="Coming in Phase 2">
+            <button class="clx-sidebar-item" onclick="openPatientSearch()">
+                <span class="clx-sidebar-icon">🔍</span>
+                <span class="clx-sidebar-label">Search Patients</span>
+            </button>
+            <button class="clx-sidebar-item" onclick="startEdArrival()">
+                <span class="clx-sidebar-icon">🚑</span>
+                <span class="clx-sidebar-label">New ED Arrival</span>
+            </button>
+            <button class="clx-sidebar-item" onclick="startAdmission()">
                 <span class="clx-sidebar-icon">➕</span>
-                <span class="clx-sidebar-label">Admit Patient (Ph2)</span>
+                <span class="clx-sidebar-label">Admit Patient</span>
             </button>
 
             <div class="clx-sidebar-section" style="margin-top:10px;">Account</div>
@@ -665,8 +884,9 @@
                 <div class="emr-title-bar">
                     <button class="emr-back-btn" onclick="closeChart()">← Back to Unit Board</button>
                     <div class="chart-actions">
-                        <button class="btn sm" disabled title="Phase 2">Transfer</button>
-                        <button class="btn sm danger" disabled title="Phase 2">Discharge</button>
+                        <button class="btn sm" id="chartBtnHandoff" onclick="openHandoffModal()">📋 Handoff</button>
+                        <button class="btn sm" id="chartBtnTransfer" onclick="openTransferModal()">Transfer</button>
+                        <button class="btn sm danger" id="chartBtnDischarge" onclick="openDischargeModal()">Discharge</button>
                     </div>
                 </div>
 
@@ -678,6 +898,21 @@
                     <button class="chart-tab" role="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
                     <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
                     <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
+                    <button class="chart-tab" role="tab" data-tab="encounters" onclick="switchTab('encounters')">Encounters</button>
+                </div>
+
+                <!-- Historical-view banner (shown when viewing a prior encounter) -->
+                <div class="historical-banner" id="historicalBanner" style="display:none;">
+                    <span class="hb-icon">⚠</span>
+                    <span class="hb-text">HISTORICAL — Read-only view of a prior encounter. Writes are disabled.</span>
+                    <button class="btn sm" onclick="returnToCurrentEncounter()">Return to Current</button>
+                </div>
+
+                <!-- Pending-transfer banner (shown when encounter has outbound pending transfer) -->
+                <div class="pending-banner" id="pendingTransferBanner" style="display:none;">
+                    <span style="font-size:18px;">⇄</span>
+                    <span class="pt-banner-text" style="flex:1;"></span>
+                    <button class="btn sm" onclick="cancelPendingTransfer()">Cancel Request</button>
                 </div>
 
                 <div class="tab-panel active" id="tab-demographics" role="tabpanel"></div>
@@ -685,6 +920,7 @@
                 <div class="tab-panel" id="tab-notes" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-mar" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-tar" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-encounters" role="tabpanel"></div>
             </section>
 
         </main>
@@ -696,6 +932,39 @@
             <h2 id="admTitle">Administer</h2>
             <div class="adm-sub" id="admSub"></div>
             <div id="admBody"></div>
+        </div>
+    </div>
+
+    <!-- Phase 2: Generic "flow modal" (search, wizards, handoff, transfer, discharge) -->
+    <div class="adm-overlay" id="flowOverlay" role="dialog" aria-modal="true" aria-labelledby="flowTitle">
+        <div class="adm-modal flow-modal" id="flowModal">
+            <div class="flow-header">
+                <h2 id="flowTitle">—</h2>
+                <button class="flow-close" onclick="closeFlowModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="adm-sub" id="flowSub"></div>
+            <div id="flowBody"></div>
+        </div>
+    </div>
+
+    <!-- Phase 2: Migration Modal (shown once when SEED_VERSION in DB < latest) -->
+    <div class="adm-overlay" id="migrationOverlay" role="dialog" aria-modal="true" aria-labelledby="migrationTitle">
+        <div class="adm-modal" id="migrationModal">
+            <h2 id="migrationTitle">Sim EMR — Data Update Required</h2>
+            <div class="adm-sub">Phase 2 introduces encounters (hospital visits) as a separate record from patients. The existing simulation data is incompatible with the new schema and will be reset.</div>
+            <div style="background:var(--clx-bg-surface-2);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:13px;">
+                <strong>What happens when you click Reset:</strong>
+                <ul style="margin:8px 0 0 18px;line-height:1.55;">
+                    <li>All existing EMR data is cleared (patients, beds, vitals, notes, MAR, TAR)</li>
+                    <li>28 fictional patients are seeded (18 currently admitted + 10 unadmitted with history)</li>
+                    <li>Several patients receive prior-encounter records to practice history review</li>
+                    <li>This only runs once — other users will see the new data immediately after</li>
+                </ul>
+            </div>
+            <div id="migrationStatus" style="font-size:13px;color:var(--clx-text-muted);min-height:20px;"></div>
+            <div class="adm-buttons">
+                <button class="btn primary" id="migrationConfirmBtn" onclick="runMigration()">Reset &amp; Re-seed</button>
+            </div>
         </div>
     </div>
 
@@ -723,6 +992,8 @@
     const UNIT_NAMES = { ED: 'ED', MS: 'Med-Surg', ICU: 'ICU', PCU: 'PCU / Step-Down', OB: 'OB / L&D' };
     const UNIT_ORDER = ['ED', 'MS', 'ICU', 'PCU', 'OB'];
     const UNIT_BED_COUNT = 10;
+    // Phase 2: ED hall beds (overflow)
+    const ED_HALL_BEDS = ['ED-H1', 'ED-H2', 'ED-H3', 'ED-H4'];
 
     // ===========================================================
     // [150] STATE
@@ -733,7 +1004,8 @@
     let currentUserEmail = '';
 
     let allPatients = {};         // { patientId: patientObj }
-    let allBeds = {};             // { unit: { bedId: patientId | null } }
+    let allEncounters = {};       // { encounterId: encounterObj }  ← Phase 2
+    let allBeds = {};             // { unit: { bedId: encounterId | null } }  ← Phase 2: stores encounterId
     let currentUnit = 'all';      // 'all' | 'ED' | 'MS' | 'ICU' | 'PCU' | 'OB'
     let boardMode = 'cards';      // 'cards' | 'manager'
     let mgrSortBy = 'bed';
@@ -744,7 +1016,13 @@
     let currentTab = 'demographics';
     let patientUnsubscribers = []; // listeners scoped to current patient
 
-    let currentVitals = [];       // for current patient
+    // Phase 2: viewing encounter context
+    // - null = viewing current encounter (writable)
+    // - encId = viewing that specific prior encounter (read-only)
+    let viewingEncounterId = null;
+    let chartReadOnly = false;
+
+    let currentVitals = [];       // ALL vitals for current patient (filtered by encounter at render time)
     let currentNotes = [];
     let currentMar = [];
     let currentTar = [];
@@ -801,7 +1079,7 @@
     }, 30000);
 
     // ===========================================================
-    // [280] SEED LOADER
+    // [280] SEED LOADER + MIGRATION
     // ===========================================================
     function startEMR() {
         if (!window.EMR_SEED) {
@@ -809,66 +1087,170 @@
             showToast('Seed data missing. Page may not work.', 'error');
             return;
         }
-        seedIfEmpty().then(function () {
-            attachGlobalListeners();
-            checkSeedVersion();
-        }).catch(function (err) {
-            console.error('[EMR] Seed/listen failed:', err);
-            showToast('Could not load EMR data: ' + (err.message || err), 'error');
-        });
-    }
-
-    function seedIfEmpty() {
-        return database.ref('emr/patients').once('value').then(function (snap) {
-            if (snap.exists() && snap.numChildren() > 0) return;
-            console.log('[EMR] Empty database — seeding ' + window.EMR_SEED.SEED_PATIENTS.length + ' patients');
-            const updates = {};
-            // Patients
-            window.EMR_SEED.SEED_PATIENTS.forEach(function (p) {
-                updates['emr/patients/' + p.id] = Object.assign({}, p, { status: 'active' });
-                // Bed assignment
-                updates['emr/beds/' + p.unit + '/' + p.bed] = p.id;
-            });
-            // MAR entries
-            Object.keys(window.EMR_SEED.SEED_MAR).forEach(function (pid) {
-                const items = window.EMR_SEED.SEED_MAR[pid];
-                items.forEach(function (item) {
-                    const key = database.ref('emr/mar/' + pid).push().key;
-                    updates['emr/mar/' + pid + '/' + key] = Object.assign({
-                        status: item.status || 'scheduled',
-                        administeredAt: null, administeredBy: null,
-                        notes: item.notes || '',
-                        orderedBy: null, orderedAt: null, orderVerifiedBy: null,
-                        prnIndicationGiven: null, wasteAmount: null, wasteVerifiedBy: null,
-                        createdAt: Date.now()
-                    }, item);
-                });
-            });
-            // TAR entries
-            Object.keys(window.EMR_SEED.SEED_TAR).forEach(function (pid) {
-                const items = window.EMR_SEED.SEED_TAR[pid];
-                items.forEach(function (item) {
-                    const key = database.ref('emr/tar/' + pid).push().key;
-                    updates['emr/tar/' + pid + '/' + key] = Object.assign({
-                        status: 'scheduled',
-                        administeredAt: null, administeredBy: null,
-                        notes: '',
-                        createdAt: Date.now()
-                    }, item);
-                });
-            });
-            // Seed version
-            updates['emr/meta/seedVersion'] = window.EMR_SEED.SEED_VERSION;
-            return database.ref().update(updates);
-        });
-    }
-
-    function checkSeedVersion() {
+        // Check seed version first; if DB is older than latest, show migration modal.
         database.ref('emr/meta/seedVersion').once('value').then(function (snap) {
             const dbVer = snap.val();
-            if (dbVer && dbVer < window.EMR_SEED.SEED_VERSION) {
-                document.getElementById('seedBanner').classList.add('visible');
+            const latest = window.EMR_SEED.SEED_VERSION;
+            if (!dbVer) {
+                // Empty or first-time — seed quietly without modal prompt
+                seedFresh().then(attachGlobalListeners).catch(onStartError);
+            } else if (dbVer < latest) {
+                // Data exists but on old schema — show migration modal; listeners attach after confirm
+                showMigrationModal();
+            } else {
+                // Up-to-date — just attach listeners
+                attachGlobalListeners();
             }
+        }).catch(onStartError);
+    }
+
+    function onStartError(err) {
+        console.error('[EMR] Startup failed:', err);
+        showToast('Could not load EMR data: ' + (err.message || err), 'error');
+    }
+
+    function showMigrationModal() {
+        document.getElementById('migrationOverlay').classList.add('visible');
+    }
+
+    window.runMigration = function () {
+        const btn = document.getElementById('migrationConfirmBtn');
+        const status = document.getElementById('migrationStatus');
+        btn.disabled = true; btn.textContent = 'Working…';
+        status.textContent = 'Clearing existing data…';
+        const wipeUpdates = {
+            'emr/patients': null,
+            'emr/encounters': null,
+            'emr/beds': null,
+            'emr/vitals': null,
+            'emr/notes': null,
+            'emr/mar': null,
+            'emr/tar': null,
+            'emr/transfers': null
+        };
+        database.ref().update(wipeUpdates).then(function () {
+            status.textContent = 'Seeding Phase 2 data…';
+            return seedFresh();
+        }).then(function () {
+            status.textContent = 'Done. Loading board…';
+            document.getElementById('migrationOverlay').classList.remove('visible');
+            attachGlobalListeners();
+            showToast('Sim EMR data reset complete. 28 patients loaded.', 'success');
+        }).catch(function (err) {
+            console.error('[EMR] Migration failed:', err);
+            status.textContent = 'Error: ' + (err.message || err);
+            btn.disabled = false;
+            btn.textContent = 'Retry';
+        });
+    };
+
+    function seedFresh() {
+        // Phase 2 seed: writes patients, encounters, beds, and per-encounter chart data.
+        const seed = window.EMR_SEED;
+        const updates = {};
+        const now = Date.now();
+
+        // ---- Active admitted patients (18) ----
+        seed.SEED_PATIENTS.forEach(function (p) {
+            const encId = database.ref('emr/encounters').push().key;
+            const enc = p.currentEncounter;
+            updates['emr/encounters/' + encId] = Object.assign({}, enc, {
+                patientId: p.id,
+                status: 'active'
+            });
+            updates['emr/beds/' + enc.unit + '/' + enc.bed] = encId;
+
+            const patientRec = {
+                id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
+                allergies: p.allergies, pmh: p.pmh || '', socialHx: p.socialHx || '',
+                homeMedications: p.homeMedications || [],
+                currentEncounterId: encId, status: 'admitted', createdAt: now
+            };
+            updates['emr/patients/' + p.id] = patientRec;
+
+            // Chart data for current encounter (from CHART_BY_PATIENT.current)
+            const chart = (seed.CHART_BY_PATIENT[p.id] || {}).current || {};
+            writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
+
+            // Prior encounter (if any) — with sparse chart data
+            if (p.priorEncounter) {
+                const prEncId = database.ref('emr/encounters').push().key;
+                updates['emr/encounters/' + prEncId] = Object.assign({}, p.priorEncounter, {
+                    patientId: p.id, status: 'completed'
+                });
+                const prChart = ((seed.CHART_BY_PATIENT[p.id] || {}).prior || [])[0] || {};
+                writeChartEntries(updates, p.id, prEncId, prChart, p.priorEncounter.admissionDate);
+            }
+        });
+
+        // ---- Unadmitted patients (10) with prior encounters ----
+        seed.SEED_UNADMITTED_PATIENTS.forEach(function (p) {
+            const patientRec = {
+                id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
+                allergies: p.allergies, pmh: p.pmh || '', socialHx: p.socialHx || '',
+                homeMedications: p.homeMedications || [],
+                currentEncounterId: null, status: 'inactive', createdAt: now
+            };
+            updates['emr/patients/' + p.id] = patientRec;
+
+            const priorChartList = seed.UNADMITTED_PRIOR_CHART[p.id] || [];
+            (p.priorEncounters || []).forEach(function (priorEnc, idx) {
+                const encId = database.ref('emr/encounters').push().key;
+                updates['emr/encounters/' + encId] = Object.assign({}, priorEnc, {
+                    patientId: p.id, status: 'completed'
+                });
+                const chart = priorChartList[idx] || {};
+                writeChartEntries(updates, p.id, encId, chart, priorEnc.admissionDate);
+            });
+        });
+
+        updates['emr/meta/seedVersion'] = seed.SEED_VERSION;
+        updates['emr/meta/seededAt'] = now;
+        return database.ref().update(updates);
+    }
+
+    // Writes MAR/TAR/vitals/notes arrays for one (patient, encounter) pair
+    function writeChartEntries(updates, patientId, encounterId, chart, baseTs) {
+        const base = baseTs || Date.now();
+        (chart.mar || []).forEach(function (item, i) {
+            const key = database.ref('emr/mar/' + patientId).push().key;
+            updates['emr/mar/' + patientId + '/' + key] = Object.assign({
+                encounterId: encounterId,
+                status: item.status || 'scheduled',
+                administeredAt: item.administeredAt || null,
+                administeredBy: item.administeredBy || null,
+                notes: item.notes || '',
+                createdAt: base + i
+            }, item);
+        });
+        (chart.tar || []).forEach(function (item, i) {
+            const key = database.ref('emr/tar/' + patientId).push().key;
+            updates['emr/tar/' + patientId + '/' + key] = Object.assign({
+                encounterId: encounterId,
+                status: item.status || 'scheduled',
+                administeredAt: item.administeredAt || null,
+                administeredBy: item.administeredBy || null,
+                notes: item.notes || '',
+                createdAt: base + i
+            }, item);
+        });
+        (chart.vitals || []).forEach(function (v, i) {
+            const key = database.ref('emr/vitals/' + patientId).push().key;
+            updates['emr/vitals/' + patientId + '/' + key] = Object.assign({
+                encounterId: encounterId,
+                timestamp: v.timestamp || (base + (v.offsetH || 0) * 3600000),
+                by: v.by || 'Past Nurse'
+            }, v);
+        });
+        (chart.notes || []).forEach(function (n, i) {
+            const key = database.ref('emr/notes/' + patientId).push().key;
+            updates['emr/notes/' + patientId + '/' + key] = {
+                encounterId: encounterId,
+                type: n.type || 'narrative',
+                body: n.body || '',
+                by: n.by || 'Past Nurse',
+                timestamp: base + (n.offsetH || 0) * 3600000
+            };
         });
     }
 
@@ -886,11 +1268,33 @@
             }
             renderBoard();
         });
+        database.ref('emr/encounters').on('value', function (snap) {
+            allEncounters = snap.val() || {};
+            if (currentPatientId) {
+                updateChartReadOnlyState();
+                renderChartHeader();
+                if (currentTab === 'encounters') renderEncountersTab();
+                if (currentTab === 'demographics') renderDemographicsTab();
+            }
+            renderBoard();
+        });
         database.ref('emr/beds').on('value', function (snap) {
             allBeds = snap.val() || {};
             updateUnitCounts();
             renderBoard();
         });
+    }
+
+    // Phase 2 helpers: encounter lookup
+    function encOf(encId) { return allEncounters[encId] || null; }
+    function currentEncForPatient(pid) {
+        const p = allPatients[pid];
+        return (p && p.currentEncounterId) ? allEncounters[p.currentEncounterId] : null;
+    }
+    // Viewing encounter (current OR a historical one selected from Encounters tab)
+    function viewingEnc() {
+        if (viewingEncounterId) return allEncounters[viewingEncounterId] || null;
+        return currentEncForPatient(currentPatientId);
     }
 
     function updateUnitCounts() {
@@ -997,28 +1401,115 @@
     }
 
     function renderCardsView(units) {
+        function bedCardHtml(b) {
+            if (!b.patient) {
+                return '<div class="bed-card empty"><div>' + esc(b.bedId) + '</div><div style="font-size:11px;margin-top:4px;">Unoccupied</div></div>';
+            }
+            const p = b.patient;
+            const badges = buildBadges(p);
+            // Pending-transfer indicator: encounter has pendingTransfer field
+            const enc = p._encounterId ? allEncounters[p._encounterId] : null;
+            const pending = (enc && enc.pendingTransfer) ? enc.pendingTransfer : null;
+            const pendingChip = pending
+                ? '<div class="pending-chip" title="Awaiting ' + esc(UNIT_NAMES[pending.toUnit] || pending.toUnit) + ' bed acceptance">⇄ Outbound → ' + esc(UNIT_NAMES[pending.toUnit] || pending.toUnit) + '</div>'
+                : '';
+            return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
+                '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + '</div>' +
+                '<div class="pt-name">' + esc(p.name) + '</div>' +
+                '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
+                '<div class="pt-dx">' + esc(p.dx) + '</div>' +
+                pendingChip +
+                (badges ? '<div class="pt-badges">' + badges + '</div>' : '') +
+            '</div>';
+        }
+
         return units.map(function (unit) {
             const beds = buildUnitBeds(unit);
-            const cards = beds.map(function (b) {
-                if (!b.patient) {
-                    return '<div class="bed-card empty"><div>' + esc(b.bedId) + '</div><div style="font-size:11px;margin-top:4px;">Unoccupied</div></div>';
-                }
-                const p = b.patient;
-                const badges = buildBadges(p);
-                return '<div class="bed-card" onclick="openChart(\'' + esc(p.id) + '\')">' +
-                    '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + '</div>' +
-                    '<div class="pt-name">' + esc(p.name) + '</div>' +
-                    '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
-                    '<div class="pt-dx">' + esc(p.dx) + '</div>' +
-                    (badges ? '<div class="pt-badges">' + badges + '</div>' : '') +
-                '</div>';
-            }).join('');
-            return (units.length > 1 ? '<div class="mgr-section-title">' + esc(UNIT_NAMES[unit]) + '</div>' : '') +
-                   '<div class="unit-board" style="margin-bottom:18px;">' + cards + '</div>';
+            const regular = beds.filter(function (b) { return b.bedId.indexOf('-H') === -1; });
+            const hall = beds.filter(function (b) { return b.bedId.indexOf('-H') !== -1; });
+
+            let html = '';
+            if (units.length > 1) html += '<div class="mgr-section-title">' + esc(UNIT_NAMES[unit]) + '</div>';
+
+            // Incoming Transfers (top of every unit that has pending incoming)
+            html += renderIncomingTransfersSection(unit);
+            // Cards view: Waiting Room at top for ED
+            if (unit === 'ED') {
+                html += renderWaitingRoomSection();
+            }
+            html += '<div class="unit-board" style="margin-bottom:14px;">' + regular.map(bedCardHtml).join('') + '</div>';
+            if (hall.length) {
+                html += '<div class="mgr-section-title" style="margin-top:4px;">Hall Beds (ED overflow)</div>' +
+                        '<div class="unit-board" style="margin-bottom:18px;">' + hall.map(bedCardHtml).join('') + '</div>';
+            }
+            return html;
         }).join('');
     }
 
+    // Incoming Transfers section — shown at top of receiving unit
+    function renderIncomingTransfersSection(unit) {
+        const incoming = incomingTransfersFor(unit);
+        if (!incoming.length) return '';
+        const rows = incoming.map(function (e) {
+            const pt = e.pendingTransfer;
+            const mins = Math.floor((Date.now() - (pt.requestedAt || 0)) / 60000);
+            const waited = mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h ' + (mins%60) + 'm';
+            return '<div class="wr-row">' +
+                '<div class="wr-acuity" style="background:#f97316;">⇄</div>' +
+                '<div class="wr-main">' +
+                    '<div class="wr-name">' + esc(e._patient.name) + ' <span class="wr-meta">' + esc(e._patient.sex) + ' ' + esc(String(e._patient.age)) + ' · ' + esc(e._patient.mrn) + '</span></div>' +
+                    '<div class="wr-cc">From ' + esc(e.unit) + '-' + esc(e.bed) + ' · ' + esc(pt.reason || '—') + '</div>' +
+                '</div>' +
+                '<div class="wr-wait">Requested by ' + esc(pt.requestedBy) + '<br><span class="wr-mins">' + esc(waited) + ' ago</span></div>' +
+                '<div class="wr-actions">' +
+                    '<button class="btn sm primary" onclick="openAcceptTransferModal(\'' + esc(e._id) + '\')">Accept</button>' +
+                    '<button class="btn sm" onclick="openChart(\'' + esc(e._patient.id) + '\')">Open Chart</button>' +
+                    '<button class="btn sm danger-solid" onclick="openRejectTransferModal(\'' + esc(e._id) + '\')">Reject</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+        return '<div class="emr-panel" style="margin-bottom:14px;border-left:4px solid #f97316;">' +
+            '<div class="emr-panel-hd"><span>⇄ Incoming Transfers → ' + esc(UNIT_NAMES[unit] || unit) + '</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">' + incoming.length + ' pending</span></div>' +
+            '<div class="emr-panel-bd" style="padding:8px 10px;">' + rows + '</div>' +
+        '</div>';
+    }
+
+    function renderWaitingRoomSection() {
+        const wr = waitingRoomEncounters();
+        if (!wr.length) return '';
+        const rows = wr.map(function (e) {
+            const mins = Math.floor((Date.now() - (e.admissionDate || 0)) / 60000);
+            const waitedStr = mins < 60 ? mins + ' min' : Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
+            const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(e.esiAcuity || 3) - 1] || '#9ca3af';
+            return '<div class="wr-row">' +
+                '<div class="wr-acuity" style="background:' + acuityColor + ';">' + (e.esiAcuity || '—') + '</div>' +
+                '<div class="wr-main">' +
+                    '<div class="wr-name">' + esc(e._patient.name) + ' <span class="wr-meta">' + esc(e._patient.sex) + ' ' + esc(String(e._patient.age)) + ' · ' + esc(e._patient.mrn) + '</span></div>' +
+                    '<div class="wr-cc">' + esc(e.chiefComplaint || '—') + '</div>' +
+                '</div>' +
+                '<div class="wr-wait">Arrived ' + esc(fmtTimeShort(e.admissionDate)) + '<br><span class="wr-mins">Waiting ' + esc(waitedStr) + '</span></div>' +
+                '<div class="wr-actions">' +
+                    '<button class="btn sm primary" onclick="openWaitingRoomAssignBed(\'' + esc(e._id) + '\')">Assign Bed</button>' +
+                    '<button class="btn sm" onclick="openChart(\'' + esc(e._patient.id) + '\')">Open Chart</button>' +
+                    '<button class="btn sm danger" onclick="openWaitingRoomDischarge(\'' + esc(e._id) + '\')">D/C</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+        return '<div class="emr-panel" style="margin-bottom:14px;">' +
+            '<div class="emr-panel-hd"><span>🛋️ ED Waiting Room</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">' + wr.length + ' waiting</span></div>' +
+            '<div class="emr-panel-bd" style="padding:8px 10px;">' + rows + '</div>' +
+        '</div>';
+    }
+
     function renderManagerView(units) {
+        // Incoming transfers for each selected unit (shown at top)
+        let incomingHtml = units.map(function (u) { return renderIncomingTransfersSection(u); }).join('');
+        // Waiting-room section (bottom for Manager view)
+        let waitingHtml = '';
+        if (units.indexOf('ED') !== -1) {
+            waitingHtml = renderWaitingRoomSection();
+        }
+
         // Flatten all patient rows across selected units
         const rows = [];
         units.forEach(function (unit) {
@@ -1075,7 +1566,7 @@
             '</tr>';
         });
         html += '</tbody></table></div>';
-        return html;
+        return incomingHtml + html + waitingHtml;
     }
 
     function mgrCompareRows(a, b) {
@@ -1113,14 +1604,56 @@
     };
 
     function buildUnitBeds(unit) {
-        // Returns array of { bedId, patient | null } in bed-number order, for a given unit.
+        // Phase 2: beds store encounterId; look up encounter → patientId → patient.
+        // Also merge encounter-level fields (acuity/dx/code/isolation/fallRisk) onto the patient
+        // object so existing renderers keep working without big signature changes.
         const bedMap = allBeds[unit] || {};
         const out = [];
+        function buildOne(bedId) {
+            const encId = bedMap[bedId];
+            let patientWithEncFields = null;
+            if (encId) {
+                const enc = allEncounters[encId];
+                const p = enc ? allPatients[enc.patientId] : null;
+                if (p && enc) {
+                    patientWithEncFields = Object.assign({}, p, {
+                        unit: enc.unit, bed: enc.bed,
+                        dx: enc.dx, md: enc.md, codeStatus: enc.codeStatus,
+                        acuity: enc.acuity, isolation: enc.isolation,
+                        fallRisk: enc.fallRisk, dnr: enc.dnr,
+                        diet: enc.diet, activity: enc.activity, ivAccess: enc.ivAccess,
+                        weightKg: enc.weightKg, heightIn: enc.heightIn,
+                        chiefComplaint: enc.chiefComplaint, esiAcuity: enc.esiAcuity,
+                        arrivalMode: enc.arrivalMode, admissionSource: enc.admissionSource,
+                        admissionDate: enc.admissionDate,
+                        _encounterId: encId
+                    });
+                }
+            }
+            return { bedId: bedId, patient: patientWithEncFields };
+        }
         for (let i = 1; i <= UNIT_BED_COUNT; i++) {
             const bedId = unit + '-' + (i < 10 ? '0' + i : '' + i);
-            const pid = bedMap[bedId];
-            out.push({ bedId: bedId, patient: pid ? allPatients[pid] : null });
+            out.push(buildOne(bedId));
         }
+        // ED hall beds
+        if (unit === 'ED') ED_HALL_BEDS.forEach(function (b) { out.push(buildOne(b)); });
+        return out;
+    }
+
+    // Waiting Room: ED encounters without a bed assignment
+    function waitingRoomEncounters() {
+        const out = [];
+        Object.keys(allEncounters).forEach(function (k) {
+            const e = allEncounters[k];
+            if (!e || e.status !== 'active') return;
+            if (e.unit !== 'ED') return;
+            if (e.bed && e.bed !== 'WAITING') return;
+            const p = allPatients[e.patientId];
+            if (!p) return;
+            out.push(Object.assign({ _id: k, _patient: p }, e));
+        });
+        out.sort(function (a, b) { return (a.admissionDate || 0) - (b.admissionDate || 0); });
         return out;
     }
 
@@ -1140,6 +1673,8 @@
         if (!p) { showToast('Patient not found', 'error'); return; }
         currentPatientId = pid;
         currentPatient = p;
+        viewingEncounterId = null; // start on current encounter
+        updateChartReadOnlyState();
         document.getElementById('viewBoard').classList.remove('active');
         document.getElementById('viewChart').classList.add('active');
         renderChartHeader();
@@ -1153,9 +1688,94 @@
         detachPatientListeners();
         currentPatientId = null;
         currentPatient = null;
+        viewingEncounterId = null;
+        chartReadOnly = false;
+        document.getElementById('historicalBanner').style.display = 'none';
         document.getElementById('viewChart').classList.remove('active');
         document.getElementById('viewBoard').classList.add('active');
         window.scrollTo(0, 0);
+    };
+
+    // Switch chart viewing context to a specific encounter (null = current/writable)
+    window.viewEncounter = function (encId) {
+        if (!currentPatientId) return;
+        const p = allPatients[currentPatientId];
+        const cur = p ? p.currentEncounterId : null;
+        if (encId === cur) encId = null; // normalize: viewing current = null
+        viewingEncounterId = encId;
+        updateChartReadOnlyState();
+        renderChartHeader();
+        // Re-render the active tab so filters apply
+        switchTab(currentTab);
+    };
+    window.returnToCurrentEncounter = function () { viewEncounter(null); };
+
+    function updateChartReadOnlyState() {
+        const p = allPatients[currentPatientId] || {};
+        const isInactive = !p.currentEncounterId;
+        // Read-only when viewing a specific historical encounter, OR when patient has no active encounter
+        chartReadOnly = !!viewingEncounterId || isInactive;
+        const banner = document.getElementById('historicalBanner');
+        if (chartReadOnly) {
+            banner.style.display = 'flex';
+            const txtEl = banner.querySelector('.hb-text');
+            if (isInactive && !viewingEncounterId) {
+                txtEl.textContent = 'INACTIVE PATIENT — No active encounter. Viewing most recent encounter (read-only).';
+            } else {
+                txtEl.textContent = 'HISTORICAL — Read-only view of a prior encounter. Writes are disabled.';
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+        // Pending-transfer banner (only for current, writable view)
+        const pendingBanner = document.getElementById('pendingTransferBanner');
+        if (pendingBanner) {
+            const enc = p.currentEncounterId ? allEncounters[p.currentEncounterId] : null;
+            if (!chartReadOnly && enc && enc.pendingTransfer) {
+                const pt = enc.pendingTransfer;
+                pendingBanner.style.display = 'flex';
+                pendingBanner.querySelector('.pt-banner-text').textContent =
+                    'Transfer requested to ' + (UNIT_NAMES[pt.toUnit] || pt.toUnit) +
+                    ' by ' + pt.requestedBy + '. Awaiting receiving unit acceptance.';
+            } else {
+                pendingBanner.style.display = 'none';
+            }
+        }
+        // Toggle chart action buttons based on read-only state
+        ['chartBtnHandoff','chartBtnTransfer','chartBtnDischarge'].forEach(function (id) {
+            const btn = document.getElementById(id);
+            if (btn) btn.disabled = chartReadOnly;
+        });
+        // Disable Transfer if already pending (can't double-request)
+        const transferBtn = document.getElementById('chartBtnTransfer');
+        if (transferBtn && !chartReadOnly) {
+            const enc2 = p.currentEncounterId ? allEncounters[p.currentEncounterId] : null;
+            transferBtn.disabled = !!(enc2 && enc2.pendingTransfer);
+        }
+    }
+
+    // Cancel a pending transfer (sender-side)
+    window.cancelPendingTransfer = function () {
+        if (!currentPatientId) return;
+        const p = allPatients[currentPatientId];
+        const enc = p ? allEncounters[p.currentEncounterId] : null;
+        if (!enc || !enc.pendingTransfer) return;
+        showConfirmModal('Cancel Transfer Request?',
+            'This will cancel the pending transfer to ' + (UNIT_NAMES[enc.pendingTransfer.toUnit] || enc.pendingTransfer.toUnit) + '. Patient stays in current bed.',
+            function () {
+                const now = Date.now();
+                const updates = {};
+                updates['emr/encounters/' + p.currentEncounterId + '/pendingTransfer'] = null;
+                const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+                updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+                    encounterId: p.currentEncounterId, type: 'narrative',
+                    body: 'TRANSFER CANCELED — ' + new Date(now).toLocaleString() + '. Request to ' + (UNIT_NAMES[enc.pendingTransfer.toUnit] || enc.pendingTransfer.toUnit) + ' withdrawn by ' + currentUserName + '.',
+                    by: currentUserName, timestamp: now
+                };
+                database.ref().update(updates).then(function () {
+                    showToast('Transfer request canceled.', 'info');
+                });
+            }, { danger: true, confirmText: 'Cancel Transfer' });
     };
 
     window.switchTab = function (tab) {
@@ -1172,6 +1792,7 @@
             case 'notes':        renderNotesTab(); break;
             case 'mar':          renderMarTab(); break;
             case 'tar':          renderTarTab(); break;
+            case 'encounters':   renderEncountersTab(); break;
         }
     };
 
@@ -1181,52 +1802,149 @@
     function renderChartHeader() {
         const p = currentPatient;
         if (!p) return;
+        // Which encounter are we showing in the header?
+        // viewingEncounterId > current encounter > most recent completed encounter (inactive patients)
+        let enc = null;
+        if (viewingEncounterId) enc = allEncounters[viewingEncounterId];
+        else if (p.currentEncounterId) enc = allEncounters[p.currentEncounterId];
+        else enc = mostRecentCompletedEnc(p.id);
+
         const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
         const allergyClass = (p.allergies || []).filter(function (a) { return a !== 'NKDA'; }).length > 0 ? 'ch-value warn' : 'ch-value';
+
+        const bedLabel = enc ? (enc.bed + ' (' + (UNIT_NAMES[enc.unit] || enc.unit) + ')') : '—';
+        const dxLabel  = enc ? enc.dx : (p.currentEncounterId ? '—' : 'Not admitted');
+        const mdLabel  = enc ? (enc.md || '—') : '—';
+        const codeLabel = enc ? (enc.codeStatus || 'Full Code') : '—';
+        const isDnr    = enc ? !!enc.dnr : false;
+
         const html =
             '<div class="ch-block"><span class="ch-label">Patient</span><span class="ch-value large">' + esc(p.name) + '</span><span class="ch-value" style="font-weight:400;">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • DOB ' + esc(p.dob) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">MRN</span><span class="ch-value">' + esc(p.mrn) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Bed</span><span class="ch-value">' + esc(p.bed) + ' (' + esc(UNIT_NAMES[p.unit] || p.unit) + ')</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Diagnosis</span><span class="ch-value" title="' + esc(p.dx) + '">' + esc(p.dx) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">MD</span><span class="ch-value">' + esc(p.md) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Code Status</span><span class="ch-value' + (p.dnr ? ' warn' : '') + '">' + esc(p.codeStatus) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Bed</span><span class="ch-value">' + esc(bedLabel) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Diagnosis</span><span class="ch-value" title="' + esc(dxLabel) + '">' + esc(dxLabel) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">MD</span><span class="ch-value">' + esc(mdLabel) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Code Status</span><span class="ch-value' + (isDnr ? ' warn' : '') + '">' + esc(codeLabel) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesText) + '</span></div>';
         document.getElementById('chartHeader').innerHTML = html;
     }
 
+    function mostRecentCompletedEnc(pid) {
+        const encs = [];
+        Object.keys(allEncounters).forEach(function (k) {
+            const e = allEncounters[k];
+            if (e && e.patientId === pid && e.status === 'completed') encs.push(Object.assign({ _id: k }, e));
+        });
+        encs.sort(function (a, b) { return (b.admissionDate || 0) - (a.admissionDate || 0); });
+        return encs[0] || null;
+    }
+    function allEncountersForPatient(pid) {
+        const encs = [];
+        Object.keys(allEncounters).forEach(function (k) {
+            const e = allEncounters[k];
+            if (e && e.patientId === pid) encs.push(Object.assign({ _id: k }, e));
+        });
+        encs.sort(function (a, b) { return (b.admissionDate || 0) - (a.admissionDate || 0); });
+        return encs;
+    }
+    function activeEncounterIdForView() {
+        // The encounter we are currently viewing (for filtering vitals/notes/MAR/TAR).
+        if (viewingEncounterId) return viewingEncounterId;
+        const p = allPatients[currentPatientId];
+        if (p && p.currentEncounterId) return p.currentEncounterId;
+        // Inactive: filter to most recent completed encounter
+        const mr = mostRecentCompletedEnc(currentPatientId);
+        return mr ? mr._id : null;
+    }
+
     // ===========================================================
-    // [830] DEMOGRAPHICS TAB
+    // [830] DEMOGRAPHICS TAB  (Phase 2: encounter-aware)
     // ===========================================================
     function renderDemographicsTab() {
         const p = currentPatient; if (!p) return;
-        const fields = [
+        // Pick the encounter to display (viewing > current > most recent completed)
+        let enc = null;
+        if (viewingEncounterId) enc = allEncounters[viewingEncounterId];
+        else if (p.currentEncounterId) enc = allEncounters[p.currentEncounterId];
+        else enc = mostRecentCompletedEnc(p.id);
+
+        const patientFields = [
             ['Full Name', p.name],
             ['Date of Birth', p.dob],
             ['Age', String(p.age)],
             ['Sex', p.sex],
             ['MRN', p.mrn],
-            ['Unit / Bed', (UNIT_NAMES[p.unit] || p.unit) + ' / ' + p.bed],
-            ['Code Status', p.codeStatus],
             ['Allergies', (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA'],
-            ['Primary Diagnosis', p.dx],
-            ['Attending MD', p.md],
-            ['Diet', p.diet || '—'],
-            ['Activity', p.activity || '—'],
-            ['IV Access', p.ivAccess || '—'],
-            ['Weight', (p.weightKg != null ? p.weightKg + ' kg' : '—')],
-            ['Height', (p.heightIn != null ? p.heightIn + ' in' : '—')],
-            ['Isolation', p.isolation || 'None'],
-            ['Fall Risk', p.fallRisk ? 'Yes' : 'No'],
-            ['Acuity', String(p.acuity || 1) + ' / 5']
+            ['Past Medical Hx', p.pmh || '—'],
+            ['Social Hx', p.socialHx || '—']
         ];
-        const html = '<div class="emr-panel">' +
-            '<div class="emr-panel-hd"><span>Demographics &amp; Admission Details</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Read-only</span></div>' +
+
+        const encounterFields = enc ? [
+            ['Unit / Bed', (UNIT_NAMES[enc.unit] || enc.unit) + ' / ' + enc.bed],
+            ['Admission Date', fmtTime(enc.admissionDate)],
+            ['Admission Source', enc.admissionSource || '—'],
+            ['Chief Complaint', enc.chiefComplaint || '—'],
+            ['ESI Acuity', enc.esiAcuity ? String(enc.esiAcuity) + ' / 5' : '—'],
+            ['Arrival Mode', enc.arrivalMode || '—'],
+            ['Primary Diagnosis', enc.dx || '—'],
+            ['Attending MD', enc.md || '—'],
+            ['Code Status', enc.codeStatus || 'Full Code'],
+            ['Diet', enc.diet || '—'],
+            ['Activity', enc.activity || '—'],
+            ['IV Access', enc.ivAccess || '—'],
+            ['Weight', (enc.weightKg != null ? enc.weightKg + ' kg' : '—')],
+            ['Height', (enc.heightIn != null ? enc.heightIn + ' in' : '—')],
+            ['Isolation', enc.isolation || 'None'],
+            ['Fall Risk', enc.fallRisk ? 'Yes' : 'No'],
+            ['Acuity', enc.acuity != null ? String(enc.acuity) + ' / 5' : '—']
+        ] : [];
+
+        const homeMedsHtml = (p.homeMedications && p.homeMedications.length)
+            ? '<ul style="margin:4px 0 0 18px;line-height:1.55;font-size:13px;">' +
+              p.homeMedications.map(function (m) {
+                  return '<li>' + esc(m.med) + ' ' + esc(m.dose) + ' ' + esc(m.route) + ' — ' + esc(m.freq) + '</li>';
+              }).join('') + '</ul>'
+            : '<div style="font-size:13px;color:var(--clx-text-muted);">None on file</div>';
+
+        let html = '<div class="emr-panel">' +
+            '<div class="emr-panel-hd"><span>Patient Identity</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Persists across encounters</span></div>' +
             '<div class="emr-panel-bd"><div class="demo-grid">' +
-            fields.map(function (f) {
+            patientFields.map(function (f) {
                 return '<div class="ch-block"><span class="ch-label">' + esc(f[0]) + '</span><span class="ch-value">' + esc(f[1]) + '</span></div>';
             }).join('') +
             '</div></div></div>';
+
+        html += '<div class="emr-panel">' +
+            '<div class="emr-panel-hd"><span>Home Medications</span></div>' +
+            '<div class="emr-panel-bd">' + homeMedsHtml + '</div>' +
+        '</div>';
+
+        if (enc) {
+            html += '<div class="emr-panel">' +
+                '<div class="emr-panel-hd"><span>Current Encounter</span>' +
+                (enc.status === 'completed'
+                    ? '<span style="font-size:11px;font-weight:500;color:#9a3412;">Completed ' + esc(fmtTime(enc.dischargeDate)) + ' · ' + esc(enc.dischargeDisposition || '') + '</span>'
+                    : '<span style="font-size:11px;font-weight:500;color:#166534;">Active since ' + esc(fmtTime(enc.admissionDate)) + '</span>') +
+                '</div>' +
+                '<div class="emr-panel-bd"><div class="demo-grid">' +
+                encounterFields.map(function (f) {
+                    return '<div class="ch-block"><span class="ch-label">' + esc(f[0]) + '</span><span class="ch-value">' + esc(f[1]) + '</span></div>';
+                }).join('') +
+                '</div></div></div>';
+        } else {
+            html += '<div class="emr-panel"><div class="emr-panel-bd">' +
+                '<div style="text-align:center;padding:20px;color:var(--clx-text-muted);">No active encounter. This patient is not currently admitted.</div>' +
+            '</div></div>';
+        }
+
         document.getElementById('tab-demographics').innerHTML = html;
+    }
+
+    // ---- Encounter filter helper (used by Vitals / MAR / TAR renderers) ----
+    function filterToActiveEncounter(items) {
+        const encId = activeEncounterIdForView();
+        if (!encId) return items; // fallback: show all if no encounter context
+        return items.filter(function (it) { return it.encounterId === encId; });
     }
 
     // ===========================================================
@@ -1235,7 +1953,8 @@
     function renderVitalsTab() {
         if (!currentPatient) return;
         const el = document.getElementById('tab-vitals');
-        const formHtml =
+        const ro = chartReadOnly;
+        const formHtml = ro ? '' :
             '<div class="emr-panel">' +
                 '<div class="emr-panel-hd"><span>Record Vitals</span></div>' +
                 '<div class="emr-panel-bd">' +
@@ -1250,23 +1969,24 @@
                     '</div>' +
                     '<button class="btn primary" onclick="saveVitals()">Save Vitals</button>' +
                 '</div>' +
-            '</div>' +
+            '</div>';
+        el.innerHTML = formHtml +
             '<div class="emr-panel">' +
-                '<div class="emr-panel-hd"><span>Vitals Flowsheet</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Most recent first</span></div>' +
+                '<div class="emr-panel-hd"><span>Vitals Flowsheet</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Most recent first (this encounter)</span></div>' +
                 '<div class="emr-panel-bd" id="vitalsTableArea"></div>' +
             '</div>';
-        el.innerHTML = formHtml;
         renderVitalsTable();
     }
 
     function renderVitalsTable() {
         const area = document.getElementById('vitalsTableArea');
         if (!area) return;
-        if (!currentVitals.length) {
-            area.innerHTML = '<div class="vitals-empty">No vitals recorded yet. Use the form above to record the first set.</div>';
+        const filtered = filterToActiveEncounter(currentVitals);
+        if (!filtered.length) {
+            area.innerHTML = '<div class="vitals-empty">No vitals recorded for this encounter yet.' + (chartReadOnly ? '' : ' Use the form above to record the first set.') + '</div>';
             return;
         }
-        const rows = currentVitals.map(function (v) {
+        const rows = filtered.map(function (v) {
             return '<tr>' +
                 '<td>' + esc(fmtTime(v.timestamp)) + '</td>' +
                 '<td>' + (v.sys != null && v.dia != null ? esc(v.sys + '/' + v.dia) : '—') + '</td>' +
@@ -1286,6 +2006,9 @@
 
     window.saveVitals = function () {
         if (!currentPatientId) return;
+        if (chartReadOnly) { showToast('Read-only view \u2014 switch to current encounter to record.', 'warning'); return; }
+        const encId = activeEncounterIdForView();
+        if (!encId) { showToast('No active encounter.', 'error'); return; }
         const sys  = parseIntOrNull(document.getElementById('vsSys').value);
         const dia  = parseIntOrNull(document.getElementById('vsDia').value);
         const hr   = parseIntOrNull(document.getElementById('vsHr').value);
@@ -1298,6 +2021,7 @@
             return;
         }
         const entry = {
+            encounterId: encId,
             timestamp: Date.now(),
             sys: sys, dia: dia, hr: hr, rr: rr, temp: temp, spo2: spo2, pain: pain,
             by: currentUserName
@@ -1320,6 +2044,7 @@
     // ===========================================================
     function renderNotesTab() {
         const el = document.getElementById('tab-notes');
+        const ro = chartReadOnly;
         const noteTypes = [
             { id: 'soap',      label: 'SOAP' },
             { id: 'sbar',      label: 'SBAR' },
@@ -1330,7 +2055,7 @@
             return '<button class="note-type-btn ' + (activeNoteType === t.id ? 'active' : '') + '" onclick="selectNoteType(\'' + t.id + '\')">' + esc(t.label) + '</button>';
         }).join('');
 
-        el.innerHTML =
+        const editorPanel = ro ? '' :
             '<div class="emr-panel">' +
                 '<div class="emr-panel-hd"><span>Add Note</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">By ' + esc(currentUserName) + ' · ' + esc(fmtTime(Date.now())) + '</span></div>' +
                 '<div class="emr-panel-bd">' +
@@ -1347,15 +2072,16 @@
                         '<button class="btn primary" onclick="saveNote()">Save Note</button>' +
                     '</div>' +
                 '</div>' +
-            '</div>' +
+            '</div>';
+
+        el.innerHTML = editorPanel +
             '<div class="emr-panel">' +
-                '<div class="emr-panel-hd"><span>Note History</span></div>' +
+                '<div class="emr-panel-hd"><span>Note History</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">This encounter</span></div>' +
                 '<div class="emr-panel-bd" id="noteHistoryArea"></div>' +
             '</div>';
 
-        renderNoteEditor();
+        if (!ro) { renderNoteEditor(); wireTextareaTracking(); }
         renderNoteHistory();
-        wireTextareaTracking();
     }
 
     window.selectNoteType = function (type) {
@@ -1470,9 +2196,13 @@
 
     window.saveNote = function () {
         if (!currentPatientId) return;
+        if (chartReadOnly) { showToast('Read-only view \u2014 switch to current encounter to write.', 'warning'); return; }
+        const encId = activeEncounterIdForView();
+        if (!encId) { showToast('No active encounter.', 'error'); return; }
         const body = gatherNoteBody();
         if (!body) { showToast('Note is empty.', 'warning'); return; }
         const entry = {
+            encounterId: encId,
             type: activeNoteType,
             body: body,
             by: currentUserName,
@@ -1489,11 +2219,12 @@
     function renderNoteHistory() {
         const area = document.getElementById('noteHistoryArea');
         if (!area) return;
-        if (!currentNotes.length) {
-            area.innerHTML = '<div class="vitals-empty">No notes yet.</div>';
+        const filtered = filterToActiveEncounter(currentNotes);
+        if (!filtered.length) {
+            area.innerHTML = '<div class="vitals-empty">No notes yet for this encounter.</div>';
             return;
         }
-        area.innerHTML = currentNotes.map(function (n) {
+        area.innerHTML = filtered.map(function (n) {
             return '<div class="note-card">' +
                 '<div class="nh-meta"><span class="nh-type">' + esc(n.type || 'note') + '</span><span>' + esc(fmtTime(n.timestamp)) + '</span><span>by ' + esc(n.by || '—') + '</span></div>' +
                 '<div class="nh-body">' + esc(n.body || '') + '</div>' +
@@ -1716,7 +2447,8 @@
 
     function renderMedTar(kind) {
         const el = document.getElementById('tab-' + kind);
-        const items = (kind === 'mar') ? currentMar : currentTar;
+        const rawItems = (kind === 'mar') ? currentMar : currentTar;
+        const items = filterToActiveEncounter(rawItems);
         const labelHd = (kind === 'mar') ? 'Medication' : 'Treatment';
         const captionPlural = (kind === 'mar') ? 'medications' : 'treatments';
 
@@ -1734,6 +2466,7 @@
                 : '';
             const isPRN = !!it.isPRN;
             const canAdmin = (status === 'scheduled' || (isPRN && status !== 'given'));
+            const ro = chartReadOnly;
             return '<tr>' +
                 '<td data-label="Time"><strong>' + esc(it.scheduledTime || '—') + '</strong>' + (isPRN ? ' <span style="font-size:10px;color:var(--clx-text-muted);">PRN</span>' : '') + '</td>' +
                 '<td data-label="' + esc(labelHd) + '"><strong>' + esc(it[(kind === 'mar') ? 'medication' : 'treatment'] || '—') + '</strong>' +
@@ -1744,9 +2477,9 @@
                 '</td>' +
                 '<td data-label="Status"><span class="mar-status ' + status + '">' + status + '</span></td>' +
                 '<td data-label="Action">' +
-                    (canAdmin
+                    (canAdmin && !ro
                         ? '<button class="btn primary sm" onclick="openAdministerModal(\'' + kind + '\', \'' + esc(it._key) + '\')">Administer</button>'
-                        : '<span style="font-size:11px;color:var(--clx-text-muted);">Done</span>') +
+                        : '<span style="font-size:11px;color:var(--clx-text-muted);">' + (ro ? 'View' : 'Done') + '</span>') +
                 '</td>' +
             '</tr>';
         }).join('');
@@ -1767,6 +2500,7 @@
     let admContext = null; // { kind, key, item, patient, allergyHits, action }
 
     window.openAdministerModal = function (kind, key) {
+        if (chartReadOnly) { showToast('Read-only view.', 'warning'); return; }
         const items = (kind === 'mar') ? currentMar : currentTar;
         const item = items.find(function (i) { return i._key === key; });
         if (!item) { showToast('Item not found.', 'error'); return; }
@@ -1937,7 +2671,1016 @@
     });
 
     // ===========================================================
-    // [2000] INIT
+    // [2000] FLOW MODAL ROUTER (search, wizards, handoff, etc.)
+    // ===========================================================
+    let flowCtx = null;  // arbitrary per-flow state; reset on open
+
+    function openFlowModal(title, bodyHtml, subtitle) {
+        document.getElementById('flowTitle').textContent = title;
+        document.getElementById('flowSub').textContent = subtitle || '';
+        document.getElementById('flowBody').innerHTML = bodyHtml;
+        document.getElementById('flowOverlay').classList.add('visible');
+    }
+    window.closeFlowModal = function () {
+        document.getElementById('flowOverlay').classList.remove('visible');
+        flowCtx = null;
+    };
+    document.getElementById('flowOverlay').addEventListener('click', function (e) {
+        if (e.target.id === 'flowOverlay') closeFlowModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('flowOverlay').classList.contains('visible')) closeFlowModal();
+    });
+
+    // ---- Shared patient-search renderer ----
+    function renderPatientSearchList(containerId, query, tab, onSelect) {
+        const lcQ = (query || '').trim().toLowerCase();
+        let list = Object.values(allPatients);
+        if (tab === 'admitted') list = list.filter(function (p) { return !!p.currentEncounterId; });
+        if (lcQ) {
+            list = list.filter(function (p) {
+                return (p.name || '').toLowerCase().indexOf(lcQ) !== -1
+                    || (p.mrn || '').toLowerCase().indexOf(lcQ) !== -1
+                    || (p.dob || '').indexOf(lcQ) !== -1;
+            });
+        }
+        list.sort(function (a, b) {
+            // admitted first, then alphabetical
+            const aAd = !!a.currentEncounterId, bAd = !!b.currentEncounterId;
+            if (aAd !== bAd) return aAd ? -1 : 1;
+            return (a.name || '').localeCompare(b.name || '');
+        });
+        const c = document.getElementById(containerId);
+        if (!c) return;
+        if (!list.length) {
+            c.innerHTML = '<div class="flow-empty-msg">No matching patients. ' + (query ? 'Try a different search, or create a new patient below.' : '') + '</div>';
+            return;
+        }
+        c.innerHTML = list.slice(0, 50).map(function (p) {
+            const admitted = !!p.currentEncounterId;
+            const enc = admitted ? allEncounters[p.currentEncounterId] : null;
+            const bedLabel = enc ? (enc.bed + ' · ' + (UNIT_NAMES[enc.unit] || enc.unit)) : '—';
+            const metaParts = [
+                (p.sex || '') + ' ' + (p.age != null ? p.age : ''),
+                'DOB ' + (p.dob || ''),
+                'MRN ' + (p.mrn || '')
+            ];
+            if (admitted) metaParts.push(bedLabel);
+            return '<div class="flow-pt-row" onclick="flowSelectPatient(\'' + esc(p.id) + '\')">' +
+                '<div class="pt-main">' +
+                    '<div class="pt-name-row">' + esc(p.name) + '</div>' +
+                    '<div class="pt-meta-row">' + esc(metaParts.join(' · ')) + '</div>' +
+                '</div>' +
+                '<span class="pt-status ' + (admitted ? 'admitted' : 'inactive') + '">' + (admitted ? 'Admitted' : 'Inactive') + '</span>' +
+            '</div>';
+        }).join('');
+    }
+
+    // ---- 1. PATIENT SEARCH (standalone) ----
+    window.openPatientSearch = function () {
+        flowCtx = { mode: 'search', tab: 'admitted' };
+        const body =
+            '<div class="flow-tabs">' +
+                '<button class="flow-tab-btn active" onclick="flowSetSearchTab(\'admitted\')">Admitted</button>' +
+                '<button class="flow-tab-btn" onclick="flowSetSearchTab(\'all\')">All Patients</button>' +
+            '</div>' +
+            '<input type="text" class="flow-search-input" id="flowSearchQuery" placeholder="Search by name, MRN, or DOB…" oninput="flowUpdateSearch(this.value)" autofocus>' +
+            '<div class="flow-results-list" id="flowSearchResults"></div>';
+        openFlowModal('Search Patients', body, 'Find a patient record');
+        flowUpdateSearch('');
+        setTimeout(function () { const el = document.getElementById('flowSearchQuery'); if (el) el.focus(); }, 50);
+    };
+    window.flowUpdateSearch = function (q) {
+        if (!flowCtx) return;
+        renderPatientSearchList('flowSearchResults', q, flowCtx.tab || 'admitted', 'open-chart');
+    };
+    window.flowSetSearchTab = function (tab) {
+        if (!flowCtx) return;
+        flowCtx.tab = tab;
+        document.querySelectorAll('.flow-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+        event.currentTarget.classList.add('active');
+        const q = (document.getElementById('flowSearchQuery') || {}).value || '';
+        flowUpdateSearch(q);
+    };
+    // Called when a patient row is clicked in any flow search list
+    window.flowSelectPatient = function (pid) {
+        if (!flowCtx) return;
+        if (flowCtx.mode === 'search') {
+            closeFlowModal();
+            openChart(pid);
+        } else if (flowCtx.mode === 'ed-arrival-step-1' || flowCtx.mode === 'admit-step-1') {
+            flowCtx.selectedPatientId = pid;
+            if (flowCtx.mode === 'ed-arrival-step-1') flowGoToEdArrivalStep2();
+            else flowGoToAdmitStep2();
+        }
+    };
+
+    // ---- 2. ED ARRIVAL WIZARD ----
+    window.startEdArrival = function () {
+        flowCtx = { mode: 'ed-arrival-step-1', step: 1, isNewPatient: false };
+        flowRenderEdArrivalStep1();
+    };
+
+    function flowRenderEdArrivalStep1() {
+        const body = flowStepDots(1, 4) +
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Step 1 of 4 — Find existing patient or create new.</p>' +
+            '<input type="text" class="flow-search-input" id="flowSearchQuery" placeholder="Search by name, MRN, or DOB…" oninput="flowUpdateSearch(this.value)" autofocus>' +
+            '<div class="flow-results-list" id="flowSearchResults"></div>' +
+            '<div style="border-top:1px solid var(--clx-border);padding-top:10px;margin-top:6px;">' +
+                '<button class="btn primary" onclick="flowEdArrivalNewPatient()">+ Create New Patient</button>' +
+            '</div>';
+        openFlowModal('New ED Arrival', body, 'Triage and register a patient');
+        flowUpdateSearch('');
+    }
+
+    window.flowEdArrivalNewPatient = function () {
+        flowCtx.isNewPatient = true;
+        flowCtx.newPatient = {};
+        const body = flowStepDots(1.5, 4) +
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">New patient registration — minimal fields.</p>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field"><label>Full Name</label><input id="np_name" type="text" autofocus></div>' +
+                '<div class="ff-field"><label>Date of Birth</label><input id="np_dob" type="date"></div>' +
+                '<div class="ff-field"><label>Sex</label><select id="np_sex"><option value="F">F</option><option value="M">M</option><option value="X">X</option></select></div>' +
+                '<div class="ff-field full-row"><label>Allergies (comma-separated, or "NKDA")</label><input id="np_allergies" type="text" placeholder="NKDA"></div>' +
+                '<div class="ff-field full-row"><label>Past Medical Hx (one line)</label><input id="np_pmh" type="text" placeholder="e.g., HTN, T2DM"></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="flowRenderEdArrivalStep1()">Back</button>' +
+                '<button class="btn primary" onclick="flowEdArrivalCreateAndContinue()">Continue to Triage</button>' +
+            '</div>';
+        document.getElementById('flowBody').innerHTML = body;
+    };
+
+    window.flowEdArrivalCreateAndContinue = function () {
+        const name = (document.getElementById('np_name').value || '').trim();
+        const dob  = (document.getElementById('np_dob').value || '').trim();
+        const sex  = (document.getElementById('np_sex').value || 'F').trim();
+        const allergiesRaw = (document.getElementById('np_allergies').value || '').trim() || 'NKDA';
+        const pmh  = (document.getElementById('np_pmh').value || '').trim();
+        if (!name) { showToast('Name required.', 'warning'); return; }
+        if (!dob)  { showToast('DOB required.', 'warning'); return; }
+        const age = calcAge(dob);
+        const allergies = allergiesRaw.toUpperCase() === 'NKDA' ? ['NKDA'] : allergiesRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        flowCtx.newPatient = {
+            name: name, dob: dob, sex: sex, age: age, allergies: allergies,
+            pmh: pmh, socialHx: '', homeMedications: []
+        };
+        flowGoToEdArrivalStep2();
+    };
+
+    window.flowGoToEdArrivalStep2 = function () {
+        flowCtx.step = 2;
+        const ptLabel = flowCtx.isNewPatient ? flowCtx.newPatient.name : (allPatients[flowCtx.selectedPatientId] || {}).name;
+        const body = flowStepDots(2, 4) +
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Step 2 — Triage for <strong>' + esc(ptLabel) + '</strong>.</p>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Chief Complaint</label><textarea id="tr_cc" rows="2" placeholder="Pt reports..."></textarea></div>' +
+                '<div class="ff-field"><label>Arrival Mode</label><select id="tr_mode">' +
+                    '<option value="walk-in">walk-in</option><option value="POV">POV</option><option value="EMS">EMS</option><option value="wheelchair">wheelchair</option>' +
+                '</select></div>' +
+                '<div class="ff-field"><label>Temp (°C)</label><input id="tr_temp" type="number" step="0.1" inputmode="decimal"></div>' +
+                '<div class="ff-field"><label>HR</label><input id="tr_hr" type="number" inputmode="numeric"></div>' +
+                '<div class="ff-field"><label>BP</label><input id="tr_bp" type="text" placeholder="120/80"></div>' +
+                '<div class="ff-field"><label>SpO2 %</label><input id="tr_spo2" type="number" inputmode="numeric"></div>' +
+                '<div class="ff-field"><label>Pain (0-10)</label><input id="tr_pain" type="number" min="0" max="10" inputmode="numeric"></div>' +
+            '</div>' +
+            '<div style="margin-top:10px;"><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">ESI Acuity</label>' +
+            '<div class="esi-grid">' +
+                '<button class="esi-btn esi-1" onclick="flowSelectEsi(1)"><span class="esi-num">1</span>Resuscitation</button>' +
+                '<button class="esi-btn esi-2" onclick="flowSelectEsi(2)"><span class="esi-num">2</span>Emergent</button>' +
+                '<button class="esi-btn esi-3 selected" onclick="flowSelectEsi(3)"><span class="esi-num">3</span>Urgent</button>' +
+                '<button class="esi-btn esi-4" onclick="flowSelectEsi(4)"><span class="esi-num">4</span>Less urgent</button>' +
+                '<button class="esi-btn esi-5" onclick="flowSelectEsi(5)"><span class="esi-num">5</span>Non-urgent</button>' +
+            '</div></div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="flowRenderEdArrivalStep1()">Back</button>' +
+                '<button class="btn primary" onclick="flowGoToEdArrivalStep3()">Continue to Bed Assignment</button>' +
+            '</div>';
+        document.getElementById('flowTitle').textContent = 'New ED Arrival — Triage';
+        document.getElementById('flowBody').innerHTML = body;
+        flowCtx.esi = 3;
+    };
+
+    window.flowSelectEsi = function (n) {
+        flowCtx.esi = n;
+        document.querySelectorAll('.esi-btn').forEach(function (b) { b.classList.remove('selected'); });
+        event.currentTarget.classList.add('selected');
+    };
+
+    window.flowGoToEdArrivalStep3 = function () {
+        flowCtx.triage = {
+            cc: (document.getElementById('tr_cc').value || '').trim(),
+            mode: document.getElementById('tr_mode').value,
+            temp: parseFloatOrNull(document.getElementById('tr_temp').value),
+            hr: parseIntOrNull(document.getElementById('tr_hr').value),
+            bp: (document.getElementById('tr_bp').value || '').trim(),
+            spo2: parseIntOrNull(document.getElementById('tr_spo2').value),
+            pain: parseIntOrNull(document.getElementById('tr_pain').value)
+        };
+        flowCtx.step = 3;
+        const avail = availableBedsForUnit('ED');
+        const regular = avail.filter(function (b) { return b.indexOf('-H') === -1; });
+        const hall = avail.filter(function (b) { return b.indexOf('-H') !== -1; });
+        const bedOpts = ['<option value="WAITING">→ Waiting Room (defer bed)</option>']
+            .concat(regular.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + '</option>'; }))
+            .concat(hall.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + ' (hall)</option>'; }))
+            .join('');
+        const body = flowStepDots(3, 4) +
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Step 3 — Room assignment.</p>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>ED Bed</label><select id="tr_bed">' + bedOpts + '</select></div>' +
+                '<div class="ff-field full-row"><label>Admitting MD</label><select id="tr_md">' +
+                    '<option value="Dr. Avery Chen, MD-SIM">Dr. Avery Chen, MD-SIM</option>' +
+                    '<option value="Dr. Maya Lin, MD-SIM">Dr. Maya Lin, MD-SIM</option>' +
+                    '<option value="Dr. Sora Patel, MD-SIM">Dr. Sora Patel, MD-SIM</option>' +
+                '</select></div>' +
+                '<div class="ff-field full-row"><label>Working Dx (may be updated)</label><input id="tr_dx" type="text" placeholder="e.g., Abdominal pain, r/o appy"></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="flowGoToEdArrivalStep2()">Back</button>' +
+                '<button class="btn primary" onclick="flowFinishEdArrival()">Complete Arrival</button>' +
+            '</div>';
+        document.getElementById('flowTitle').textContent = 'New ED Arrival — Bed';
+        document.getElementById('flowBody').innerHTML = body;
+    };
+
+    window.flowFinishEdArrival = function () {
+        const bed = document.getElementById('tr_bed').value;
+        const md = document.getElementById('tr_md').value;
+        const dx = (document.getElementById('tr_dx').value || '').trim() || 'Eval per MD';
+        const ctx = flowCtx;
+        const now = Date.now();
+
+        // Determine patient ID (existing or create new)
+        let patientId;
+        const updates = {};
+
+        // Create encounter first (we need encId before writing patient record for new patients)
+        const encId = database.ref('emr/encounters').push().key;
+
+        if (ctx.isNewPatient) {
+            patientId = 'p_new_' + database.ref('emr/patients').push().key;
+            // For new patients, write the full patient record ONCE with final values
+            // (avoid writing both the full record AND a child field in the same update — Firebase rejects)
+            updates['emr/patients/' + patientId] = Object.assign({
+                id: patientId,
+                currentEncounterId: encId, status: 'admitted', createdAt: now
+            }, ctx.newPatient);
+        } else {
+            patientId = ctx.selectedPatientId;
+            const existing = allPatients[patientId];
+            if (existing && existing.currentEncounterId) {
+                showToast('Patient already has an active encounter.', 'warning');
+                return;
+            }
+            // Existing patient — OK to write child fields
+            updates['emr/patients/' + patientId + '/currentEncounterId'] = encId;
+            updates['emr/patients/' + patientId + '/status'] = 'admitted';
+        }
+
+        const encounter = {
+            patientId: patientId,
+            unit: 'ED',
+            bed: bed,
+            admissionDate: now,
+            admissionSource: ctx.triage.mode === 'EMS' ? 'ED-EMS' : 'ED-walkin',
+            admittingMD: md, md: md,
+            dx: dx,
+            chiefComplaint: ctx.triage.cc,
+            esiAcuity: ctx.esi,
+            arrivalMode: ctx.triage.mode,
+            codeStatus: 'Full Code',
+            diet: 'NPO until eval', activity: 'As tolerated',
+            isolation: null, fallRisk: false, dnr: false, acuity: ctx.esi,
+            status: 'active'
+        };
+        updates['emr/encounters/' + encId] = encounter;
+        if (bed !== 'WAITING') {
+            updates['emr/beds/ED/' + bed] = encId;
+        }
+
+        // Admission / triage note
+        const noteKey = database.ref('emr/notes/' + patientId).push().key;
+        const noteBody = [
+            'ED ARRIVAL — ' + new Date(now).toLocaleString(),
+            'Mode: ' + ctx.triage.mode + '. CC: ' + (ctx.triage.cc || '—'),
+            'ESI: ' + ctx.esi,
+            ctx.triage.temp != null ? 'T ' + ctx.triage.temp + '°C' : null,
+            ctx.triage.hr != null ? 'HR ' + ctx.triage.hr : null,
+            ctx.triage.bp ? 'BP ' + ctx.triage.bp : null,
+            ctx.triage.spo2 != null ? 'SpO2 ' + ctx.triage.spo2 + '%' : null,
+            ctx.triage.pain != null ? 'Pain ' + ctx.triage.pain + '/10' : null,
+            bed === 'WAITING' ? 'Bed: waiting room (pending bed assignment)' : 'Bed: ' + bed
+        ].filter(Boolean).join(' · ');
+        updates['emr/notes/' + patientId + '/' + noteKey] = {
+            encounterId: encId, type: 'narrative', body: noteBody,
+            by: currentUserName, timestamp: now
+        };
+
+        // Triage vitals (if any entered)
+        const vs = ctx.triage;
+        if (vs.temp != null || vs.hr != null || vs.spo2 != null || vs.pain != null || vs.bp) {
+            const vKey = database.ref('emr/vitals/' + patientId).push().key;
+            let sys = null, dia = null;
+            if (vs.bp && /^\d+\/\d+$/.test(vs.bp)) {
+                const parts = vs.bp.split('/');
+                sys = parseInt(parts[0], 10); dia = parseInt(parts[1], 10);
+            }
+            updates['emr/vitals/' + patientId + '/' + vKey] = {
+                encounterId: encId, timestamp: now,
+                sys: sys, dia: dia, hr: vs.hr, rr: null, temp: vs.temp, spo2: vs.spo2, pain: vs.pain,
+                by: currentUserName
+            };
+        }
+
+        database.ref().update(updates).then(function () {
+            showToast('ED arrival complete: ' + (ctx.isNewPatient ? ctx.newPatient.name : (allPatients[patientId] || {}).name), 'success');
+            closeFlowModal();
+            openChart(patientId);
+        }).catch(function (err) {
+            showToast('Save failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    // ---- 3. DIRECT ADMIT WIZARD ----
+    window.startAdmission = function () {
+        flowCtx = { mode: 'admit-step-1', step: 1, isNewPatient: false };
+        const body = flowStepDots(1, 3) +
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Step 1 — Find existing patient or create new.</p>' +
+            '<input type="text" class="flow-search-input" id="flowSearchQuery" placeholder="Search by name, MRN, or DOB…" oninput="flowUpdateSearch(this.value)" autofocus>' +
+            '<div class="flow-results-list" id="flowSearchResults"></div>' +
+            '<div style="border-top:1px solid var(--clx-border);padding-top:10px;margin-top:6px;">' +
+                '<button class="btn primary" onclick="flowAdmitNewPatient()">+ Create New Patient</button>' +
+            '</div>';
+        openFlowModal('Admit Patient', body, 'Direct admit (not via ED)');
+        flowUpdateSearch('');
+    };
+    window.flowAdmitNewPatient = function () {
+        flowCtx.isNewPatient = true;
+        flowCtx.newPatient = {};
+        const body = flowStepDots(1.5, 3) +
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">New patient registration.</p>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field"><label>Full Name</label><input id="np_name" type="text" autofocus></div>' +
+                '<div class="ff-field"><label>Date of Birth</label><input id="np_dob" type="date"></div>' +
+                '<div class="ff-field"><label>Sex</label><select id="np_sex"><option value="F">F</option><option value="M">M</option><option value="X">X</option></select></div>' +
+                '<div class="ff-field full-row"><label>Allergies (comma-separated or NKDA)</label><input id="np_allergies" type="text" placeholder="NKDA"></div>' +
+                '<div class="ff-field full-row"><label>Past Medical Hx</label><input id="np_pmh" type="text"></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="startAdmission()">Back</button>' +
+                '<button class="btn primary" onclick="flowAdmitCreateAndContinue()">Continue</button>' +
+            '</div>';
+        document.getElementById('flowBody').innerHTML = body;
+    };
+    window.flowAdmitCreateAndContinue = function () {
+        const name = (document.getElementById('np_name').value || '').trim();
+        const dob  = (document.getElementById('np_dob').value || '').trim();
+        const sex  = (document.getElementById('np_sex').value || 'F').trim();
+        const allergiesRaw = (document.getElementById('np_allergies').value || '').trim() || 'NKDA';
+        const pmh  = (document.getElementById('np_pmh').value || '').trim();
+        if (!name) { showToast('Name required.', 'warning'); return; }
+        if (!dob)  { showToast('DOB required.', 'warning'); return; }
+        const age = calcAge(dob);
+        const allergies = allergiesRaw.toUpperCase() === 'NKDA' ? ['NKDA'] : allergiesRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        flowCtx.newPatient = { name: name, dob: dob, sex: sex, age: age, allergies: allergies, pmh: pmh, socialHx: '', homeMedications: [] };
+        flowGoToAdmitStep2();
+    };
+    window.flowGoToAdmitStep2 = function () {
+        flowCtx.step = 2;
+        const ptLabel = flowCtx.isNewPatient ? flowCtx.newPatient.name : (allPatients[flowCtx.selectedPatientId] || {}).name;
+        if (!flowCtx.isNewPatient) {
+            const existing = allPatients[flowCtx.selectedPatientId];
+            if (existing && existing.currentEncounterId) {
+                showToast('Patient already admitted — use Transfer/Discharge instead.', 'warning');
+                return;
+            }
+        }
+        const unitOpts = UNIT_ORDER.filter(function (u) { return u !== 'ED'; }).map(function (u) { return '<option value="' + u + '">' + esc(UNIT_NAMES[u]) + '</option>'; }).join('');
+        const body = flowStepDots(2, 3) +
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Admission details for <strong>' + esc(ptLabel) + '</strong>.</p>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field"><label>Admission Source</label><select id="ad_source">' +
+                    '<option value="direct-admit">Direct from clinic</option>' +
+                    '<option value="post-op">Post-op (PACU)</option>' +
+                    '<option value="transfer-from-facility">Transfer from facility</option>' +
+                '</select></div>' +
+                '<div class="ff-field"><label>Admitting MD</label><select id="ad_md">' +
+                    '<option value="Dr. Reuben Park, MD-SIM">Dr. Reuben Park, MD-SIM</option>' +
+                    '<option value="Dr. Lin Okafor, MD-SIM">Dr. Lin Okafor, MD-SIM</option>' +
+                    '<option value="Dr. Maya Lin, MD-SIM">Dr. Maya Lin, MD-SIM</option>' +
+                    '<option value="Dr. Sora Patel, MD-SIM">Dr. Sora Patel, MD-SIM</option>' +
+                '</select></div>' +
+                '<div class="ff-field full-row"><label>Admission Dx</label><input id="ad_dx" type="text" placeholder="e.g., CHF exacerbation"></div>' +
+                '<div class="ff-field"><label>Code Status</label><select id="ad_code">' +
+                    '<option>Full Code</option><option>DNR</option><option>DNR/DNI</option>' +
+                '</select></div>' +
+                '<div class="ff-field"><label>Unit</label><select id="ad_unit" onchange="flowRefreshAdmitBeds()">' + unitOpts + '</select></div>' +
+                '<div class="ff-field full-row"><label>Bed</label><select id="ad_bed"></select></div>' +
+                '<div class="ff-field"><label>Diet</label><input id="ad_diet" type="text" value="Regular"></div>' +
+                '<div class="ff-field"><label>Activity</label><input id="ad_activity" type="text" value="As tolerated"></div>' +
+                '<div class="ff-field"><label>IV Access</label><input id="ad_iv" type="text" placeholder="22g L hand"></div>' +
+                '<div class="ff-field"><label>Acuity (1-5)</label><input id="ad_acuity" type="number" min="1" max="5" value="3"></div>' +
+                '<div class="ff-field"><label>Isolation</label><select id="ad_iso"><option value="">None</option><option>Contact</option><option>Droplet</option><option>Airborne</option></select></div>' +
+                '<div class="ff-field"><label>Fall Risk</label><select id="ad_fall"><option value="false">No</option><option value="true">Yes</option></select></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="startAdmission()">Back</button>' +
+                '<button class="btn primary" onclick="flowFinishAdmit()">Admit Patient</button>' +
+            '</div>';
+        document.getElementById('flowTitle').textContent = 'Admit Patient — Details';
+        document.getElementById('flowBody').innerHTML = body;
+        flowRefreshAdmitBeds();
+    };
+    window.flowRefreshAdmitBeds = function () {
+        const unit = document.getElementById('ad_unit').value;
+        const beds = availableBedsForUnit(unit);
+        const sel = document.getElementById('ad_bed');
+        if (!beds.length) {
+            sel.innerHTML = '<option value="">No available beds in ' + UNIT_NAMES[unit] + '</option>';
+        } else {
+            sel.innerHTML = beds.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + '</option>'; }).join('');
+        }
+    };
+    window.flowFinishAdmit = function () {
+        const ctx = flowCtx;
+        const unit = document.getElementById('ad_unit').value;
+        const bed = document.getElementById('ad_bed').value;
+        if (!bed) { showToast('Select a bed.', 'warning'); return; }
+        const dx = (document.getElementById('ad_dx').value || '').trim();
+        if (!dx) { showToast('Admission Dx required.', 'warning'); return; }
+
+        const now = Date.now();
+        const updates = {};
+        const encId = database.ref('emr/encounters').push().key;
+        let patientId;
+        if (ctx.isNewPatient) {
+            patientId = 'p_new_' + database.ref('emr/patients').push().key;
+            // Write full patient record once with final values
+            updates['emr/patients/' + patientId] = Object.assign({
+                id: patientId, currentEncounterId: encId, status: 'admitted', createdAt: now
+            }, ctx.newPatient);
+        } else {
+            patientId = ctx.selectedPatientId;
+            updates['emr/patients/' + patientId + '/currentEncounterId'] = encId;
+            updates['emr/patients/' + patientId + '/status'] = 'admitted';
+        }
+
+        const enc = {
+            patientId: patientId, unit: unit, bed: bed,
+            admissionDate: now,
+            admissionSource: document.getElementById('ad_source').value,
+            admittingMD: document.getElementById('ad_md').value,
+            md: document.getElementById('ad_md').value,
+            dx: dx,
+            codeStatus: document.getElementById('ad_code').value,
+            diet: document.getElementById('ad_diet').value,
+            activity: document.getElementById('ad_activity').value,
+            ivAccess: document.getElementById('ad_iv').value,
+            acuity: parseInt(document.getElementById('ad_acuity').value, 10) || 3,
+            isolation: document.getElementById('ad_iso').value || null,
+            fallRisk: document.getElementById('ad_fall').value === 'true',
+            dnr: /DNR/.test(document.getElementById('ad_code').value),
+            status: 'active'
+        };
+        updates['emr/encounters/' + encId] = enc;
+        updates['emr/beds/' + unit + '/' + bed] = encId;
+
+        const noteKey = database.ref('emr/notes/' + patientId).push().key;
+        updates['emr/notes/' + patientId + '/' + noteKey] = {
+            encounterId: encId, type: 'narrative',
+            body: 'ADMISSION — ' + new Date(now).toLocaleString() + '. Source: ' + enc.admissionSource + '. DX: ' + dx + '. Admitted to ' + unit + '-' + bed + ' by ' + enc.md + '.',
+            by: currentUserName, timestamp: now
+        };
+
+        database.ref().update(updates).then(function () {
+            showToast('Patient admitted to ' + bed + '.', 'success');
+            closeFlowModal();
+            openChart(patientId);
+        }).catch(function (err) {
+            showToast('Save failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    // ---- 4. TRANSFER MODAL (two-step with acceptance by default) ----
+    window.openTransferModal = function () {
+        if (!currentPatientId || chartReadOnly) return;
+        const p = currentPatient;
+        const enc = allEncounters[p.currentEncounterId];
+        if (!enc) { showToast('No active encounter.', 'error'); return; }
+        if (enc.pendingTransfer) {
+            showToast('Transfer already pending to ' + UNIT_NAMES[enc.pendingTransfer.toUnit] + '. Receiving unit must accept or reject.', 'warning');
+            return;
+        }
+        flowCtx = { mode: 'transfer', encId: p.currentEncounterId, fromUnit: enc.unit, fromBed: enc.bed };
+        const unitOpts = UNIT_ORDER.map(function (u) { return '<option value="' + u + '">' + esc(UNIT_NAMES[u]) + '</option>'; }).join('');
+        const body =
+            '<div class="adm-info-block"><span class="lbl">Current Location</span><span class="val">' + esc(enc.bed) + ' · ' + esc(UNIT_NAMES[enc.unit]) + '</span></div>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Destination Unit</label><select id="tx_unit" onchange="flowRefreshTransferBeds()">' + unitOpts + '</select></div>' +
+                '<div class="ff-field full-row" id="tx_bed_field" style="display:none;"><label>Destination Bed</label><select id="tx_bed"></select></div>' +
+                '<div class="ff-field full-row"><label>Transfer Reason</label><textarea id="tx_reason" rows="2" placeholder="e.g., Higher level of care needed"></textarea></div>' +
+                '<div class="ff-field full-row"><label>Report Given To (receiving RN name)</label><input id="tx_nurse" type="text" placeholder="Name"></div>' +
+            '</div>' +
+            '<div style="background:var(--clx-bg-surface-2);border-radius:6px;padding:8px 10px;margin-top:6px;">' +
+                '<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">' +
+                    '<input type="checkbox" id="tx_skip" onchange="flowToggleTxMode()">' +
+                    '<span>Skip acceptance (direct bed assign) \u2014 for instructor-led practice</span>' +
+                '</label>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" id="tx_submit_btn" onclick="flowFinishTransfer()">Request Transfer</button>' +
+            '</div>';
+        openFlowModal('Transfer Patient', body, esc(p.name));
+        const defaultTo = UNIT_ORDER.find(function (u) { return u !== enc.unit; }) || enc.unit;
+        document.getElementById('tx_unit').value = defaultTo;
+    };
+    window.flowToggleTxMode = function () {
+        const skip = document.getElementById('tx_skip').checked;
+        document.getElementById('tx_bed_field').style.display = skip ? 'flex' : 'none';
+        document.getElementById('tx_submit_btn').textContent = skip ? 'Confirm Transfer' : 'Request Transfer';
+        if (skip) flowRefreshTransferBeds();
+    };
+    window.flowRefreshTransferBeds = function () {
+        const unit = document.getElementById('tx_unit').value;
+        const beds = availableBedsForUnit(unit);
+        const sel = document.getElementById('tx_bed');
+        if (!sel) return;
+        sel.innerHTML = beds.length
+            ? beds.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + '</option>'; }).join('')
+            : '<option value="">No available beds</option>';
+    };
+    window.flowFinishTransfer = function () {
+        const ctx = flowCtx;
+        const toUnit = document.getElementById('tx_unit').value;
+        const skip = document.getElementById('tx_skip').checked;
+        const reason = (document.getElementById('tx_reason').value || '').trim() || 'Not specified';
+        const rn = (document.getElementById('tx_nurse').value || '').trim() || '—';
+        if (toUnit === ctx.fromUnit) { showToast('Destination must be a different unit.', 'warning'); return; }
+        const now = Date.now();
+
+        if (skip) {
+            // Direct assign path (legacy behavior)
+            const toBed = document.getElementById('tx_bed').value;
+            if (!toBed) { showToast('Select a destination bed.', 'warning'); return; }
+            const updates = {};
+            updates['emr/beds/' + ctx.fromUnit + '/' + ctx.fromBed] = null;
+            updates['emr/beds/' + toUnit + '/' + toBed] = ctx.encId;
+            updates['emr/encounters/' + ctx.encId + '/unit'] = toUnit;
+            updates['emr/encounters/' + ctx.encId + '/bed'] = toBed;
+            const transferKey = database.ref('emr/transfers/' + ctx.encId).push().key;
+            updates['emr/transfers/' + ctx.encId + '/' + transferKey] = {
+                fromUnit: ctx.fromUnit, fromBed: ctx.fromBed,
+                toUnit: toUnit, toBed: toBed, reason: reason,
+                receivingRN: rn, by: currentUserName, timestamp: now,
+                mode: 'direct'
+            };
+            const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+            updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+                encounterId: ctx.encId, type: 'narrative',
+                body: 'TRANSFER (direct) \u2014 ' + new Date(now).toLocaleString() + '. From ' + ctx.fromUnit + '-' + ctx.fromBed + ' to ' + toUnit + '-' + toBed + '. Reason: ' + reason + '. Report given to ' + rn + '.',
+                by: currentUserName, timestamp: now
+            };
+            database.ref().update(updates).then(function () {
+                showToast('Transferred to ' + toBed + '.', 'success');
+                closeFlowModal();
+                setTimeout(function () { if (confirm('Transfer complete. Open Handoff/SBAR generator?')) openHandoffModal(); }, 300);
+            }).catch(function (err) {
+                showToast('Transfer failed: ' + (err.message || err), 'error');
+            });
+            return;
+        }
+
+        // Two-step path: set pendingTransfer on encounter; patient stays in current bed.
+        const updates = {};
+        updates['emr/encounters/' + ctx.encId + '/pendingTransfer'] = {
+            toUnit: toUnit, reason: reason, reportGivenTo: rn,
+            requestedBy: currentUserName, requestedAt: now
+        };
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: ctx.encId, type: 'narrative',
+            body: 'TRANSFER REQUESTED \u2014 ' + new Date(now).toLocaleString() + '. Requested transfer to ' + (UNIT_NAMES[toUnit] || toUnit) + '. Reason: ' + reason + '. Report given to ' + rn + '. Awaiting receiving unit bed assignment.',
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Transfer requested to ' + UNIT_NAMES[toUnit] + '. Awaiting acceptance.', 'success');
+            closeFlowModal();
+        }).catch(function (err) {
+            showToast('Request failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    // ---- Receiving charge nurse: Accept / Reject incoming transfer ----
+    window.openAcceptTransferModal = function (encId) {
+        const enc = allEncounters[encId];
+        if (!enc || !enc.pendingTransfer) return;
+        const p = allPatients[enc.patientId];
+        const toUnit = enc.pendingTransfer.toUnit;
+        flowCtx = { mode: 'accept-transfer', encId: encId };
+        const beds = availableBedsForUnit(toUnit);
+        const regular = beds.filter(function (b) { return b.indexOf('-H') === -1; });
+        const hall = beds.filter(function (b) { return b.indexOf('-H') !== -1; });
+        const bedOpts = []
+            .concat(regular.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + '</option>'; }))
+            .concat(hall.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + ' (hall)</option>'; }))
+            .join('');
+        const body =
+            '<div class="adm-info-block"><span class="lbl">Incoming Patient</span><span class="val">' + esc(p.name) + '</span> \u00b7 ' + esc(enc.bed) + ' \u00b7 ' + esc(UNIT_NAMES[enc.unit]) + '</div>' +
+            '<div class="adm-info-block"><span class="lbl">Reason</span><span class="val">' + esc(enc.pendingTransfer.reason || '\u2014') + '</span></div>' +
+            '<div class="adm-info-block"><span class="lbl">Requested By</span><span class="val">' + esc(enc.pendingTransfer.requestedBy) + ' \u00b7 ' + esc(fmtTime(enc.pendingTransfer.requestedAt)) + '</span></div>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Assign Bed in ' + esc(UNIT_NAMES[toUnit]) + '</label><select id="ax_bed">' + (bedOpts || '<option value="">No beds available</option>') + '</select></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="flowAcceptTransfer()">Accept Transfer</button>' +
+            '</div>';
+        openFlowModal('Accept Transfer', body);
+    };
+    window.flowAcceptTransfer = function () {
+        const ctx = flowCtx;
+        const bed = document.getElementById('ax_bed').value;
+        if (!bed) { showToast('No bed selected.', 'warning'); return; }
+        const enc = allEncounters[ctx.encId];
+        if (!enc || !enc.pendingTransfer) return;
+        const pt = enc.pendingTransfer;
+        const now = Date.now();
+        const updates = {};
+        updates['emr/beds/' + enc.unit + '/' + enc.bed] = null;
+        updates['emr/beds/' + pt.toUnit + '/' + bed] = ctx.encId;
+        updates['emr/encounters/' + ctx.encId + '/unit'] = pt.toUnit;
+        updates['emr/encounters/' + ctx.encId + '/bed'] = bed;
+        updates['emr/encounters/' + ctx.encId + '/pendingTransfer'] = null;
+        const transferKey = database.ref('emr/transfers/' + ctx.encId).push().key;
+        updates['emr/transfers/' + ctx.encId + '/' + transferKey] = {
+            fromUnit: enc.unit, fromBed: enc.bed,
+            toUnit: pt.toUnit, toBed: bed, reason: pt.reason,
+            requestedBy: pt.requestedBy, requestedAt: pt.requestedAt,
+            acceptedBy: currentUserName, acceptedAt: now,
+            reportGivenTo: pt.reportGivenTo,
+            mode: 'two-step', timestamp: now
+        };
+        const noteKey = database.ref('emr/notes/' + enc.patientId).push().key;
+        updates['emr/notes/' + enc.patientId + '/' + noteKey] = {
+            encounterId: ctx.encId, type: 'narrative',
+            body: 'TRANSFER ACCEPTED \u2014 ' + new Date(now).toLocaleString() + '. From ' + enc.unit + '-' + enc.bed + ' to ' + pt.toUnit + '-' + bed + '. Accepted by ' + currentUserName + '. Report originally given to ' + pt.reportGivenTo + '.',
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Transfer accepted \u2014 patient moved to ' + bed + '.', 'success');
+            closeFlowModal();
+        }).catch(function (err) {
+            showToast('Accept failed: ' + (err.message || err), 'error');
+        });
+    };
+    window.openRejectTransferModal = function (encId) {
+        const enc = allEncounters[encId];
+        if (!enc || !enc.pendingTransfer) return;
+        const p = allPatients[enc.patientId];
+        flowCtx = { mode: 'reject-transfer', encId: encId };
+        const body =
+            '<div class="adm-info-block"><span class="lbl">Patient</span><span class="val">' + esc(p.name) + '</span></div>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Reason for Rejection</label><textarea id="rj_reason" rows="3" placeholder="e.g., No available beds, awaiting staffing, requires higher acuity than this unit..."></textarea></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn danger-solid" onclick="flowRejectTransfer()">Reject Transfer</button>' +
+            '</div>';
+        openFlowModal('Reject Transfer', body);
+    };
+    window.flowRejectTransfer = function () {
+        const ctx = flowCtx;
+        const reason = (document.getElementById('rj_reason').value || '').trim();
+        if (!reason) { showToast('Rejection reason required.', 'warning'); return; }
+        const enc = allEncounters[ctx.encId];
+        if (!enc || !enc.pendingTransfer) return;
+        const pt = enc.pendingTransfer;
+        const now = Date.now();
+        const updates = {};
+        updates['emr/encounters/' + ctx.encId + '/pendingTransfer'] = null;
+        const noteKey = database.ref('emr/notes/' + enc.patientId).push().key;
+        updates['emr/notes/' + enc.patientId + '/' + noteKey] = {
+            encounterId: ctx.encId, type: 'narrative',
+            body: 'TRANSFER REJECTED \u2014 ' + new Date(now).toLocaleString() + '. Transfer to ' + (UNIT_NAMES[pt.toUnit] || pt.toUnit) + ' rejected by ' + currentUserName + '. Reason: ' + reason + '. Patient remains in ' + enc.unit + '-' + enc.bed + '.',
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Transfer rejected.', 'info');
+            closeFlowModal();
+        });
+    };
+
+    // Incoming transfers for a given unit (pending, awaiting bed)
+    function incomingTransfersFor(unit) {
+        const out = [];
+        Object.keys(allEncounters).forEach(function (k) {
+            const e = allEncounters[k];
+            if (!e || e.status !== 'active') return;
+            if (!e.pendingTransfer) return;
+            if (e.pendingTransfer.toUnit !== unit) return;
+            const p = allPatients[e.patientId];
+            if (!p) return;
+            out.push(Object.assign({ _id: k, _patient: p }, e));
+        });
+        out.sort(function (a, b) { return (a.pendingTransfer.requestedAt || 0) - (b.pendingTransfer.requestedAt || 0); });
+        return out;
+    }
+
+    // ---- 5. DISCHARGE MODAL ----
+    window.openDischargeModal = function () {
+        if (!currentPatientId || chartReadOnly) return;
+        const p = currentPatient;
+        const enc = allEncounters[p.currentEncounterId];
+        if (!enc) return;
+        flowCtx = { mode: 'discharge', encId: p.currentEncounterId };
+        const body =
+            '<div class="adm-info-block"><span class="lbl">Patient</span><span class="val">' + esc(p.name) + '</span> · ' + esc(enc.bed) + ' · ' + esc(UNIT_NAMES[enc.unit]) + '</div>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Disposition</label><select id="dc_disp">' +
+                    '<option value="home">Home</option>' +
+                    '<option value="AMA">AMA (Against Medical Advice)</option>' +
+                    '<option value="SNF">Skilled Nursing Facility</option>' +
+                    '<option value="rehab">Rehab</option>' +
+                    '<option value="transferred-out">Transferred to another facility</option>' +
+                    '<option value="expired">Expired</option>' +
+                '</select></div>' +
+                '<div class="ff-field full-row"><label>Discharge Summary / Reason</label><textarea id="dc_reason" rows="4" placeholder="Brief discharge summary: reason for discharge, outstanding follow-up, teaching completed..."></textarea></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn danger" onclick="flowFinishDischarge()">Confirm Discharge</button>' +
+            '</div>';
+        openFlowModal('Discharge Patient', body, 'Close this encounter');
+    };
+    window.flowFinishDischarge = function () {
+        const ctx = flowCtx;
+        const disposition = document.getElementById('dc_disp').value;
+        const reason = (document.getElementById('dc_reason').value || '').trim();
+        if (!reason) { showToast('Discharge summary required.', 'warning'); return; }
+        const enc = allEncounters[ctx.encId];
+        if (!enc) return;
+        const now = Date.now();
+        const updates = {};
+        updates['emr/encounters/' + ctx.encId + '/status'] = 'completed';
+        updates['emr/encounters/' + ctx.encId + '/dischargeDate'] = now;
+        updates['emr/encounters/' + ctx.encId + '/dischargeDisposition'] = disposition;
+        updates['emr/encounters/' + ctx.encId + '/dischargeReason'] = reason;
+        updates['emr/patients/' + currentPatientId + '/currentEncounterId'] = null;
+        updates['emr/patients/' + currentPatientId + '/status'] = 'inactive';
+        if (enc.bed && enc.bed !== 'WAITING') {
+            updates['emr/beds/' + enc.unit + '/' + enc.bed] = null;
+        }
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: ctx.encId, type: 'narrative',
+            body: 'DISCHARGE — ' + new Date(now).toLocaleString() + '. Disposition: ' + disposition + '. ' + reason,
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Discharged to ' + disposition + '.', 'success');
+            closeFlowModal();
+            closeChart();
+        }).catch(function (err) {
+            showToast('Discharge failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    // ---- 6. HANDOFF / SBAR GENERATOR ----
+    window.openHandoffModal = function () {
+        if (!currentPatientId) return;
+        const p = currentPatient;
+        const enc = allEncounters[p.currentEncounterId];
+        if (!enc) { showToast('No active encounter.', 'warning'); return; }
+
+        const encId = p.currentEncounterId;
+        const recentVitals = currentVitals.filter(function (v) { return v.encounterId === encId; })[0];
+        const recentNotes = currentNotes.filter(function (n) { return n.encounterId === encId; }).slice(0, 3);
+        const marForEnc = currentMar.filter(function (m) { return m.encounterId === encId; });
+        const held = marForEnc.filter(function (m) { return m.status === 'held'; });
+        const overdue = marForEnc.filter(function (m) { return m.status === 'scheduled' && !m.isPRN; });
+        const prnRecent = marForEnc.filter(function (m) { return m.isPRN && m.status === 'given' && m.administeredAt && (Date.now() - m.administeredAt) < 4 * 3600 * 1000; });
+
+        const situation = esc(p.name) + ', ' + esc(String(p.age)) + esc(p.sex) + ' in ' + esc(enc.bed) + ' (' + esc(UNIT_NAMES[enc.unit] || enc.unit) + '). Admitted ' + esc(fmtTime(enc.admissionDate)) + ' for: ' + esc(enc.dx) + '. ' + (enc.esiAcuity ? 'ESI ' + esc(String(enc.esiAcuity)) + '. ' : '') + 'Code: ' + esc(enc.codeStatus) + '.';
+        const background = 'PMH: ' + esc(p.pmh || 'none documented') + '. ' +
+            'Allergies: ' + esc((p.allergies || []).join(', ') || 'NKDA') + '. ' +
+            (p.homeMedications && p.homeMedications.length ? 'Home meds: ' + esc(p.homeMedications.map(function (m) { return m.med; }).join(', ')) + '. ' : '') +
+            (enc.isolation ? 'Isolation: ' + esc(enc.isolation) + '. ' : '') +
+            (enc.fallRisk ? 'Fall risk.' : '');
+        let assessment = '';
+        if (recentVitals) {
+            const vParts = [];
+            if (recentVitals.sys != null && recentVitals.dia != null) vParts.push('BP ' + recentVitals.sys + '/' + recentVitals.dia);
+            if (recentVitals.hr != null) vParts.push('HR ' + recentVitals.hr);
+            if (recentVitals.rr != null) vParts.push('RR ' + recentVitals.rr);
+            if (recentVitals.temp != null) vParts.push('T ' + recentVitals.temp + '°C');
+            if (recentVitals.spo2 != null) vParts.push('SpO2 ' + recentVitals.spo2 + '%');
+            if (recentVitals.pain != null) vParts.push('Pain ' + recentVitals.pain + '/10');
+            assessment += 'Most recent vitals (' + esc(fmtTimeShort(recentVitals.timestamp)) + '): ' + esc(vParts.join(', ')) + '.\n';
+        }
+        if (recentNotes.length) {
+            assessment += 'Recent notes:\n' + recentNotes.map(function (n) {
+                const excerpt = (n.body || '').split('\n')[0].slice(0, 160);
+                return '  • ' + esc(fmtTimeShort(n.timestamp)) + ' [' + esc(n.type) + ']: ' + esc(excerpt);
+            }).join('\n') + '\n';
+        }
+        if (held.length) assessment += 'HELD meds: ' + esc(held.map(function (m) { return m.medication; }).join(', ')) + '.\n';
+        if (overdue.length) assessment += 'Scheduled meds due: ' + esc(overdue.map(function (m) { return m.medication + ' @ ' + m.scheduledTime; }).slice(0,5).join('; ')) + '.\n';
+        if (prnRecent.length) assessment += 'Recent PRNs (last 4h): ' + esc(prnRecent.map(function (m) { return m.medication + ' ' + fmtTimeShort(m.administeredAt); }).join('; ')) + '.\n';
+
+        const body =
+            '<div class="sbar-section"><div class="sbar-label">S — Situation</div><div class="sbar-body" id="sbarS">' + situation + '</div></div>' +
+            '<div class="sbar-section"><div class="sbar-label">B — Background</div><div class="sbar-body" id="sbarB">' + background + '</div></div>' +
+            '<div class="sbar-section"><div class="sbar-label">A — Assessment</div><div class="sbar-body" id="sbarA">' + (assessment || 'No recent data.') + '</div></div>' +
+            '<div class="sbar-section"><div class="sbar-label">R — Recommendation</div><textarea id="sbarR" placeholder="e.g., Continue current meds, pain reassessment due at 1400, ambulate x 3 this shift..."></textarea></div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Close</button>' +
+                '<button class="btn" onclick="copyHandoffToClipboard()">Copy to Clipboard</button>' +
+                '<button class="btn primary" onclick="saveHandoffAsNote()">Save as SBAR Note</button>' +
+            '</div>';
+        openFlowModal('Handoff / SBAR', body, 'Auto-populated from current encounter');
+    };
+    function buildHandoffText() {
+        const s = (document.getElementById('sbarS') || {}).textContent || '';
+        const b = (document.getElementById('sbarB') || {}).textContent || '';
+        const a = (document.getElementById('sbarA') || {}).textContent || '';
+        const r = (document.getElementById('sbarR') || {}).value || '';
+        return 'S: ' + s + '\n\nB: ' + b + '\n\nA: ' + a + '\n\nR: ' + r;
+    }
+    window.copyHandoffToClipboard = function () {
+        const txt = buildHandoffText();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt).then(function () { showToast('Handoff copied.', 'success'); });
+        } else {
+            const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy'); ta.remove();
+            showToast('Handoff copied.', 'success');
+        }
+    };
+    window.saveHandoffAsNote = function () {
+        const txt = buildHandoffText();
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        database.ref('emr/notes/' + currentPatientId + '/' + noteKey).set({
+            encounterId: encId, type: 'sbar', body: txt,
+            by: currentUserName, timestamp: Date.now()
+        }).then(function () {
+            showToast('Handoff saved as SBAR note.', 'success');
+            closeFlowModal();
+        });
+    };
+
+    // ---- 7. WAITING ROOM ACTIONS ----
+    window.openWaitingRoomAssignBed = function (encId) {
+        const enc = allEncounters[encId];
+        if (!enc) return;
+        flowCtx = { mode: 'wr-assign', encId: encId };
+        const beds = availableBedsForUnit('ED');
+        const regular = beds.filter(function (b) { return b.indexOf('-H') === -1; });
+        const hall = beds.filter(function (b) { return b.indexOf('-H') !== -1; });
+        const opts = []
+            .concat(regular.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + '</option>'; }))
+            .concat(hall.map(function (b) { return '<option value="' + esc(b) + '">' + esc(b) + ' (hall)</option>'; }))
+            .join('');
+        const body =
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Assign a bed from the ED for <strong>' + esc((allPatients[enc.patientId] || {}).name) + '</strong>.</p>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Bed</label><select id="wr_bed">' + (opts || '<option>No beds available</option>') + '</select></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="flowFinishWaitingRoomAssign()">Assign Bed</button>' +
+            '</div>';
+        openFlowModal('Assign Bed from Waiting Room', body);
+    };
+    window.flowFinishWaitingRoomAssign = function () {
+        const ctx = flowCtx;
+        const bed = document.getElementById('wr_bed').value;
+        if (!bed) { showToast('Select a bed.', 'warning'); return; }
+        const updates = {};
+        updates['emr/beds/ED/' + bed] = ctx.encId;
+        updates['emr/encounters/' + ctx.encId + '/bed'] = bed;
+        const nKey = database.ref('emr/notes/' + (allEncounters[ctx.encId] || {}).patientId).push().key;
+        updates['emr/notes/' + allEncounters[ctx.encId].patientId + '/' + nKey] = {
+            encounterId: ctx.encId, type: 'narrative',
+            body: 'Bed assigned: ' + bed + ' at ' + new Date().toLocaleString() + '.',
+            by: currentUserName, timestamp: Date.now()
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Bed ' + bed + ' assigned.', 'success');
+            closeFlowModal();
+        });
+    };
+    window.openWaitingRoomDischarge = function (encId) {
+        const enc = allEncounters[encId];
+        if (!enc) return;
+        flowCtx = { mode: 'wr-discharge', encId: encId };
+        const pid = enc.patientId;
+        const pname = (allPatients[pid] || {}).name;
+        const body =
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Discharge <strong>' + esc(pname) + '</strong> directly from the waiting room.</p>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Disposition</label><select id="dc_disp"><option value="home">Home</option><option value="AMA">AMA</option><option value="transferred-out">Transferred to another facility</option></select></div>' +
+                '<div class="ff-field full-row"><label>Reason / Notes</label><textarea id="dc_reason" rows="3" placeholder="Low acuity workup, VS stable, counseled on home care..."></textarea></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn danger" onclick="flowFinishWaitingRoomDischarge()">Discharge</button>' +
+            '</div>';
+        openFlowModal('Discharge from Waiting Room', body);
+    };
+    window.flowFinishWaitingRoomDischarge = function () {
+        const ctx = flowCtx;
+        const disp = document.getElementById('dc_disp').value;
+        const reason = (document.getElementById('dc_reason').value || '').trim();
+        if (!reason) { showToast('Reason required.', 'warning'); return; }
+        const enc = allEncounters[ctx.encId];
+        const now = Date.now();
+        const updates = {};
+        updates['emr/encounters/' + ctx.encId + '/status'] = 'completed';
+        updates['emr/encounters/' + ctx.encId + '/dischargeDate'] = now;
+        updates['emr/encounters/' + ctx.encId + '/dischargeDisposition'] = disp;
+        updates['emr/encounters/' + ctx.encId + '/dischargeReason'] = reason;
+        updates['emr/patients/' + enc.patientId + '/currentEncounterId'] = null;
+        updates['emr/patients/' + enc.patientId + '/status'] = 'inactive';
+        if (enc.bed && enc.bed !== 'WAITING') updates['emr/beds/' + enc.unit + '/' + enc.bed] = null;
+        const nKey = database.ref('emr/notes/' + enc.patientId).push().key;
+        updates['emr/notes/' + enc.patientId + '/' + nKey] = {
+            encounterId: ctx.encId, type: 'narrative',
+            body: 'DISCHARGE FROM WAITING ROOM — ' + new Date(now).toLocaleString() + '. Disposition: ' + disp + '. ' + reason,
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Discharged from waiting room.', 'success');
+            closeFlowModal();
+        });
+    };
+
+    // ---- Encounters tab renderer ----
+    function renderEncountersTab() {
+        if (!currentPatient) return;
+        const el = document.getElementById('tab-encounters');
+        const encs = allEncountersForPatient(currentPatientId);
+        if (!encs.length) {
+            el.innerHTML = '<div class="emr-panel"><div class="emr-panel-bd"><div class="vitals-empty">No encounters on record.</div></div></div>';
+            return;
+        }
+        const viewingId = viewingEncounterId || (currentPatient.currentEncounterId || null);
+        const rows = encs.map(function (e) {
+            const isCurrent = e.status === 'active';
+            const isViewing = e._id === viewingId;
+            const cls = 'enc-row ' + (isCurrent ? 'current' : 'historical') + (isViewing ? ' viewing' : '');
+            const dateLine = isCurrent
+                ? 'Admitted ' + esc(fmtTime(e.admissionDate)) + ' — ' + (e.unit || '—') + ' ' + (e.bed || '')
+                : esc(fmtTime(e.admissionDate)) + '  →  ' + esc(fmtTime(e.dischargeDate)) + '  ·  ' + (e.unit || '—') + ' ' + (e.bed || '');
+            return '<div class="' + cls + '" onclick="viewEncounter(\'' + esc(e._id) + '\')">' +
+                '<div class="enc-main">' +
+                    '<div class="enc-date-line">' + dateLine + '</div>' +
+                    '<div class="enc-sub">' + esc(e.admissionSource || '—') + ' · ' + esc(e.md || '—') + (e.dischargeDisposition ? ' · disposition: ' + esc(e.dischargeDisposition) : '') + '</div>' +
+                    '<div class="enc-dx-line">DX: ' + esc(e.dx || '—') + (e.dischargeReason ? '<br>Summary: ' + esc(e.dischargeReason) : '') + '</div>' +
+                '</div>' +
+                '<span class="enc-badge ' + (isCurrent ? 'active' : 'completed') + '">' + (isCurrent ? 'Active' : 'Completed') + '</span>' +
+            '</div>';
+        }).join('');
+        el.innerHTML = '<div class="emr-panel">' +
+            '<div class="emr-panel-hd"><span>Encounters (' + encs.length + ')</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Click to view chart data from that encounter</span></div>' +
+            '<div class="emr-panel-bd">' + rows + '</div>' +
+        '</div>';
+    }
+
+    // ---- Helpers ----
+    function availableBedsForUnit(unit) {
+        const bedMap = allBeds[unit] || {};
+        const out = [];
+        for (let i = 1; i <= UNIT_BED_COUNT; i++) {
+            const bedId = unit + '-' + (i < 10 ? '0' + i : '' + i);
+            if (!bedMap[bedId]) out.push(bedId);
+        }
+        if (unit === 'ED') ED_HALL_BEDS.forEach(function (b) { if (!bedMap[b]) out.push(b); });
+        return out;
+    }
+    function calcAge(dobStr) {
+        if (!dobStr) return 0;
+        const dob = new Date(dobStr);
+        const diff = Date.now() - dob.getTime();
+        return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+    }
+    function flowStepDots(step, total) {
+        let dots = '<div class="flow-step-dots">';
+        for (let i = 1; i <= total; i++) {
+            const cls = (i < Math.floor(step)) ? 'done' : (Math.abs(i - step) < 0.75 ? 'active' : '');
+            dots += '<div class="flow-step-dot ' + cls + '"></div>';
+        }
+        dots += '</div>';
+        return dots;
+    }
+
+    // ===========================================================
+    // [2900] INIT
     // ===========================================================
     // (Auth state change in [200] kicks off everything once user resolves.)
 
