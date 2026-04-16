@@ -13,9 +13,11 @@
    No real NDC codes, NPIs, MRNs, or provider identities.
    ========================================================= */
 
-const SEED_VERSION = 3;
+const SEED_VERSION = 4;
 
 // ---- Allergy → med-name substring triggers (case-insensitive) ----
+// Phase 3A.5b: kept for back-compat but also used as one of several matchers.
+// The primary matcher is now the crossReactivityMap + substance-type logic in index.html.
 const ALLERGY_TRIGGERS = {
     'Penicillin':     ['amoxicillin', 'ampicillin', 'piperacillin', 'penicillin', 'nafcillin', 'oxacillin'],
     'Sulfa':          ['sulfamethoxazole', 'bactrim', 'sulfa', 'tmp-smx'],
@@ -32,6 +34,104 @@ const ALLERGY_TRIGGERS = {
     'Statins':        ['atorvastatin', 'simvastatin', 'rosuvastatin'],
     'ACE inhibitors': ['lisinopril', 'enalapril', 'ramipril']
 };
+
+// ---- Phase 3A.5b: Allergy reaction/severity defaults ----
+// When seed allergies come in as strings (e.g., 'Penicillin'), the seed writer
+// expands them using this map into the full object shape:
+//   { substance, type, reaction, severity, note }
+//
+// type:     'drug' | 'drug-class' | 'food' | 'environmental' | 'contrast'
+// reaction: clinically typical for this substance; edit per-patient if scenario demands
+// severity: 'mild' | 'moderate' | 'severe' | 'anaphylaxis'
+const ALLERGY_REACTION_MAP = {
+    'NKDA':            { type: 'none',           reaction: '',                                  severity: '' },
+    'Penicillin':      { type: 'drug-class',     reaction: 'Hives, facial swelling',            severity: 'moderate' },
+    'Sulfa':           { type: 'drug-class',     reaction: 'Rash',                              severity: 'moderate' },
+    'NSAIDs':          { type: 'drug-class',     reaction: 'GI bleeding (documented)',          severity: 'moderate' },
+    'Aspirin':         { type: 'drug',           reaction: 'Hives',                             severity: 'mild' },
+    'Codeine':         { type: 'drug',           reaction: 'Intractable nausea',                severity: 'moderate', note: 'Intolerance (not true allergy)' },
+    'Morphine':        { type: 'drug',           reaction: 'Itching, hypotension',              severity: 'moderate' },
+    'Latex':           { type: 'environmental',  reaction: 'Contact dermatitis',                severity: 'moderate' },
+    'Iodine':          { type: 'contrast',       reaction: 'Anaphylaxis to IV contrast',        severity: 'severe', note: 'Requires contrast-free imaging or premedication' },
+    'Shellfish':       { type: 'food',           reaction: 'Hives, tongue swelling',            severity: 'severe' },
+    'Eggs':            { type: 'food',           reaction: 'Hives',                             severity: 'mild',   note: 'Contraindication for propofol (egg lecithin)' },
+    'Peanuts':         { type: 'food',           reaction: 'Anaphylaxis (EpiPen carrier)',      severity: 'anaphylaxis' },
+    'Heparin':         { type: 'drug',           reaction: 'HIT (thrombocytopenia)',            severity: 'severe', note: 'HIT history — NO heparin products, NO enoxaparin. Use bivalirudin/argatroban.' },
+    'Statins':         { type: 'drug-class',     reaction: 'Myalgias, elevated CK',             severity: 'moderate' },
+    'ACE inhibitors':  { type: 'drug-class',     reaction: 'Persistent cough',                  severity: 'mild',   note: 'Switched to ARB; ARBs do not cross-react.' }
+};
+
+// ---- Phase 3A.5b: Cross-reactivity map (used by checkAllergyConflict) ----
+// Maps a SEED drug class/drug to other drug classes that share clinical cross-reactivity.
+// 'none' means no cross-reactivity (the allergy object type-matches only its own members).
+// Used by index.html to flag SOFT vs HARD matches at order-place and MAR-admin.
+const CROSS_REACTIVITY_MAP = {
+    'Penicillin':      { crossClass: ['Cephalosporins'], crossRate: 0.02, note: 'PCN→ceph cross-reactivity ~1-2% per current evidence (down from old 10% teaching).' },
+    'Sulfa':           { crossClass: [],                 crossRate: 0,    note: 'Sulfa-abx allergy does NOT cross-react with sulfa-containing non-abx (furosemide, thiazides).' },
+    'Aspirin':         { crossClass: ['NSAIDs'],         crossRate: 0.2,  note: 'ASA→NSAID cross-reactivity common (Samter\'s triad, esp. asthma + nasal polyps).' },
+    'NSAIDs':          { crossClass: ['Aspirin'],        crossRate: 0.2 },
+    'Codeine':         { crossClass: ['Opioids'],        crossRate: 0.1,  note: 'Intolerance, not true allergy. Other opioids often tolerated.' },
+    'Morphine':        { crossClass: ['Opioids'],        crossRate: 0.3,  note: 'Histamine release common across morphine, codeine, meperidine. Hydromorphone/fentanyl usually tolerated.' },
+    'ACE inhibitors':  { crossClass: [],                 crossRate: 0,    note: 'ARBs do NOT cross-react with ACEi. Switch is safe.' },
+    'Iodine':          { crossClass: ['Contrast'],       crossRate: 0.5,  note: 'True iodine allergy is rare; usually refers to contrast or povidone-iodine (different mechanisms).' },
+    'Eggs':            { crossClass: [],                 crossRate: 0,    note: 'Propofol contains egg lecithin but true anaphylaxis rare; many allergists clear with caution.' }
+};
+
+// ---- Phase 3A.5b: Drug → drug class map ----
+// Maps a specific medication to its drug class(es) for cross-reactivity checks at order-place.
+// Not exhaustive — covers meds used in current seed + common CPOE entries.
+const DRUG_CLASS_MAP = {
+    // Penicillins
+    'amoxicillin':     ['Penicillin'],
+    'ampicillin':      ['Penicillin'],
+    'piperacillin-tazobactam': ['Penicillin'],
+    'piperacillin':    ['Penicillin'],
+    'nafcillin':       ['Penicillin'],
+    'oxacillin':       ['Penicillin'],
+    // Cephalosporins
+    'cefazolin':       ['Cephalosporins'],
+    'ceftriaxone':     ['Cephalosporins'],
+    'cefepime':        ['Cephalosporins'],
+    'cephalexin':      ['Cephalosporins'],
+    // Sulfa abx
+    'trimethoprim-sulfamethoxazole': ['Sulfa'],
+    'bactrim':         ['Sulfa'],
+    'sulfamethoxazole': ['Sulfa'],
+    // NSAIDs / ASA
+    'aspirin':         ['Aspirin', 'NSAIDs'],
+    'ibuprofen':       ['NSAIDs'],
+    'naproxen':        ['NSAIDs'],
+    'ketorolac':       ['NSAIDs'],
+    // Opioids
+    'morphine':        ['Opioids', 'Morphine'],
+    'hydromorphone':   ['Opioids'],
+    'fentanyl':        ['Opioids'],
+    'oxycodone':       ['Opioids'],
+    'codeine':         ['Opioids', 'Codeine'],
+    // ACE / ARB
+    'lisinopril':      ['ACE inhibitors'],
+    'enalapril':       ['ACE inhibitors'],
+    'ramipril':        ['ACE inhibitors'],
+    'losartan':        ['ARB'],
+    'valsartan':       ['ARB'],
+    // Heparins / anticoag
+    'heparin':         ['Heparin'],
+    'enoxaparin':      ['Heparin'],
+    // Statins
+    'atorvastatin':    ['Statins'],
+    'simvastatin':     ['Statins'],
+    'rosuvastatin':    ['Statins'],
+    // Propofol (eggs)
+    'propofol':        ['Eggs']
+};
+
+// Helper: expand a string allergy to the full object form.
+// Used by the seeder when writing patient records to Firebase.
+function expandAllergy(raw) {
+    if (typeof raw !== 'string') return raw; // already an object
+    const reac = ALLERGY_REACTION_MAP[raw] || { type: 'drug', reaction: 'Unknown', severity: 'unknown' };
+    return Object.assign({ substance: raw }, reac);
+}
 
 // Helper: ISO day N days ago (for plausible prior-encounter dates)
 function daysAgoISO(n) {
@@ -101,7 +201,8 @@ const SEED_PATIENTS = [
         mrn: 'SIM-10003', allergies: ['Aspirin'],
         pmh: 'HTN, T2DM, hyperlipidemia, AFib on warfarin. Prior stroke 2019 with mild L-sided weakness residual.',
         homeMedications: [
-            { med: 'Warfarin',     dose: '5 mg',    route: 'PO', freq: 'Daily' },
+            { med: 'Warfarin',     dose: '5 mg',    route: 'PO', freq: 'Daily',
+              holdStatus: 'held', holdReason: 'Hold pending neuro imaging and INR. Resume per neurology.' },
             { med: 'Metformin',    dose: '1000 mg', route: 'PO', freq: 'BID' },
             { med: 'Atorvastatin', dose: '80 mg',   route: 'PO', freq: 'Daily' },
             { med: 'Lisinopril',   dose: '20 mg',   route: 'PO', freq: 'Daily' }
@@ -254,6 +355,8 @@ const SEED_PATIENTS = [
         pmh: 'CHF (EF 30%), AFib, CKD stage 3, prior CABG 2015.',
         homeMedications: [
             { med: 'Carvedilol',    dose: '12.5 mg', route: 'PO', freq: 'BID' },
+            { med: 'Losartan',      dose: '50 mg',   route: 'PO', freq: 'Daily',
+              note: 'ARB \u2014 substituted for ACEi (ACE-i allergy, cough). ARBs do not cross-react.' },
             { med: 'Furosemide',    dose: '40 mg',   route: 'PO', freq: 'Daily' },
             { med: 'Spironolactone', dose: '25 mg',  route: 'PO', freq: 'Daily' },
             { med: 'Apixaban',      dose: '5 mg',    route: 'PO', freq: 'BID' }
@@ -731,6 +834,12 @@ const SEED_UNADMITTED_PATIENTS = [
 const CHART_BY_PATIENT = {
     p_marcus_webb: {
         current: {
+            notes: [
+                { type: 'narrative', authorRole: 'MD', by: 'Dr. Avery Chen, MD-SIM', offsetH: -1.5,
+                  body: 'ED admission note. 34 yo M with hx HTN, hyperlipidemia presenting with substernal chest pressure x 2h radiating to L arm, 7/10, diaphoresis. ECG shows nonspecific ST/T changes. Troponin pending. Started on ASA, started on heparin gtt pending ACS r/o. Cardiology consulted.' },
+                { type: 'narrative', authorRole: 'RN',  by: 'ED triage RN (seeded)',  offsetH: -1.8,
+                  body: 'Triage: CP 7/10 substernal, radiating L arm. Pallor +, diaphoretic. Applied O2 2L NC, cardiac monitor on. Pt anxious, wife at bedside.' }
+            ],
             mar: [
                 { medication: 'Aspirin', dose: '325 mg', route: 'PO', frequency: 'Once', scheduledTime: '1400', isPRN: false },
                 { medication: 'Nitroglycerin', dose: '0.4 mg', route: 'SL', frequency: 'PRN chest pain', scheduledTime: 'PRN', isPRN: true, prnIndication: 'Chest pain' },
@@ -759,8 +868,9 @@ const CHART_BY_PATIENT = {
     p_leonard_kowalski: {
         current: {
             mar: [
+                { medication: 'Warfarin', dose: '5 mg', route: 'PO', frequency: 'Daily', scheduledTime: '1800', isPRN: false, status: 'held', notes: 'Held per stroke protocol — awaiting CT head + INR result' },
                 { medication: 'Atorvastatin', dose: '80 mg', route: 'PO', frequency: 'Daily', scheduledTime: '2100', isPRN: false, status: 'held', notes: 'Held per stroke protocol' },
-                { medication: 'Lisinopril', dose: '10 mg', route: 'PO', frequency: 'Daily', scheduledTime: '0800', isPRN: false, status: 'held', notes: 'Held — permissive HTN' },
+                { medication: 'Lisinopril', dose: '10 mg', route: 'PO', frequency: 'Daily', scheduledTime: '0800', isPRN: false, status: 'held', notes: 'Held — permissive HTN for cerebral perfusion' },
                 { medication: 'Acetaminophen', dose: '650 mg', route: 'PO', frequency: 'Q6H PRN pain', scheduledTime: 'PRN', isPRN: true, prnIndication: 'Pain or fever' }
             ],
             tar: [
@@ -811,6 +921,14 @@ const CHART_BY_PATIENT = {
     },
     p_priya_kapoor: {
         current: {
+            notes: [
+                { type: 'narrative', authorRole: 'MD', by: 'Dr. Avery Chen, MD-SIM', offsetH: -4,
+                  body: 'ED admission: 44 yo F w/ recurrent UTIs, T2DM, presenting with 2 days fever + flank pain + confusion. T 39.2, HR 128, BP 82/50, lactate pending. Sepsis likely, UTI source. Pip-tazo started, NS bolus x 1L, norepi initiated. ICU admit.' },
+                { type: 'narrative', authorRole: 'RN', by: 'ED RN (seeded)', offsetH: -3.5,
+                  body: 'VS unstable on arrival BP 82/50, HR 128, T 39.2. 2 PIVs established. Lactate drawn 4.1. Foley inserted per sepsis protocol. Family (husband) notified.' },
+                { type: 'narrative', authorRole: 'SW', by: 'SW on-call (seeded)', offsetH: -1,
+                  body: 'Met with husband at bedside. Two young children at home (6 and 8). Grandmother picking kids up from school. Husband coping but tearful — provided support, will follow up tomorrow.' }
+            ],
             mar: [
                 { medication: 'Piperacillin-Tazobactam', dose: '4.5 g', route: 'IV', frequency: 'Q8H', scheduledTime: '0800,1600,2400', isPRN: false },
                 { medication: 'Acetaminophen', dose: '650 mg', route: 'PO', frequency: 'Q6H PRN fever', scheduledTime: 'PRN', isPRN: true, prnIndication: 'Temp >38.5°C' },
@@ -846,6 +964,12 @@ const CHART_BY_PATIENT = {
     },
     p_helen_cho: {
         current: {
+            notes: [
+                { type: 'narrative', authorRole: 'MD', by: 'Dr. Reuben Park, MD-SIM', offsetH: -50,
+                  body: 'Post-op note: elective R TKR, POD#0. Procedure without complication. Spinal anesthesia. EBL 250 mL. Pain controlled on PCA + oral regimen. Plan: early ambulation with PT, DVT ppx, pain mgmt, discharge planning.' },
+                { type: 'narrative', authorRole: 'PT', by: 'PT Eval (seeded)', offsetH: -24,
+                  body: 'PT eval POD#1: pt ambulated 20 ft with rolling walker, weight bearing as tolerated on R. Knee ROM 0-45 degrees passive. Pain 5/10 during activity, 3/10 at rest. Will progress to 90 deg flexion as tolerated. Goal: ambulate 100 ft by POD#3, home with outpt PT.' }
+            ],
             mar: [
                 { medication: 'Oxycodone', dose: '5 mg', route: 'PO', frequency: 'Q4H PRN pain', scheduledTime: 'PRN', isPRN: true, prnIndication: 'Pain >4/10' },
                 { medication: 'Acetaminophen', dose: '1000 mg', route: 'PO', frequency: 'Q6H', scheduledTime: '0600,1200,1800,2400', isPRN: false },
@@ -864,6 +988,7 @@ const CHART_BY_PATIENT = {
             mar: [
                 { medication: 'Furosemide', dose: '40 mg', route: 'IV', frequency: 'BID', scheduledTime: '0800,1600', isPRN: false },
                 { medication: 'Carvedilol', dose: '12.5 mg', route: 'PO', frequency: 'BID', scheduledTime: '0800,2000', isPRN: false },
+                { medication: 'Losartan', dose: '50 mg', route: 'PO', frequency: 'Daily', scheduledTime: '0800', isPRN: false },
                 { medication: 'Spironolactone', dose: '25 mg', route: 'PO', frequency: 'Daily', scheduledTime: '0800', isPRN: false },
                 { medication: 'Potassium Chloride', dose: '20 mEq', route: 'PO', frequency: 'Daily', scheduledTime: '0900', isPRN: false }
             ],
@@ -882,10 +1007,13 @@ const CHART_BY_PATIENT = {
     p_angela_freeman: {
         current: {
             mar: [
-                { medication: 'Insulin Regular drip', dose: 'Per protocol', route: 'IV', frequency: 'Continuous', scheduledTime: 'Continuous', isPRN: false },
-                { medication: 'Insulin Lispro (sliding scale)', dose: 'Per scale', route: 'SubQ', frequency: 'AC + HS', scheduledTime: '0700,1130,1700,2100', isPRN: false },
+                { medication: 'Insulin Regular drip', dose: 'Per DKA protocol', route: 'IV', frequency: 'Continuous', scheduledTime: 'Continuous', isPRN: false,
+                  notes: 'Titrate per ICU DKA protocol (BG target 150-200 while on drip)' },
+                { medication: 'Insulin Lispro (sliding scale)', dose: 'Per scale', route: 'SubQ', frequency: 'AC + HS', scheduledTime: '0700,1130,1700,2100', isPRN: false,
+                  status: 'held', notes: 'HELD while on insulin drip. Resume when drip transitioned off and pt tolerating PO.' },
                 { medication: 'Potassium Chloride', dose: '20 mEq', route: 'IV', frequency: 'Q4H per protocol', scheduledTime: '0800,1200,1600,2000', isPRN: false },
-                { medication: '0.9% Normal Saline', dose: '125 mL/hr', route: 'IV', frequency: 'Continuous', scheduledTime: 'Continuous', isPRN: false }
+                { medication: '0.9% Normal Saline', dose: '125 mL/hr', route: 'IV', frequency: 'Continuous', scheduledTime: 'Continuous', isPRN: false,
+                  notes: 'Transition to D5\u00bdNS when BG drops <250 (per DKA protocol).' }
             ],
             tar: [
                 { treatment: 'Bedside glucose check', frequency: 'Q1H until off drip', scheduledTime: 'Q1H' },
@@ -1188,6 +1316,10 @@ const UNADMITTED_PRIOR_CHART = {
 window.EMR_SEED = {
     SEED_VERSION: SEED_VERSION,
     ALLERGY_TRIGGERS: ALLERGY_TRIGGERS,
+    ALLERGY_REACTION_MAP: ALLERGY_REACTION_MAP,
+    CROSS_REACTIVITY_MAP: CROSS_REACTIVITY_MAP,
+    DRUG_CLASS_MAP: DRUG_CLASS_MAP,
+    expandAllergy: expandAllergy,
     SEED_PATIENTS: SEED_PATIENTS,
     SEED_UNADMITTED_PATIENTS: SEED_UNADMITTED_PATIENTS,
     CHART_BY_PATIENT: CHART_BY_PATIENT,

@@ -704,6 +704,40 @@
         .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
         .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
 
+        /* Phase 3A.5b: Role chip on notes */
+        .role-chip {
+            display: inline-block; color: #fff; font-size: 10px; font-weight: 700;
+            padding: 2px 7px; border-radius: 10px; letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        /* Phase 3A.5b: FYI banner */
+        .fyi-banner {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; border-radius: 6px; margin-bottom: 10px;
+            background: #fffbea; border: 1px solid #fde68a; border-left: 4px solid #eab308;
+            cursor: pointer; font-size: 13px; color: #713f12;
+            transition: background 0.15s;
+        }
+        .fyi-banner:hover { background: #fef3c7; }
+        .fyi-banner.empty {
+            background: transparent; border: 1px dashed var(--clx-border);
+            border-left: 1px dashed var(--clx-border); color: var(--clx-text-muted);
+            opacity: 0.7; font-size: 12px; font-style: italic;
+        }
+        .fyi-banner.empty:hover { opacity: 1; background: var(--clx-bg-surface-2); }
+        .fyi-banner .fyi-icon { flex-shrink: 0; font-size: 16px; }
+        .fyi-banner .fyi-text { flex: 1; min-width: 0; font-weight: 600; line-height: 1.4; }
+        .fyi-banner.empty .fyi-text { font-weight: 400; }
+        .fyi-banner .fyi-meta { font-size: 10px; font-weight: 400; color: #854d0e; white-space: nowrap; opacity: 0.75; }
+        .fyi-banner .fyi-clear {
+            background: none; border: none; color: #854d0e; cursor: pointer;
+            font-size: 18px; padding: 0 4px; line-height: 1; opacity: 0.6;
+        }
+        .fyi-banner .fyi-clear:hover { opacity: 1; }
+        [data-theme="dark"] .fyi-banner { background: rgba(234,179,8,0.12); color: #fde68a; border-color: rgba(234,179,8,0.3); }
+        [data-theme="dark"] .fyi-banner.empty { background: transparent; color: var(--clx-text-muted); }
+
         /* Phase 3A: Flags tab */
         .flag-row {
             display: flex; justify-content: space-between; align-items: center;
@@ -1113,6 +1147,7 @@
     let allPatients = {};         // { patientId: patientObj }
     let allEncounters = {};       // { encounterId: encounterObj }  ← Phase 2
     let allBeds = {};             // { unit: { bedId: encounterId | null } }  ← Phase 2: stores encounterId
+    let unitBanners = {};         // { unit: { text, updatedAt, updatedBy } }  ← Phase 3A.5b
     let currentUnit = 'all';      // 'all' | 'ED' | 'MS' | 'ICU' | 'PCU' | 'OB'
     let boardMode = 'cards';      // 'cards' | 'manager'
     let mgrSortBy = 'bed';
@@ -1136,10 +1171,36 @@
     let currentLdas = [];         // per-encounter LDAs for the encounter currently being viewed
 
     let activeNoteType = 'soap';
+    let activeNoteRole = 'RN';    // Phase 3A.5b — default role for new notes
     let activeScreening = null;   // 'phq9' | 'gad7' | 'morse' | 'braden' | null
     let lastActiveTextarea = null;
     let savedScreenings = [];     // session-scoped, inserted into note body
     let sessionStartTime = Date.now();
+
+    // Phase 3A.5b: Role options for notes — covers multidisciplinary documentation
+    const NOTE_ROLES = [
+        { id: 'RN',        label: 'RN',         color: '#16a34a' },
+        { id: 'LPN',       label: 'LPN',        color: '#16a34a' },
+        { id: 'CNA',       label: 'CNA',        color: '#65a30d' },
+        { id: 'MD',        label: 'MD',         color: '#1e40af' },
+        { id: 'PA',        label: 'PA',         color: '#1e40af' },
+        { id: 'NP',        label: 'NP',         color: '#1e40af' },
+        { id: 'PT',        label: 'PT',         color: '#c2410c' },
+        { id: 'OT',        label: 'OT',         color: '#c2410c' },
+        { id: 'ST',        label: 'ST',         color: '#c2410c' },
+        { id: 'RT',        label: 'RT',         color: '#0e7490' },
+        { id: 'Pharm',     label: 'Pharmacist', color: '#7c3aed' },
+        { id: 'SW',        label: 'Social Wk',  color: '#a21caf' },
+        { id: 'Psych',     label: 'Psychiatry', color: '#a21caf' },
+        { id: 'Chap',      label: 'Chaplain',   color: '#6b7280' },
+        { id: 'CM',        label: 'Case Mgr',   color: '#9a3412' },
+        { id: 'Student',   label: 'Student',    color: '#6b7280' },
+        { id: 'Other',     label: 'Other',      color: '#6b7280' }
+    ];
+    function roleColor(roleId) {
+        const r = NOTE_ROLES.find(function (r) { return r.id === roleId; });
+        return r ? r.color : '#6b7280';
+    }
 
     // ===========================================================
     // [200] FIREBASE INIT & AUTH
@@ -1271,7 +1332,8 @@
 
             const patientRec = {
                 id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
-                allergies: p.allergies, pmh: p.pmh || '', socialHx: p.socialHx || '',
+                allergies: (p.allergies || []).map(seed.expandAllergy),
+                pmh: p.pmh || '', socialHx: p.socialHx || '',
                 homeMedications: p.homeMedications || [],
                 currentEncounterId: encId, status: 'admitted', createdAt: now
             };
@@ -1312,7 +1374,8 @@
         seed.SEED_UNADMITTED_PATIENTS.forEach(function (p) {
             const patientRec = {
                 id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
-                allergies: p.allergies, pmh: p.pmh || '', socialHx: p.socialHx || '',
+                allergies: (p.allergies || []).map(seed.expandAllergy),
+                pmh: p.pmh || '', socialHx: p.socialHx || '',
                 homeMedications: p.homeMedications || [],
                 currentEncounterId: null, status: 'inactive', createdAt: now
             };
@@ -1372,6 +1435,7 @@
             updates['emr/notes/' + patientId + '/' + key] = {
                 encounterId: encounterId,
                 type: n.type || 'narrative',
+                authorRole: n.authorRole || 'RN',
                 body: n.body || '',
                 by: n.by || 'Past Nurse',
                 timestamp: base + (n.offsetH || 0) * 3600000
@@ -1406,6 +1470,10 @@
         database.ref('emr/beds').on('value', function (snap) {
             allBeds = snap.val() || {};
             updateUnitCounts();
+            renderBoard();
+        });
+        database.ref('emr/unitBanners').on('value', function (snap) {
+            unitBanners = snap.val() || {};
             renderBoard();
         });
     }
@@ -1574,6 +1642,8 @@
             let html = '';
             if (units.length > 1) html += '<div class="mgr-section-title">' + esc(UNIT_NAMES[unit]) + '</div>';
 
+            // Per-unit FYI banner (editable by anyone)
+            html += renderFyiBanner(unit);
             // Incoming Transfers (top of every unit that has pending incoming)
             html += renderIncomingTransfersSection(unit);
             // Cards view: Waiting Room at top for ED
@@ -1588,6 +1658,47 @@
             return html;
         }).join('');
     }
+
+    // Phase 3A.5b: Per-unit FYI banner (editable by anyone)
+    function renderFyiBanner(unit) {
+        if (unit === 'all' || !UNIT_NAMES[unit]) return '';
+        const b = unitBanners[unit];
+        const text = b && b.text ? b.text : '';
+        if (!text) {
+            // Empty state — subtle add-button tucked in
+            return '<div class="fyi-banner empty" onclick="editFyiBanner(\'' + unit + '\')" title="Click to add a unit-wide FYI">' +
+                '<span class="fyi-icon">📢</span>' +
+                '<span class="fyi-text">+ Add FYI banner for ' + esc(UNIT_NAMES[unit]) + '</span>' +
+            '</div>';
+        }
+        const meta = b && b.updatedBy ? ' — ' + esc(b.updatedBy) + ' · ' + esc(fmtTimeShort(b.updatedAt)) : '';
+        return '<div class="fyi-banner" onclick="editFyiBanner(\'' + unit + '\')" title="Click to edit">' +
+            '<span class="fyi-icon">📢</span>' +
+            '<span class="fyi-text">' + esc(text) + '</span>' +
+            '<span class="fyi-meta">' + meta + '</span>' +
+            '<button class="fyi-clear" onclick="clearFyiBanner(event, \'' + unit + '\')" title="Clear banner">×</button>' +
+        '</div>';
+    }
+
+    window.editFyiBanner = function (unit) {
+        const existing = (unitBanners[unit] && unitBanners[unit].text) || '';
+        showPromptModal('FYI: ' + (UNIT_NAMES[unit] || unit), 'Unit-wide FYI (visible to all users in this unit board):', function (val) {
+            const newVal = (val || '').trim();
+            const updates = {};
+            if (newVal) {
+                updates['emr/unitBanners/' + unit] = { text: newVal, updatedAt: Date.now(), updatedBy: currentUserName };
+            } else {
+                updates['emr/unitBanners/' + unit] = null;
+            }
+            database.ref().update(updates);
+        }, { defaultValue: existing, placeholder: 'e.g., All students break at 1500', submitText: 'Save' });
+    };
+
+    window.clearFyiBanner = function (ev, unit) {
+        ev.stopPropagation();
+        showConfirmModal('Clear FYI banner?', 'This will remove the banner for ' + (UNIT_NAMES[unit] || unit) + '.',
+            function () { database.ref('emr/unitBanners/' + unit).set(null); }, { danger: true, confirmText: 'Clear' });
+    };
 
     // Incoming Transfers section — shown at top of receiving unit
     function renderIncomingTransfersSection(unit) {
@@ -1645,6 +1756,8 @@
     }
 
     function renderManagerView(units) {
+        // Per-unit FYI banner at top
+        let fyiHtml = units.map(function (u) { return renderFyiBanner(u); }).join('');
         // Incoming transfers for each selected unit (shown at top)
         let incomingHtml = units.map(function (u) { return renderIncomingTransfersSection(u); }).join('');
         // Waiting-room section (bottom for Manager view)
@@ -1693,8 +1806,8 @@
                 return;
             }
             const p = r.patient;
-            const allergiesArr = (p.allergies || []).filter(function (a) { return a && a !== 'NKDA'; });
-            const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
+            const allergiesArr = activeAllergies(p.allergies);
+            const allergiesTxt = allergiesDisplayText(p.allergies);
             const allergiesClass = allergiesArr.length > 0 ? 'mgr-allergies has-allergy' : 'mgr-allergies';
             const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(p.acuity || 1) - 1] || '#9ca3af';
             const enc = p._encounterId ? allEncounters[p._encounterId] : null;
@@ -1706,13 +1819,13 @@
                 '<td class="mgr-dx">' + esc(p.dx) + '</td>' +
                 statusNoteMgrCellHtml(enc) +
                 '<td>' + esc(p.codeStatus) + '</td>' +
-                '<td class="' + allergiesClass + '">' + esc(allergiesText) + '</td>' +
+                '<td class="' + allergiesClass + '">' + esc(allergiesTxt) + '</td>' +
                 '<td><span class="acuity-pill" style="background:' + acuityColor + ';">' + (p.acuity || 1) + '</span></td>' +
                 '<td><div class="mgr-badges">' + buildBadges(p) + '</div></td>' +
             '</tr>';
         });
         html += '</tbody></table></div>';
-        return incomingHtml + html + waitingHtml;
+        return fyiHtml + incomingHtml + html + waitingHtml;
     }
 
     function mgrCompareRows(a, b) {
@@ -1986,8 +2099,8 @@
         else if (p.currentEncounterId) enc = allEncounters[p.currentEncounterId];
         else enc = mostRecentCompletedEnc(p.id);
 
-        const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
-        const allergyClass = (p.allergies || []).filter(function (a) { return a !== 'NKDA'; }).length > 0 ? 'ch-value warn' : 'ch-value';
+        const allergiesTxt = allergiesDisplayText(p.allergies);
+        const allergyClass = activeAllergies(p.allergies).length > 0 ? 'ch-value warn' : 'ch-value';
 
         const bedLabel = enc ? (enc.bed + ' (' + (UNIT_NAMES[enc.unit] || enc.unit) + ')') : '—';
         const dxLabel  = enc ? enc.dx : (p.currentEncounterId ? '—' : 'Not admitted');
@@ -2006,7 +2119,7 @@
             '<div class="ch-block"><span class="ch-label">Diagnosis</span><span class="ch-value" title="' + esc(dxLabel) + '">' + esc(dxLabel) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">MD</span><span class="ch-value">' + esc(mdLabel) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">Code Status</span><span class="ch-value' + (isDnr ? ' warn' : '') + '">' + esc(codeLabel) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesText) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesTxt) + '</span></div>' +
             (enc && enc.status === 'active'
                 ? '<div class="ch-block" style="grid-column: 1 / -1;"><span class="ch-label">Status Note</span>' + statusNoteHtml(enc) + '</div>'
                 : '');
@@ -2058,7 +2171,7 @@
             if (FIELD_DEFS[key]) return editableFieldHtml(key, rawVal, display);
             return esc(display || rawVal || '—');
         }
-        const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
+        const allergiesTxt = allergiesDisplayText(p.allergies);
 
         const patientFields = [
             ['Full Name', ef('name', p.name)],
@@ -2066,7 +2179,7 @@
             ['Age', esc(String(p.age))],
             ['Sex', ef('sex', p.sex)],
             ['MRN', ef('mrn', p.mrn)],
-            ['Allergies', ef('allergies', p.allergies, allergiesText)],
+            ['Allergies', ef('allergies', p.allergies, allergiesTxt)],
             ['Past Medical Hx', ef('pmh', p.pmh)],
             ['Social Hx', ef('socialHx', p.socialHx)]
         ];
@@ -2255,11 +2368,16 @@
             return '<button class="note-type-btn ' + (activeNoteType === t.id ? 'active' : '') + '" onclick="selectNoteType(\'' + t.id + '\')">' + esc(t.label) + '</button>';
         }).join('');
 
+        const roleOpts = NOTE_ROLES.map(function (r) { return '<option value="' + r.id + '"' + (r.id === activeNoteRole ? ' selected' : '') + '>' + esc(r.label) + '</option>'; }).join('');
+
         const editorPanel = ro ? '' :
             '<div class="emr-panel">' +
                 '<div class="emr-panel-hd"><span>Add Note</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">By ' + esc(currentUserName) + ' · ' + esc(fmtTime(Date.now())) + '</span></div>' +
                 '<div class="emr-panel-bd">' +
-                    '<div class="note-type-row">' + tabsHtml + '</div>' +
+                    '<div class="note-type-row" style="align-items:center;">' + tabsHtml +
+                        '<span style="margin-left:auto;font-size:11px;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Role:</span>' +
+                        '<select id="noteRoleSelect" onchange="activeNoteRole=this.value" style="padding:4px 8px;border:1px solid var(--clx-border);border-radius:4px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">' + roleOpts + '</select>' +
+                    '</div>' +
                     '<div id="noteEditorArea"></div>' +
                     '<div class="note-tools-row" id="noteToolsRow">' +
                         '<button class="btn sm" onclick="insertCurrentTime()">Insert Current Time</button>' +
@@ -2404,6 +2522,7 @@
         const entry = {
             encounterId: encId,
             type: activeNoteType,
+            authorRole: activeNoteRole,
             body: body,
             by: currentUserName,
             timestamp: Date.now()
@@ -2425,8 +2544,15 @@
             return;
         }
         area.innerHTML = filtered.map(function (n) {
+            const role = n.authorRole || '';
+            const roleChip = role
+                ? '<span class="role-chip" style="background:' + esc(roleColor(role)) + ';">' + esc(role) + '</span>'
+                : '';
             return '<div class="note-card">' +
-                '<div class="nh-meta"><span class="nh-type">' + esc(n.type || 'note') + '</span><span>' + esc(fmtTime(n.timestamp)) + '</span><span>by ' + esc(n.by || '—') + '</span></div>' +
+                '<div class="nh-meta">' + roleChip +
+                    '<span class="nh-type">' + esc(n.type || 'note') + '</span>' +
+                    '<span>' + esc(fmtTime(n.timestamp)) + '</span>' +
+                    '<span>by ' + esc(n.by || '—') + '</span></div>' +
                 '<div class="nh-body">' + esc(n.body || '') + '</div>' +
             '</div>';
         }).join('');
@@ -2715,19 +2841,59 @@
         updateAdmSubmitState();
     };
 
+    // Phase 3A.5b: enhanced allergy check.
+    // Returns an array of hits: { allergy: substance, trigger: matched-text, matchType: 'exact'|'class'|'cross', severity, note, reaction }
+    // - 'exact' match: med name contains the allergic substance directly
+    // - 'class'  match: med belongs to the same drug class as the allergic substance
+    // - 'cross'  match: med belongs to a class with documented cross-reactivity to the allergy class
     function checkAllergyConflict(patient, marItem) {
         if (!patient || !patient.allergies || !patient.allergies.length) return [];
-        if (!window.EMR_SEED || !window.EMR_SEED.ALLERGY_TRIGGERS) return [];
+        if (!window.EMR_SEED) return [];
+        const triggers = window.EMR_SEED.ALLERGY_TRIGGERS || {};
+        const drugClassMap = window.EMR_SEED.DRUG_CLASS_MAP || {};
+        const xrMap = window.EMR_SEED.CROSS_REACTIVITY_MAP || {};
+
         const med = (marItem.medication || '').toLowerCase();
-        const triggers = window.EMR_SEED.ALLERGY_TRIGGERS;
+        // Determine which classes this med belongs to (look up by name + by substring)
+        const medClasses = new Set();
+        Object.keys(drugClassMap).forEach(function (drug) {
+            if (med.indexOf(drug) !== -1) drugClassMap[drug].forEach(function (c) { medClasses.add(c); });
+        });
+
         const hits = [];
         patient.allergies.forEach(function (allergy) {
-            if (allergy === 'NKDA') return;
-            const triggerWords = triggers[allergy];
-            if (!triggerWords || !triggerWords.length) return;
-            triggerWords.forEach(function (tw) {
-                if (med.indexOf(tw.toLowerCase()) !== -1) hits.push({ allergy: allergy, trigger: tw });
-            });
+            const sub = allergySubstance(allergy);
+            if (!sub || sub === 'NKDA') return;
+
+            // 1. Substring trigger match (back-compat with ALLERGY_TRIGGERS)
+            const triggerWords = triggers[sub] || [];
+            for (const tw of triggerWords) {
+                if (med.indexOf(tw.toLowerCase()) !== -1) {
+                    hits.push({ allergy: sub, trigger: tw, matchType: 'exact',
+                        severity: allergySeverity(allergy), reaction: allergyReaction(allergy), note: allergyNote(allergy) });
+                    return; // one hit per allergy is enough
+                }
+            }
+
+            // 2. Class match — does the med belong to the same class as the allergy substance?
+            if (medClasses.has(sub)) {
+                hits.push({ allergy: sub, trigger: sub, matchType: 'class',
+                    severity: allergySeverity(allergy), reaction: allergyReaction(allergy), note: allergyNote(allergy) });
+                return;
+            }
+
+            // 3. Cross-reactivity match — does the med belong to a class that cross-reacts with the allergy?
+            const xr = xrMap[sub];
+            if (xr && xr.crossClass && xr.crossClass.length) {
+                for (const xc of xr.crossClass) {
+                    if (medClasses.has(xc)) {
+                        hits.push({ allergy: sub, trigger: xc, matchType: 'cross',
+                            severity: allergySeverity(allergy), reaction: allergyReaction(allergy), note: xr.note || '',
+                            crossRate: xr.crossRate });
+                        return;
+                    }
+                }
+            }
         });
         return hits;
     }
@@ -2746,12 +2912,24 @@
             '</div>' +
         '</div>';
 
-        // Allergy warning
+        // Allergy warning (Phase 3A.5b: enriched with match type, severity, reaction, cross-reactivity note)
         if (ctx.allergyHits.length) {
+            const hitDetails = ctx.allergyHits.map(function (h) {
+                const matchLabel = h.matchType === 'exact' ? 'EXACT MATCH'
+                                 : h.matchType === 'class' ? 'CLASS MATCH'
+                                 : 'CROSS-REACTIVITY' + (h.crossRate ? ' (' + Math.round(h.crossRate * 100) + '% rate)' : '');
+                let detail = '<div style="margin-bottom:6px;"><strong>' + esc(h.allergy) + '</strong>' +
+                    ' \u2014 <span style="text-transform:uppercase;font-size:11px;font-weight:700;">' + matchLabel + '</span>' +
+                    (h.severity ? ' · severity: <strong>' + esc(h.severity) + '</strong>' : '') +
+                    (h.reaction ? '<br><span style="font-size:12px;">Documented reaction: ' + esc(h.reaction) + '</span>' : '') +
+                    (h.note ? '<br><span style="font-size:12px;font-style:italic;">' + esc(h.note) + '</span>' : '') +
+                '</div>';
+                return detail;
+            }).join('');
             html += '<div class="allergy-warn">' +
                 '<div class="aw-title">⚠ Allergy alert</div>' +
-                '<div class="aw-body">Patient allergic to <strong>' + esc(ctx.allergyHits.map(function (h) { return h.allergy; }).join(', ')) +
-                    '</strong>. Administering <strong>' + esc(itemName) + '</strong> may cause a reaction.</div>' +
+                '<div class="aw-body">Administering <strong>' + esc(itemName) + '</strong> may cause a reaction:</div>' +
+                '<div class="aw-body" style="margin-top:8px;">' + hitDetails + '</div>' +
                 '<label><input type="checkbox" id="admAllergyAck"> I have verified this is clinically appropriate to give to this patient.</label>' +
             '</div>';
         }
@@ -3667,7 +3845,7 @@
 
         const situation = esc(p.name) + ', ' + esc(String(p.age)) + esc(p.sex) + ' in ' + esc(enc.bed) + ' (' + esc(UNIT_NAMES[enc.unit] || enc.unit) + '). Admitted ' + esc(fmtTime(enc.admissionDate)) + ' for: ' + esc(enc.dx) + '. ' + (enc.esiAcuity ? 'ESI ' + esc(String(enc.esiAcuity)) + '. ' : '') + 'Code: ' + esc(enc.codeStatus) + '.';
         const background = 'PMH: ' + esc(p.pmh || 'none documented') + '. ' +
-            'Allergies: ' + esc((p.allergies || []).join(', ') || 'NKDA') + '. ' +
+            'Allergies: ' + esc(allergiesDisplayText(p.allergies)) + '. ' +
             (p.homeMedications && p.homeMedications.length ? 'Home meds: ' + esc(p.homeMedications.map(function (m) { return m.med; }).join(', ')) + '. ' : '') +
             (enc.isolation ? 'Isolation: ' + esc(enc.isolation) + '. ' : '') +
             (enc.fallRisk ? 'Fall risk.' : '');
@@ -3844,7 +4022,10 @@
                     '<div class="enc-sub">' + esc(e.admissionSource || '—') + ' · ' + esc(e.md || '—') + (e.dischargeDisposition ? ' · disposition: ' + esc(e.dischargeDisposition) : '') + '</div>' +
                     '<div class="enc-dx-line">DX: ' + esc(e.dx || '—') + (e.dischargeReason ? '<br>Summary: ' + esc(e.dischargeReason) : '') + '</div>' +
                 '</div>' +
-                '<span class="enc-badge ' + (isCurrent ? 'active' : 'completed') + '">' + (isCurrent ? 'Active' : 'Completed') + '</span>' +
+                '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+                    '<span class="enc-badge ' + (isCurrent ? 'active' : 'completed') + '">' + (isCurrent ? 'Active' : 'Completed') + '</span>' +
+                    '<button class="btn sm" onclick="event.stopPropagation(); showEncounterSummary(\'' + esc(e._id) + '\')">🔍 View Summary</button>' +
+                '</div>' +
             '</div>';
         }).join('');
         el.innerHTML = '<div class="emr-panel">' +
@@ -3913,7 +4094,7 @@
         let curVal;
         if (def.level === 'patient') curVal = p[fieldKey];
         else curVal = enc[fieldKey];
-        if (fieldKey === 'allergies') curVal = Array.isArray(curVal) ? curVal.join(', ') : (curVal || '');
+        if (fieldKey === 'allergies') curVal = allergiesDisplayText(curVal);
 
         // Prompt-style editor via flow modal (avoids finicky inline editors for selects/toggles)
         let body = '';
@@ -3994,9 +4175,17 @@
         if (!input) return;
         let oldVal, newVal;
         if (def.kind === 'allergies') {
-            oldVal = Array.isArray(p.allergies) ? p.allergies.join(', ') : (p.allergies || '');
+            oldVal = allergiesDisplayText(p.allergies);
             const raw = (input.value || '').trim();
-            newVal = raw ? raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : ['NKDA'];
+            const list = raw ? raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : ['NKDA'];
+            // Expand each substance string to the full object using the seed's reaction map (preserves existing object entries unchanged)
+            const expand = (window.EMR_SEED && window.EMR_SEED.expandAllergy) ? window.EMR_SEED.expandAllergy : function (s) { return { substance: s, type: 'unknown', reaction: '', severity: '' }; };
+            newVal = list.map(function (sub) {
+                // Preserve any existing allergy object that already has details for this substance
+                const existing = (p.allergies || []).find(function (a) { return allergySubstance(a) === sub; });
+                if (existing && typeof existing === 'object') return existing;
+                return expand(sub);
+            });
         } else if (def.kind === 'meds') {
             oldVal = Array.isArray(p.homeMedications) ? p.homeMedications.map(function (m) { return m.med + ' ' + m.dose + ' ' + m.route + ' ' + m.freq; }).join('; ') : '';
             const rows = document.querySelectorAll('#ef_meds_list .med-row');
@@ -4436,6 +4625,128 @@
         });
     };
 
+    // ===========================================================
+    // [2875] PHASE 3A.5b — Prior Encounter Summary Popup
+    // ===========================================================
+    window.showEncounterSummary = function (encId) {
+        const enc = allEncounters[encId];
+        if (!enc) return;
+        const p = allPatients[enc.patientId];
+        if (!p) return;
+        database.ref('emr/ldas/' + encId).once('value').then(function (snap) {
+            const ldas = [];
+            snap.forEach(function (c) { ldas.push(Object.assign({ _key: c.key }, c.val())); });
+            renderEncounterSummaryModal(encId, enc, p, ldas);
+        }).catch(function () { renderEncounterSummaryModal(encId, enc, p, []); });
+    };
+
+    function renderEncounterSummaryModal(encId, enc, p, ldas) {
+        const vitalsArr = currentVitals.filter(function (v) { return v.encounterId === encId; });
+        const notesArr  = currentNotes.filter(function (n) { return n.encounterId === encId; });
+        const marArr    = currentMar.filter(function (m) { return m.encounterId === encId; });
+        const tarArr    = currentTar.filter(function (t) { return t.encounterId === encId; });
+
+        const isCurrent = enc.status === 'active';
+        const statusLine = isCurrent
+            ? 'Active encounter · admitted ' + fmtTime(enc.admissionDate)
+            : 'Completed ' + fmtTime(enc.dischargeDate) + ' · ' + (enc.dischargeDisposition || '—');
+
+        let html = '<div style="max-height:70vh;overflow-y:auto;padding-right:6px;">';
+        html += '<div class="adm-info-block"><span class="lbl">Encounter</span><span class="val">' +
+            esc(UNIT_NAMES[enc.unit] || enc.unit) + ' · ' + esc(enc.bed || '—') + ' · ' + esc(enc.dx || '—') +
+            '</span><div style="font-size:11px;color:var(--clx-text-muted);margin-top:3px;">' + esc(statusLine) + '</div></div>';
+
+        const admFields = [
+            ['Admission Source', enc.admissionSource],
+            ['Admitting MD', enc.md],
+            ['Chief Complaint', enc.chiefComplaint],
+            ['ESI Acuity', enc.esiAcuity],
+            ['Arrival Mode', enc.arrivalMode],
+            ['Code Status', enc.codeStatus],
+            ['Diet', enc.diet],
+            ['Activity', enc.activity],
+            ['IV Access', enc.ivAccess]
+        ].filter(function (f) { return f[1]; });
+        if (admFields.length) {
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>Admission</span></div><div class="emr-panel-bd"><div class="demo-grid">' +
+                admFields.map(function (f) { return '<div class="ch-block"><span class="ch-label">' + esc(f[0]) + '</span><span class="ch-value">' + esc(String(f[1])) + '</span></div>'; }).join('') +
+            '</div></div></div>';
+        }
+
+        if (!isCurrent) {
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>Discharge Summary</span></div><div class="emr-panel-bd" style="font-size:13px;line-height:1.5;">' +
+                '<div><strong>Disposition:</strong> ' + esc(enc.dischargeDisposition || '—') + '</div>' +
+                '<div style="margin-top:6px;">' + esc(enc.dischargeReason || '—') + '</div>' +
+            '</div></div>';
+        }
+
+        if (notesArr.length) {
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>Notes (' + notesArr.length + ')</span></div><div class="emr-panel-bd" style="padding:8px 10px;">' +
+                notesArr.map(function (n) {
+                    const roleChip = n.authorRole
+                        ? '<span class="role-chip" style="background:' + esc(roleColor(n.authorRole)) + ';">' + esc(n.authorRole) + '</span> '
+                        : '';
+                    return '<div class="note-card">' +
+                        '<div class="nh-meta">' + roleChip + '<span class="nh-type">' + esc(n.type || 'note') + '</span><span>' + esc(fmtTime(n.timestamp)) + '</span><span>by ' + esc(n.by || '—') + '</span></div>' +
+                        '<div class="nh-body">' + esc(n.body || '') + '</div>' +
+                    '</div>';
+                }).join('') +
+            '</div></div>';
+        }
+
+        if (vitalsArr.length) {
+            const vRows = vitalsArr.slice(0, 8).map(function (v) {
+                const parts = [];
+                if (v.sys != null && v.dia != null) parts.push('BP ' + v.sys + '/' + v.dia);
+                if (v.hr != null) parts.push('HR ' + v.hr);
+                if (v.rr != null) parts.push('RR ' + v.rr);
+                if (v.temp != null) parts.push('T ' + v.temp + '°C');
+                if (v.spo2 != null) parts.push('SpO2 ' + v.spo2 + '%');
+                if (v.pain != null) parts.push('Pain ' + v.pain + '/10');
+                return '<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--clx-border);">' +
+                    '<strong>' + esc(fmtTime(v.timestamp)) + ':</strong> ' + esc(parts.join(', ')) + ' — ' + esc(v.by || '—') +
+                '</div>';
+            }).join('');
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>Vitals (' + vitalsArr.length + ' entries, showing latest 8)</span></div><div class="emr-panel-bd">' + vRows + '</div></div>';
+        }
+
+        if (marArr.length) {
+            const gcount = { given: 0, held: 0, refused: 0, scheduled: 0 };
+            marArr.forEach(function (m) { const s = (m.status || 'scheduled').toLowerCase(); if (gcount[s] != null) gcount[s]++; });
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>Medications (' + marArr.length + ')</span></div><div class="emr-panel-bd" style="font-size:12px;">' +
+                '<div style="margin-bottom:6px;">' +
+                    '<span class="mar-status given">' + gcount.given + ' given</span> ' +
+                    '<span class="mar-status held">' + gcount.held + ' held</span> ' +
+                    '<span class="mar-status refused">' + gcount.refused + ' refused</span> ' +
+                    '<span class="mar-status scheduled">' + gcount.scheduled + ' scheduled</span>' +
+                '</div>' +
+                '<ul style="margin:4px 0 0 18px;line-height:1.5;">' +
+                    marArr.slice(0, 10).map(function (m) { return '<li>' + esc(m.medication) + ' ' + esc(m.dose || '') + ' ' + esc(m.route || '') + ' — ' + esc(m.frequency || '') + ' [' + esc(m.status || 'scheduled') + ']</li>'; }).join('') +
+                '</ul>' +
+            '</div></div>';
+        }
+
+        if (tarArr.length) {
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>Treatments (' + tarArr.length + ')</span></div><div class="emr-panel-bd" style="font-size:12px;">' +
+                '<ul style="margin:4px 0 0 18px;line-height:1.5;">' +
+                    tarArr.slice(0, 8).map(function (t) { return '<li>' + esc(t.treatment) + ' — ' + esc(t.frequency || '') + '</li>'; }).join('') +
+                '</ul>' +
+            '</div></div>';
+        }
+
+        if (ldas.length) {
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>LDAs (' + ldas.length + ')</span></div><div class="emr-panel-bd" style="font-size:12px;">' +
+                '<ul style="margin:4px 0 0 18px;line-height:1.5;">' +
+                    ldas.map(function (l) { return '<li>' + esc(l.type) + ' · ' + esc(l.site) + ' · ' + esc(l.size || '') + (l.status === 'removed' ? ' (removed)' : '') + '</li>'; }).join('') +
+                '</ul>' +
+            '</div></div>';
+        }
+
+        html += '</div>'; // close scroll area
+        html += '<div class="adm-buttons"><button class="btn primary" onclick="closeFlowModal()">Close</button></div>';
+        openFlowModal('Encounter Summary · ' + (p.name), html, (isCurrent ? '' : 'Read-only historical encounter'));
+    }
+
     // ---- Helpers ----
     function availableBedsForUnit(unit) {
         const bedMap = allBeds[unit] || {};
@@ -4447,6 +4758,24 @@
         if (unit === 'ED') ED_HALL_BEDS.forEach(function (b) { if (!bedMap[b]) out.push(b); });
         return out;
     }
+    // ---- Allergy normalization helpers (Phase 3A.5b) ----
+    // Allergies can be either legacy strings ('Penicillin') OR new objects ({substance, type, reaction, severity, note}).
+    // These helpers handle both transparently.
+    function allergySubstance(a)  { return (typeof a === 'string') ? a : (a && a.substance) || ''; }
+    function allergyType(a)       { return (typeof a === 'string') ? '' : (a && a.type) || ''; }
+    function allergyReaction(a)   { return (typeof a === 'string') ? '' : (a && a.reaction) || ''; }
+    function allergySeverity(a)   { return (typeof a === 'string') ? '' : (a && a.severity) || ''; }
+    function allergyNote(a)       { return (typeof a === 'string') ? '' : (a && a.note) || ''; }
+    function allergyIsActive(a)   { return allergySubstance(a) !== 'NKDA' && allergySubstance(a) !== ''; }
+    function allergiesDisplayText(arr)   {
+        if (!arr || !arr.length) return 'NKDA';
+        return arr.map(function (a) { return allergySubstance(a); }).join(', ');
+    }
+    function activeAllergies(arr) {
+        if (!arr) return [];
+        return arr.filter(allergyIsActive);
+    }
+
     // MRN generator — next sequential SIM-NNNNN not in use
     function generateNewMRN() {
         let maxNum = 30000; // baseline above seeded range (20001 unadmitted, 10001-10018 admitted)
