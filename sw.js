@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v147';
+const CACHE_VERSION = 'v148';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -61,6 +61,8 @@ const OFFLINE_URLS = [
     '/careplan/',
     '/rotationlog/',
     '/profile/',
+    '/emr/',
+    '/emr/seed-data.js',
     '/shared/toast.css',
     '/shared/toast.js',
     '/shared/header.css',
@@ -95,7 +97,8 @@ const STALE_WHILE_REVALIDATE = [
     '/sbar/index.html',
     '/careplan/index.html',
     '/rotationlog/index.html',
-    '/profile/index.html'
+    '/profile/index.html',
+    '/emr/index.html'
 ];
 
 // Install event - cache core resources

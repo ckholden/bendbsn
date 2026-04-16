@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
+    <script>
+        if (localStorage.getItem('bendbsn_auth') !== 'true') {
+            window.location.href = '/';
+        }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0d1f2d">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
+    <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
+    <title>BendBSN — Sim Chart</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            background: var(--clx-bg-canvas, #f5f8fa);
+            color: var(--clx-text-primary, #1a2532);
+            min-height: 100vh; min-height: 100dvh;
+        }
+
+        /* ---- Disclaimer bar ---- */
+        .sim-disclaimer {
+            background: #7f1d1d;
+            color: #fff;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 6px 12px;
+            border-bottom: 2px solid #450a0a;
+            position: sticky;
+            top: 56px;
+            z-index: 99;
+            text-transform: uppercase;
+        }
+
+        /* ---- Sidebar units ---- */
+        .clx-sidebar-item .unit-acuity {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--clx-text-muted, #718096);
+        }
+        .sim-session-info {
+            padding: 12px 16px;
+            font-size: 11px;
+            color: var(--clx-text-muted, #718096);
+            border-top: 1px solid var(--clx-border, #d1dce8);
+            margin-top: auto;
+        }
+        .sim-session-info .name { font-weight: 600; color: var(--clx-text-primary); margin-bottom: 2px; }
+
+        /* ---- Page title bar ---- */
+        .emr-title-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 0; border-bottom: 1px solid var(--clx-border, #d1dce8);
+            margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
+        }
+        .emr-title-bar h1 {
+            font-size: 20px; font-weight: 700; color: var(--clx-text-primary, #1a2532); margin: 0;
+        }
+        .emr-title-bar .subtitle { font-size: 12px; color: var(--clx-text-muted, #718096); margin-top: 2px; }
+        .emr-back-btn {
+            background: none; border: 1px solid var(--clx-border, #d1dce8); color: var(--clx-text-secondary, #4a5568);
+            padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit;
+        }
+        .emr-back-btn:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
+
+        /* ---- Board mode toggle ---- */
+        .board-mode-toggle { display: inline-flex; border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px; overflow: hidden; }
+        .bm-btn {
+            padding: 6px 12px; font-size: 12px; font-weight: 600; font-family: inherit;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-secondary, #4a5568);
+            border: none; cursor: pointer; border-right: 1px solid var(--clx-border, #d1dce8);
+        }
+        .bm-btn:last-child { border-right: none; }
+        .bm-btn.active { background: var(--clx-accent, #0f7490); color: #fff; }
+        .bm-btn:hover:not(.active) { background: var(--clx-bg-surface-2, #f5f8fa); }
+
+        /* ---- Manager (rounding-sheet) view ---- */
+        .mgr-section { margin-bottom: 18px; }
+        .mgr-section-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 6px; padding-left: 2px;
+        }
+        .mgr-table-wrap { overflow-x: auto; border: 1px solid var(--clx-border, #d1dce8); border-radius: 8px; background: var(--clx-bg-surface, #fff); }
+        .mgr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .mgr-table th, .mgr-table td {
+            padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--clx-border, #d1dce8); white-space: nowrap;
+        }
+        .mgr-table th {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); background: var(--clx-bg-surface-2, #f5f8fa);
+            cursor: pointer; user-select: none; position: sticky; top: 0;
+        }
+        .mgr-table th:hover { color: var(--clx-accent, #0f7490); }
+        .mgr-table th .sort-arrow { font-size: 9px; opacity: 0.5; margin-left: 3px; }
+        .mgr-table th.sorted .sort-arrow { opacity: 1; color: var(--clx-accent); }
+        .mgr-table tbody tr { cursor: pointer; transition: background 0.1s; }
+        .mgr-table tbody tr:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
+        .mgr-table tbody tr:last-child td { border-bottom: none; }
+        .mgr-table .mgr-bed { font-weight: 700; color: var(--clx-text-primary); }
+        .mgr-table .mgr-empty { color: var(--clx-text-muted, #718096); font-style: italic; }
+        .mgr-table .mgr-empty:hover { background: transparent; cursor: default; }
+        .mgr-table .acuity-pill {
+            display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; color: #fff; min-width: 22px; text-align: center;
+        }
+        .mgr-table .mgr-dx { white-space: normal; max-width: 280px; }
+        .mgr-table .mgr-allergies { white-space: normal; max-width: 180px; font-size: 12px; }
+        .mgr-table .mgr-allergies.has-allergy { color: #b91c1c; font-weight: 600; }
+        .mgr-table .mgr-badges { display: flex; gap: 3px; }
+        @media (max-width: 720px) {
+            .mgr-table .mgr-dx { max-width: 200px; }
+            .mgr-table th, .mgr-table td { padding: 6px 8px; font-size: 12px; }
+        }
+
+        /* ---- Unit board (cards) ---- */
+        .unit-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .bed-card {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+            position: relative;
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+        }
+        .bed-card:hover { border-color: var(--clx-accent, #0f7490); box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateY(-1px); }
+        .bed-card.empty {
+            border-style: dashed;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            color: var(--clx-text-muted, #718096);
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            font-size: 13px;
+            cursor: default;
+        }
+        .bed-card.empty:hover { transform: none; box-shadow: none; border-color: var(--clx-border, #d1dce8); }
+        .bed-card .bed-num {
+            font-size: 16px; font-weight: 700; color: var(--clx-text-primary, #1a2532);
+            margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+        }
+        .acuity-dot {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+        }
+        .acuity-1 { background: #16a34a; }
+        .acuity-2 { background: #84cc16; }
+        .acuity-3 { background: #eab308; }
+        .acuity-4 { background: #f97316; }
+        .acuity-5 { background: #dc2626; }
+        .bed-card .pt-name { font-size: 14px; font-weight: 600; color: var(--clx-text-primary); margin-bottom: 2px; }
+        .bed-card .pt-meta { font-size: 11px; color: var(--clx-text-muted, #718096); margin-bottom: 6px; }
+        .bed-card .pt-dx { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-bottom: 8px;
+            overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .bed-card .pt-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: auto; }
+        .pt-badge {
+            font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;
+        }
+        .pt-badge.dnr { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .pt-badge.iso { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .pt-badge.fall { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        [data-theme="dark"] .pt-badge.dnr { background: rgba(239,68,68,0.12); color: #fca5a5; border-color: rgba(239,68,68,0.3); }
+        [data-theme="dark"] .pt-badge.iso { background: rgba(245,158,11,0.12); color: #fcd34d; border-color: rgba(245,158,11,0.3); }
+        [data-theme="dark"] .pt-badge.fall { background: rgba(249,115,22,0.12); color: #fdba74; border-color: rgba(249,115,22,0.3); }
+
+        /* ---- Chart header strip ---- */
+        .chart-header {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px 18px;
+            align-items: end;
+        }
+        .chart-header .ch-block { display: flex; flex-direction: column; min-width: 0; }
+        .chart-header .ch-label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 1px;
+        }
+        .chart-header .ch-value { font-size: 13px; font-weight: 600; color: var(--clx-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-header .ch-value.large { font-size: 16px; }
+        .chart-header .ch-value.warn { color: #b91c1c; }
+        .chart-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .chart-actions button {
+            padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+            border: 1px solid var(--clx-border, #d1dce8); background: var(--clx-bg-surface, #fff); color: var(--clx-text-secondary, #4a5568);
+            cursor: pointer; font-family: inherit;
+        }
+        .chart-actions button:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
+        .chart-actions button.danger { color: #b91c1c; border-color: #fecaca; }
+        .chart-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ---- Tabs ---- */
+        .chart-tabs {
+            display: flex;
+            border-bottom: 2px solid var(--clx-border, #d1dce8);
+            margin-bottom: 14px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .chart-tabs::-webkit-scrollbar { display: none; }
+        .chart-tab {
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--clx-text-secondary, #4a5568);
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .chart-tab:hover { color: var(--clx-accent, #0f7490); }
+        .chart-tab.active {
+            color: var(--clx-accent, #0f7490);
+            border-bottom-color: var(--clx-accent, #0f7490);
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ---- Generic panels ---- */
+        .emr-panel {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            margin-bottom: 14px;
+        }
+        .emr-panel-hd {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            border-radius: 8px 8px 0 0;
+        }
+        .emr-panel-bd { padding: 14px; }
+
+        /* ---- Demographics grid ---- */
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px 18px;
+        }
+        .demo-grid .ch-block { min-width: 0; }
+        .demo-grid .ch-label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 2px;
+        }
+        .demo-grid .ch-value { font-size: 13px; color: var(--clx-text-primary); }
+
+        /* ---- Forms ---- */
+        .vs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 10px 12px;
+            margin-bottom: 12px;
+        }
+        .vs-grid label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); display: block; margin-bottom: 3px;
+        }
+        .vs-grid input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 14px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary);
+            font-family: inherit;
+        }
+        .vs-grid input:focus { outline: 2px solid var(--clx-focus, #0f7490); outline-offset: 1px; }
+
+        .btn {
+            padding: 8px 14px; font-size: 13px; font-weight: 600;
+            border-radius: 6px; cursor: pointer; font-family: inherit;
+            border: 1px solid var(--clx-border, #d1dce8); background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+        }
+        .btn:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
+        .btn.primary { background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490); }
+        .btn.primary:hover { background: var(--clx-accent-hover, #0c5d75); border-color: var(--clx-accent-hover, #0c5d75); }
+        .btn.danger { background: #dc2626; color: #fff; border-color: #dc2626; }
+        .btn.danger:hover { background: #b91c1c; border-color: #b91c1c; }
+        .btn.warn { background: #d97706; color: #fff; border-color: #d97706; }
+        .btn.warn:hover { background: #b45309; border-color: #b45309; }
+        .btn.sm { padding: 5px 10px; font-size: 12px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ---- Vitals table ---- */
+        .vitals-table {
+            width: 100%; border-collapse: collapse; font-size: 13px;
+        }
+        .vitals-table th, .vitals-table td {
+            padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        .vitals-table th {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); background: var(--clx-bg-surface-2, #f5f8fa);
+        }
+        .vitals-table tr:last-child td { border-bottom: none; }
+        .vitals-empty {
+            padding: 24px; text-align: center; color: var(--clx-text-muted, #718096); font-size: 13px;
+        }
+        .vitals-table-wrap { overflow-x: auto; }
+
+        /* ---- Notes ---- */
+        .note-type-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+        .note-type-btn {
+            padding: 6px 12px; border: 1px solid var(--clx-border, #d1dce8); background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-secondary, #4a5568); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit;
+        }
+        .note-type-btn.active { background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490); }
+        .note-section { margin-bottom: 10px; }
+        .note-section label {
+            display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 4px;
+        }
+        .note-section textarea {
+            width: 100%; min-height: 60px; padding: 8px 10px; font-size: 13px; line-height: 1.45;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+            font-family: inherit; resize: vertical;
+        }
+        .note-section textarea.large { min-height: 160px; }
+        .note-tools-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+        .note-history { margin-top: 14px; }
+        .note-card {
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+        .note-card .nh-meta {
+            font-size: 11px; color: var(--clx-text-muted, #718096); margin-bottom: 6px;
+            display: flex; gap: 10px; flex-wrap: wrap;
+        }
+        .note-card .nh-type { font-weight: 700; color: var(--clx-accent, #0f7490); text-transform: uppercase; letter-spacing: 0.04em; }
+        .note-card .nh-body {
+            font-size: 13px; line-height: 1.5; color: var(--clx-text-primary); white-space: pre-wrap; word-wrap: break-word;
+        }
+
+        /* ---- Screening tools ---- */
+        .screening-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 8px; margin-bottom: 8px;
+        }
+        .screening-tile {
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            padding: 10px 12px;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--clx-text-secondary, #4a5568);
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: inherit;
+            text-align: left;
+        }
+        .screening-tile:hover { background: var(--clx-bg-surface, #fff); border-color: var(--clx-accent, #0f7490); color: var(--clx-accent); }
+        .screening-tile .tile-tag { font-size: 10px; opacity: 0.75; font-weight: 500; }
+
+        .screening-form {
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 10px;
+            background: var(--clx-bg-surface, #fff);
+        }
+        .screening-form h4 { font-size: 14px; margin-bottom: 4px; color: var(--clx-text-primary); }
+        .screening-form .pre { font-size: 12px; color: var(--clx-text-muted, #718096); margin-bottom: 10px; }
+        .screen-q-row {
+            display: grid; grid-template-columns: 1fr auto; gap: 8px;
+            padding: 6px 0; border-bottom: 1px dashed var(--clx-border, #d1dce8); font-size: 13px; align-items: center;
+        }
+        .screen-q-row:last-of-type { border-bottom: none; }
+        .screen-q-row select {
+            padding: 4px 8px; font-size: 12px; border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 4px; background: var(--clx-bg-surface); color: var(--clx-text-primary); font-family: inherit;
+        }
+        .screen-result {
+            margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+            background: var(--clx-bg-surface-2, #f5f8fa); color: var(--clx-text-primary);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .screen-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+        /* ---- MAR / TAR ---- */
+        .mar-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .mar-table th, .mar-table td {
+            padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--clx-border, #d1dce8); vertical-align: top;
+        }
+        .mar-table th {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); background: var(--clx-bg-surface-2, #f5f8fa);
+        }
+        .mar-status {
+            display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .mar-status.scheduled { background: #dbeafe; color: #1e40af; }
+        .mar-status.given     { background: #dcfce7; color: #166534; }
+        .mar-status.held      { background: #fef9c3; color: #854d0e; }
+        .mar-status.refused   { background: #fee2e2; color: #b91c1c; }
+        [data-theme="dark"] .mar-status.scheduled { background: rgba(59,130,246,0.18); color: #93c5fd; }
+        [data-theme="dark"] .mar-status.given     { background: rgba(34,197,94,0.18); color: #86efac; }
+        [data-theme="dark"] .mar-status.held      { background: rgba(234,179,8,0.18); color: #fde68a; }
+        [data-theme="dark"] .mar-status.refused   { background: rgba(239,68,68,0.18); color: #fca5a5; }
+
+        .mar-table-wrap { overflow-x: auto; }
+
+        @media (max-width: 600px) {
+            .mar-table thead { display: none; }
+            .mar-table, .mar-table tbody, .mar-table tr, .mar-table td { display: block; width: 100%; }
+            .mar-table tr {
+                border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px; padding: 8px; margin-bottom: 8px;
+                background: var(--clx-bg-surface, #fff);
+            }
+            .mar-table td { padding: 4px 0; border-bottom: none; }
+            .mar-table td::before { content: attr(data-label) ': '; font-weight: 700; color: var(--clx-text-muted); font-size: 10px; text-transform: uppercase; }
+        }
+
+        /* ---- Administer modal ---- */
+        .adm-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 9000;
+            align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .adm-overlay.visible { display: flex; }
+        .adm-modal {
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary);
+            width: 100%; max-width: 540px;
+            max-height: 92vh; overflow-y: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            padding: 18px 20px;
+        }
+        .adm-modal h2 { font-size: 16px; margin-bottom: 4px; }
+        .adm-modal .adm-sub { font-size: 12px; color: var(--clx-text-muted, #718096); margin-bottom: 14px; }
+        .adm-section { margin-bottom: 14px; }
+        .adm-info-block {
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        .adm-info-block .lbl {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--clx-text-muted, #718096); display: block; margin-bottom: 2px;
+        }
+        .adm-info-block .val { font-weight: 600; color: var(--clx-text-primary); }
+
+        .allergy-warn {
+            background: #fef2f2;
+            border: 2px solid #dc2626;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            color: #7f1d1d;
+        }
+        .allergy-warn .aw-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+        .allergy-warn .aw-body { font-size: 13px; line-height: 1.45; margin-bottom: 8px; }
+        .allergy-warn label {
+            display: flex; align-items: flex-start; gap: 8px; font-size: 12px; cursor: pointer; color: #7f1d1d;
+        }
+        .allergy-warn input[type="checkbox"] { margin-top: 2px; transform: scale(1.1); accent-color: #dc2626; }
+        [data-theme="dark"] .allergy-warn { background: rgba(220,38,38,0.12); color: #fca5a5; border-color: #ef4444; }
+        [data-theme="dark"] .allergy-warn label { color: #fca5a5; }
+        [data-theme="dark"] .allergy-warn .aw-title { color: #fecaca; }
+
+        .rights-list {
+            list-style: none; padding: 0; margin: 0;
+        }
+        .rights-list li {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 12px; border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px; margin-bottom: 6px;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            cursor: pointer; transition: background 0.15s, border-color 0.15s;
+        }
+        .rights-list li:hover { background: var(--clx-bg-surface, #fff); }
+        .rights-list li.checked { background: #f0fdf4; border-color: #86efac; }
+        [data-theme="dark"] .rights-list li.checked { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.4); }
+        .rights-list input[type="checkbox"] { margin-top: 3px; transform: scale(1.15); accent-color: #16a34a; }
+        .rights-list .rt-text { flex: 1; }
+        .rights-list .rt-title { font-size: 13px; font-weight: 600; color: var(--clx-text-primary); margin-bottom: 1px; }
+        .rights-list .rt-detail { font-size: 12px; color: var(--clx-text-secondary, #4a5568); }
+
+        .adm-modal .adm-notes label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--clx-text-muted, #718096); display: block; margin-bottom: 4px;
+        }
+        .adm-modal .adm-notes textarea {
+            width: 100%; min-height: 50px; padding: 8px 10px; font-size: 13px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+            font-family: inherit; resize: vertical;
+        }
+        .adm-buttons { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--clx-border, #d1dce8); }
+
+        /* ---- View switching ---- */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* ---- Page loading ---- */
+        .page-loading {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 200px; color: var(--clx-text-muted, #718096); font-size: 14px;
+        }
+
+        /* ---- Connection / seed status banner ---- */
+        .seed-banner {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            display: none;
+        }
+        .seed-banner.visible { display: block; }
+        [data-theme="dark"] .seed-banner { background: rgba(249,115,22,0.12); color: #fdba74; border-color: rgba(249,115,22,0.3); }
+
+        /* ---- Mobile tweaks ---- */
+        @media (max-width: 480px) {
+            .emr-title-bar h1 { font-size: 17px; }
+            .chart-header { padding: 10px 12px; gap: 8px 12px; }
+            .chart-header .ch-value.large { font-size: 14px; }
+            .chart-tab { padding: 8px 10px; font-size: 12px; }
+            .emr-panel-bd { padding: 12px; }
+            .adm-modal { padding: 14px 16px; max-height: 96vh; }
+        }
+    </style>
+</head>
+<body class="has-sidebar">
+
+    <div class="sim-disclaimer">⚠ SIMULATION ONLY — All patients are fictional. Not for clinical use.</div>
+
+    <div class="clx-shell">
+
+        <!-- Sidebar -->
+        <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="EMR navigation">
+            <div class="clx-sidebar-section">Units</div>
+            <button class="clx-sidebar-item" data-view="all" onclick="showUnit('all')">
+                <span class="clx-sidebar-icon">🏥</span>
+                <span class="clx-sidebar-label">All Units</span>
+            </button>
+            <button class="clx-sidebar-item" data-view="ED" onclick="showUnit('ED')">
+                <span class="clx-sidebar-icon">🚑</span>
+                <span class="clx-sidebar-label">ED</span>
+                <span class="unit-acuity" id="cnt-ED">—</span>
+            </button>
+            <button class="clx-sidebar-item" data-view="MS" onclick="showUnit('MS')">
+                <span class="clx-sidebar-icon">🛏️</span>
+                <span class="clx-sidebar-label">Med-Surg</span>
+                <span class="unit-acuity" id="cnt-MS">—</span>
+            </button>
+            <button class="clx-sidebar-item" data-view="ICU" onclick="showUnit('ICU')">
+                <span class="clx-sidebar-icon">🫀</span>
+                <span class="clx-sidebar-label">ICU</span>
+                <span class="unit-acuity" id="cnt-ICU">—</span>
+            </button>
+            <button class="clx-sidebar-item" data-view="PCU" onclick="showUnit('PCU')">
+                <span class="clx-sidebar-icon">📊</span>
+                <span class="clx-sidebar-label">PCU / Step-Down</span>
+                <span class="unit-acuity" id="cnt-PCU">—</span>
+            </button>
+            <button class="clx-sidebar-item" data-view="OB" onclick="showUnit('OB')">
+                <span class="clx-sidebar-icon">👶</span>
+                <span class="clx-sidebar-label">OB / L&amp;D</span>
+                <span class="unit-acuity" id="cnt-OB">—</span>
+            </button>
+
+            <div class="clx-sidebar-section" style="margin-top:10px;">Workflows</div>
+            <button class="clx-sidebar-item" disabled style="opacity:0.55;cursor:not-allowed;" title="Coming in Phase 2">
+                <span class="clx-sidebar-icon">➕</span>
+                <span class="clx-sidebar-label">Admit Patient (Ph2)</span>
+            </button>
+
+            <div class="clx-sidebar-section" style="margin-top:10px;">Account</div>
+            <a href="/home/" class="clx-sidebar-item">
+                <span class="clx-sidebar-icon">🏠</span>
+                <span class="clx-sidebar-label">Home</span>
+            </a>
+            <button class="clx-sidebar-item" onclick="toggleDarkMode()">
+                <span class="clx-sidebar-icon" id="sidebarThemeIcon">🎨</span>
+                <span class="clx-sidebar-label">Theme</span>
+            </button>
+            <button class="clx-sidebar-item" onclick="openTicketModal && openTicketModal()">
+                <span class="clx-sidebar-icon">💬</span>
+                <span class="clx-sidebar-label">Feedback</span>
+            </button>
+
+            <div class="sim-session-info">
+                <div class="name" id="sessionName">—</div>
+                <div id="sessionElapsed">Session: just started</div>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="clx-main">
+
+            <!-- Connection / seed banner -->
+            <div class="seed-banner" id="seedBanner">
+                New scenario data is available. An admin can reset to apply.
+            </div>
+
+            <!-- VIEW A: Unit Board -->
+            <section class="view active" id="viewBoard">
+                <div class="emr-title-bar">
+                    <div>
+                        <h1 id="boardTitle">All Units</h1>
+                        <div class="subtitle" id="boardSubtitle">Loading patients…</div>
+                    </div>
+                    <div class="board-mode-toggle" role="group" aria-label="Board view mode">
+                        <button class="bm-btn active" id="bmCards" onclick="setBoardMode('cards')">📇 Cards</button>
+                        <button class="bm-btn" id="bmManager" onclick="setBoardMode('manager')">📋 Manager</button>
+                    </div>
+                </div>
+                <div id="boardContent" class="page-loading">Loading…</div>
+            </section>
+
+            <!-- VIEW B: Patient Chart -->
+            <section class="view" id="viewChart">
+                <div class="emr-title-bar">
+                    <button class="emr-back-btn" onclick="closeChart()">← Back to Unit Board</button>
+                    <div class="chart-actions">
+                        <button class="btn sm" disabled title="Phase 2">Transfer</button>
+                        <button class="btn sm danger" disabled title="Phase 2">Discharge</button>
+                    </div>
+                </div>
+
+                <div class="chart-header" id="chartHeader"></div>
+
+                <div class="chart-tabs" role="tablist">
+                    <button class="chart-tab active" role="tab" data-tab="demographics" onclick="switchTab('demographics')">Demographics</button>
+                    <button class="chart-tab" role="tab" data-tab="vitals" onclick="switchTab('vitals')">Vitals</button>
+                    <button class="chart-tab" role="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
+                    <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
+                    <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
+                </div>
+
+                <div class="tab-panel active" id="tab-demographics" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-vitals" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-notes" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-mar" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-tar" role="tabpanel"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Administer Modal -->
+    <div class="adm-overlay" id="admOverlay" role="dialog" aria-modal="true" aria-labelledby="admTitle">
+        <div class="adm-modal" id="admModal">
+            <h2 id="admTitle">Administer</h2>
+            <div class="adm-sub" id="admSub"></div>
+            <div id="admBody"></div>
+        </div>
+    </div>
+
+    <!-- Seed data first -->
+    <script src="/emr/seed-data.js"></script>
+    <!-- Toast + shared header -->
+    <script src="/shared/toast.js"></script>
+    <script src="/shared/header.js"></script>
+
+    <script>
+    'use strict';
+    // ===========================================================
+    // [100] CONSTANTS & CONFIG
+    // ===========================================================
+    const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
+        authDomain: "bendbsn-17377.firebaseapp.com",
+        databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+        projectId: "bendbsn-17377",
+        storageBucket: "bendbsn-17377.firebasestorage.app",
+        messagingSenderId: "762882187702",
+        appId: "1:762882187702:web:81c97c9eae005666796117"
+    };
+
+    const UNIT_NAMES = { ED: 'ED', MS: 'Med-Surg', ICU: 'ICU', PCU: 'PCU / Step-Down', OB: 'OB / L&D' };
+    const UNIT_ORDER = ['ED', 'MS', 'ICU', 'PCU', 'OB'];
+    const UNIT_BED_COUNT = 10;
+
+    // ===========================================================
+    // [150] STATE
+    // ===========================================================
+    let database = null;
+    let currentUserUid = null;
+    let currentUserName = 'Anonymous';
+    let currentUserEmail = '';
+
+    let allPatients = {};         // { patientId: patientObj }
+    let allBeds = {};             // { unit: { bedId: patientId | null } }
+    let currentUnit = 'all';      // 'all' | 'ED' | 'MS' | 'ICU' | 'PCU' | 'OB'
+    let boardMode = 'cards';      // 'cards' | 'manager'
+    let mgrSortBy = 'bed';
+    let mgrSortDir = 'asc';
+
+    let currentPatientId = null;  // when chart open
+    let currentPatient = null;
+    let currentTab = 'demographics';
+    let patientUnsubscribers = []; // listeners scoped to current patient
+
+    let currentVitals = [];       // for current patient
+    let currentNotes = [];
+    let currentMar = [];
+    let currentTar = [];
+
+    let activeNoteType = 'soap';
+    let activeScreening = null;   // 'phq9' | 'gad7' | 'morse' | 'braden' | null
+    let lastActiveTextarea = null;
+    let savedScreenings = [];     // session-scoped, inserted into note body
+    let sessionStartTime = Date.now();
+
+    // ===========================================================
+    // [200] FIREBASE INIT & AUTH
+    // ===========================================================
+    firebase.initializeApp(FIREBASE_CONFIG);
+    database = firebase.database();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(function (user) {
+        if (!user) {
+            // Not signed in — bail out (login redirect already handled by inline script)
+            return;
+        }
+        currentUserUid = user.uid;
+        currentUserEmail = user.email || '';
+        // Try to read display name from /userProfiles, else fall back to localStorage
+        database.ref('userProfiles/' + user.uid).once('value').then(function (snap) {
+            const p = snap.val() || {};
+            currentUserName = p.displayName || p.name || localStorage.getItem('bendbsn_displayName') || (user.email || 'Anonymous').split('@')[0];
+            updateSessionInfo();
+            // Sync theme
+            if (window.initThemeSync) window.initThemeSync(database, user.uid);
+            // Start everything
+            startEMR();
+        }).catch(function () {
+            currentUserName = localStorage.getItem('bendbsn_displayName') || (user.email || 'Anonymous').split('@')[0];
+            updateSessionInfo();
+            startEMR();
+        });
+    });
+
+    function updateSessionInfo() {
+        const nameEl = document.getElementById('sessionName');
+        if (nameEl) nameEl.textContent = currentUserName;
+    }
+
+    setInterval(function () {
+        const el = document.getElementById('sessionElapsed');
+        if (!el) return;
+        const mins = Math.floor((Date.now() - sessionStartTime) / 60000);
+        if (mins < 1) el.textContent = 'Session: just started';
+        else if (mins === 1) el.textContent = 'Session: 1 minute';
+        else if (mins < 60) el.textContent = 'Session: ' + mins + ' minutes';
+        else el.textContent = 'Session: ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
+    }, 30000);
+
+    // ===========================================================
+    // [280] SEED LOADER
+    // ===========================================================
+    function startEMR() {
+        if (!window.EMR_SEED) {
+            console.error('[EMR] seed-data.js did not load');
+            showToast('Seed data missing. Page may not work.', 'error');
+            return;
+        }
+        seedIfEmpty().then(function () {
+            attachGlobalListeners();
+            checkSeedVersion();
+        }).catch(function (err) {
+            console.error('[EMR] Seed/listen failed:', err);
+            showToast('Could not load EMR data: ' + (err.message || err), 'error');
+        });
+    }
+
+    function seedIfEmpty() {
+        return database.ref('emr/patients').once('value').then(function (snap) {
+            if (snap.exists() && snap.numChildren() > 0) return;
+            console.log('[EMR] Empty database — seeding ' + window.EMR_SEED.SEED_PATIENTS.length + ' patients');
+            const updates = {};
+            // Patients
+            window.EMR_SEED.SEED_PATIENTS.forEach(function (p) {
+                updates['emr/patients/' + p.id] = Object.assign({}, p, { status: 'active' });
+                // Bed assignment
+                updates['emr/beds/' + p.unit + '/' + p.bed] = p.id;
+            });
+            // MAR entries
+            Object.keys(window.EMR_SEED.SEED_MAR).forEach(function (pid) {
+                const items = window.EMR_SEED.SEED_MAR[pid];
+                items.forEach(function (item) {
+                    const key = database.ref('emr/mar/' + pid).push().key;
+                    updates['emr/mar/' + pid + '/' + key] = Object.assign({
+                        status: item.status || 'scheduled',
+                        administeredAt: null, administeredBy: null,
+                        notes: item.notes || '',
+                        orderedBy: null, orderedAt: null, orderVerifiedBy: null,
+                        prnIndicationGiven: null, wasteAmount: null, wasteVerifiedBy: null,
+                        createdAt: Date.now()
+                    }, item);
+                });
+            });
+            // TAR entries
+            Object.keys(window.EMR_SEED.SEED_TAR).forEach(function (pid) {
+                const items = window.EMR_SEED.SEED_TAR[pid];
+                items.forEach(function (item) {
+                    const key = database.ref('emr/tar/' + pid).push().key;
+                    updates['emr/tar/' + pid + '/' + key] = Object.assign({
+                        status: 'scheduled',
+                        administeredAt: null, administeredBy: null,
+                        notes: '',
+                        createdAt: Date.now()
+                    }, item);
+                });
+            });
+            // Seed version
+            updates['emr/meta/seedVersion'] = window.EMR_SEED.SEED_VERSION;
+            return database.ref().update(updates);
+        });
+    }
+
+    function checkSeedVersion() {
+        database.ref('emr/meta/seedVersion').once('value').then(function (snap) {
+            const dbVer = snap.val();
+            if (dbVer && dbVer < window.EMR_SEED.SEED_VERSION) {
+                document.getElementById('seedBanner').classList.add('visible');
+            }
+        });
+    }
+
+    // ===========================================================
+    // [560] FIREBASE LISTENERS
+    // ===========================================================
+    function attachGlobalListeners() {
+        database.ref('emr/patients').on('value', function (snap) {
+            allPatients = snap.val() || {};
+            updateUnitCounts();
+            if (currentPatientId && allPatients[currentPatientId]) {
+                currentPatient = allPatients[currentPatientId];
+                renderChartHeader();
+                if (currentTab === 'demographics') renderDemographicsTab();
+            }
+            renderBoard();
+        });
+        database.ref('emr/beds').on('value', function (snap) {
+            allBeds = snap.val() || {};
+            updateUnitCounts();
+            renderBoard();
+        });
+    }
+
+    function updateUnitCounts() {
+        UNIT_ORDER.forEach(function (unit) {
+            const beds = allBeds[unit] || {};
+            let occ = 0;
+            Object.values(beds).forEach(function (v) { if (v) occ++; });
+            const el = document.getElementById('cnt-' + unit);
+            if (el) el.textContent = occ + '/' + UNIT_BED_COUNT;
+        });
+    }
+
+    function attachPatientListeners(pid) {
+        detachPatientListeners();
+        const refs = [
+            { ref: database.ref('emr/vitals/' + pid), cb: function (snap) {
+                currentVitals = snapshotToSortedArray(snap, 'timestamp', 'desc');
+                if (currentTab === 'vitals') renderVitalsTab();
+            }},
+            { ref: database.ref('emr/notes/' + pid), cb: function (snap) {
+                currentNotes = snapshotToSortedArray(snap, 'timestamp', 'desc');
+                if (currentTab === 'notes') renderNoteHistory();
+            }},
+            { ref: database.ref('emr/mar/' + pid), cb: function (snap) {
+                currentMar = snapshotToSortedArray(snap, 'scheduledTime', 'asc');
+                if (currentTab === 'mar') renderMarTab();
+            }},
+            { ref: database.ref('emr/tar/' + pid), cb: function (snap) {
+                currentTar = snapshotToSortedArray(snap, 'scheduledTime', 'asc');
+                if (currentTab === 'tar') renderTarTab();
+            }}
+        ];
+        refs.forEach(function (r) {
+            r.ref.on('value', r.cb);
+            patientUnsubscribers.push(function () { r.ref.off('value', r.cb); });
+        });
+    }
+
+    function detachPatientListeners() {
+        patientUnsubscribers.forEach(function (fn) { try { fn(); } catch (e) {} });
+        patientUnsubscribers = [];
+        currentVitals = []; currentNotes = []; currentMar = []; currentTar = [];
+    }
+
+    function snapshotToSortedArray(snap, sortKey, dir) {
+        const items = [];
+        snap.forEach(function (child) { items.push(Object.assign({ _key: child.key }, child.val())); });
+        items.sort(function (a, b) {
+            const va = a[sortKey]; const vb = b[sortKey];
+            if (va == null) return 1;
+            if (vb == null) return -1;
+            if (va < vb) return dir === 'desc' ? 1 : -1;
+            if (va > vb) return dir === 'desc' ? -1 : 1;
+            return 0;
+        });
+        return items;
+    }
+
+    // ===========================================================
+    // [630] UNIT BOARD — CARDS + MANAGER
+    // ===========================================================
+    window.showUnit = function (unit) {
+        currentUnit = unit;
+        document.querySelectorAll('.clx-sidebar-item[data-view]').forEach(function (el) {
+            el.classList.toggle('active', el.dataset.view === unit);
+        });
+        // Switch to board view if currently on chart
+        if (currentPatientId) closeChart();
+        document.getElementById('boardTitle').textContent = unit === 'all' ? 'All Units' : UNIT_NAMES[unit];
+        renderBoard();
+    };
+
+    window.setBoardMode = function (mode) {
+        boardMode = mode;
+        document.getElementById('bmCards').classList.toggle('active', mode === 'cards');
+        document.getElementById('bmManager').classList.toggle('active', mode === 'manager');
+        renderBoard();
+    };
+
+    function renderBoard() {
+        const el = document.getElementById('boardContent');
+        if (!el) return;
+        // If patients haven't loaded yet, keep loading state
+        if (Object.keys(allPatients).length === 0 && Object.keys(allBeds).length === 0) {
+            el.className = 'page-loading';
+            el.textContent = 'Loading…';
+            return;
+        }
+        const units = currentUnit === 'all' ? UNIT_ORDER : [currentUnit];
+        const totalOcc = units.reduce(function (sum, u) {
+            const beds = allBeds[u] || {};
+            return sum + Object.values(beds).filter(function (v) { return v; }).length;
+        }, 0);
+        const totalBeds = units.length * UNIT_BED_COUNT;
+        document.getElementById('boardSubtitle').textContent =
+            totalOcc + ' occupied of ' + totalBeds + ' beds' + (currentUnit === 'all' ? ' across all units' : '');
+
+        el.className = '';
+        if (boardMode === 'manager') {
+            el.innerHTML = renderManagerView(units);
+        } else {
+            el.innerHTML = renderCardsView(units);
+        }
+    }
+
+    function renderCardsView(units) {
+        return units.map(function (unit) {
+            const beds = buildUnitBeds(unit);
+            const cards = beds.map(function (b) {
+                if (!b.patient) {
+                    return '<div class="bed-card empty"><div>' + esc(b.bedId) + '</div><div style="font-size:11px;margin-top:4px;">Unoccupied</div></div>';
+                }
+                const p = b.patient;
+                const badges = buildBadges(p);
+                return '<div class="bed-card" onclick="openChart(\'' + esc(p.id) + '\')">' +
+                    '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + '</div>' +
+                    '<div class="pt-name">' + esc(p.name) + '</div>' +
+                    '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
+                    '<div class="pt-dx">' + esc(p.dx) + '</div>' +
+                    (badges ? '<div class="pt-badges">' + badges + '</div>' : '') +
+                '</div>';
+            }).join('');
+            return (units.length > 1 ? '<div class="mgr-section-title">' + esc(UNIT_NAMES[unit]) + '</div>' : '') +
+                   '<div class="unit-board" style="margin-bottom:18px;">' + cards + '</div>';
+        }).join('');
+    }
+
+    function renderManagerView(units) {
+        // Flatten all patient rows across selected units
+        const rows = [];
+        units.forEach(function (unit) {
+            const beds = buildUnitBeds(unit);
+            beds.forEach(function (b) {
+                rows.push({ unit: unit, bedId: b.bedId, patient: b.patient });
+            });
+        });
+        // Apply sort
+        rows.sort(function (a, b) {
+            // Always keep occupied beds before empty within a unit
+            return mgrCompareRows(a, b);
+        });
+        const arrow = function (col) {
+            if (mgrSortBy !== col) return '<span class="sort-arrow">▴▾</span>';
+            return '<span class="sort-arrow">' + (mgrSortDir === 'asc' ? '▲' : '▼') + '</span>';
+        };
+        const sortedClass = function (col) { return mgrSortBy === col ? 'sorted' : ''; };
+        let html = '<div class="mgr-table-wrap"><table class="mgr-table">' +
+            '<thead><tr>' +
+                '<th class="' + sortedClass('bed') + '" onclick="setMgrSort(\'bed\')">Bed' + arrow('bed') + '</th>' +
+                (currentUnit === 'all' ? '<th class="' + sortedClass('unit') + '" onclick="setMgrSort(\'unit\')">Unit' + arrow('unit') + '</th>' : '') +
+                '<th class="' + sortedClass('name') + '" onclick="setMgrSort(\'name\')">Patient' + arrow('name') + '</th>' +
+                '<th class="' + sortedClass('age') + '" onclick="setMgrSort(\'age\')">Age/Sex' + arrow('age') + '</th>' +
+                '<th class="' + sortedClass('dx') + '" onclick="setMgrSort(\'dx\')">DX' + arrow('dx') + '</th>' +
+                '<th class="' + sortedClass('code') + '" onclick="setMgrSort(\'code\')">Code' + arrow('code') + '</th>' +
+                '<th>Allergies</th>' +
+                '<th class="' + sortedClass('acuity') + '" onclick="setMgrSort(\'acuity\')">Acuity' + arrow('acuity') + '</th>' +
+                '<th>Flags</th>' +
+            '</tr></thead><tbody>';
+        rows.forEach(function (r) {
+            if (!r.patient) {
+                const cols = currentUnit === 'all' ? 9 : 8;
+                html += '<tr class="mgr-empty"><td class="mgr-bed">' + esc(r.bedId) + '</td>' +
+                    (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
+                    '<td colspan="' + (cols - (currentUnit === 'all' ? 2 : 1)) + '">— Unoccupied —</td></tr>';
+                return;
+            }
+            const p = r.patient;
+            const allergiesArr = (p.allergies || []).filter(function (a) { return a && a !== 'NKDA'; });
+            const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
+            const allergiesClass = allergiesArr.length > 0 ? 'mgr-allergies has-allergy' : 'mgr-allergies';
+            const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(p.acuity || 1) - 1] || '#9ca3af';
+            html += '<tr onclick="openChart(\'' + esc(p.id) + '\')">' +
+                '<td class="mgr-bed">' + esc(r.bedId) + '</td>' +
+                (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
+                '<td><strong>' + esc(p.name) + '</strong></td>' +
+                '<td>' + esc(String(p.age)) + ' / ' + esc(p.sex) + '</td>' +
+                '<td class="mgr-dx">' + esc(p.dx) + '</td>' +
+                '<td>' + esc(p.codeStatus) + '</td>' +
+                '<td class="' + allergiesClass + '">' + esc(allergiesText) + '</td>' +
+                '<td><span class="acuity-pill" style="background:' + acuityColor + ';">' + (p.acuity || 1) + '</span></td>' +
+                '<td><div class="mgr-badges">' + buildBadges(p) + '</div></td>' +
+            '</tr>';
+        });
+        html += '</tbody></table></div>';
+        return html;
+    }
+
+    function mgrCompareRows(a, b) {
+        // Empty beds always sort below occupied within same unit
+        const aOcc = !!a.patient, bOcc = !!b.patient;
+        if (mgrSortBy !== 'bed' && mgrSortBy !== 'unit') {
+            if (!aOcc && !bOcc) return a.bedId.localeCompare(b.bedId);
+            if (!aOcc) return 1;
+            if (!bOcc) return -1;
+        }
+        let va, vb;
+        switch (mgrSortBy) {
+            case 'unit':   va = a.unit; vb = b.unit; break;
+            case 'name':   va = a.patient.name.toLowerCase(); vb = b.patient.name.toLowerCase(); break;
+            case 'age':    va = a.patient.age || 0; vb = b.patient.age || 0; break;
+            case 'dx':     va = (a.patient.dx || '').toLowerCase(); vb = (b.patient.dx || '').toLowerCase(); break;
+            case 'code':   va = a.patient.codeStatus || ''; vb = b.patient.codeStatus || ''; break;
+            case 'acuity': va = a.patient.acuity || 0; vb = b.patient.acuity || 0; break;
+            default:       va = a.bedId; vb = b.bedId; // bed
+        }
+        if (va < vb) return mgrSortDir === 'asc' ? -1 : 1;
+        if (va > vb) return mgrSortDir === 'asc' ? 1 : -1;
+        // Tiebreak by bed
+        return a.bedId.localeCompare(b.bedId);
+    }
+
+    window.setMgrSort = function (col) {
+        if (mgrSortBy === col) {
+            mgrSortDir = mgrSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            mgrSortBy = col;
+            mgrSortDir = (col === 'acuity') ? 'desc' : 'asc';
+        }
+        renderBoard();
+    };
+
+    function buildUnitBeds(unit) {
+        // Returns array of { bedId, patient | null } in bed-number order, for a given unit.
+        const bedMap = allBeds[unit] || {};
+        const out = [];
+        for (let i = 1; i <= UNIT_BED_COUNT; i++) {
+            const bedId = unit + '-' + (i < 10 ? '0' + i : '' + i);
+            const pid = bedMap[bedId];
+            out.push({ bedId: bedId, patient: pid ? allPatients[pid] : null });
+        }
+        return out;
+    }
+
+    function buildBadges(p) {
+        let html = '';
+        if (p.dnr) html += '<span class="pt-badge dnr">' + (p.codeStatus || 'DNR') + '</span>';
+        if (p.isolation) html += '<span class="pt-badge iso">' + esc(p.isolation) + '</span>';
+        if (p.fallRisk) html += '<span class="pt-badge fall">Fall Risk</span>';
+        return html;
+    }
+
+    // ===========================================================
+    // [730] PATIENT CHART — open/close + tab switching
+    // ===========================================================
+    window.openChart = function (pid) {
+        const p = allPatients[pid];
+        if (!p) { showToast('Patient not found', 'error'); return; }
+        currentPatientId = pid;
+        currentPatient = p;
+        document.getElementById('viewBoard').classList.remove('active');
+        document.getElementById('viewChart').classList.add('active');
+        renderChartHeader();
+        switchTab('demographics');
+        attachPatientListeners(pid);
+        if (window.closeMobileSidebar) window.closeMobileSidebar();
+        window.scrollTo(0, 0);
+    };
+
+    window.closeChart = function () {
+        detachPatientListeners();
+        currentPatientId = null;
+        currentPatient = null;
+        document.getElementById('viewChart').classList.remove('active');
+        document.getElementById('viewBoard').classList.add('active');
+        window.scrollTo(0, 0);
+    };
+
+    window.switchTab = function (tab) {
+        currentTab = tab;
+        document.querySelectorAll('.chart-tab').forEach(function (el) {
+            el.classList.toggle('active', el.dataset.tab === tab);
+        });
+        document.querySelectorAll('.tab-panel').forEach(function (el) {
+            el.classList.toggle('active', el.id === 'tab-' + tab);
+        });
+        switch (tab) {
+            case 'demographics': renderDemographicsTab(); break;
+            case 'vitals':       renderVitalsTab(); break;
+            case 'notes':        renderNotesTab(); break;
+            case 'mar':          renderMarTab(); break;
+            case 'tar':          renderTarTab(); break;
+        }
+    };
+
+    // ===========================================================
+    // [780] CHART HEADER STRIP
+    // ===========================================================
+    function renderChartHeader() {
+        const p = currentPatient;
+        if (!p) return;
+        const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
+        const allergyClass = (p.allergies || []).filter(function (a) { return a !== 'NKDA'; }).length > 0 ? 'ch-value warn' : 'ch-value';
+        const html =
+            '<div class="ch-block"><span class="ch-label">Patient</span><span class="ch-value large">' + esc(p.name) + '</span><span class="ch-value" style="font-weight:400;">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • DOB ' + esc(p.dob) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">MRN</span><span class="ch-value">' + esc(p.mrn) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Bed</span><span class="ch-value">' + esc(p.bed) + ' (' + esc(UNIT_NAMES[p.unit] || p.unit) + ')</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Diagnosis</span><span class="ch-value" title="' + esc(p.dx) + '">' + esc(p.dx) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">MD</span><span class="ch-value">' + esc(p.md) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Code Status</span><span class="ch-value' + (p.dnr ? ' warn' : '') + '">' + esc(p.codeStatus) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesText) + '</span></div>';
+        document.getElementById('chartHeader').innerHTML = html;
+    }
+
+    // ===========================================================
+    // [830] DEMOGRAPHICS TAB
+    // ===========================================================
+    function renderDemographicsTab() {
+        const p = currentPatient; if (!p) return;
+        const fields = [
+            ['Full Name', p.name],
+            ['Date of Birth', p.dob],
+            ['Age', String(p.age)],
+            ['Sex', p.sex],
+            ['MRN', p.mrn],
+            ['Unit / Bed', (UNIT_NAMES[p.unit] || p.unit) + ' / ' + p.bed],
+            ['Code Status', p.codeStatus],
+            ['Allergies', (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA'],
+            ['Primary Diagnosis', p.dx],
+            ['Attending MD', p.md],
+            ['Diet', p.diet || '—'],
+            ['Activity', p.activity || '—'],
+            ['IV Access', p.ivAccess || '—'],
+            ['Weight', (p.weightKg != null ? p.weightKg + ' kg' : '—')],
+            ['Height', (p.heightIn != null ? p.heightIn + ' in' : '—')],
+            ['Isolation', p.isolation || 'None'],
+            ['Fall Risk', p.fallRisk ? 'Yes' : 'No'],
+            ['Acuity', String(p.acuity || 1) + ' / 5']
+        ];
+        const html = '<div class="emr-panel">' +
+            '<div class="emr-panel-hd"><span>Demographics &amp; Admission Details</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Read-only</span></div>' +
+            '<div class="emr-panel-bd"><div class="demo-grid">' +
+            fields.map(function (f) {
+                return '<div class="ch-block"><span class="ch-label">' + esc(f[0]) + '</span><span class="ch-value">' + esc(f[1]) + '</span></div>';
+            }).join('') +
+            '</div></div></div>';
+        document.getElementById('tab-demographics').innerHTML = html;
+    }
+
+    // ===========================================================
+    // [870] VITALS FLOWSHEET TAB
+    // ===========================================================
+    function renderVitalsTab() {
+        if (!currentPatient) return;
+        const el = document.getElementById('tab-vitals');
+        const formHtml =
+            '<div class="emr-panel">' +
+                '<div class="emr-panel-hd"><span>Record Vitals</span></div>' +
+                '<div class="emr-panel-bd">' +
+                    '<div class="vs-grid">' +
+                        '<div><label>BP Sys</label><input type="number" id="vsSys" min="40" max="300" inputmode="numeric"></div>' +
+                        '<div><label>BP Dia</label><input type="number" id="vsDia" min="20" max="200" inputmode="numeric"></div>' +
+                        '<div><label>HR</label><input type="number" id="vsHr" min="20" max="250" inputmode="numeric"></div>' +
+                        '<div><label>RR</label><input type="number" id="vsRr" min="4" max="60" inputmode="numeric"></div>' +
+                        '<div><label>Temp °C</label><input type="number" id="vsTemp" min="30" max="45" step="0.1" inputmode="decimal"></div>' +
+                        '<div><label>SpO2 %</label><input type="number" id="vsSpo2" min="50" max="100" inputmode="numeric"></div>' +
+                        '<div><label>Pain (0-10)</label><input type="number" id="vsPain" min="0" max="10" inputmode="numeric"></div>' +
+                    '</div>' +
+                    '<button class="btn primary" onclick="saveVitals()">Save Vitals</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="emr-panel">' +
+                '<div class="emr-panel-hd"><span>Vitals Flowsheet</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Most recent first</span></div>' +
+                '<div class="emr-panel-bd" id="vitalsTableArea"></div>' +
+            '</div>';
+        el.innerHTML = formHtml;
+        renderVitalsTable();
+    }
+
+    function renderVitalsTable() {
+        const area = document.getElementById('vitalsTableArea');
+        if (!area) return;
+        if (!currentVitals.length) {
+            area.innerHTML = '<div class="vitals-empty">No vitals recorded yet. Use the form above to record the first set.</div>';
+            return;
+        }
+        const rows = currentVitals.map(function (v) {
+            return '<tr>' +
+                '<td>' + esc(fmtTime(v.timestamp)) + '</td>' +
+                '<td>' + (v.sys != null && v.dia != null ? esc(v.sys + '/' + v.dia) : '—') + '</td>' +
+                '<td>' + (v.hr != null ? esc(String(v.hr)) : '—') + '</td>' +
+                '<td>' + (v.rr != null ? esc(String(v.rr)) : '—') + '</td>' +
+                '<td>' + (v.temp != null ? esc(String(v.temp)) + ' °C' : '—') + '</td>' +
+                '<td>' + (v.spo2 != null ? esc(String(v.spo2)) + '%' : '—') + '</td>' +
+                '<td>' + (v.pain != null ? esc(String(v.pain)) + '/10' : '—') + '</td>' +
+                '<td>' + esc(v.by || '—') + '</td>' +
+            '</tr>';
+        }).join('');
+        area.innerHTML =
+            '<div class="vitals-table-wrap"><table class="vitals-table">' +
+            '<thead><tr><th>Time</th><th>BP</th><th>HR</th><th>RR</th><th>Temp</th><th>SpO2</th><th>Pain</th><th>By</th></tr></thead>' +
+            '<tbody>' + rows + '</tbody></table></div>';
+    }
+
+    window.saveVitals = function () {
+        if (!currentPatientId) return;
+        const sys  = parseIntOrNull(document.getElementById('vsSys').value);
+        const dia  = parseIntOrNull(document.getElementById('vsDia').value);
+        const hr   = parseIntOrNull(document.getElementById('vsHr').value);
+        const rr   = parseIntOrNull(document.getElementById('vsRr').value);
+        const temp = parseFloatOrNull(document.getElementById('vsTemp').value);
+        const spo2 = parseIntOrNull(document.getElementById('vsSpo2').value);
+        const pain = parseIntOrNull(document.getElementById('vsPain').value);
+        if (sys == null && dia == null && hr == null && rr == null && temp == null && spo2 == null && pain == null) {
+            showToast('Enter at least one vital before saving.', 'warning');
+            return;
+        }
+        const entry = {
+            timestamp: Date.now(),
+            sys: sys, dia: dia, hr: hr, rr: rr, temp: temp, spo2: spo2, pain: pain,
+            by: currentUserName
+        };
+        database.ref('emr/vitals/' + currentPatientId).push(entry).then(function () {
+            showToast('Vitals saved.', 'success');
+            ['vsSys','vsDia','vsHr','vsRr','vsTemp','vsSpo2','vsPain'].forEach(function (id) {
+                const inp = document.getElementById(id); if (inp) inp.value = '';
+            });
+        }).catch(function (err) {
+            showToast('Save failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    function parseIntOrNull(v)   { if (v === '' || v == null) return null; const n = parseInt(v, 10); return isNaN(n) ? null : n; }
+    function parseFloatOrNull(v) { if (v === '' || v == null) return null; const n = parseFloat(v); return isNaN(n) ? null : n; }
+
+    // ===========================================================
+    // [960] NOTES TAB — type selector + editor + embedded screenings
+    // ===========================================================
+    function renderNotesTab() {
+        const el = document.getElementById('tab-notes');
+        const noteTypes = [
+            { id: 'soap',      label: 'SOAP' },
+            { id: 'sbar',      label: 'SBAR' },
+            { id: 'narrative', label: 'Narrative' },
+            { id: 'shift',     label: 'Shift Assessment' }
+        ];
+        const tabsHtml = noteTypes.map(function (t) {
+            return '<button class="note-type-btn ' + (activeNoteType === t.id ? 'active' : '') + '" onclick="selectNoteType(\'' + t.id + '\')">' + esc(t.label) + '</button>';
+        }).join('');
+
+        el.innerHTML =
+            '<div class="emr-panel">' +
+                '<div class="emr-panel-hd"><span>Add Note</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">By ' + esc(currentUserName) + ' · ' + esc(fmtTime(Date.now())) + '</span></div>' +
+                '<div class="emr-panel-bd">' +
+                    '<div class="note-type-row">' + tabsHtml + '</div>' +
+                    '<div id="noteEditorArea"></div>' +
+                    '<div class="note-tools-row" id="noteToolsRow">' +
+                        '<button class="btn sm" onclick="insertCurrentTime()">Insert Current Time</button>' +
+                        '<button class="btn sm" onclick="insertLatestVitals()">Insert Latest Vitals</button>' +
+                        '<button class="btn sm" onclick="toggleScreeningPanel()">Screening Tools ▾</button>' +
+                    '</div>' +
+                    '<div id="screeningPanel" style="display:none;"></div>' +
+                    '<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">' +
+                        '<button class="btn" onclick="clearNoteEditor()">Clear</button>' +
+                        '<button class="btn primary" onclick="saveNote()">Save Note</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="emr-panel">' +
+                '<div class="emr-panel-hd"><span>Note History</span></div>' +
+                '<div class="emr-panel-bd" id="noteHistoryArea"></div>' +
+            '</div>';
+
+        renderNoteEditor();
+        renderNoteHistory();
+        wireTextareaTracking();
+    }
+
+    window.selectNoteType = function (type) {
+        activeNoteType = type;
+        document.querySelectorAll('.note-type-btn').forEach(function (el) {
+            el.classList.toggle('active', el.textContent.toLowerCase().indexOf(type === 'shift' ? 'shift' : type) === 0);
+        });
+        renderNoteEditor();
+    };
+
+    function renderNoteEditor() {
+        const area = document.getElementById('noteEditorArea');
+        if (!area) return;
+        let html = '';
+        if (activeNoteType === 'soap') {
+            html =
+                '<div class="note-section"><label>S — Subjective</label><textarea data-note-field="s" placeholder="Patient reports..."></textarea></div>' +
+                '<div class="note-section"><label>O — Objective</label><textarea data-note-field="o" placeholder="Vitals, findings, lab values..."></textarea></div>' +
+                '<div class="note-section"><label>A — Assessment</label><textarea data-note-field="a" placeholder="Clinical impression..."></textarea></div>' +
+                '<div class="note-section"><label>P — Plan</label><textarea data-note-field="p" placeholder="Interventions, monitoring, follow-up..."></textarea></div>';
+        } else if (activeNoteType === 'sbar') {
+            html =
+                '<div class="note-section"><label>S — Situation</label><textarea data-note-field="s" placeholder="Brief reason for communication..."></textarea></div>' +
+                '<div class="note-section"><label>B — Background</label><textarea data-note-field="b" placeholder="Pertinent history, admission DX..."></textarea></div>' +
+                '<div class="note-section"><label>A — Assessment</label><textarea data-note-field="a" placeholder="Current vitals, findings, your concern..."></textarea></div>' +
+                '<div class="note-section"><label>R — Recommendation</label><textarea data-note-field="r" placeholder="What you need from the provider..."></textarea></div>';
+        } else if (activeNoteType === 'narrative') {
+            html =
+                '<div class="note-section"><label>Narrative</label><textarea class="large" data-note-field="narr" placeholder="Free-text nursing narrative..."></textarea></div>';
+        } else if (activeNoteType === 'shift') {
+            html =
+                '<div class="note-section"><label>Neuro</label><textarea data-note-field="neuro" placeholder="LOC, orientation, pupils, motor/sensory..."></textarea></div>' +
+                '<div class="note-section"><label>Respiratory</label><textarea data-note-field="resp" placeholder="Lung sounds, RR, SpO2, O2 mode/flow..."></textarea></div>' +
+                '<div class="note-section"><label>Cardiovascular</label><textarea data-note-field="cv" placeholder="Heart sounds, rhythm, pulses, edema, cap refill..."></textarea></div>' +
+                '<div class="note-section"><label>GI</label><textarea data-note-field="gi" placeholder="Bowel sounds, abdomen, last BM, diet tolerance..."></textarea></div>' +
+                '<div class="note-section"><label>GU</label><textarea data-note-field="gu" placeholder="U/O, color, foley/voiding, last void..."></textarea></div>' +
+                '<div class="note-section"><label>Skin / Wounds</label><textarea data-note-field="skin" placeholder="Color, temp, turgor, wounds/dressings, Braden..."></textarea></div>' +
+                '<div class="note-section"><label>Pain</label><textarea data-note-field="pain" placeholder="Location, intensity, quality, interventions, response..."></textarea></div>' +
+                '<div class="note-section"><label>Lines / Drains / Airways</label><textarea data-note-field="lines" placeholder="IV/central lines, drains, tubes — type, location, status..."></textarea></div>';
+        }
+        area.innerHTML = html;
+        wireTextareaTracking();
+    }
+
+    function wireTextareaTracking() {
+        document.querySelectorAll('#tab-notes textarea').forEach(function (ta) {
+            ta.addEventListener('focus', function () { lastActiveTextarea = ta; });
+        });
+    }
+
+    window.clearNoteEditor = function () {
+        document.querySelectorAll('#noteEditorArea textarea').forEach(function (ta) { ta.value = ''; });
+        savedScreenings = [];
+        renderScreeningPanel();
+        lastActiveTextarea = null;
+    };
+
+    window.insertCurrentTime = function () {
+        const ts = new Date().toLocaleString([], { hour: '2-digit', minute: '2-digit' }) + ' ';
+        insertAtCursor(ts);
+    };
+
+    window.insertLatestVitals = function () {
+        if (!currentVitals.length) { showToast('No vitals recorded yet.', 'warning'); return; }
+        const v = currentVitals[0];
+        const parts = [];
+        if (v.sys != null && v.dia != null) parts.push('BP ' + v.sys + '/' + v.dia);
+        if (v.hr != null)   parts.push('HR ' + v.hr);
+        if (v.rr != null)   parts.push('RR ' + v.rr);
+        if (v.temp != null) parts.push('T ' + v.temp + '°C');
+        if (v.spo2 != null) parts.push('SpO2 ' + v.spo2 + '%');
+        if (v.pain != null) parts.push('Pain ' + v.pain + '/10');
+        const str = '[' + fmtTimeShort(v.timestamp) + ' VS] ' + parts.join(', ') + '. ';
+        insertAtCursor(str);
+    };
+
+    function insertAtCursor(text) {
+        if (!lastActiveTextarea) {
+            showToast('Click in a text field first, then insert.', 'warning');
+            return;
+        }
+        const start = lastActiveTextarea.selectionStart;
+        const end = lastActiveTextarea.selectionEnd;
+        lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + text + lastActiveTextarea.value.slice(end);
+        lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + text.length;
+        lastActiveTextarea.focus();
+    }
+
+    function gatherNoteBody() {
+        const fields = document.querySelectorAll('#noteEditorArea textarea');
+        if (activeNoteType === 'narrative') {
+            return (fields[0] && fields[0].value.trim()) || '';
+        }
+        const labels = {
+            soap: { s: 'S', o: 'O', a: 'A', p: 'P' },
+            sbar: { s: 'S', b: 'B', a: 'A', r: 'R' },
+            shift: { neuro: 'Neuro', resp: 'Resp', cv: 'CV', gi: 'GI', gu: 'GU', skin: 'Skin/Wounds', pain: 'Pain', lines: 'Lines/Drains' }
+        }[activeNoteType] || {};
+        const parts = [];
+        fields.forEach(function (ta) {
+            const v = ta.value.trim();
+            if (!v) return;
+            const k = ta.getAttribute('data-note-field');
+            parts.push((labels[k] || k.toUpperCase()) + ': ' + v);
+        });
+        // Append saved screenings to the bottom
+        if (savedScreenings.length) {
+            parts.push('Screenings: ' + savedScreenings.map(function (s) { return s.display; }).join('; '));
+        }
+        return parts.join('\n\n');
+    }
+
+    window.saveNote = function () {
+        if (!currentPatientId) return;
+        const body = gatherNoteBody();
+        if (!body) { showToast('Note is empty.', 'warning'); return; }
+        const entry = {
+            type: activeNoteType,
+            body: body,
+            by: currentUserName,
+            timestamp: Date.now()
+        };
+        database.ref('emr/notes/' + currentPatientId).push(entry).then(function () {
+            showToast('Note saved.', 'success');
+            clearNoteEditor();
+        }).catch(function (err) {
+            showToast('Save failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    function renderNoteHistory() {
+        const area = document.getElementById('noteHistoryArea');
+        if (!area) return;
+        if (!currentNotes.length) {
+            area.innerHTML = '<div class="vitals-empty">No notes yet.</div>';
+            return;
+        }
+        area.innerHTML = currentNotes.map(function (n) {
+            return '<div class="note-card">' +
+                '<div class="nh-meta"><span class="nh-type">' + esc(n.type || 'note') + '</span><span>' + esc(fmtTime(n.timestamp)) + '</span><span>by ' + esc(n.by || '—') + '</span></div>' +
+                '<div class="nh-body">' + esc(n.body || '') + '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    // ---- Screening tools (PHQ-9, GAD-7, Morse, Braden) ----
+    const SCREENING_DEFS = {
+        phq9: {
+            label: 'PHQ-9', max: 27,
+            preamble: 'Over the last 2 weeks, how often have you been bothered by the following? (0=Not at all · 1=Several days · 2=More than half the days · 3=Nearly every day)',
+            questions: [
+                'Little interest or pleasure in doing things',
+                'Feeling down, depressed, or hopeless',
+                'Trouble falling or staying asleep, or sleeping too much',
+                'Feeling tired or having little energy',
+                'Poor appetite or overeating',
+                'Feeling bad about yourself — or that you are a failure',
+                'Trouble concentrating on things',
+                'Moving/speaking slowly, or being fidgety/restless',
+                'Thoughts that you would be better off dead or hurting yourself'
+            ],
+            options: [['', '—'], ['0','0'], ['1','1'], ['2','2'], ['3','3']],
+            severity: function (s) {
+                if (s == null) return '—';
+                if (s <= 4) return 'Minimal';
+                if (s <= 9) return 'Mild';
+                if (s <= 14) return 'Moderate';
+                if (s <= 19) return 'Moderately severe';
+                return 'Severe';
+            }
+        },
+        gad7: {
+            label: 'GAD-7', max: 21,
+            preamble: 'Over the last 2 weeks, how often have you been bothered by the following? (0=Not at all · 1=Several days · 2=More than half the days · 3=Nearly every day)',
+            questions: [
+                'Feeling nervous, anxious, or on edge',
+                'Not being able to stop or control worrying',
+                'Worrying too much about different things',
+                'Trouble relaxing',
+                'Being so restless it is hard to sit still',
+                'Becoming easily annoyed or irritable',
+                'Feeling afraid as if something awful might happen'
+            ],
+            options: [['', '—'], ['0','0'], ['1','1'], ['2','2'], ['3','3']],
+            severity: function (s) {
+                if (s == null) return '—';
+                if (s <= 4) return 'Minimal';
+                if (s <= 9) return 'Mild';
+                if (s <= 14) return 'Moderate';
+                return 'Severe';
+            }
+        },
+        morse: {
+            label: 'Morse Fall Scale', max: 125,
+            preamble: 'Six-item bedside fall risk scale. Select each item.',
+            questions: [
+                'History of falling (within 3 mo)',
+                'Secondary diagnosis',
+                'Ambulatory aid',
+                'IV / heparin lock',
+                'Gait',
+                'Mental status'
+            ],
+            options: [
+                [['','—'],['0','No (0)'],['25','Yes (25)']],
+                [['','—'],['0','No (0)'],['15','Yes (15)']],
+                [['','—'],['0','None / bed rest / nurse aid (0)'],['15','Crutches/cane/walker (15)'],['30','Furniture (30)']],
+                [['','—'],['0','No (0)'],['20','Yes (20)']],
+                [['','—'],['0','Normal/bed rest/wheelchair (0)'],['10','Weak (10)'],['20','Impaired (20)']],
+                [['','—'],['0','Oriented to own ability (0)'],['15','Forgets limitations / overestimates (15)']]
+            ],
+            severity: function (s) {
+                if (s == null) return '—';
+                if (s < 25) return 'Low risk';
+                if (s < 45) return 'Moderate risk';
+                return 'High risk';
+            }
+        },
+        braden: {
+            label: 'Braden Scale', max: 23,
+            preamble: 'Pressure injury risk. Lower scores = higher risk. Score each subscale.',
+            questions: [
+                'Sensory perception',
+                'Moisture',
+                'Activity',
+                'Mobility',
+                'Nutrition',
+                'Friction & shear'
+            ],
+            options: [
+                [['','—'],['1','Completely limited (1)'],['2','Very limited (2)'],['3','Slightly limited (3)'],['4','No impairment (4)']],
+                [['','—'],['1','Constantly moist (1)'],['2','Very moist (2)'],['3','Occasionally moist (3)'],['4','Rarely moist (4)']],
+                [['','—'],['1','Bedfast (1)'],['2','Chairfast (2)'],['3','Walks occasionally (3)'],['4','Walks frequently (4)']],
+                [['','—'],['1','Completely immobile (1)'],['2','Very limited (2)'],['3','Slightly limited (3)'],['4','No limits (4)']],
+                [['','—'],['1','Very poor (1)'],['2','Probably inadequate (2)'],['3','Adequate (3)'],['4','Excellent (4)']],
+                [['','—'],['1','Problem (1)'],['2','Potential problem (2)'],['3','No apparent problem (3)']]
+            ],
+            severity: function (s) {
+                if (s == null) return '—';
+                if (s <= 9)  return 'Very high risk';
+                if (s <= 12) return 'High risk';
+                if (s <= 14) return 'Moderate risk';
+                if (s <= 18) return 'Mild risk';
+                return 'No risk';
+            }
+        }
+    };
+
+    window.toggleScreeningPanel = function () {
+        const panel = document.getElementById('screeningPanel');
+        const open = panel.style.display !== 'none';
+        if (open) { panel.style.display = 'none'; activeScreening = null; renderScreeningPanel(); return; }
+        panel.style.display = 'block';
+        renderScreeningPanel();
+    };
+
+    function renderScreeningPanel() {
+        const panel = document.getElementById('screeningPanel');
+        if (!panel) return;
+        let html = '';
+        // Saved screenings (chips)
+        if (savedScreenings.length) {
+            html += '<div style="margin-bottom:10px;font-size:11px;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;">Saved (will be added to note)</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">';
+            savedScreenings.forEach(function (s, i) {
+                html += '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--clx-bg-surface-2);border:1px solid var(--clx-border);padding:4px 10px;border-radius:14px;font-size:12px;">' +
+                    esc(s.display) +
+                    ' <button class="btn sm" style="padding:0 6px;font-size:10px;" onclick="removeSavedScreening(' + i + ')">×</button>' +
+                '</span>';
+            });
+            html += '</div>';
+        }
+        if (!activeScreening) {
+            html += '<div class="screening-list">';
+            Object.keys(SCREENING_DEFS).forEach(function (k) {
+                html += '<button class="screening-tile" onclick="openScreening(\'' + k + '\')"><span>' + esc(SCREENING_DEFS[k].label) + '</span><span class="tile-tag">Open ▸</span></button>';
+            });
+            html += '</div>';
+        } else {
+            html += renderScreeningForm(activeScreening);
+        }
+        panel.innerHTML = html;
+    }
+
+    function renderScreeningForm(type) {
+        const def = SCREENING_DEFS[type];
+        let html = '<div class="screening-form">' +
+            '<h4>' + esc(def.label) + '</h4>' +
+            '<div class="pre">' + esc(def.preamble) + '</div>';
+        def.questions.forEach(function (q, i) {
+            const opts = Array.isArray(def.options[0][0]) ? def.options[i] : def.options;
+            html += '<div class="screen-q-row"><div>' + (i + 1) + '. ' + esc(q) + '</div>' +
+                '<select id="scr_' + type + '_' + i + '" onchange="updateScreeningTotal(\'' + type + '\')">' +
+                opts.map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') +
+                '</select></div>';
+        });
+        html += '<div class="screen-result" id="scrResult_' + type + '"><span>Score: <strong id="scrTotal_' + type + '">—</strong> / ' + def.max + '</span><span id="scrSev_' + type + '">—</span></div>' +
+                '<div class="screen-actions">' +
+                    '<button class="btn primary sm" onclick="saveScreening(\'' + type + '\')">Save to Note</button>' +
+                    '<button class="btn sm" onclick="closeScreeningForm()">Back</button>' +
+                '</div>' +
+            '</div>';
+        return html;
+    }
+
+    window.openScreening = function (type) {
+        activeScreening = type;
+        renderScreeningPanel();
+    };
+    window.closeScreeningForm = function () { activeScreening = null; renderScreeningPanel(); };
+
+    window.updateScreeningTotal = function (type) {
+        const def = SCREENING_DEFS[type];
+        let total = 0; let anyAnswered = false;
+        def.questions.forEach(function (_, i) {
+            const sel = document.getElementById('scr_' + type + '_' + i);
+            if (!sel || sel.value === '') return;
+            anyAnswered = true;
+            total += parseInt(sel.value, 10) || 0;
+        });
+        const totalEl = document.getElementById('scrTotal_' + type);
+        const sevEl = document.getElementById('scrSev_' + type);
+        if (totalEl) totalEl.textContent = anyAnswered ? String(total) : '—';
+        if (sevEl)   sevEl.textContent = anyAnswered ? def.severity(total) : '—';
+    };
+
+    window.saveScreening = function (type) {
+        const def = SCREENING_DEFS[type];
+        let total = 0; let anyAnswered = false;
+        def.questions.forEach(function (_, i) {
+            const sel = document.getElementById('scr_' + type + '_' + i);
+            if (!sel || sel.value === '') return;
+            anyAnswered = true;
+            total += parseInt(sel.value, 10) || 0;
+        });
+        if (!anyAnswered) { showToast('Answer at least one question first.', 'warning'); return; }
+        const sev = def.severity(total);
+        savedScreenings.push({
+            type: type,
+            display: def.label + ': ' + total + '/' + def.max + ' (' + sev + ')',
+            score: total, severity: sev, time: Date.now()
+        });
+        activeScreening = null;
+        renderScreeningPanel();
+        showToast(def.label + ' saved — will be added when you save the note.', 'success');
+    };
+
+    window.removeSavedScreening = function (i) {
+        savedScreenings.splice(i, 1);
+        renderScreeningPanel();
+    };
+
+    // ===========================================================
+    // [1430] MAR TAB
+    // ===========================================================
+    function renderMarTab()  { renderMedTar('mar'); }
+    function renderTarTab()  { renderMedTar('tar'); }
+
+    function renderMedTar(kind) {
+        const el = document.getElementById('tab-' + kind);
+        const items = (kind === 'mar') ? currentMar : currentTar;
+        const labelHd = (kind === 'mar') ? 'Medication' : 'Treatment';
+        const captionPlural = (kind === 'mar') ? 'medications' : 'treatments';
+
+        if (!items.length) {
+            el.innerHTML = '<div class="emr-panel"><div class="emr-panel-bd">' +
+                '<div class="vitals-empty">No ' + esc(captionPlural) + ' on file for this patient.</div>' +
+                '</div></div>';
+            return;
+        }
+
+        const rows = items.map(function (it) {
+            const status = (it.status || 'scheduled').toLowerCase();
+            const adminInfo = (status !== 'scheduled' && it.administeredAt)
+                ? '<div style="font-size:11px;color:var(--clx-text-muted);margin-top:4px;">' + esc(fmtTime(it.administeredAt)) + ' by ' + esc(it.administeredBy || '—') + (it.notes ? ' — ' + esc(it.notes) : '') + '</div>'
+                : '';
+            const isPRN = !!it.isPRN;
+            const canAdmin = (status === 'scheduled' || (isPRN && status !== 'given'));
+            return '<tr>' +
+                '<td data-label="Time"><strong>' + esc(it.scheduledTime || '—') + '</strong>' + (isPRN ? ' <span style="font-size:10px;color:var(--clx-text-muted);">PRN</span>' : '') + '</td>' +
+                '<td data-label="' + esc(labelHd) + '"><strong>' + esc(it[(kind === 'mar') ? 'medication' : 'treatment'] || '—') + '</strong>' +
+                    (kind === 'mar' && it.dose ? '<div style="font-size:12px;color:var(--clx-text-secondary);">' + esc(it.dose) + (it.route ? ' · ' + esc(it.route) : '') + '</div>' : '') +
+                    (it.frequency ? '<div style="font-size:11px;color:var(--clx-text-muted);">' + esc(it.frequency) + '</div>' : '') +
+                    (isPRN && it.prnIndication ? '<div style="font-size:11px;color:var(--clx-text-muted);">PRN: ' + esc(it.prnIndication) + '</div>' : '') +
+                    adminInfo +
+                '</td>' +
+                '<td data-label="Status"><span class="mar-status ' + status + '">' + status + '</span></td>' +
+                '<td data-label="Action">' +
+                    (canAdmin
+                        ? '<button class="btn primary sm" onclick="openAdministerModal(\'' + kind + '\', \'' + esc(it._key) + '\')">Administer</button>'
+                        : '<span style="font-size:11px;color:var(--clx-text-muted);">Done</span>') +
+                '</td>' +
+            '</tr>';
+        }).join('');
+
+        el.innerHTML =
+            '<div class="emr-panel">' +
+                '<div class="emr-panel-hd"><span>' + (kind === 'mar' ? 'MAR — Medication Administration Record' : 'TAR — Treatment Administration Record') + '</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">' + items.length + ' ' + esc(captionPlural) + '</span></div>' +
+                '<div class="emr-panel-bd"><div class="mar-table-wrap"><table class="mar-table">' +
+                    '<thead><tr><th>Time</th><th>' + esc(labelHd) + '</th><th>Status</th><th>Action</th></tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table></div></div>' +
+            '</div>';
+    }
+
+    // ===========================================================
+    // [1550] ADMINISTER MODAL — Allergy + 5 Rights gate
+    // ===========================================================
+    let admContext = null; // { kind, key, item, patient, allergyHits, action }
+
+    window.openAdministerModal = function (kind, key) {
+        const items = (kind === 'mar') ? currentMar : currentTar;
+        const item = items.find(function (i) { return i._key === key; });
+        if (!item) { showToast('Item not found.', 'error'); return; }
+        const patient = currentPatient;
+        const allergyHits = (kind === 'mar') ? checkAllergyConflict(patient, item) : [];
+        admContext = { kind: kind, key: key, item: item, patient: patient, allergyHits: allergyHits, action: 'give' };
+        document.getElementById('admTitle').textContent = (kind === 'mar' ? 'Administer Medication' : 'Document Treatment');
+        document.getElementById('admSub').textContent = (kind === 'mar' ? '5 Rights verification' : 'Confirm completion');
+        document.getElementById('admBody').innerHTML = renderAdministerBody(admContext);
+        document.getElementById('admOverlay').classList.add('visible');
+        wireRightsListInteraction();
+        updateAdmSubmitState();
+    };
+
+    function checkAllergyConflict(patient, marItem) {
+        if (!patient || !patient.allergies || !patient.allergies.length) return [];
+        if (!window.EMR_SEED || !window.EMR_SEED.ALLERGY_TRIGGERS) return [];
+        const med = (marItem.medication || '').toLowerCase();
+        const triggers = window.EMR_SEED.ALLERGY_TRIGGERS;
+        const hits = [];
+        patient.allergies.forEach(function (allergy) {
+            if (allergy === 'NKDA') return;
+            const triggerWords = triggers[allergy];
+            if (!triggerWords || !triggerWords.length) return;
+            triggerWords.forEach(function (tw) {
+                if (med.indexOf(tw.toLowerCase()) !== -1) hits.push({ allergy: allergy, trigger: tw });
+            });
+        });
+        return hits;
+    }
+
+    function renderAdministerBody(ctx) {
+        const it = ctx.item;
+        const p = ctx.patient;
+        const isMar = ctx.kind === 'mar';
+        const itemName = isMar ? it.medication : it.treatment;
+
+        let html = '<div class="adm-section">' +
+            '<div class="adm-info-block"><span class="lbl">Patient</span><span class="val">' + esc(p.name) + '</span> &nbsp;<span style="color:var(--clx-text-muted);font-size:12px;">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' · DOB ' + esc(p.dob) + ' · ' + esc(p.bed) + '</span></div>' +
+            '<div class="adm-info-block"><span class="lbl">' + (isMar ? 'Medication' : 'Treatment') + '</span><span class="val">' + esc(itemName || '—') + '</span>' +
+                (isMar && it.dose ? '<div style="font-size:12px;margin-top:2px;">' + esc(it.dose) + (it.route ? ' · ' + esc(it.route) : '') + '</div>' : '') +
+                (it.frequency ? '<div style="font-size:11px;color:var(--clx-text-muted);">' + esc(it.frequency) + '</div>' : '') +
+            '</div>' +
+        '</div>';
+
+        // Allergy warning
+        if (ctx.allergyHits.length) {
+            html += '<div class="allergy-warn">' +
+                '<div class="aw-title">⚠ Allergy alert</div>' +
+                '<div class="aw-body">Patient allergic to <strong>' + esc(ctx.allergyHits.map(function (h) { return h.allergy; }).join(', ')) +
+                    '</strong>. Administering <strong>' + esc(itemName) + '</strong> may cause a reaction.</div>' +
+                '<label><input type="checkbox" id="admAllergyAck"> I have verified this is clinically appropriate to give to this patient.</label>' +
+            '</div>';
+        }
+
+        // 5 Rights for MAR; simple confirmation for TAR
+        if (isMar) {
+            const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            html += '<div class="adm-section"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:6px;">5 Rights verification</div><ul class="rights-list" id="rightsList">' +
+                rightItem('right-pt',    'Right Patient',     'Verify patient identity using two identifiers (name + DOB).') +
+                rightItem('right-med',   'Right Medication',  esc(itemName)) +
+                rightItem('right-dose',  'Right Dose',        esc(it.dose || 'See order')) +
+                rightItem('right-route', 'Right Route',       esc(it.route || 'See order')) +
+                rightItem('right-time',  'Right Time',        'Scheduled: ' + esc(it.scheduledTime || '—') + ' · Now: ' + esc(nowTime)) +
+            '</ul></div>';
+        } else {
+            html += '<div class="adm-section"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:6px;">Verification</div><ul class="rights-list" id="rightsList">' +
+                rightItem('right-pt', 'Right Patient', 'Verify patient identity (name + DOB).') +
+                rightItem('right-tx', 'Right Treatment', esc(itemName)) +
+            '</ul></div>';
+        }
+
+        // Notes
+        html += '<div class="adm-section adm-notes"><label for="admNotes">Notes (optional)</label><textarea id="admNotes" placeholder="Site, response, special circumstances..."></textarea></div>';
+
+        // Buttons
+        html += '<div class="adm-buttons">' +
+            '<button class="btn" onclick="closeAdministerModal()">Cancel</button>' +
+            '<button class="btn warn" onclick="markHeldOrRefused(\'held\')">Mark Held</button>' +
+            '<button class="btn danger" onclick="markHeldOrRefused(\'refused\')">Mark Refused</button>' +
+            '<button class="btn primary" id="admConfirmBtn" onclick="confirmAdminister()">Confirm ' + (isMar ? 'Administration' : 'Completion') + '</button>' +
+        '</div>';
+
+        return html;
+    }
+
+    function rightItem(id, title, detail) {
+        return '<li data-right="' + id + '"><input type="checkbox" id="' + id + '"><div class="rt-text"><div class="rt-title">' + title + '</div><div class="rt-detail">' + detail + '</div></div></li>';
+    }
+
+    function wireRightsListInteraction() {
+        document.querySelectorAll('#rightsList li').forEach(function (li) {
+            const cb = li.querySelector('input[type="checkbox"]');
+            li.addEventListener('click', function (ev) {
+                if (ev.target !== cb) cb.checked = !cb.checked;
+                li.classList.toggle('checked', cb.checked);
+                updateAdmSubmitState();
+            });
+        });
+        const allergyAck = document.getElementById('admAllergyAck');
+        if (allergyAck) allergyAck.addEventListener('change', updateAdmSubmitState);
+    }
+
+    function updateAdmSubmitState() {
+        const btn = document.getElementById('admConfirmBtn');
+        if (!btn) return;
+        const allChecked = Array.from(document.querySelectorAll('#rightsList input[type="checkbox"]')).every(function (cb) { return cb.checked; });
+        const allergyOk = !admContext.allergyHits.length || (document.getElementById('admAllergyAck') && document.getElementById('admAllergyAck').checked);
+        btn.disabled = !(allChecked && allergyOk);
+    }
+
+    window.confirmAdminister = function () {
+        if (!admContext) return;
+        const notes = (document.getElementById('admNotes') || {}).value || '';
+        writeAdminUpdate('given', notes);
+    };
+
+    window.markHeldOrRefused = function (newStatus) {
+        if (!admContext) return;
+        const notes = (document.getElementById('admNotes') || {}).value || '';
+        if (!notes.trim()) {
+            showPromptModal((newStatus === 'held' ? 'Hold reason' : 'Refusal reason'),
+                'Briefly document the reason:', function (val) {
+                    if (!val || !val.trim()) { showToast('Reason required.', 'warning'); return; }
+                    writeAdminUpdate(newStatus, val.trim());
+                }, { submitText: 'Save', placeholder: 'Reason' });
+            return;
+        }
+        writeAdminUpdate(newStatus, notes);
+    };
+
+    function writeAdminUpdate(status, notes) {
+        const ctx = admContext;
+        const path = 'emr/' + ctx.kind + '/' + currentPatientId + '/' + ctx.key;
+        const updates = {
+            status: status,
+            administeredAt: Date.now(),
+            administeredBy: currentUserName,
+            notes: notes || ''
+        };
+        if (ctx.allergyHits && ctx.allergyHits.length) {
+            updates.allergyOverride = {
+                allergens: ctx.allergyHits.map(function (h) { return h.allergy; }),
+                acknowledgedBy: currentUserName,
+                acknowledgedAt: Date.now()
+            };
+        }
+        database.ref(path).update(updates).then(function () {
+            const verb = status === 'given' ? 'administered' : status;
+            showToast((ctx.kind === 'mar' ? 'Medication ' : 'Treatment ') + verb + '.', 'success');
+            closeAdministerModal();
+        }).catch(function (err) {
+            showToast('Save failed: ' + (err.message || err), 'error');
+        });
+    }
+
+    window.closeAdministerModal = function () {
+        document.getElementById('admOverlay').classList.remove('visible');
+        admContext = null;
+    };
+
+    // Close modal on backdrop click
+    document.getElementById('admOverlay').addEventListener('click', function (e) {
+        if (e.target.id === 'admOverlay') closeAdministerModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('admOverlay').classList.contains('visible')) closeAdministerModal();
+    });
+
+    // ===========================================================
+    // [2000] INIT
+    // ===========================================================
+    // (Auth state change in [200] kicks off everything once user resolves.)
+
+    // ===========================================================
+    // [1900] UTILITIES
+    // ===========================================================
+    function esc(str) {
+        if (str == null) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function fmtTime(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts);
+        return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function fmtTimeShort(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    </script>
+
+</body>
+</html>
+</content>
+</invoke>
