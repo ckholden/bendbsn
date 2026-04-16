@@ -704,6 +704,40 @@
         .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
         .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
 
+        /* Phase 3A: Flags tab */
+        .flag-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; border-bottom: 1px solid var(--clx-border, #d1dce8);
+            gap: 12px;
+        }
+        .flag-row:last-child { border-bottom: none; }
+        .flag-row.active { background: #fffbea; }
+        [data-theme="dark"] .flag-row.active { background: rgba(234,179,8,0.08); }
+        .flag-row .flag-left { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
+        .flag-row .flag-icon { font-size: 18px; flex-shrink: 0; line-height: 1.2; }
+        .flag-row .flag-name { font-size: 14px; font-weight: 600; color: var(--clx-text-primary); }
+        .flag-row .flag-hint { font-size: 11px; color: var(--clx-text-muted, #718096); margin-top: 2px; line-height: 1.4; }
+
+        /* Toggle switch */
+        .flag-toggle { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; }
+        .flag-toggle input { opacity: 0; width: 0; height: 0; }
+        .flag-toggle .slider {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--clx-border, #d1dce8); border-radius: 22px;
+            transition: 0.2s;
+        }
+        .flag-toggle .slider::before {
+            position: absolute; content: ""; height: 16px; width: 16px;
+            left: 3px; bottom: 3px; background: #fff; border-radius: 50%;
+            transition: 0.2s;
+        }
+        .flag-toggle input:checked + .slider { background-color: #dc2626; }
+        .flag-toggle input:checked + .slider::before { transform: translateX(18px); }
+
+        /* Precaution badge — darker red than iso/fall */
+        .pt-badge.precaution { background: #fef2f2; color: #7f1d1d; border: 1px solid #fca5a5; }
+        [data-theme="dark"] .pt-badge.precaution { background: rgba(220,38,38,0.16); color: #fecaca; border-color: rgba(220,38,38,0.4); }
+
         /* Phase 3A: LDAs */
         .lda-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
         .lda-row {
@@ -963,6 +997,7 @@
                     <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
                     <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
                     <button class="chart-tab" role="tab" data-tab="ldas" onclick="switchTab('ldas')">LDAs</button>
+                    <button class="chart-tab" role="tab" data-tab="flags" onclick="switchTab('flags')">Flags</button>
                     <button class="chart-tab" role="tab" data-tab="encounters" onclick="switchTab('encounters')">Encounters</button>
                 </div>
 
@@ -986,6 +1021,7 @@
                 <div class="tab-panel" id="tab-mar" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-tar" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-ldas" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-flags" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-encounters" role="tabpanel"></div>
             </section>
 
@@ -1767,6 +1803,17 @@
         if (p.dnr) html += '<span class="pt-badge dnr">' + (p.codeStatus || 'DNR') + '</span>';
         if (p.isolation) html += '<span class="pt-badge iso">' + esc(p.isolation) + '</span>';
         if (p.fallRisk) html += '<span class="pt-badge fall">Fall Risk</span>';
+        // Additional precautions from Flags tab
+        const enc = p._encounterId ? allEncounters[p._encounterId] : null;
+        const prec = (enc && enc.precautions) ? enc.precautions : {};
+        const precLabels = {
+            suicide:'Suicide', seizure:'Seizure', aspiration:'Aspiration',
+            restraints:'Restraints', bleeding:'Bleeding', latex:'Latex',
+            npo:'NPO', neutropenic:'Neutropenic', spinal:'Spinal'
+        };
+        Object.keys(precLabels).forEach(function (k) {
+            if (prec[k]) html += '<span class="pt-badge precaution">' + esc(precLabels[k]) + '</span>';
+        });
         return html;
     }
 
@@ -1916,6 +1963,7 @@
             case 'mar':          renderMarTab(); break;
             case 'tar':          renderTarTab(); break;
             case 'ldas':         renderLdasTab(); break;
+            case 'flags':        renderFlagsTab(); break;
             case 'encounters':   renderEncountersTab(); break;
         }
     };
@@ -4072,6 +4120,111 @@
         const display = val ? esc(val) : '+ Add';
         return '<td class="' + cls + '" onclick="editStatusNote(this, \'' + esc(encId) + '\', event)" title="' + esc(val || 'Add status note') + '">' + display + '</td>';
     }
+
+    // ===========================================================
+    // [2830] FLAGS TAB — precautions / safety flags
+    // ===========================================================
+    // Precaution flags are stored at encounter.precautions = { fallRisk, suicide, seizure, aspiration, restraints, bleeding, latex, npo, neutropenic, spinal }
+    // Plus the already-existing isolation + DNR (code status) + fall risk fields.
+    const PRECAUTION_DEFS = [
+        { key: 'fallRisk',      label: 'Fall Risk',             icon: '⚠',  hint: 'Use bed alarm, non-slip socks, call light in reach. Morse Fall Scale in Notes.' },
+        { key: 'suicide',       label: 'Suicide Precautions',   icon: '🛡',  hint: '1:1 sitter if indicated. Remove sharps, cords, belts. Escape-proof environment.' },
+        { key: 'seizure',       label: 'Seizure Precautions',   icon: '⚡',  hint: 'Padded rails, bed low, O2 + suction at bedside, IV access.' },
+        { key: 'aspiration',    label: 'Aspiration Risk',       icon: '🍽',  hint: 'HOB ≥30°, thickened liquids, swallow eval before any PO.' },
+        { key: 'restraints',    label: 'Restraints in Use',     icon: '🔒',  hint: 'Q2H renewal, Q15min checks, least restrictive device, skin integrity.' },
+        { key: 'bleeding',      label: 'Bleeding Precautions',  icon: '💉',  hint: 'Soft toothbrush, electric razor, pressure 5 min after sticks, avoid IM injections.' },
+        { key: 'latex',         label: 'Latex Allergy',         icon: '🧤',  hint: 'Latex-free equipment, notify pharmacy & OR.' },
+        { key: 'npo',           label: 'NPO',                   icon: '🚫',  hint: 'Nothing by mouth. Sign at bedside. Notify if pt attempts.' },
+        { key: 'neutropenic',   label: 'Neutropenic Precautions', icon: '🦠', hint: 'Private room, no fresh flowers/fruit, strict hand hygiene, no sick visitors.' },
+        { key: 'spinal',        label: 'Spinal Precautions',    icon: '🩻',  hint: 'Log-roll only, c-collar if ordered, no flexion/extension.' }
+    ];
+
+    function renderFlagsTab() {
+        if (!currentPatient) return;
+        const el = document.getElementById('tab-flags');
+        const enc = currentPatient.currentEncounterId ? allEncounters[currentPatient.currentEncounterId] : null;
+        const ro = chartReadOnly;
+        if (!enc) {
+            el.innerHTML = '<div class="emr-panel"><div class="emr-panel-bd"><div class="vitals-empty">No active encounter.</div></div></div>';
+            return;
+        }
+        const prec = enc.precautions || {};
+        // Isolation (separate — it's a string not a boolean)
+        const isolationRow =
+            '<div class="flag-row' + (enc.isolation ? ' active' : '') + '">' +
+                '<div class="flag-left">' +
+                    '<span class="flag-icon">🧫</span>' +
+                    '<div class="flag-text"><div class="flag-name">Isolation</div>' +
+                    '<div class="flag-hint">' + (enc.isolation ? esc(enc.isolation) + ' precautions. Sign at door. Don PPE before entry.' : 'No isolation active.') + '</div></div>' +
+                '</div>' +
+                (ro ? '' : '<button class="btn sm" onclick="editField(\'isolation\', event)">Change</button>') +
+            '</div>';
+
+        // Code status / DNR (shown as a flag for visibility, but edit goes through normal field)
+        const codeRow =
+            '<div class="flag-row' + (enc.dnr ? ' active' : '') + '">' +
+                '<div class="flag-left">' +
+                    '<span class="flag-icon">❤️</span>' +
+                    '<div class="flag-text"><div class="flag-name">Code Status</div>' +
+                    '<div class="flag-hint">' + esc(enc.codeStatus || 'Full Code') + (enc.dnr ? '. Honor advance directive.' : '.') + '</div></div>' +
+                '</div>' +
+                (ro ? '' : '<button class="btn sm" onclick="editField(\'codeStatus\', event)">Change</button>') +
+            '</div>';
+
+        // Other boolean precautions
+        const boolRows = PRECAUTION_DEFS.map(function (def) {
+            let isActive;
+            // fallRisk comes from the encounter top-level (legacy), not the precautions object
+            if (def.key === 'fallRisk') isActive = !!enc.fallRisk;
+            else isActive = !!prec[def.key];
+            return '<div class="flag-row' + (isActive ? ' active' : '') + '">' +
+                '<div class="flag-left">' +
+                    '<span class="flag-icon">' + def.icon + '</span>' +
+                    '<div class="flag-text">' +
+                        '<div class="flag-name">' + esc(def.label) + '</div>' +
+                        '<div class="flag-hint">' + esc(def.hint) + '</div>' +
+                    '</div>' +
+                '</div>' +
+                (ro ? '' :
+                    '<label class="flag-toggle"><input type="checkbox"' + (isActive ? ' checked' : '') +
+                    ' onchange="togglePrecaution(\'' + def.key + '\', this.checked)"><span class="slider"></span></label>'
+                ) +
+            '</div>';
+        }).join('');
+
+        el.innerHTML = '<div class="emr-panel">' +
+            '<div class="emr-panel-hd"><span>🚩 Safety Flags &amp; Precautions</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Changes auto-write an audit note</span></div>' +
+            '<div class="emr-panel-bd">' +
+                isolationRow + codeRow + boolRows +
+            '</div>' +
+        '</div>';
+    }
+
+    window.togglePrecaution = function (key, newVal) {
+        if (chartReadOnly) return;
+        const p = currentPatient;
+        const encId = p ? p.currentEncounterId : null;
+        if (!encId) return;
+        const enc = allEncounters[encId];
+        const now = Date.now();
+        const updates = {};
+        if (key === 'fallRisk') {
+            updates['emr/encounters/' + encId + '/fallRisk'] = newVal;
+        } else {
+            updates['emr/encounters/' + encId + '/precautions/' + key] = newVal || null;
+        }
+        const def = PRECAUTION_DEFS.find(function (d) { return d.key === key; });
+        const label = def ? def.label : key;
+        const noteKey = database.ref('emr/notes/' + p.id).push().key;
+        updates['emr/notes/' + p.id + '/' + noteKey] = {
+            encounterId: encId, type: 'chart-edit',
+            body: 'Flag change: ' + label + ' ' + (newVal ? 'ACTIVATED' : 'deactivated') + '.',
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast(label + (newVal ? ' activated' : ' deactivated') + '.', 'success');
+        });
+    };
 
     // ===========================================================
     // [2850] LDAs TAB — list, add, site-check, discontinue
