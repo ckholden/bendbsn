@@ -704,6 +704,69 @@
         .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
         .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
 
+        /* Phase 3A: LDAs */
+        .lda-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+        .lda-row {
+            display: flex; gap: 10px; padding: 10px 12px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+        }
+        .lda-row .lda-main { flex: 1; min-width: 0; }
+        .lda-row .lda-head { font-size: 13px; color: var(--clx-text-primary); margin-bottom: 2px; }
+        .lda-row .lda-sub  { font-size: 11px; color: var(--clx-text-muted, #718096); margin-top: 1px; }
+        .lda-row .lda-notes { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-top: 3px; font-style: italic; }
+        .lda-row .lda-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            .lda-row { flex-direction: column; }
+            .lda-row .lda-actions { flex-direction: row; }
+        }
+
+        /* Phase 3A: Editable fields (pencil + value) */
+        .editable-field { display: inline-flex; align-items: center; gap: 4px; }
+
+        /* Phase 3A: Status Note */
+        .status-note {
+            font-size: 11px; font-style: italic; color: #6d4c00;
+            background: #fffbea; border-left: 3px solid #f59e0b;
+            padding: 4px 8px; border-radius: 3px; margin-top: 6px;
+            cursor: pointer; line-height: 1.35;
+            position: relative;
+            overflow: hidden; text-overflow: ellipsis;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        }
+        .status-note.empty {
+            color: var(--clx-text-muted, #718096); background: transparent;
+            border-left-color: var(--clx-border, #d1dce8);
+            font-style: normal;
+        }
+        .status-note:hover { filter: brightness(0.97); }
+        [data-theme="dark"] .status-note { background: rgba(245,158,11,0.12); color: #fde68a; }
+        .status-note-editor {
+            display: block; width: 100%; margin-top: 6px;
+            font-size: 11px; padding: 4px 6px;
+            border: 1px solid var(--clx-accent, #0f7490); border-radius: 3px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+            font-family: inherit; resize: vertical; min-height: 40px;
+        }
+
+        /* Status column in manager view */
+        .mgr-table .mgr-status-note {
+            font-size: 11px; font-style: italic; color: #6d4c00;
+            max-width: 200px; white-space: normal;
+            overflow: hidden; text-overflow: ellipsis;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            cursor: pointer;
+        }
+        .mgr-table .mgr-status-note.empty { color: var(--clx-text-muted); font-style: normal; }
+        [data-theme="dark"] .mgr-table .mgr-status-note { color: #fde68a; }
+
+        /* Inline edit pencil */
+        .edit-pencil {
+            display: inline-block; font-size: 11px; margin-left: 6px; opacity: 0.45;
+            cursor: pointer; user-select: none;
+        }
+        .edit-pencil:hover { opacity: 1; color: var(--clx-accent); }
+
         /* Pending transfer chip on bed card */
         .pending-chip {
             display: inline-block;
@@ -884,6 +947,7 @@
                 <div class="emr-title-bar">
                     <button class="emr-back-btn" onclick="closeChart()">← Back to Unit Board</button>
                     <div class="chart-actions">
+                        <button class="btn sm primary" id="chartBtnAssignBed" onclick="assignBedFromChart()" style="display:none;">Assign Bed</button>
                         <button class="btn sm" id="chartBtnHandoff" onclick="openHandoffModal()">📋 Handoff</button>
                         <button class="btn sm" id="chartBtnTransfer" onclick="openTransferModal()">Transfer</button>
                         <button class="btn sm danger" id="chartBtnDischarge" onclick="openDischargeModal()">Discharge</button>
@@ -898,6 +962,7 @@
                     <button class="chart-tab" role="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
                     <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
                     <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
+                    <button class="chart-tab" role="tab" data-tab="ldas" onclick="switchTab('ldas')">LDAs</button>
                     <button class="chart-tab" role="tab" data-tab="encounters" onclick="switchTab('encounters')">Encounters</button>
                 </div>
 
@@ -920,6 +985,7 @@
                 <div class="tab-panel" id="tab-notes" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-mar" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-tar" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-ldas" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-encounters" role="tabpanel"></div>
             </section>
 
@@ -1026,6 +1092,7 @@
     let currentNotes = [];
     let currentMar = [];
     let currentTar = [];
+    let currentLdas = [];         // per-encounter LDAs for the encounter currently being viewed
 
     let activeNoteType = 'soap';
     let activeScreening = null;   // 'phq9' | 'gad7' | 'morse' | 'braden' | null
@@ -1126,7 +1193,8 @@
             'emr/notes': null,
             'emr/mar': null,
             'emr/tar': null,
-            'emr/transfers': null
+            'emr/transfers': null,
+            'emr/ldas': null
         };
         database.ref().update(wipeUpdates).then(function () {
             status.textContent = 'Seeding Phase 2 data…';
@@ -1171,6 +1239,22 @@
             // Chart data for current encounter (from CHART_BY_PATIENT.current)
             const chart = (seed.CHART_BY_PATIENT[p.id] || {}).current || {};
             writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
+
+            // LDAs (lines/drains/airways) for current encounter
+            const ldaList = (seed.SEED_LDAS || {})[p.id] || [];
+            ldaList.forEach(function (lda) {
+                const ldaKey = database.ref('emr/ldas/' + encId).push().key;
+                const insertTs = now - Math.floor((lda.daysAgo || 0) * 86400000);
+                updates['emr/ldas/' + encId + '/' + ldaKey] = {
+                    encounterId: encId, patientId: p.id,
+                    type: lda.type, site: lda.site, size: lda.size,
+                    insertDate: insertTs, insertedBy: lda.insertedBy || 'Seeded',
+                    status: lda.status || 'active',
+                    notes: lda.notes || '',
+                    lastAssessedAt: null, lastAssessedBy: null,
+                    lastDressingChange: null
+                };
+            });
 
             // Prior encounter (if any) — with sparse chart data
             if (p.priorEncounter) {
@@ -1331,12 +1415,29 @@
             r.ref.on('value', r.cb);
             patientUnsubscribers.push(function () { r.ref.off('value', r.cb); });
         });
+        // LDA listener — scoped to the active encounter (re-attaches if viewingEncounterId changes)
+        attachLdaListener();
+    }
+
+    let ldaUnsubscriber = null;
+    function attachLdaListener() {
+        if (ldaUnsubscriber) { try { ldaUnsubscriber(); } catch (e) {} ldaUnsubscriber = null; }
+        const encId = activeEncounterIdForView();
+        if (!encId) { currentLdas = []; if (currentTab === 'ldas') renderLdasTab(); return; }
+        const ref = database.ref('emr/ldas/' + encId);
+        const cb = function (snap) {
+            currentLdas = snapshotToSortedArray(snap, 'insertDate', 'desc');
+            if (currentTab === 'ldas') renderLdasTab();
+        };
+        ref.on('value', cb);
+        ldaUnsubscriber = function () { ref.off('value', cb); };
     }
 
     function detachPatientListeners() {
         patientUnsubscribers.forEach(function (fn) { try { fn(); } catch (e) {} });
         patientUnsubscribers = [];
-        currentVitals = []; currentNotes = []; currentMar = []; currentTar = [];
+        if (ldaUnsubscriber) { try { ldaUnsubscriber(); } catch (e) {} ldaUnsubscriber = null; }
+        currentVitals = []; currentNotes = []; currentMar = []; currentTar = []; currentLdas = [];
     }
 
     function snapshotToSortedArray(snap, sortKey, dir) {
@@ -1418,6 +1519,7 @@
                 '<div class="pt-name">' + esc(p.name) + '</div>' +
                 '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
                 '<div class="pt-dx">' + esc(p.dx) + '</div>' +
+                statusNoteHtml(enc) +
                 pendingChip +
                 (badges ? '<div class="pt-badges">' + badges + '</div>' : '') +
             '</div>';
@@ -1535,6 +1637,7 @@
                 '<th class="' + sortedClass('name') + '" onclick="setMgrSort(\'name\')">Patient' + arrow('name') + '</th>' +
                 '<th class="' + sortedClass('age') + '" onclick="setMgrSort(\'age\')">Age/Sex' + arrow('age') + '</th>' +
                 '<th class="' + sortedClass('dx') + '" onclick="setMgrSort(\'dx\')">DX' + arrow('dx') + '</th>' +
+                '<th>Status Note</th>' +
                 '<th class="' + sortedClass('code') + '" onclick="setMgrSort(\'code\')">Code' + arrow('code') + '</th>' +
                 '<th>Allergies</th>' +
                 '<th class="' + sortedClass('acuity') + '" onclick="setMgrSort(\'acuity\')">Acuity' + arrow('acuity') + '</th>' +
@@ -1542,7 +1645,7 @@
             '</tr></thead><tbody>';
         rows.forEach(function (r) {
             if (!r.patient) {
-                const cols = currentUnit === 'all' ? 9 : 8;
+                const cols = currentUnit === 'all' ? 10 : 9; // +1 for Status Note column
                 html += '<tr class="mgr-empty"><td class="mgr-bed">' + esc(r.bedId) + '</td>' +
                     (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
                     '<td colspan="' + (cols - (currentUnit === 'all' ? 2 : 1)) + '">— Unoccupied —</td></tr>';
@@ -1553,12 +1656,14 @@
             const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
             const allergiesClass = allergiesArr.length > 0 ? 'mgr-allergies has-allergy' : 'mgr-allergies';
             const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(p.acuity || 1) - 1] || '#9ca3af';
+            const enc = p._encounterId ? allEncounters[p._encounterId] : null;
             html += '<tr onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<td class="mgr-bed">' + esc(r.bedId) + '</td>' +
                 (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
                 '<td><strong>' + esc(p.name) + '</strong></td>' +
                 '<td>' + esc(String(p.age)) + ' / ' + esc(p.sex) + '</td>' +
                 '<td class="mgr-dx">' + esc(p.dx) + '</td>' +
+                statusNoteMgrCellHtml(enc) +
                 '<td>' + esc(p.codeStatus) + '</td>' +
                 '<td class="' + allergiesClass + '">' + esc(allergiesText) + '</td>' +
                 '<td><span class="acuity-pill" style="background:' + acuityColor + ';">' + (p.acuity || 1) + '</span></td>' +
@@ -1705,6 +1810,8 @@
         viewingEncounterId = encId;
         updateChartReadOnlyState();
         renderChartHeader();
+        // Re-attach LDA listener to the newly-active encounter
+        attachLdaListener();
         // Re-render the active tab so filters apply
         switchTab(currentTab);
     };
@@ -1746,6 +1853,13 @@
             const btn = document.getElementById(id);
             if (btn) btn.disabled = chartReadOnly;
         });
+        // Show Assign Bed button only for waiting-room patients
+        const bedBtn = document.getElementById('chartBtnAssignBed');
+        if (bedBtn) {
+            const enc3 = p.currentEncounterId ? allEncounters[p.currentEncounterId] : null;
+            const inWaiting = enc3 && (enc3.bed === 'WAITING' || !enc3.bed);
+            bedBtn.style.display = (inWaiting && !chartReadOnly) ? 'inline-block' : 'none';
+        }
         // Disable Transfer if already pending (can't double-request)
         const transferBtn = document.getElementById('chartBtnTransfer');
         if (transferBtn && !chartReadOnly) {
@@ -1753,6 +1867,15 @@
             transferBtn.disabled = !!(enc2 && enc2.pendingTransfer);
         }
     }
+
+    // Assign a bed from the patient's chart (for waiting-room patients)
+    window.assignBedFromChart = function () {
+        if (!currentPatientId) return;
+        const p = allPatients[currentPatientId];
+        if (!p || !p.currentEncounterId) return;
+        // Delegates to the same Waiting Room assign flow
+        openWaitingRoomAssignBed(p.currentEncounterId);
+    };
 
     // Cancel a pending transfer (sender-side)
     window.cancelPendingTransfer = function () {
@@ -1769,7 +1892,7 @@
                 const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
                 updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
                     encounterId: p.currentEncounterId, type: 'narrative',
-                    body: 'TRANSFER CANCELED — ' + new Date(now).toLocaleString() + '. Request to ' + (UNIT_NAMES[enc.pendingTransfer.toUnit] || enc.pendingTransfer.toUnit) + ' withdrawn by ' + currentUserName + '.',
+                    body: 'TRANSFER CANCELED — ' + fmtTime(now) + '. Request to ' + (UNIT_NAMES[enc.pendingTransfer.toUnit] || enc.pendingTransfer.toUnit) + ' withdrawn by ' + currentUserName + '.',
                     by: currentUserName, timestamp: now
                 };
                 database.ref().update(updates).then(function () {
@@ -1792,6 +1915,7 @@
             case 'notes':        renderNotesTab(); break;
             case 'mar':          renderMarTab(); break;
             case 'tar':          renderTarTab(); break;
+            case 'ldas':         renderLdasTab(); break;
             case 'encounters':   renderEncountersTab(); break;
         }
     };
@@ -1818,14 +1942,21 @@
         const codeLabel = enc ? (enc.codeStatus || 'Full Code') : '—';
         const isDnr    = enc ? !!enc.dnr : false;
 
+        const admittedElapsed = enc && enc.admissionDate
+            ? '<span class="ch-value" style="font-weight:400;font-size:11px;color:var(--clx-text-muted);" data-elapsed-ts="' + enc.admissionDate + '">' + esc(fmtElapsed(enc.admissionDate)) + '</span>'
+            : '';
+
         const html =
             '<div class="ch-block"><span class="ch-label">Patient</span><span class="ch-value large">' + esc(p.name) + '</span><span class="ch-value" style="font-weight:400;">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • DOB ' + esc(p.dob) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">MRN</span><span class="ch-value">' + esc(p.mrn) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Bed</span><span class="ch-value">' + esc(bedLabel) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Bed</span><span class="ch-value">' + esc(bedLabel) + '</span>' + (enc ? '<span class="ch-value" style="font-weight:400;font-size:11px;color:var(--clx-text-muted);">Admitted ' + esc(fmtTime(enc.admissionDate)) + '</span>' + admittedElapsed : '') + '</div>' +
             '<div class="ch-block"><span class="ch-label">Diagnosis</span><span class="ch-value" title="' + esc(dxLabel) + '">' + esc(dxLabel) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">MD</span><span class="ch-value">' + esc(mdLabel) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">Code Status</span><span class="ch-value' + (isDnr ? ' warn' : '') + '">' + esc(codeLabel) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesText) + '</span></div>';
+            '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesText) + '</span></div>' +
+            (enc && enc.status === 'active'
+                ? '<div class="ch-block" style="grid-column: 1 / -1;"><span class="ch-label">Status Note</span>' + statusNoteHtml(enc) + '</div>'
+                : '');
         document.getElementById('chartHeader').innerHTML = html;
     }
 
@@ -1868,43 +1999,54 @@
         else if (p.currentEncounterId) enc = allEncounters[p.currentEncounterId];
         else enc = mostRecentCompletedEnc(p.id);
 
+        // Helper: editable-field cell (wraps editableFieldHtml with a fallback to plain esc)
+        function ef(key, rawVal, display) {
+            if (chartReadOnly) return esc(display || rawVal || '—');
+            if (FIELD_DEFS[key]) return editableFieldHtml(key, rawVal, display);
+            return esc(display || rawVal || '—');
+        }
+        const allergiesText = (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA';
+
         const patientFields = [
-            ['Full Name', p.name],
-            ['Date of Birth', p.dob],
-            ['Age', String(p.age)],
-            ['Sex', p.sex],
-            ['MRN', p.mrn],
-            ['Allergies', (p.allergies && p.allergies.length) ? p.allergies.join(', ') : 'NKDA'],
-            ['Past Medical Hx', p.pmh || '—'],
-            ['Social Hx', p.socialHx || '—']
+            ['Full Name', ef('name', p.name)],
+            ['Date of Birth', ef('dob', p.dob)],
+            ['Age', esc(String(p.age))],
+            ['Sex', ef('sex', p.sex)],
+            ['MRN', ef('mrn', p.mrn)],
+            ['Allergies', ef('allergies', p.allergies, allergiesText)],
+            ['Past Medical Hx', ef('pmh', p.pmh)],
+            ['Social Hx', ef('socialHx', p.socialHx)]
         ];
 
         const encounterFields = enc ? [
-            ['Unit / Bed', (UNIT_NAMES[enc.unit] || enc.unit) + ' / ' + enc.bed],
-            ['Admission Date', fmtTime(enc.admissionDate)],
-            ['Admission Source', enc.admissionSource || '—'],
-            ['Chief Complaint', enc.chiefComplaint || '—'],
-            ['ESI Acuity', enc.esiAcuity ? String(enc.esiAcuity) + ' / 5' : '—'],
-            ['Arrival Mode', enc.arrivalMode || '—'],
-            ['Primary Diagnosis', enc.dx || '—'],
-            ['Attending MD', enc.md || '—'],
-            ['Code Status', enc.codeStatus || 'Full Code'],
-            ['Diet', enc.diet || '—'],
-            ['Activity', enc.activity || '—'],
-            ['IV Access', enc.ivAccess || '—'],
-            ['Weight', (enc.weightKg != null ? enc.weightKg + ' kg' : '—')],
-            ['Height', (enc.heightIn != null ? enc.heightIn + ' in' : '—')],
-            ['Isolation', enc.isolation || 'None'],
-            ['Fall Risk', enc.fallRisk ? 'Yes' : 'No'],
-            ['Acuity', enc.acuity != null ? String(enc.acuity) + ' / 5' : '—']
+            ['Unit / Bed', esc((UNIT_NAMES[enc.unit] || enc.unit) + ' / ' + enc.bed)],
+            ['Admission Date', esc(fmtTime(enc.admissionDate))],
+            ['Admission Source', esc(enc.admissionSource || '—')],
+            ['Chief Complaint', esc(enc.chiefComplaint || '—')],
+            ['ESI Acuity', esc(enc.esiAcuity ? String(enc.esiAcuity) + ' / 5' : '—')],
+            ['Arrival Mode', esc(enc.arrivalMode || '—')],
+            ['Primary Diagnosis', ef('dx', enc.dx)],
+            ['Attending MD', ef('md', enc.md)],
+            ['Code Status', ef('codeStatus', enc.codeStatus || 'Full Code')],
+            ['Diet', ef('diet', enc.diet)],
+            ['Activity', ef('activity', enc.activity)],
+            ['IV Access', ef('ivAccess', enc.ivAccess)],
+            ['Weight', ef('weightKg', enc.weightKg, enc.weightKg != null ? enc.weightKg + ' kg' : '—')],
+            ['Height', ef('heightIn', enc.heightIn, enc.heightIn != null ? enc.heightIn + ' in' : '—')],
+            ['Isolation', ef('isolation', enc.isolation, enc.isolation || 'None')],
+            ['Fall Risk', ef('fallRisk', enc.fallRisk, enc.fallRisk ? 'Yes' : 'No')],
+            ['Acuity', ef('acuity', enc.acuity, enc.acuity != null ? String(enc.acuity) + ' / 5' : '—')]
         ] : [];
 
-        const homeMedsHtml = (p.homeMedications && p.homeMedications.length)
+        const homeMedsList = (p.homeMedications && p.homeMedications.length)
             ? '<ul style="margin:4px 0 0 18px;line-height:1.55;font-size:13px;">' +
               p.homeMedications.map(function (m) {
                   return '<li>' + esc(m.med) + ' ' + esc(m.dose) + ' ' + esc(m.route) + ' — ' + esc(m.freq) + '</li>';
               }).join('') + '</ul>'
             : '<div style="font-size:13px;color:var(--clx-text-muted);">None on file</div>';
+        const homeMedsHtml = chartReadOnly
+            ? homeMedsList
+            : homeMedsList + '<div style="margin-top:8px;"><button class="btn sm" onclick="editField(\'homeMedications\', event)">✎ Edit Home Meds</button></div>';
 
         let html = '<div class="emr-panel">' +
             '<div class="emr-panel-hd"><span>Patient Identity</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Persists across encounters</span></div>' +
@@ -1970,9 +2112,14 @@
                     '<button class="btn primary" onclick="saveVitals()">Save Vitals</button>' +
                 '</div>' +
             '</div>';
+        // Most-recent vitals elapsed for the header
+        const latest = filterToActiveEncounter(currentVitals)[0];
+        const elapsedHdr = latest
+            ? '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Last vitals <span data-elapsed-ts="' + latest.timestamp + '">' + esc(fmtElapsed(latest.timestamp)) + '</span></span>'
+            : '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Most recent first (this encounter)</span>';
         el.innerHTML = formHtml +
             '<div class="emr-panel">' +
-                '<div class="emr-panel-hd"><span>Vitals Flowsheet</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Most recent first (this encounter)</span></div>' +
+                '<div class="emr-panel-hd"><span>Vitals Flowsheet</span>' + elapsedHdr + '</div>' +
                 '<div class="emr-panel-bd" id="vitalsTableArea"></div>' +
             '</div>';
         renderVitalsTable();
@@ -2824,7 +2971,8 @@
         const allergies = allergiesRaw.toUpperCase() === 'NKDA' ? ['NKDA'] : allergiesRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
         flowCtx.newPatient = {
             name: name, dob: dob, sex: sex, age: age, allergies: allergies,
-            pmh: pmh, socialHx: '', homeMedications: []
+            pmh: pmh, socialHx: '', homeMedications: [],
+            mrn: generateNewMRN()
         };
         flowGoToEdArrivalStep2();
     };
@@ -2963,7 +3111,7 @@
         // Admission / triage note
         const noteKey = database.ref('emr/notes/' + patientId).push().key;
         const noteBody = [
-            'ED ARRIVAL — ' + new Date(now).toLocaleString(),
+            'ED ARRIVAL — ' + fmtTime(now),
             'Mode: ' + ctx.triage.mode + '. CC: ' + (ctx.triage.cc || '—'),
             'ESI: ' + ctx.esi,
             ctx.triage.temp != null ? 'T ' + ctx.triage.temp + '°C' : null,
@@ -3150,7 +3298,7 @@
         const noteKey = database.ref('emr/notes/' + patientId).push().key;
         updates['emr/notes/' + patientId + '/' + noteKey] = {
             encounterId: encId, type: 'narrative',
-            body: 'ADMISSION — ' + new Date(now).toLocaleString() + '. Source: ' + enc.admissionSource + '. DX: ' + dx + '. Admitted to ' + unit + '-' + bed + ' by ' + enc.md + '.',
+            body: 'ADMISSION — ' + fmtTime(now) + '. Source: ' + enc.admissionSource + '. DX: ' + dx + '. Admitted to ' + unit + '-' + bed + ' by ' + enc.md + '.',
             by: currentUserName, timestamp: now
         };
 
@@ -3240,7 +3388,7 @@
             const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
             updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
                 encounterId: ctx.encId, type: 'narrative',
-                body: 'TRANSFER (direct) \u2014 ' + new Date(now).toLocaleString() + '. From ' + ctx.fromUnit + '-' + ctx.fromBed + ' to ' + toUnit + '-' + toBed + '. Reason: ' + reason + '. Report given to ' + rn + '.',
+                body: 'TRANSFER (direct) \u2014 ' + fmtTime(now) + '. From ' + ctx.fromUnit + '-' + ctx.fromBed + ' to ' + toUnit + '-' + toBed + '. Reason: ' + reason + '. Report given to ' + rn + '.',
                 by: currentUserName, timestamp: now
             };
             database.ref().update(updates).then(function () {
@@ -3262,7 +3410,7 @@
         const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
         updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'TRANSFER REQUESTED \u2014 ' + new Date(now).toLocaleString() + '. Requested transfer to ' + (UNIT_NAMES[toUnit] || toUnit) + '. Reason: ' + reason + '. Report given to ' + rn + '. Awaiting receiving unit bed assignment.',
+            body: 'TRANSFER REQUESTED \u2014 ' + fmtTime(now) + '. Requested transfer to ' + (UNIT_NAMES[toUnit] || toUnit) + '. Reason: ' + reason + '. Report given to ' + rn + '. Awaiting receiving unit bed assignment.',
             by: currentUserName, timestamp: now
         };
         database.ref().update(updates).then(function () {
@@ -3326,7 +3474,7 @@
         const noteKey = database.ref('emr/notes/' + enc.patientId).push().key;
         updates['emr/notes/' + enc.patientId + '/' + noteKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'TRANSFER ACCEPTED \u2014 ' + new Date(now).toLocaleString() + '. From ' + enc.unit + '-' + enc.bed + ' to ' + pt.toUnit + '-' + bed + '. Accepted by ' + currentUserName + '. Report originally given to ' + pt.reportGivenTo + '.',
+            body: 'TRANSFER ACCEPTED \u2014 ' + fmtTime(now) + '. From ' + enc.unit + '-' + enc.bed + ' to ' + pt.toUnit + '-' + bed + '. Accepted by ' + currentUserName + '. Report originally given to ' + pt.reportGivenTo + '.',
             by: currentUserName, timestamp: now
         };
         database.ref().update(updates).then(function () {
@@ -3365,7 +3513,7 @@
         const noteKey = database.ref('emr/notes/' + enc.patientId).push().key;
         updates['emr/notes/' + enc.patientId + '/' + noteKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'TRANSFER REJECTED \u2014 ' + new Date(now).toLocaleString() + '. Transfer to ' + (UNIT_NAMES[pt.toUnit] || pt.toUnit) + ' rejected by ' + currentUserName + '. Reason: ' + reason + '. Patient remains in ' + enc.unit + '-' + enc.bed + '.',
+            body: 'TRANSFER REJECTED \u2014 ' + fmtTime(now) + '. Transfer to ' + (UNIT_NAMES[pt.toUnit] || pt.toUnit) + ' rejected by ' + currentUserName + '. Reason: ' + reason + '. Patient remains in ' + enc.unit + '-' + enc.bed + '.',
             by: currentUserName, timestamp: now
         };
         database.ref().update(updates).then(function () {
@@ -3437,7 +3585,7 @@
         const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
         updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'DISCHARGE — ' + new Date(now).toLocaleString() + '. Disposition: ' + disposition + '. ' + reason,
+            body: 'DISCHARGE — ' + fmtTime(now) + '. Disposition: ' + disposition + '. ' + reason,
             by: currentUserName, timestamp: now
         };
         database.ref().update(updates).then(function () {
@@ -3567,7 +3715,7 @@
         const nKey = database.ref('emr/notes/' + (allEncounters[ctx.encId] || {}).patientId).push().key;
         updates['emr/notes/' + allEncounters[ctx.encId].patientId + '/' + nKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'Bed assigned: ' + bed + ' at ' + new Date().toLocaleString() + '.',
+            body: 'Bed assigned: ' + bed + ' at ' + fmtTime(Date.now()) + '.',
             by: currentUserName, timestamp: Date.now()
         };
         database.ref().update(updates).then(function () {
@@ -3611,7 +3759,7 @@
         const nKey = database.ref('emr/notes/' + enc.patientId).push().key;
         updates['emr/notes/' + enc.patientId + '/' + nKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'DISCHARGE FROM WAITING ROOM — ' + new Date(now).toLocaleString() + '. Disposition: ' + disp + '. ' + reason,
+            body: 'DISCHARGE FROM WAITING ROOM — ' + fmtTime(now) + '. Disposition: ' + disp + '. ' + reason,
             by: currentUserName, timestamp: now
         };
         database.ref().update(updates).then(function () {
@@ -3652,6 +3800,484 @@
         '</div>';
     }
 
+    // ===========================================================
+    // [2750] PHASE 3A — EDITABLE CHART FIELDS (Demographics)
+    // ===========================================================
+
+    // Definitions drive the editable-field generator. Each field has:
+    //   level: 'patient' | 'encounter'
+    //   key:   field name at that level
+    //   kind:  'text' | 'textarea' | 'select' | 'toggle' | 'number'
+    //   options (select only), suffix (for numbers), transform (formatter)
+    const FIELD_DEFS = {
+        // Patient-level (persist across encounters)
+        name:        { level: 'patient',   kind: 'text',     placeholder: 'Full name' },
+        dob:         { level: 'patient',   kind: 'date' },
+        sex:         { level: 'patient',   kind: 'select', options: ['F','M','X'] },
+        mrn:         { level: 'patient',   kind: 'text',     placeholder: 'e.g., SIM-30010' },
+        allergies:   { level: 'patient',   kind: 'allergies' }, // special array handling
+        pmh:         { level: 'patient',   kind: 'textarea', placeholder: 'e.g., HTN, T2DM, anxiety' },
+        socialHx:    { level: 'patient',   kind: 'textarea', placeholder: 'e.g., Non-smoker, social ETOH, lives alone' },
+        homeMedications: { level: 'patient', kind: 'meds' }, // special array handling
+
+        // Encounter-level (change per admission)
+        dx:          { level: 'encounter', kind: 'text',     placeholder: 'Primary diagnosis' },
+        md:          { level: 'encounter', kind: 'text',     placeholder: 'Attending MD' },
+        codeStatus:  { level: 'encounter', kind: 'select', options: ['Full Code','DNR','DNR/DNI'] },
+        diet:        { level: 'encounter', kind: 'text' },
+        activity:    { level: 'encounter', kind: 'text' },
+        ivAccess:    { level: 'encounter', kind: 'text' },
+        isolation:   { level: 'encounter', kind: 'select', options: ['','Contact','Droplet','Airborne','Contact + Droplet','Enteric'] },
+        fallRisk:    { level: 'encounter', kind: 'toggle' },
+        dnr:         { level: 'encounter', kind: 'toggle' },
+        acuity:      { level: 'encounter', kind: 'number',   min: 1, max: 5 },
+        weightKg:    { level: 'encounter', kind: 'number',   suffix: 'kg', min: 0, max: 300, step: 0.1 },
+        heightIn:    { level: 'encounter', kind: 'number',   suffix: 'in', min: 0, max: 100 }
+    };
+
+    function editableFieldHtml(fieldKey, value, displayValue) {
+        // Returns HTML for a field value with a pencil edit icon. Click calls editField().
+        const def = FIELD_DEFS[fieldKey];
+        if (!def) return esc(displayValue || value || '—');
+        if (chartReadOnly) return esc(displayValue || value || '—');
+        const safeDisplay = esc(displayValue || value || '—');
+        return '<span class="editable-field" data-field="' + fieldKey + '">' +
+            '<span class="ef-value">' + safeDisplay + '</span>' +
+            '<span class="edit-pencil" onclick="editField(\'' + fieldKey + '\', event)" title="Edit">✎</span>' +
+        '</span>';
+    }
+
+    window.editField = function (fieldKey, ev) {
+        if (ev) ev.stopPropagation();
+        if (chartReadOnly) return;
+        const def = FIELD_DEFS[fieldKey];
+        if (!def) return;
+        const p = currentPatient;
+        const enc = p.currentEncounterId ? allEncounters[p.currentEncounterId] : null;
+        if (def.level === 'encounter' && !enc) return;
+
+        // Current value
+        let curVal;
+        if (def.level === 'patient') curVal = p[fieldKey];
+        else curVal = enc[fieldKey];
+        if (fieldKey === 'allergies') curVal = Array.isArray(curVal) ? curVal.join(', ') : (curVal || '');
+
+        // Prompt-style editor via flow modal (avoids finicky inline editors for selects/toggles)
+        let body = '';
+        const labelMap = {
+            allergies:'Allergies', pmh:'Past Medical Hx', socialHx:'Social Hx',
+            dx:'Diagnosis', md:'Attending MD', codeStatus:'Code Status',
+            diet:'Diet', activity:'Activity', ivAccess:'IV Access',
+            isolation:'Isolation', fallRisk:'Fall Risk', dnr:'DNR',
+            acuity:'Acuity (1–5)', weightKg:'Weight (kg)', heightIn:'Height (in)'
+        };
+        const label = labelMap[fieldKey] || fieldKey;
+
+        if (def.kind === 'allergies') {
+            body = '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:8px;">' +
+                   'Enter allergies comma-separated. Use "NKDA" for no known drug allergies.</p>' +
+                   '<input id="ef_input" class="flow-search-input" value="' + esc(curVal) + '" autofocus>';
+        } else if (def.kind === 'meds') {
+            const meds = Array.isArray(p.homeMedications) ? p.homeMedications : [];
+            body = '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:8px;">Home medications \u2014 add, edit, or remove rows. Leave blank to remove.</p>' +
+                   '<div id="ef_meds_list">' +
+                       meds.map(function (m, i) { return medRowHtml(m, i); }).join('') +
+                   '</div>' +
+                   '<button class="btn sm" style="margin-top:6px;" onclick="addHomeMedRow()">+ Add Row</button>';
+        } else if (def.kind === 'date') {
+            body = '<input id="ef_input" type="date" class="flow-search-input" value="' + esc(curVal || '') + '" autofocus>';
+        } else if (def.kind === 'textarea') {
+            body = '<textarea id="ef_input" rows="4" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--clx-border);border-radius:6px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;" placeholder="' + esc(def.placeholder || '') + '" autofocus>' + esc(curVal || '') + '</textarea>';
+        } else if (def.kind === 'select') {
+            const opts = def.options.map(function (o) { return '<option value="' + esc(o) + '"' + (o === curVal ? ' selected' : '') + '>' + esc(o || '(none)') + '</option>'; }).join('');
+            body = '<select id="ef_input" class="flow-search-input" autofocus>' + opts + '</select>';
+        } else if (def.kind === 'toggle') {
+            body = '<label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;">' +
+                       '<input type="checkbox" id="ef_input"' + (curVal ? ' checked' : '') + ' style="transform:scale(1.3);">' +
+                       'Yes, this patient has ' + esc(label) + '.' +
+                   '</label>';
+        } else if (def.kind === 'number') {
+            body = '<input id="ef_input" type="number" class="flow-search-input" value="' + esc(String(curVal == null ? '' : curVal)) + '"' +
+                   (def.min != null ? ' min="' + def.min + '"' : '') +
+                   (def.max != null ? ' max="' + def.max + '"' : '') +
+                   (def.step != null ? ' step="' + def.step + '"' : '') +
+                   ' autofocus>';
+        } else {
+            body = '<input id="ef_input" class="flow-search-input" value="' + esc(curVal || '') + '" placeholder="' + esc(def.placeholder || '') + '" autofocus>';
+        }
+
+        body += '<div class="adm-buttons">' +
+                    '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                    '<button class="btn primary" onclick="saveField(\'' + fieldKey + '\')">Save</button>' +
+                '</div>';
+        openFlowModal('Edit ' + label, body, 'Changes are audited in the note history.');
+        setTimeout(function () { const el = document.getElementById('ef_input'); if (el) el.focus && el.focus(); }, 50);
+    };
+
+    // Home-meds row helpers (used by the 'meds' kind editor)
+    function medRowHtml(m, i) {
+        return '<div class="med-row" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:4px;">' +
+            '<input class="ef-med-name" placeholder="Medication" value="' + esc((m && m.med) || '') + '">' +
+            '<input class="ef-med-dose" placeholder="Dose" value="' + esc((m && m.dose) || '') + '">' +
+            '<input class="ef-med-route" placeholder="Route" value="' + esc((m && m.route) || '') + '">' +
+            '<input class="ef-med-freq" placeholder="Frequency" value="' + esc((m && m.freq) || '') + '">' +
+            '<button class="btn sm" onclick="this.parentNode.remove()">\u00d7</button>' +
+        '</div>';
+    }
+    window.addHomeMedRow = function () {
+        const list = document.getElementById('ef_meds_list');
+        if (!list) return;
+        const div = document.createElement('div');
+        div.innerHTML = medRowHtml({}, list.children.length);
+        list.appendChild(div.firstChild);
+    };
+
+    window.saveField = function (fieldKey) {
+        const def = FIELD_DEFS[fieldKey];
+        const p = currentPatient;
+        const encId = p.currentEncounterId;
+        const enc = allEncounters[encId];
+        const input = document.getElementById('ef_input');
+        if (!input) return;
+        let oldVal, newVal;
+        if (def.kind === 'allergies') {
+            oldVal = Array.isArray(p.allergies) ? p.allergies.join(', ') : (p.allergies || '');
+            const raw = (input.value || '').trim();
+            newVal = raw ? raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : ['NKDA'];
+        } else if (def.kind === 'meds') {
+            oldVal = Array.isArray(p.homeMedications) ? p.homeMedications.map(function (m) { return m.med + ' ' + m.dose + ' ' + m.route + ' ' + m.freq; }).join('; ') : '';
+            const rows = document.querySelectorAll('#ef_meds_list .med-row');
+            const parsed = [];
+            rows.forEach(function (r) {
+                const med = (r.querySelector('.ef-med-name').value || '').trim();
+                if (!med) return; // skip empty rows
+                parsed.push({
+                    med: med,
+                    dose:  (r.querySelector('.ef-med-dose').value || '').trim(),
+                    route: (r.querySelector('.ef-med-route').value || '').trim(),
+                    freq:  (r.querySelector('.ef-med-freq').value || '').trim()
+                });
+            });
+            newVal = parsed;
+        } else if (def.kind === 'toggle') {
+            oldVal = def.level === 'patient' ? p[fieldKey] : enc[fieldKey];
+            newVal = input.checked;
+        } else if (def.kind === 'number') {
+            oldVal = def.level === 'patient' ? p[fieldKey] : enc[fieldKey];
+            newVal = input.value === '' ? null : parseFloat(input.value);
+        } else {
+            oldVal = def.level === 'patient' ? p[fieldKey] : enc[fieldKey];
+            newVal = (input.value || '').trim() || null;
+        }
+
+        const displayOld = (function (v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined || v === '' ? '—' : String(v)); })(oldVal);
+        const displayNew = (function (v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined || v === '' ? '—' : String(v)); })(newVal);
+        if (displayOld === displayNew) { closeFlowModal(); return; }
+
+        const now = Date.now();
+        const updates = {};
+        if (def.level === 'patient') {
+            updates['emr/patients/' + p.id + '/' + fieldKey] = newVal;
+        } else {
+            updates['emr/encounters/' + encId + '/' + fieldKey] = newVal;
+        }
+        // Audit note (always attached to the CURRENT encounter so it shows in the notes history)
+        if (encId) {
+            const labelMap = {
+                allergies:'Allergies', pmh:'Past Medical Hx', socialHx:'Social Hx',
+                dx:'Diagnosis', md:'Attending MD', codeStatus:'Code Status',
+                diet:'Diet', activity:'Activity', ivAccess:'IV Access',
+                isolation:'Isolation', fallRisk:'Fall Risk', dnr:'DNR',
+                acuity:'Acuity', weightKg:'Weight (kg)', heightIn:'Height (in)'
+            };
+            const label = labelMap[fieldKey] || fieldKey;
+            const noteKey = database.ref('emr/notes/' + p.id).push().key;
+            updates['emr/notes/' + p.id + '/' + noteKey] = {
+                encounterId: encId, type: 'chart-edit',
+                body: 'Chart edit: ' + label + ' changed from "' + displayOld + '" to "' + displayNew + '".',
+                by: currentUserName, timestamp: now
+            };
+        }
+        database.ref().update(updates).then(function () {
+            showToast(fieldKey + ' updated.', 'success');
+            closeFlowModal();
+        }).catch(function (err) { showToast('Save failed: ' + (err.message || err), 'error'); });
+    };
+
+    // ===========================================================
+    // [2800] PHASE 3A — STATUS NOTE (inline edit on boards + chart)
+    // ===========================================================
+
+    // Called from click handler on any status-note element.
+    // target = element that was clicked; encId = encounter id.
+    window.editStatusNote = function (target, encId, ev) {
+        if (ev) ev.stopPropagation();
+        const enc = allEncounters[encId];
+        if (!enc) return;
+        if (enc.status !== 'active') { showToast('Read-only (encounter completed).', 'warning'); return; }
+        // Replace element with textarea
+        const existing = enc.statusNote || '';
+        const ta = document.createElement('textarea');
+        ta.className = 'status-note-editor';
+        ta.value = existing;
+        ta.maxLength = 160;
+        ta.placeholder = 'e.g., pending psych consult, family in waiting room, NPO for 1400 OR';
+        target.parentNode.replaceChild(ta, target);
+        ta.focus();
+        ta.select();
+        let saved = false;
+        function save() {
+            if (saved) return;
+            saved = true;
+            const newVal = ta.value.trim();
+            if (newVal === existing) { /* no change */ re_render(); return; }
+            const updates = {};
+            updates['emr/encounters/' + encId + '/statusNote'] = newVal || null;
+            updates['emr/encounters/' + encId + '/statusNoteUpdatedAt'] = Date.now();
+            updates['emr/encounters/' + encId + '/statusNoteUpdatedBy'] = currentUserName;
+            database.ref().update(updates);
+            // Listeners will re-render automatically.
+        }
+        function re_render() {
+            // Trigger re-render by re-running the appropriate renderer
+            if (currentPatientId && currentPatient && currentPatient.currentEncounterId === encId) {
+                renderChartHeader();
+            } else {
+                renderBoard();
+            }
+        }
+        ta.addEventListener('blur', function () { save(); });
+        ta.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { saved = true; re_render(); }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ta.blur(); }
+        });
+    };
+
+    // Build the HTML for a status-note chip (used in bed cards, chart header, and manager cell)
+    function statusNoteHtml(enc) {
+        if (!enc) return '';
+        const val = enc.statusNote || '';
+        const classes = 'status-note' + (val ? '' : ' empty');
+        const display = val ? esc(val) : '+ Add status note';
+        const encId = Object.keys(allEncounters).find(function (k) { return allEncounters[k] === enc; }) || '';
+        return '<div class="' + classes + '" onclick="editStatusNote(this, \'' + esc(encId) + '\', event)" title="Click to edit">' + display + '</div>';
+    }
+
+    // For manager-view cell
+    function statusNoteMgrCellHtml(enc) {
+        if (!enc) return '<td></td>';
+        const val = enc.statusNote || '';
+        const cls = 'mgr-status-note' + (val ? '' : ' empty');
+        const encId = Object.keys(allEncounters).find(function (k) { return allEncounters[k] === enc; }) || '';
+        const display = val ? esc(val) : '+ Add';
+        return '<td class="' + cls + '" onclick="editStatusNote(this, \'' + esc(encId) + '\', event)" title="' + esc(val || 'Add status note') + '">' + display + '</td>';
+    }
+
+    // ===========================================================
+    // [2850] LDAs TAB — list, add, site-check, discontinue
+    // ===========================================================
+    const LDA_TYPES = ['PIV','CVC','PICC','Art-line','Foley','NG','OG','ETT','Trach','Chest-tube','JP-drain','Hemovac','PEG','Epidural','External-fixator','Other'];
+    const LDA_GROUPS = {
+        'IV Access': ['PIV','CVC','PICC','Art-line'],
+        'Drains':    ['JP-drain','Hemovac','Chest-tube'],
+        'Airways':   ['ETT','Trach'],
+        'Tubes':     ['Foley','NG','OG','PEG'],
+        'Other':     ['Epidural','External-fixator','Other']
+    };
+
+    function renderLdasTab() {
+        const el = document.getElementById('tab-ldas');
+        const ro = chartReadOnly;
+        const ldas = currentLdas.filter(function (l) { return l.status !== 'removed'; });
+        const removedCount = currentLdas.filter(function (l) { return l.status === 'removed'; }).length;
+
+        // Add button
+        const addBtn = ro ? '' : '<button class="btn sm primary" onclick="openAddLdaModal()">+ Add LDA</button>';
+
+        // Group by our groupings
+        function groupFor(type) {
+            for (const g of Object.keys(LDA_GROUPS)) {
+                if (LDA_GROUPS[g].indexOf(type) !== -1) return g;
+            }
+            return 'Other';
+        }
+        const groups = {};
+        ldas.forEach(function (l) {
+            const g = groupFor(l.type);
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(l);
+        });
+
+        let html = '<div class="emr-panel">' +
+            '<div class="emr-panel-hd"><span>Lines / Drains / Airways</span>' +
+                '<div style="display:flex;gap:8px;align-items:center;">' +
+                    (removedCount ? '<span style="font-size:11px;color:var(--clx-text-muted);">' + removedCount + ' removed (hidden)</span>' : '') +
+                    addBtn +
+                '</div>' +
+            '</div>' +
+            '<div class="emr-panel-bd">';
+
+        if (!ldas.length) {
+            html += '<div class="vitals-empty">No active lines, drains, or airways for this encounter.' + (ro ? '' : ' Click "+ Add LDA" to start.') + '</div>';
+        } else {
+            Object.keys(LDA_GROUPS).forEach(function (g) {
+                const items = groups[g];
+                if (!items || !items.length) return;
+                html += '<div class="mgr-section-title">' + esc(g) + '</div>';
+                html += '<div class="lda-list">' + items.map(function (l) { return ldaRowHtml(l, ro); }).join('') + '</div>';
+            });
+        }
+
+        html += '</div></div>';
+        el.innerHTML = html;
+    }
+
+    function ldaRowHtml(lda, ro) {
+        const days = lda.insertDate ? Math.floor((Date.now() - lda.insertDate) / 86400000) : 0;
+        const dayLabel = days === 0 ? 'Day 0 (today)' : 'Day ' + days;
+        const lastAssessed = lda.lastAssessedAt
+            ? '<span data-elapsed-ts="' + lda.lastAssessedAt + '">' + esc(fmtElapsed(lda.lastAssessedAt)) + '</span> by ' + esc(lda.lastAssessedBy || '—')
+            : '<span style="color:#b91c1c;">never</span>';
+        return '<div class="lda-row">' +
+            '<div class="lda-main">' +
+                '<div class="lda-head"><strong>' + esc(lda.type) + '</strong> · ' + esc(lda.site || '—') + ' · ' + esc(lda.size || '—') + '</div>' +
+                '<div class="lda-sub">Inserted ' + esc(fmtTime(lda.insertDate)) + ' by ' + esc(lda.insertedBy || '—') + ' · <strong>' + dayLabel + '</strong></div>' +
+                (lda.notes ? '<div class="lda-notes">' + esc(lda.notes) + '</div>' : '') +
+                '<div class="lda-sub">Last site check: ' + lastAssessed + '</div>' +
+            '</div>' +
+            (ro ? '' :
+                '<div class="lda-actions">' +
+                    '<button class="btn sm" onclick="chartLdaSiteCheck(\'' + esc(lda._key) + '\')">Chart site check</button>' +
+                    '<button class="btn sm danger" onclick="openDischargeLdaModal(\'' + esc(lda._key) + '\')">D/C</button>' +
+                '</div>'
+            ) +
+        '</div>';
+    }
+
+    window.openAddLdaModal = function () {
+        if (chartReadOnly) return;
+        const opts = LDA_TYPES.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('');
+        const body = '<div class="flow-form-grid">' +
+                '<div class="ff-field"><label>Type</label><select id="lda_type">' + opts + '</select></div>' +
+                '<div class="ff-field"><label>Site / Location</label><input id="lda_site" placeholder="e.g., L AC, R IJ, R chest"></div>' +
+                '<div class="ff-field"><label>Size / Details</label><input id="lda_size" placeholder="e.g., 20g, 7 Fr, 8.0 cuff"></div>' +
+                '<div class="ff-field"><label>Inserted By</label><input id="lda_by" value="' + esc(currentUserName) + '"></div>' +
+                '<div class="ff-field full-row"><label>Notes (optional)</label><textarea id="lda_notes" rows="2" placeholder="e.g., First attempt, patent with positive blood return"></textarea></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="saveNewLda()">Add LDA</button>' +
+            '</div>';
+        openFlowModal('Add LDA', body, 'Line / Drain / Airway');
+    };
+
+    window.saveNewLda = function () {
+        const encId = activeEncounterIdForView();
+        if (!encId || !currentPatientId) return;
+        const type = document.getElementById('lda_type').value;
+        const site = (document.getElementById('lda_site').value || '').trim();
+        const size = (document.getElementById('lda_size').value || '').trim();
+        const by   = (document.getElementById('lda_by').value || '').trim() || currentUserName;
+        const notes= (document.getElementById('lda_notes').value || '').trim();
+        if (!site) { showToast('Site required.', 'warning'); return; }
+        const now = Date.now();
+        const key = database.ref('emr/ldas/' + encId).push().key;
+        const updates = {};
+        updates['emr/ldas/' + encId + '/' + key] = {
+            encounterId: encId, patientId: currentPatientId,
+            type: type, site: site, size: size || null,
+            insertDate: now, insertedBy: by,
+            status: 'active', notes: notes,
+            lastAssessedAt: null, lastAssessedBy: null, lastDressingChange: null
+        };
+        const nKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + nKey] = {
+            encounterId: encId, type: 'narrative',
+            body: 'LDA ADDED: ' + type + ' to ' + site + (size ? ' (' + size + ')' : '') + ' by ' + by + ' at ' + fmtTime(now) + (notes ? '. ' + notes : '.'),
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast(type + ' added.', 'success');
+            closeFlowModal();
+        });
+    };
+
+    window.chartLdaSiteCheck = function (ldaKey) {
+        if (chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const lda = currentLdas.find(function (l) { return l._key === ldaKey; });
+        if (!lda) return;
+        const now = Date.now();
+        const prefill = lda.type + ' at ' + lda.site + ' (day ' + Math.floor((now - lda.insertDate) / 86400000) + '): site clean/dry/intact, dressing intact, patent, no signs of infection/infiltration.';
+        const body = '<div class="flow-form-grid"><div class="ff-field full-row"><label>Site check note</label><textarea id="sc_note" rows="4" autofocus>' + esc(prefill) + '</textarea></div>' +
+            '<div class="ff-field"><label><input type="checkbox" id="sc_dressing"> Dressing changed</label></div></div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="saveSiteCheck(\'' + esc(ldaKey) + '\')">Save Site Check</button>' +
+            '</div>';
+        openFlowModal('Site Check: ' + lda.type + ' · ' + lda.site, body);
+    };
+
+    window.saveSiteCheck = function (ldaKey) {
+        const encId = activeEncounterIdForView();
+        if (!encId || !currentPatientId) return;
+        const note = (document.getElementById('sc_note').value || '').trim();
+        const dressingChanged = document.getElementById('sc_dressing').checked;
+        if (!note) { showToast('Note required.', 'warning'); return; }
+        const now = Date.now();
+        const updates = {};
+        updates['emr/ldas/' + encId + '/' + ldaKey + '/lastAssessedAt'] = now;
+        updates['emr/ldas/' + encId + '/' + ldaKey + '/lastAssessedBy'] = currentUserName;
+        if (dressingChanged) updates['emr/ldas/' + encId + '/' + ldaKey + '/lastDressingChange'] = now;
+        const nKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + nKey] = {
+            encounterId: encId, type: 'narrative',
+            body: 'LDA SITE CHECK — ' + note + (dressingChanged ? ' Dressing changed.' : ''),
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Site check saved.', 'success');
+            closeFlowModal();
+        });
+    };
+
+    window.openDischargeLdaModal = function (ldaKey) {
+        if (chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        const lda = currentLdas.find(function (l) { return l._key === ldaKey; });
+        if (!lda || !encId) return;
+        const body = '<div class="adm-info-block"><span class="lbl">Remove LDA</span><span class="val">' + esc(lda.type + ' · ' + lda.site) + '</span></div>' +
+            '<div class="flow-form-grid"><div class="ff-field full-row"><label>Reason / observations on removal</label><textarea id="dc_lda" rows="3" placeholder="e.g., No longer needed; site intact; no signs of infection; tip intact."></textarea></div></div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn danger-solid" onclick="confirmDischargeLda(\'' + esc(ldaKey) + '\')">Remove</button>' +
+            '</div>';
+        openFlowModal('Remove LDA', body);
+    };
+    window.confirmDischargeLda = function (ldaKey) {
+        const encId = activeEncounterIdForView();
+        if (!encId || !currentPatientId) return;
+        const reason = (document.getElementById('dc_lda').value || '').trim();
+        if (!reason) { showToast('Reason required.', 'warning'); return; }
+        const lda = currentLdas.find(function (l) { return l._key === ldaKey; });
+        const now = Date.now();
+        const updates = {};
+        updates['emr/ldas/' + encId + '/' + ldaKey + '/status'] = 'removed';
+        updates['emr/ldas/' + encId + '/' + ldaKey + '/removedAt'] = now;
+        updates['emr/ldas/' + encId + '/' + ldaKey + '/removedBy'] = currentUserName;
+        const nKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + nKey] = {
+            encounterId: encId, type: 'narrative',
+            body: 'LDA REMOVED: ' + (lda ? lda.type + ' · ' + lda.site : ldaKey) + '. ' + reason,
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('LDA removed.', 'success');
+            closeFlowModal();
+        });
+    };
+
     // ---- Helpers ----
     function availableBedsForUnit(unit) {
         const bedMap = allBeds[unit] || {};
@@ -3663,6 +4289,19 @@
         if (unit === 'ED') ED_HALL_BEDS.forEach(function (b) { if (!bedMap[b]) out.push(b); });
         return out;
     }
+    // MRN generator — next sequential SIM-NNNNN not in use
+    function generateNewMRN() {
+        let maxNum = 30000; // baseline above seeded range (20001 unadmitted, 10001-10018 admitted)
+        Object.values(allPatients).forEach(function (p) {
+            const m = /^SIM-(\d+)$/.exec(p && p.mrn || '');
+            if (m) {
+                const n = parseInt(m[1], 10);
+                if (!isNaN(n) && n >= maxNum) maxNum = n + 1;
+            }
+        });
+        return 'SIM-' + String(maxNum).padStart(5, '0');
+    }
+
     function calcAge(dobStr) {
         if (!dobStr) return 0;
         const dob = new Date(dobStr);
@@ -3695,14 +4334,39 @@
     function fmtTime(ts) {
         if (!ts) return '—';
         const d = new Date(ts);
-        return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
     function fmtTimeShort(ts) {
         if (!ts) return '—';
         const d = new Date(ts);
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
+
+    // Phase 3A: elapsed time formatter — auto-updates via polling
+    function fmtElapsed(ts) {
+        if (!ts) return '—';
+        const diff = Date.now() - ts;
+        if (diff < 0) return 'future';
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return mins + 'm ago';
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return hours + 'h ' + (mins % 60) + 'm ago';
+        const days = Math.floor(hours / 24);
+        if (days < 30) return days + 'd ago';
+        const months = Math.floor(days / 30);
+        return months + 'mo ago';
+    }
+
+    // Inline-edit utility: elements with [data-elapsed-ts] are re-rendered every 30s.
+    function refreshElapsedElements() {
+        document.querySelectorAll('[data-elapsed-ts]').forEach(function (el) {
+            const ts = parseInt(el.getAttribute('data-elapsed-ts'), 10);
+            if (!isNaN(ts)) el.textContent = fmtElapsed(ts);
+        });
+    }
+    setInterval(refreshElapsedElements, 30000);
     </script>
 
 </body>

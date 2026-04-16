@@ -13,7 +13,7 @@
    No real NDC codes, NPIs, MRNs, or provider identities.
    ========================================================= */
 
-const SEED_VERSION = 2;
+const SEED_VERSION = 3;
 
 // ---- Allergy → med-name substring triggers (case-insensitive) ----
 const ALLERGY_TRIGGERS = {
@@ -1024,6 +1024,88 @@ const CHART_BY_PATIENT = {
     }
 };
 
+// =========================================================
+// LDAs (Lines / Drains / Airways) seed — keyed by patient ID
+// Attached to the patient's current encounter during migration.
+// =========================================================
+const SEED_LDAS = {
+    p_marcus_webb: [
+        { type: 'PIV', site: 'L AC', size: '20g', daysAgo: 0.2, insertedBy: 'ED RN (seeded)' }
+    ],
+    p_amara_diallo: [
+        { type: 'PIV', site: 'R hand', size: '22g', daysAgo: 0.3, insertedBy: 'ED RN (seeded)' }
+    ],
+    p_leonard_kowalski: [
+        { type: 'PIV', site: 'L AC', size: '20g', daysAgo: 0.1, insertedBy: 'ED RN (seeded)' }
+    ],
+    p_sofia_reyes: [
+        { type: 'PIV', site: 'L AC', size: '18g', daysAgo: 0.3, insertedBy: 'ED RN (seeded)' }
+    ],
+    p_thomas_brandt: [
+        { type: 'PIV', site: 'L hand', size: '20g', daysAgo: 0.3, insertedBy: 'ED RN (seeded)' },
+        { type: 'Foley', site: 'Urethral', size: '16 Fr', daysAgo: 0.3, insertedBy: 'ED RN (seeded)', notes: 'Pre-op for hip ORIF' }
+    ],
+    p_priya_kapoor: [
+        { type: 'PIV', site: 'R AC', size: '18g', daysAgo: 0.25, insertedBy: 'ED RN (seeded)' },
+        { type: 'PIV', site: 'L AC', size: '20g', daysAgo: 0.25, insertedBy: 'ED RN (seeded)' },
+        { type: 'Foley', site: 'Urethral', size: '14 Fr', daysAgo: 0.2, insertedBy: 'ED RN (seeded)', notes: 'For strict I&O — septic shock protocol' }
+    ],
+    p_james_holloway: [
+        { type: 'PIV', site: 'R AC', size: '18g', daysAgo: 0.3, insertedBy: 'ED RN (seeded)' }
+    ],
+    p_helen_cho: [
+        { type: 'PIV', site: 'R hand', size: 'SL (22g)', daysAgo: 2, insertedBy: 'Pre-op RN (seeded)', status: 'active',
+          notes: 'Saline lock — per PACU protocol' },
+        { type: 'JP-drain', site: 'R knee lateral', size: '10 Fr', daysAgo: 2, insertedBy: 'OR team (seeded)',
+          notes: 'Surgical drain post-TKR' }
+    ],
+    p_robert_dimaggio: [
+        { type: 'PIV', site: 'L hand', size: '22g', daysAgo: 1.2, insertedBy: 'Floor RN (seeded)' }
+    ],
+    p_angela_freeman: [
+        { type: 'PIV', site: 'L AC', size: '18g', daysAgo: 1.5, insertedBy: 'ED RN (seeded)', notes: 'Insulin drip' }
+    ],
+    p_walter_huang: [
+        { type: 'PIV', site: 'R AC', size: '20g', daysAgo: 2, insertedBy: 'Floor RN (seeded)' },
+        { type: 'PEG', site: 'Upper abdomen', size: '20 Fr', daysAgo: 365, insertedBy: 'Home (pre-existing)',
+          notes: 'Long-term feeding tube; flush q6h with 30 mL water' }
+    ],
+    p_dorothy_nguyen: [
+        { type: 'CVC', site: 'R IJ (triple-lumen)', size: '7 Fr', daysAgo: 1, insertedBy: 'ICU intensivist (seeded)',
+          notes: 'Triple-lumen: norepi + maintenance + meds' },
+        { type: 'Foley', site: 'Urethral', size: '14 Fr', daysAgo: 1, insertedBy: 'ICU RN (seeded)',
+          notes: 'Strict I&O, hourly' }
+    ],
+    p_miguel_torres: [
+        { type: 'PIV', site: 'R AC', size: '18g', daysAgo: 0.1, insertedBy: 'Cath lab (seeded)' },
+        { type: 'Art-line', site: 'L radial', size: '20g', daysAgo: 0.1, insertedBy: 'Cath lab (seeded)',
+          notes: 'Continuous BP monitoring — zero q4h' },
+        { type: 'Foley', site: 'Urethral', size: '14 Fr', daysAgo: 0.1, insertedBy: 'Cath lab (seeded)' }
+    ],
+    p_rachel_okonkwo: [
+        { type: 'PIV', site: 'R AC', size: '18g', daysAgo: 0.1, insertedBy: 'L&D RN (seeded)', notes: 'Mag drip' },
+        { type: 'PIV', site: 'L AC', size: '18g', daysAgo: 0.1, insertedBy: 'L&D RN (seeded)', notes: 'Maintenance fluids' },
+        { type: 'Foley', site: 'Urethral', size: '14 Fr', daysAgo: 0.1, insertedBy: 'L&D RN (seeded)',
+          notes: 'Mag protocol — monitor hourly U/O' }
+    ],
+    p_denise_abara: [
+        { type: 'PIV', site: 'L hand', size: 'SL (22g)', daysAgo: 3, insertedBy: 'Floor RN (seeded)', notes: 'Saline lock' },
+        { type: 'Chest-tube', site: 'R mediastinal', size: '32 Fr', daysAgo: 3, insertedBy: 'OR team (seeded)',
+          notes: 'Post-CABG mediastinal; -20 cmH2O suction; output monitored q2h' }
+    ],
+    p_frank_ostrowski: [
+        { type: 'PIV', site: 'R hand', size: 'SL (22g)', daysAgo: 2, insertedBy: 'ED RN (seeded)' }
+    ],
+    p_kezia_williams: [
+        { type: 'PIV', site: 'L AC', size: '18g', daysAgo: 0.15, insertedBy: 'L&D RN (seeded)', notes: 'Oxytocin drip + maintenance fluids' },
+        { type: 'Epidural', site: 'L3-L4', size: '18g catheter', daysAgo: 0.1, insertedBy: 'Anesthesia (seeded)',
+          notes: 'PCEA with bupivacaine/fentanyl' }
+    ],
+    p_natalie_chen: [
+        { type: 'PIV', site: 'R hand', size: 'SL (22g)', daysAgo: 1.2, insertedBy: 'L&D RN (seeded)', notes: 'Saline lock post-delivery' }
+    ]
+};
+
 // Prior-encounter sparse sample data for unadmitted patients
 // Each entry array matches SEED_UNADMITTED_PATIENTS[i].priorEncounters[j]
 const UNADMITTED_PRIOR_CHART = {
@@ -1109,5 +1191,6 @@ window.EMR_SEED = {
     SEED_PATIENTS: SEED_PATIENTS,
     SEED_UNADMITTED_PATIENTS: SEED_UNADMITTED_PATIENTS,
     CHART_BY_PATIENT: CHART_BY_PATIENT,
-    UNADMITTED_PRIOR_CHART: UNADMITTED_PRIOR_CHART
+    UNADMITTED_PRIOR_CHART: UNADMITTED_PRIOR_CHART,
+    SEED_LDAS: SEED_LDAS
 };
