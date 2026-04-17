@@ -704,6 +704,34 @@
         .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
         .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
 
+        /* Phase 3F-lite: Scenario picker */
+        .scenario-list { display: flex; flex-direction: column; gap: 8px; }
+        .scenario-card {
+            display: flex; gap: 14px; align-items: flex-start;
+            padding: 14px 16px; border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px; cursor: pointer; background: var(--clx-bg-surface, #fff);
+            transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+        }
+        .scenario-card:hover {
+            border-color: var(--clx-accent, #0f7490); box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateY(-1px);
+        }
+        .scenario-card.active { border-left: 4px solid #16a34a; background: var(--clx-bg-surface-2, #f5f8fa); }
+        .scenario-card .sc-icon { font-size: 28px; flex-shrink: 0; line-height: 1; }
+        .scenario-card .sc-main { flex: 1; min-width: 0; }
+        .scenario-card .sc-title {
+            font-size: 15px; font-weight: 700; color: var(--clx-text-primary); margin-bottom: 4px;
+        }
+        .scenario-card .sc-active-tag {
+            font-size: 10px; background: #16a34a; color: #fff;
+            padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.04em;
+        }
+        .scenario-card .sc-desc {
+            font-size: 12px; color: var(--clx-text-secondary, #4a5568); line-height: 1.45; margin-bottom: 6px;
+        }
+        .scenario-card .sc-stats {
+            font-size: 11px; color: var(--clx-text-muted, #718096);
+        }
+
         /* Phase 3A.5b: Role chip on notes */
         .role-chip {
             display: inline-block; color: #fff; font-size: 10px; font-weight: 700;
@@ -971,6 +999,10 @@
                 <span class="clx-sidebar-icon">➕</span>
                 <span class="clx-sidebar-label">Admit Patient</span>
             </button>
+            <button class="clx-sidebar-item" onclick="openScenarioPicker()">
+                <span class="clx-sidebar-icon">🎬</span>
+                <span class="clx-sidebar-label">Scenarios</span>
+            </button>
 
             <div class="clx-sidebar-section" style="margin-top:10px;">Account</div>
             <a href="/home/" class="clx-sidebar-item">
@@ -1111,6 +1143,8 @@
 
     <!-- Seed data first -->
     <script src="/emr/seed-data.js"></script>
+    <!-- Scenario packs (Phase 3F-lite) -->
+    <script src="/emr/scenarios.js"></script>
     <!-- Toast + shared header -->
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
@@ -4032,6 +4066,317 @@
             '<div class="emr-panel-hd"><span>Encounters (' + encs.length + ')</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Click to view chart data from that encounter</span></div>' +
             '<div class="emr-panel-bd">' + rows + '</div>' +
         '</div>';
+    }
+
+    // ===========================================================
+    // [2700] PHASE 3F-lite — Scenario Launcher
+    // ===========================================================
+    window.openScenarioPicker = function () {
+        if (!window.EMR_SCENARIOS) {
+            showToast('Scenario packs not loaded.', 'error');
+            return;
+        }
+        const seed = window.EMR_SEED;
+        // Get the active scenario id (if any) for highlighting
+        database.ref('emr/meta/activeScenario').once('value').then(function (snap) {
+            const activeId = snap.val();
+            renderScenarioPickerModal(seed, activeId);
+        }).catch(function () {
+            renderScenarioPickerModal(seed, null);
+        });
+    };
+
+    function renderScenarioPickerModal(seed, activeId) {
+        const scenarios = window.EMR_SCENARIOS;
+        const cards = Object.keys(scenarios).map(function (key) {
+            const sc = scenarios[key];
+            // Build a preview of the scenario
+            let preview;
+            try { preview = sc.build(seed); } catch (e) { preview = { label: key, description: '(preview failed)' }; }
+            const isActive = activeId === key;
+            return '<div class="scenario-card' + (isActive ? ' active' : '') + '" onclick="loadScenarioPick(\'' + esc(key) + '\')">' +
+                '<div class="sc-icon">' + sc.icon + '</div>' +
+                '<div class="sc-main">' +
+                    '<div class="sc-title">' + esc(preview.label) + (isActive ? ' <span class="sc-active-tag">CURRENT</span>' : '') + '</div>' +
+                    '<div class="sc-desc">' + esc(preview.description) + '</div>' +
+                    '<div class="sc-stats">' +
+                        '<span>' + (preview.patients ? preview.patients.length : 0) + ' admitted</span>' +
+                        ' · <span>' + (preview.waitingRoom ? preview.waitingRoom.length : 0) + ' in waiting room</span>' +
+                        ' · <span>' + (preview.unadmitted ? preview.unadmitted.length : 0) + ' unadmitted in registry</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+        const body =
+            '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:14px;">' +
+                'Pick a scenario to reset the entire hospital state. <strong>This wipes all current EMR data and reloads the chosen scenario.</strong>' +
+                ' Use "Empty Hospital" for a clean slate.' +
+            '</p>' +
+            '<div class="scenario-list">' + cards + '</div>';
+        openFlowModal('🎬 Scenario Launcher', body, 'Reset hospital-wide simulation state');
+    }
+
+    // Click on a scenario card opens the PREVIEW modal (not destructive yet)
+    window.loadScenarioPick = function (scenarioKey) {
+        const scenarios = window.EMR_SCENARIOS;
+        if (!scenarios || !scenarios[scenarioKey]) return;
+        const seed = window.EMR_SEED;
+        let plan;
+        try { plan = scenarios[scenarioKey].build(seed); }
+        catch (e) { showToast('Scenario build failed: ' + (e.message || e), 'error'); return; }
+        renderScenarioPreviewModal(scenarioKey, plan);
+    };
+
+    function renderScenarioPreviewModal(scenarioKey, plan) {
+        // Build a scrollable summary of what the scenario contains
+        const sc = window.EMR_SCENARIOS[scenarioKey];
+
+        // Group admitted patients by unit
+        const byUnit = { ED: [], MS: [], ICU: [], PCU: [], OB: [] };
+        (plan.patients || []).forEach(function (p) {
+            const u = p.currentEncounter && p.currentEncounter.unit;
+            if (byUnit[u]) byUnit[u].push(p);
+        });
+
+        // Patients with status note overrides (Night Shift Cascade)
+        const statusOverrides = plan.statusNotes || {};
+
+        let html = '<div style="max-height:65vh;overflow-y:auto;padding-right:6px;">';
+
+        // Header card
+        html += '<div class="adm-info-block">' +
+            '<span class="lbl">Scenario</span>' +
+            '<span class="val" style="font-size:16px;">' + sc.icon + ' ' + esc(plan.label) + '</span>' +
+            '<div style="font-size:12px;color:var(--clx-text-muted);margin-top:6px;line-height:1.5;">' + esc(plan.description) + '</div>' +
+        '</div>';
+
+        // Summary counts
+        html += '<div class="emr-panel"><div class="emr-panel-hd"><span>Summary</span></div><div class="emr-panel-bd" style="font-size:13px;">' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">' +
+                '<div><strong style="font-size:18px;">' + (plan.patients || []).length + '</strong><div style="font-size:11px;color:var(--clx-text-muted);">Admitted Patients</div></div>' +
+                '<div><strong style="font-size:18px;">' + (plan.waitingRoom || []).length + '</strong><div style="font-size:11px;color:var(--clx-text-muted);">In ED Waiting Room</div></div>' +
+                '<div><strong style="font-size:18px;">' + (plan.unadmitted || []).length + '</strong><div style="font-size:11px;color:var(--clx-text-muted);">In Patient Registry</div></div>' +
+                '<div><strong style="font-size:18px;">' + Object.keys(statusOverrides).length + '</strong><div style="font-size:11px;color:var(--clx-text-muted);">Active Issues</div></div>' +
+            '</div>' +
+        '</div></div>';
+
+        // Per-unit patient lists
+        UNIT_ORDER.forEach(function (unit) {
+            const list = byUnit[unit];
+            if (!list || !list.length) return;
+            html += '<div class="emr-panel"><div class="emr-panel-hd"><span>' + esc(UNIT_NAMES[unit]) + ' (' + list.length + ')</span></div>' +
+                '<div class="emr-panel-bd" style="padding:8px 12px;font-size:12px;">' +
+                    list.map(function (p) {
+                        const enc = p.currentEncounter;
+                        const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(enc.acuity || 1) - 1] || '#9ca3af';
+                        const issue = statusOverrides[p.id];
+                        return '<div style="padding:6px 0;border-bottom:1px solid var(--clx-border);">' +
+                            '<div style="display:flex;align-items:center;gap:8px;">' +
+                                '<span style="display:inline-block;width:18px;height:18px;border-radius:9px;background:' + acuityColor + ';color:#fff;font-size:11px;font-weight:700;text-align:center;line-height:18px;flex-shrink:0;">' + (enc.acuity || '?') + '</span>' +
+                                '<strong>' + esc(enc.bed) + '</strong> · ' + esc(p.name) + ' (' + esc(p.sex) + ' ' + esc(String(p.age)) + ')' +
+                            '</div>' +
+                            '<div style="margin-left:26px;color:var(--clx-text-secondary);font-size:11px;">' + esc(enc.dx || '') + '</div>' +
+                            (issue ? '<div style="margin-left:26px;color:#9a3412;font-size:11px;font-weight:600;">⚠ ' + esc(issue) + '</div>' : '') +
+                        '</div>';
+                    }).join('') +
+            '</div></div>';
+        });
+
+        // Waiting room
+        if (plan.waitingRoom && plan.waitingRoom.length) {
+            html += '<div class="emr-panel" style="border-left:4px solid #f97316;"><div class="emr-panel-hd"><span>🛋️ ED Waiting Room (' + plan.waitingRoom.length + ')</span></div>' +
+                '<div class="emr-panel-bd" style="padding:8px 12px;font-size:12px;">' +
+                    plan.waitingRoom.map(function (wr) {
+                        const enc = wr.encounter;
+                        const ptName = wr.isNew ? wr.patient.name : ((window.EMR_SEED && window.EMR_SEED.SEED_UNADMITTED_PATIENTS.find(function(u) { return u.id === wr.patientId; }) || {}).name || wr.patientId);
+                        const ptMeta = wr.isNew
+                            ? wr.patient.sex + ' ' + wr.patient.age + ' (NEW)'
+                            : ((window.EMR_SEED && window.EMR_SEED.SEED_UNADMITTED_PATIENTS.find(function(u) { return u.id === wr.patientId; }) || {}).sex || '') + ' (returning)';
+                        return '<div style="padding:6px 0;border-bottom:1px solid var(--clx-border);">' +
+                            '<div><strong>ESI ' + (enc.esiAcuity || '?') + '</strong> · ' + esc(ptName) + ' (' + esc(ptMeta) + ') · ' + esc(enc.arrivalMode || '') + '</div>' +
+                            '<div style="color:var(--clx-text-secondary);font-size:11px;margin-top:2px;">' + esc(enc.chiefComplaint || enc.dx || '—') + '</div>' +
+                        '</div>';
+                    }).join('') +
+            '</div></div>';
+        }
+
+        html += '</div>'; // close scroll area
+
+        html += '<div class="adm-buttons">' +
+            '<button class="btn" onclick="renderScenarioPickerBack()">← Back to scenarios</button>' +
+            '<button class="btn danger-solid" onclick="confirmScenarioLoad(\'' + esc(scenarioKey) + '\')">⚠ Wipe &amp; Load This Scenario</button>' +
+        '</div>';
+
+        openFlowModal('Preview: ' + plan.label, html, 'Review what will be loaded before resetting hospital state');
+    }
+
+    window.renderScenarioPickerBack = function () { openScenarioPicker(); };
+
+    window.confirmScenarioLoad = function (scenarioKey) {
+        const scenarios = window.EMR_SCENARIOS;
+        let plan;
+        try { plan = scenarios[scenarioKey].build(window.EMR_SEED); }
+        catch (e) { showToast('Scenario rebuild failed', 'error'); return; }
+        // Final destructive confirm
+        showConfirmModal(
+            'Final Confirmation',
+            'Loading "' + plan.label + '" will WIPE ALL current EMR data — every patient, encounter, MAR/TAR, note, LDA, FYI banner, and all in-flight student documentation will be permanently deleted and replaced. There is no undo. Continue?',
+            function () { applyScenarioPlan(scenarioKey, plan); },
+            { danger: true, confirmText: 'Yes, Wipe and Load' }
+        );
+    };
+
+    function applyScenarioPlan(scenarioKey, plan) {
+        const seed = window.EMR_SEED;
+        const now = Date.now();
+        showToast('Loading scenario "' + plan.label + '"…', 'info');
+
+        // Step 1: wipe
+        const wipeUpdates = {
+            'emr/patients': null, 'emr/encounters': null, 'emr/beds': null,
+            'emr/vitals': null, 'emr/notes': null, 'emr/mar': null, 'emr/tar': null,
+            'emr/transfers': null, 'emr/ldas': null, 'emr/unitBanners': null
+        };
+        database.ref().update(wipeUpdates).then(function () {
+            // Step 2: build writes
+            const updates = scenarioPlanToWrites(plan, seed, now);
+            updates['emr/meta/activeScenario'] = scenarioKey;
+            updates['emr/meta/scenarioLoadedAt'] = now;
+            updates['emr/meta/scenarioLoadedBy'] = currentUserName;
+            return database.ref().update(updates);
+        }).then(function () {
+            showToast('Scenario "' + plan.label + '" loaded.', 'success');
+            closeFlowModal();
+            // Bounce back to All Units board so user sees the new state
+            if (currentPatientId) closeChart();
+            currentUnit = 'all';
+            document.getElementById('boardTitle').textContent = 'All Units';
+            renderBoard();
+        }).catch(function (err) {
+            console.error('[EMR] Scenario load failed:', err);
+            showToast('Scenario load failed: ' + (err.message || err), 'error');
+        });
+    }
+
+    // Convert a scenario plan (from scenarios.js) into a Firebase multi-path update payload
+    function scenarioPlanToWrites(plan, seed, now) {
+        const updates = {};
+
+        // ---- Admitted patients ----
+        (plan.patients || []).forEach(function (p) {
+            const enc = p.currentEncounter;
+            if (!enc) return;
+            const encId = database.ref('emr/encounters').push().key;
+            const encRec = Object.assign({}, enc, {
+                patientId: p.id, status: 'active'
+            });
+            // Apply scenario-level statusNote override if present
+            if (plan.statusNotes && plan.statusNotes[p.id]) {
+                encRec.statusNote = plan.statusNotes[p.id];
+                encRec.statusNoteUpdatedAt = now;
+                encRec.statusNoteUpdatedBy = 'Scenario seed';
+            }
+            updates['emr/encounters/' + encId] = encRec;
+            updates['emr/beds/' + enc.unit + '/' + enc.bed] = encId;
+            updates['emr/patients/' + p.id] = {
+                id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
+                allergies: (p.allergies || []).map(seed.expandAllergy),
+                pmh: p.pmh || '', socialHx: p.socialHx || '',
+                homeMedications: p.homeMedications || [],
+                currentEncounterId: encId, status: 'admitted', createdAt: now
+            };
+
+            // Chart data
+            const chart = (plan.chartByPatient[p.id] || {}).current || {};
+            // Allow scenario-level overrides for notes/mar/tar
+            if (plan.notesByPid && plan.notesByPid[p.id]) chart.notes = (chart.notes || []).concat(plan.notesByPid[p.id]);
+            if (plan.marByPid   && plan.marByPid[p.id])   chart.mar   = (chart.mar   || []).concat(plan.marByPid[p.id]);
+            if (plan.tarByPid   && plan.tarByPid[p.id])   chart.tar   = (chart.tar   || []).concat(plan.tarByPid[p.id]);
+            writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
+
+            // LDAs
+            const ldaList = (plan.ldasByPid || {})[p.id] || [];
+            ldaList.forEach(function (lda) {
+                const ldaKey = database.ref('emr/ldas/' + encId).push().key;
+                const insertTs = now - Math.floor((lda.daysAgo || 0) * 86400000);
+                updates['emr/ldas/' + encId + '/' + ldaKey] = {
+                    encounterId: encId, patientId: p.id,
+                    type: lda.type, site: lda.site, size: lda.size,
+                    insertDate: insertTs, insertedBy: lda.insertedBy || 'Seeded',
+                    status: lda.status || 'active', notes: lda.notes || '',
+                    lastAssessedAt: null, lastAssessedBy: null, lastDressingChange: null
+                };
+            });
+
+            // Prior encounter (if patient has one in seed)
+            if (p.priorEncounter) {
+                const prEncId = database.ref('emr/encounters').push().key;
+                updates['emr/encounters/' + prEncId] = Object.assign({}, p.priorEncounter, {
+                    patientId: p.id, status: 'completed'
+                });
+                const prChart = ((plan.chartByPatient[p.id] || {}).prior || [])[0] || {};
+                writeChartEntries(updates, p.id, prEncId, prChart, p.priorEncounter.admissionDate);
+            }
+        });
+
+        // ---- Unadmitted patients (with prior encounters) ----
+        (plan.unadmitted || []).forEach(function (p) {
+            updates['emr/patients/' + p.id] = {
+                id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
+                allergies: (p.allergies || []).map(seed.expandAllergy),
+                pmh: p.pmh || '', socialHx: p.socialHx || '',
+                homeMedications: p.homeMedications || [],
+                currentEncounterId: null, status: 'inactive', createdAt: now
+            };
+            const priorChartList = (plan.unadmittedPriorChart || {})[p.id] || [];
+            (p.priorEncounters || []).forEach(function (priorEnc, idx) {
+                const encId = database.ref('emr/encounters').push().key;
+                updates['emr/encounters/' + encId] = Object.assign({}, priorEnc, {
+                    patientId: p.id, status: 'completed'
+                });
+                writeChartEntries(updates, p.id, encId, priorChartList[idx] || {}, priorEnc.admissionDate);
+            });
+        });
+
+        // ---- Waiting room encounters ----
+        (plan.waitingRoom || []).forEach(function (wr) {
+            let patientId;
+            if (wr.isNew) {
+                patientId = wr.patient.id;
+                updates['emr/patients/' + patientId] = {
+                    id: patientId, name: wr.patient.name, sex: wr.patient.sex,
+                    age: wr.patient.age, dob: wr.patient.dob, mrn: wr.patient.mrn,
+                    allergies: (wr.patient.allergies || []).map(seed.expandAllergy),
+                    pmh: wr.patient.pmh || '', socialHx: wr.patient.socialHx || '',
+                    homeMedications: wr.patient.homeMedications || [],
+                    currentEncounterId: null, status: 'inactive', createdAt: now
+                };
+            } else {
+                patientId = wr.patientId;
+            }
+            const encId = database.ref('emr/encounters').push().key;
+            updates['emr/encounters/' + encId] = Object.assign({}, wr.encounter, {
+                patientId: patientId, status: 'active'
+            });
+            updates['emr/patients/' + patientId + '/currentEncounterId'] = encId;
+            updates['emr/patients/' + patientId + '/status'] = 'admitted';
+            // No bed assignment — bed is 'WAITING' (no emr/beds entry)
+            // Triage notes
+            (wr.notes || []).forEach(function (n) {
+                const noteKey = database.ref('emr/notes/' + patientId).push().key;
+                updates['emr/notes/' + patientId + '/' + noteKey] = {
+                    encounterId: encId, type: n.type || 'narrative',
+                    authorRole: n.authorRole || 'RN',
+                    body: n.body, by: n.by || 'Seed RN',
+                    timestamp: now + (n.offsetMin || 0) * 60000
+                };
+            });
+        });
+
+        updates['emr/meta/seedVersion'] = seed.SEED_VERSION;
+        updates['emr/meta/seededAt'] = now;
+        return updates;
     }
 
     // ===========================================================
