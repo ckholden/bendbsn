@@ -332,13 +332,18 @@
     };
 
     // ── Versioned Onboarding Modal ────────────────────────
-    var CURRENT_ONBOARDING_VERSION = '2.1';
+    var CURRENT_ONBOARDING_VERSION = '3.0-sim-emr';
 
     function initOnboarding() {
         // Skip on login page
         if (isLoginPage) return;
         // Skip if user has already seen this version
         if (localStorage.getItem('bendbsn_onboarding_version') === CURRENT_ONBOARDING_VERSION) return;
+        // Skip if user is already on the EMR page (they've discovered it)
+        if (location.pathname.indexOf('/emr') === 0) {
+            localStorage.setItem('bendbsn_onboarding_version', CURRENT_ONBOARDING_VERSION);
+            return;
+        }
 
         var overlay = document.createElement('div');
         overlay.id = 'bsnOnboardingOverlay';
@@ -349,18 +354,19 @@
 
         overlay.innerHTML =
             '<div class="bsn-onboarding-modal">' +
-                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">What\'s New in BendBSN</h2>' +
+                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">🏥 New in BendBSN: Sim Chart (EMR)</h2>' +
+                '<p style="font-size:14px;color:var(--clx-text-secondary,#4a5568);margin:0 0 12px;">A full simulation EMR for practicing realistic clinical workflows \u2014 you can do everything you would on a real shift, with fictional patients.</p>' +
                 '<ul class="bsn-onboarding-list">' +
-                    '<li>Chat now has emoji reactions on messages</li>' +
-                    '<li>Set a custom status (Studying, In class, Do not disturb\u2026)</li>' +
-                    '<li>Unread message badges on the chat sidebar link</li>' +
-                    '<li>Multiple color themes \u2014 try them from the sidebar</li>' +
-                    '<li>Direct message read receipts and last-seen times</li>' +
-                    '<li>Faster, more reliable chat with bug fixes throughout</li>' +
+                    '<li><strong>Place &amp; acknowledge orders</strong> \u2014 medications, consults, labs, diet, activity, and more (with allergy checking).</li>' +
+                    '<li><strong>Practice the full lifecycle</strong> \u2014 ED arrivals, triage, admits, transfers (with charge-nurse acceptance), and discharge.</li>' +
+                    '<li><strong>Document realistically</strong> \u2014 SOAP / SBAR / Narrative notes with role tagging, embedded screening tools (PHQ-9, GAD-7, Morse, Braden).</li>' +
+                    '<li><strong>5 Rights med admin</strong> with allergy cross-reactivity checking (PCN \u2192 cephalosporins, ASA \u2192 NSAIDs, etc.).</li>' +
+                    '<li><strong>Care team &amp; LDAs</strong> \u2014 assign yourself as Primary RN, track lines/drains/airways with site checks.</li>' +
+                    '<li><strong>5 scenarios to load</strong> \u2014 Quiet Day, ED Surge, Night Shift, Med-Surg Steady, Empty Hospital.</li>' +
                 '</ul>' +
                 '<div class="bsn-onboarding-btns">' +
-                    '<button class="bsn-onboarding-dismiss" id="bsnOnboardDismiss">Dismiss</button>' +
-                    '<button class="bsn-onboarding-primary" id="bsnOnboardExplore">Explore Updates</button>' +
+                    '<button class="bsn-onboarding-dismiss" id="bsnOnboardDismiss">Maybe later</button>' +
+                    '<button class="bsn-onboarding-primary" id="bsnOnboardExplore">Open Sim Chart →</button>' +
                 '</div>' +
             '</div>';
 
@@ -376,7 +382,7 @@
 
         document.getElementById('bsnOnboardExplore').addEventListener('click', function () {
             dismiss();
-            window.location.href = '/app/';
+            window.location.href = '/emr/';
         });
 
         // Close on backdrop click
@@ -394,7 +400,8 @@
         document.getElementById('bsnOnboardExplore').focus();
     }
 
-    // initOnboarding(); // Removed — no popup
+    // Phase 3B.1.6: re-enabled to announce the new Sim EMR feature
+    initOnboarding();
 
 })();
 
