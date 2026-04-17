@@ -13,7 +13,7 @@
    No real NDC codes, NPIs, MRNs, or provider identities.
    ========================================================= */
 
-const SEED_VERSION = 4;
+const SEED_VERSION = 5;
 
 // ---- Allergy → med-name substring triggers (case-insensitive) ----
 // Phase 3A.5b: kept for back-compat but also used as one of several matchers.
@@ -1481,5 +1481,6 @@ window.EMR_SEED = {
     SEED_UNADMITTED_PATIENTS: SEED_UNADMITTED_PATIENTS,
     CHART_BY_PATIENT: CHART_BY_PATIENT,
     UNADMITTED_PRIOR_CHART: UNADMITTED_PRIOR_CHART,
-    SEED_LDAS: SEED_LDAS
+    SEED_LDAS: SEED_LDAS,
+    SEED_ORDERS: SEED_ORDERS
 };

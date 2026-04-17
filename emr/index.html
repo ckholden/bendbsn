@@ -761,8 +761,47 @@
             min-width: 22px; height: 18px;
             padding: 0 5px; border-radius: 10px;
             margin-left: auto;
+            position: relative; cursor: help;
         }
         [data-theme="dark"] .bc-rn-chip { background: #15803d; }
+
+        /* Care Team hover-to-discover tooltip (Epic-style "hover-to-discover") */
+        .ct-hover-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%; right: 0;
+            margin-top: 6px;
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+            padding: 10px 12px;
+            min-width: 220px;
+            z-index: 500;
+            font-size: 12px; font-weight: 400; text-align: left;
+            white-space: normal; cursor: default;
+        }
+        .bc-rn-chip:hover .ct-hover-tooltip,
+        .bc-rn-chip:focus .ct-hover-tooltip { display: block; }
+        .ct-hover-tooltip .cth-title {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 6px;
+        }
+        .ct-hover-tooltip .cth-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 4px 0; border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        .ct-hover-tooltip .cth-row:last-child { border-bottom: none; }
+        .ct-hover-tooltip .cth-chip {
+            color: #fff; font-size: 9px; font-weight: 700;
+            padding: 2px 7px; border-radius: 8px; min-width: 36px; text-align: center;
+            flex-shrink: 0;
+        }
+        .ct-hover-tooltip .cth-role { font-size: 11px; color: var(--clx-text-muted, #718096); flex-shrink: 0; min-width: 90px; }
+        .ct-hover-tooltip .cth-name { font-size: 12px; color: var(--clx-text-primary); font-weight: 600; }
+        .ct-hover-tooltip .cth-empty { color: var(--clx-text-muted); font-style: italic; font-size: 11px; }
+        [data-theme="dark"] .ct-hover-tooltip { box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
 
         /* My Patients sidebar filter — active state */
         #myPatientsFilter.active {
@@ -770,6 +809,76 @@
             color: var(--clx-accent, #0f7490);
             border-left-color: var(--clx-accent, #0f7490);
             font-weight: 600;
+        }
+
+        /* Phase 3B: Orders tab */
+        .orders-actions-bar {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px; margin-bottom: 12px;
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+        }
+        .orders-pending-pill {
+            background: #fef3c7; color: #854d0e;
+            padding: 4px 10px; border-radius: 12px;
+            font-size: 12px; font-weight: 600;
+            border: 1px solid #fde68a;
+        }
+        [data-theme="dark"] .orders-pending-pill { background: rgba(234,179,8,0.18); color: #fde68a; border-color: rgba(234,179,8,0.4); }
+
+        .ord-row {
+            display: flex; gap: 12px; padding: 10px 14px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            transition: background 0.1s;
+        }
+        .ord-row:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
+        .ord-row:last-child { border-bottom: none; }
+        .ord-row.ord-status-pendingack { background: #fffbea; }
+        [data-theme="dark"] .ord-row.ord-status-pendingack { background: rgba(234,179,8,0.08); }
+        .ord-row.ord-status-discontinued { opacity: 0.55; }
+        .ord-row.ord-status-completed { opacity: 0.7; }
+        .ord-main { flex: 1; min-width: 0; }
+        .ord-summary { font-size: 13px; color: var(--clx-text-primary); margin-bottom: 3px; line-height: 1.45; }
+        .ord-detail { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-top: 2px; }
+        .ord-meta { font-size: 11px; color: var(--clx-text-muted, #718096); }
+        .ord-ack { font-size: 11px; color: #16a34a; margin-top: 2px; }
+        [data-theme="dark"] .ord-ack { color: #86efac; }
+        .ord-status-col { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+        .ord-status {
+            font-size: 10px; font-weight: 700;
+            padding: 3px 8px; border-radius: 10px;
+            letter-spacing: 0.04em;
+        }
+        .ord-status.ord-status-pendingack { background: #fef3c7; color: #854d0e; }
+        .ord-status.ord-status-acknowledged,
+        .ord-status.ord-status-active { background: #dcfce7; color: #166534; }
+        .ord-status.ord-status-held { background: #fef9c3; color: #854d0e; }
+        .ord-status.ord-status-discontinued { background: #fee2e2; color: #b91c1c; }
+        .ord-status.ord-status-completed { background: #e5e7eb; color: #4b5563; }
+        [data-theme="dark"] .ord-status.ord-status-pendingack { background: rgba(234,179,8,0.18); color: #fde68a; }
+        [data-theme="dark"] .ord-status.ord-status-acknowledged,
+        [data-theme="dark"] .ord-status.ord-status-active { background: rgba(34,197,94,0.18); color: #86efac; }
+        [data-theme="dark"] .ord-status.ord-status-discontinued { background: rgba(239,68,68,0.18); color: #fca5a5; }
+
+        /* New Order modal: type picker buttons */
+        .ord-type-row {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+            padding-bottom: 12px; border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        .ord-type-btn {
+            padding: 6px 10px; border: 1px solid var(--clx-border, #d1dce8);
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-secondary, #4a5568);
+            border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit;
+        }
+        .ord-type-btn.active {
+            background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490);
+        }
+        .ord-type-btn:hover:not(.active) { background: var(--clx-bg-surface-2, #f5f8fa); }
+
+        @media (max-width: 600px) {
+            .ord-row { flex-direction: column; }
+            .ord-status-col { flex-direction: row; align-items: center; }
         }
 
         /* Phase 3F-lite: Scenario picker */
@@ -1126,6 +1235,7 @@
                     <button class="emr-back-btn" onclick="closeChart()">← Back to Unit Board</button>
                     <div class="chart-actions">
                         <button class="btn sm primary" id="chartBtnAssignBed" onclick="assignBedFromChart()" style="display:none;">Assign Bed</button>
+                        <button class="btn sm primary" id="chartBtnNewOrder" onclick="openNewOrderModal()">+ New Order</button>
                         <button class="btn sm" id="chartBtnHandoff" onclick="openHandoffModal()">📋 Handoff</button>
                         <button class="btn sm" id="chartBtnTransfer" onclick="openTransferModal()">Transfer</button>
                         <button class="btn sm danger" id="chartBtnDischarge" onclick="openDischargeModal()">Discharge</button>
@@ -1138,6 +1248,7 @@
                     <button class="chart-tab active" role="tab" data-tab="demographics" onclick="switchTab('demographics')">Demographics</button>
                     <button class="chart-tab" role="tab" data-tab="vitals" onclick="switchTab('vitals')">Vitals</button>
                     <button class="chart-tab" role="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
+                    <button class="chart-tab" role="tab" data-tab="orders" onclick="switchTab('orders')">📋 Orders</button>
                     <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
                     <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
                     <button class="chart-tab" role="tab" data-tab="ldas" onclick="switchTab('ldas')">LDAs</button>
@@ -1162,6 +1273,7 @@
                 <div class="tab-panel active" id="tab-demographics" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-vitals" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-notes" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-orders" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-mar" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-tar" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-ldas" role="tabpanel"></div>
@@ -1829,10 +1941,10 @@
             const pendingChip = pending
                 ? '<div class="pending-chip" title="Awaiting ' + esc(UNIT_NAMES[pending.toUnit] || pending.toUnit) + ' bed acceptance">⇄ Outbound → ' + esc(UNIT_NAMES[pending.toUnit] || pending.toUnit) + '</div>'
                 : '';
-            // Phase 3G: Primary RN initials chip
+            // Phase 3G: Primary RN initials chip + hover-to-discover full care team (Epic-style)
             const primaryRN = (enc && enc.careTeam && enc.careTeam.primaryRN) ? enc.careTeam.primaryRN : null;
             const rnChip = primaryRN
-                ? '<span class="bc-rn-chip" title="Primary RN: ' + esc(primaryRN.name) + '">' + esc(initialsFor(primaryRN.name)) + '</span>'
+                ? '<span class="bc-rn-chip" data-careteam="' + esc(p._encounterId || '') + '">' + esc(initialsFor(primaryRN.name)) + careTeamHoverTooltip(enc) + '</span>'
                 : '';
             return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + rnChip + '</div>' +
@@ -2025,7 +2137,7 @@
             const enc = p._encounterId ? allEncounters[p._encounterId] : null;
             const primaryRN = (enc && enc.careTeam && enc.careTeam.primaryRN) ? enc.careTeam.primaryRN : null;
             const rnCell = primaryRN
-                ? '<span class="bc-rn-chip" title="' + esc(primaryRN.name) + '" style="margin-right:6px;">' + esc(initialsFor(primaryRN.name)) + '</span><span style="font-size:11px;color:var(--clx-text-muted);">' + esc(primaryRN.name.split(' ')[0]) + '</span>'
+                ? '<span class="bc-rn-chip" style="margin-right:6px;">' + esc(initialsFor(primaryRN.name)) + careTeamHoverTooltip(enc) + '</span><span style="font-size:11px;color:var(--clx-text-muted);">' + esc(primaryRN.name.split(' ')[0]) + '</span>'
                 : '<span style="font-size:11px;color:var(--clx-text-muted);font-style:italic;">unassigned</span>';
             html += '<tr onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<td class="mgr-bed">' + esc(r.bedId) + '</td>' +
@@ -2245,7 +2357,7 @@
             }
         }
         // Toggle chart action buttons based on read-only state
-        ['chartBtnHandoff','chartBtnTransfer','chartBtnDischarge'].forEach(function (id) {
+        ['chartBtnHandoff','chartBtnTransfer','chartBtnDischarge','chartBtnNewOrder'].forEach(function (id) {
             const btn = document.getElementById(id);
             if (btn) btn.disabled = chartReadOnly;
         });
@@ -2309,6 +2421,7 @@
             case 'demographics': renderDemographicsTab(); break;
             case 'vitals':       renderVitalsTab(); break;
             case 'notes':        renderNotesTab(); break;
+            case 'orders':       renderOrdersTab(); break;
             case 'mar':          renderMarTab(); break;
             case 'tar':          renderTarTab(); break;
             case 'ldas':         renderLdasTab(); break;
@@ -5176,6 +5289,435 @@
     };
 
     // ===========================================================
+    // [2840] PHASE 3B — ORDERS TAB (CPOE-lite)
+    // ===========================================================
+
+    // Display config for each order type. Determines section grouping in renderOrdersTab.
+    const ORDER_TYPES = [
+        { id: 'medication',   label: 'Medications',     icon: '💊', placeable: true },
+        { id: 'treatment',    label: 'Treatments',      icon: '🩹', placeable: true },
+        { id: 'consult',      label: 'Consults',        icon: '🩺', placeable: true },
+        { id: 'lab',          label: 'Labs',            icon: '🧪', placeable: true },
+        { id: 'imaging',      label: 'Imaging',         icon: '🩻', placeable: true },
+        { id: 'diet',         label: 'Diet',            icon: '🍽', placeable: true },
+        { id: 'activity',     label: 'Activity',        icon: '🚶', placeable: true },
+        { id: 'vitals-freq',  label: 'Vitals Frequency',icon: '📊', placeable: true },
+        { id: 'nursing',      label: 'Nursing Orders',  icon: '📝', placeable: true },
+        { id: 'code-status',  label: 'Code Status',     icon: '❤️', placeable: true }
+    ];
+
+    function orderTypeMeta(id) { return ORDER_TYPES.find(function (t) { return t.id === id; }) || { label: id, icon: '📄' }; }
+
+    // Render the Orders tab — groups by orderType, sorted by placedAt desc within each group.
+    function renderOrdersTab() {
+        const el = document.getElementById('tab-orders');
+        const ro = chartReadOnly;
+        const orders = currentOrders || [];
+
+        // Filter out discontinued + completed orders by default? Keep them visible for now.
+        // Group by type
+        const byType = {};
+        orders.forEach(function (o) {
+            const t = o.orderType || 'other';
+            if (!byType[t]) byType[t] = [];
+            byType[t].push(o);
+        });
+
+        // Pending-ack count for the prompt at top
+        const pendingCount = orders.filter(function (o) { return o.status === 'pending-ack'; }).length;
+
+        let html = '';
+        // Action bar
+        html += '<div class="orders-actions-bar">' +
+            '<button class="btn primary" onclick="openNewOrderModal()" ' + (ro ? 'disabled' : '') + '>+ Place New Order</button>' +
+            (pendingCount > 0
+                ? '<span class="orders-pending-pill">⚠ ' + pendingCount + ' order' + (pendingCount === 1 ? '' : 's') + ' need acknowledgment</span>'
+                : '') +
+        '</div>';
+
+        if (!orders.length) {
+            html += '<div class="emr-panel"><div class="emr-panel-bd"><div class="vitals-empty">No orders for this encounter yet. Click "Place New Order" above.</div></div></div>';
+            el.innerHTML = html;
+            return;
+        }
+
+        // Render each type that has at least one order
+        ORDER_TYPES.forEach(function (typeMeta) {
+            const list = byType[typeMeta.id];
+            if (!list || !list.length) return;
+            html += '<div class="emr-panel">' +
+                '<div class="emr-panel-hd"><span>' + typeMeta.icon + ' ' + esc(typeMeta.label) + ' (' + list.length + ')</span></div>' +
+                '<div class="emr-panel-bd" style="padding:6px 0;">' +
+                    list.map(function (o) { return renderOrderRow(o, ro); }).join('') +
+                '</div>' +
+            '</div>';
+        });
+
+        el.innerHTML = html;
+    }
+
+    function renderOrderRow(o, ro) {
+        const statusClass = (o.status || 'active').replace(/[^a-z]/g, '');
+        const statusLabel = (o.status || 'active').toUpperCase();
+        // Type-specific summary line
+        const summary = orderRowSummary(o);
+        const placed = 'Placed ' + esc(fmtTime(o.placedAt)) + ' by ' + esc(o.placedBy || '—') +
+                       ' (' + esc(o.orderEntry || 'CPOE') + ')';
+        const ackInfo = (o.acknowledgedBy && o.acknowledgedAt)
+            ? '<div class="ord-ack">Ack ' + esc(fmtTimeShort(o.acknowledgedAt)) + ' by ' + esc(o.acknowledgedBy) + '</div>'
+            : '';
+        const actionsHtml = ro ? '' : orderRowActions(o);
+        return '<div class="ord-row ord-status-' + statusClass + '">' +
+            '<div class="ord-main">' +
+                '<div class="ord-summary">' + summary + '</div>' +
+                '<div class="ord-meta">' + placed + '</div>' +
+                ackInfo +
+            '</div>' +
+            '<div class="ord-status-col">' +
+                '<span class="ord-status ord-status-' + statusClass + '">' + statusLabel + '</span>' +
+                actionsHtml +
+            '</div>' +
+        '</div>';
+    }
+
+    function orderRowSummary(o) {
+        switch (o.orderType) {
+            case 'medication':
+                return '<strong>' + esc(o.medication || '—') + '</strong> ' +
+                       esc(o.dose || '') + ' ' + esc(o.route || '') +
+                       (o.frequency ? ' · ' + esc(o.frequency) : '') +
+                       (o.scheduledTime ? ' · ' + esc(o.scheduledTime) : '') +
+                       (o.isPRN ? ' · <em>PRN ' + esc(o.prnIndication || '') + '</em>' : '');
+            case 'treatment':
+                return '<strong>' + esc(o.treatment || '—') + '</strong>' +
+                       (o.frequency ? ' · ' + esc(o.frequency) : '');
+            case 'consult':
+                return '<strong>Consult: ' + esc(o.consultSpecialty || '—') + '</strong>' +
+                       (o.consultReason ? '<div class="ord-detail">' + esc(o.consultReason) + '</div>' : '');
+            case 'lab':
+                return '<strong>Lab: ' + esc(o.testName || o.orderText || '—') + '</strong>' +
+                       (o.priority ? ' · ' + esc(o.priority) : '');
+            case 'imaging':
+                return '<strong>Imaging: ' + esc(o.testName || o.orderText || '—') + '</strong>' +
+                       (o.priority ? ' · ' + esc(o.priority) : '');
+            case 'diet':
+                return '<strong>Diet: ' + esc(o.dietType || '—') + '</strong>' +
+                       (o.dietSpecialInstructions ? '<div class="ord-detail">' + esc(o.dietSpecialInstructions) + '</div>' : '');
+            case 'activity':
+                return '<strong>Activity: ' + esc(o.activityType || '—') + '</strong>' +
+                       (o.activitySpecialInstructions ? '<div class="ord-detail">' + esc(o.activitySpecialInstructions) + '</div>' : '');
+            case 'vitals-freq':
+                return '<strong>Vitals: ' + esc(o.vitalsFreq || '—') + '</strong>';
+            case 'nursing':
+                return '<strong>Nursing:</strong> ' + esc(o.nursingText || '—');
+            case 'code-status':
+                return '<strong>Code Status: ' + esc(o.codeStatus || '—') + '</strong>' +
+                       (o.codeReason ? '<div class="ord-detail">' + esc(o.codeReason) + '</div>' : '');
+            default:
+                return esc(o.orderText || o.orderType || '—');
+        }
+    }
+
+    function orderRowActions(o) {
+        // Phase 3B.1: Acknowledge action only. Hold/Resume/Discontinue land in 3B.2.
+        if (o.status === 'pending-ack') {
+            return '<button class="btn sm primary" onclick="acknowledgeOrder(\'' + esc(o._key) + '\')">Acknowledge</button>';
+        }
+        return '';
+    }
+
+    // ---- Acknowledge action ----
+    window.acknowledgeOrder = function (orderId) {
+        if (!currentPatientId || chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) { showToast('Order not found.', 'error'); return; }
+        const now = Date.now();
+        const updates = {};
+        updates['emr/orders/' + encId + '/' + orderId + '/status'] = 'active';
+        updates['emr/orders/' + encId + '/' + orderId + '/acknowledgedBy'] = currentUserName;
+        updates['emr/orders/' + encId + '/' + orderId + '/acknowledgedAt'] = now;
+        // Auto-write a chart-edit note
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        const summary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: encId, type: 'chart-edit', authorRole: 'RN',
+            body: 'Order acknowledged: ' + summary,
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Order acknowledged.', 'success');
+        }).catch(function (err) { showToast('Acknowledge failed: ' + (err.message || err), 'error'); });
+    };
+
+    // ---- New Order Modal ----
+    let newOrderType = 'medication';
+
+    window.openNewOrderModal = function () {
+        if (!currentPatientId || chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) { showToast('No active encounter.', 'error'); return; }
+        newOrderType = 'medication';
+        const typeBtns = ORDER_TYPES.map(function (t) {
+            return '<button class="ord-type-btn' + (t.id === newOrderType ? ' active' : '') + '" onclick="selectNewOrderType(\'' + t.id + '\')">' +
+                t.icon + ' ' + esc(t.label) +
+            '</button>';
+        }).join('');
+        const body =
+            '<p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">You are placing this order as the simulated provider. Default status is <strong>Pending Ack</strong> so the bedside RN can acknowledge.</p>' +
+            '<div class="ord-type-row">' + typeBtns + '</div>' +
+            '<div id="newOrderForm"></div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="submitNewOrder()">Place Order</button>' +
+            '</div>';
+        openFlowModal('+ New Order — ' + (currentPatient ? currentPatient.name : ''), body);
+        renderNewOrderForm();
+    };
+
+    window.selectNewOrderType = function (t) {
+        newOrderType = t;
+        document.querySelectorAll('.ord-type-btn').forEach(function (b) { b.classList.remove('active'); });
+        const btnIdx = ORDER_TYPES.findIndex(function (x) { return x.id === t; });
+        const btns = document.querySelectorAll('.ord-type-btn');
+        if (btns[btnIdx]) btns[btnIdx].classList.add('active');
+        renderNewOrderForm();
+    };
+
+    function renderNewOrderForm() {
+        const f = document.getElementById('newOrderForm');
+        if (!f) return;
+        let html = '<div class="flow-form-grid">';
+        switch (newOrderType) {
+            case 'medication':
+                html +=
+                    '<div class="ff-field full-row"><label>Medication</label><input id="no_med" placeholder="e.g., Morphine"></div>' +
+                    '<div class="ff-field"><label>Dose</label><input id="no_dose" placeholder="e.g., 4 mg"></div>' +
+                    '<div class="ff-field"><label>Route</label><select id="no_route">' +
+                        ['PO','IV','IM','SubQ','SL','PR','INH','NEB','TOP','OPHTH','OTIC','NG','GT','PEG'].map(function(r){return '<option>'+r+'</option>';}).join('') +
+                    '</select></div>' +
+                    '<div class="ff-field"><label>Frequency</label><select id="no_freq">' +
+                        ['Once','Daily','BID','TID','QID','Q4H','Q6H','Q8H','Q12H','QHS','AC','PRN','Continuous'].map(function(f){return '<option>'+f+'</option>';}).join('') +
+                    '</select></div>' +
+                    '<div class="ff-field"><label>Scheduled Time(s)</label><input id="no_sched" placeholder="e.g., 0800,2000"></div>' +
+                    '<div class="ff-field"><label>PRN?</label><select id="no_isprn"><option value="false">No</option><option value="true">Yes</option></select></div>' +
+                    '<div class="ff-field full-row"><label>PRN Indication (if PRN)</label><input id="no_prn_ind" placeholder="e.g., Pain >5/10"></div>';
+                break;
+            case 'treatment':
+                html +=
+                    '<div class="ff-field full-row"><label>Treatment</label><input id="no_treat" placeholder="e.g., Wound dressing change"></div>' +
+                    '<div class="ff-field"><label>Frequency</label><input id="no_treatfreq" placeholder="e.g., Daily"></div>' +
+                    '<div class="ff-field"><label>Scheduled Time</label><input id="no_treatsched" placeholder="e.g., 0800"></div>';
+                break;
+            case 'consult':
+                html +=
+                    '<div class="ff-field"><label>Specialty</label><select id="no_consultspec">' +
+                        ['Cardiology','Pulmonology','Neurology','Nephrology','GI','Endocrinology','ID','Hem/Onc','Psychiatry','Palliative','PT/OT','Speech','Social Work','Case Mgmt','Nutrition','Wound','Anesthesia','Surgery','OB','Pediatrics','Other'].map(function(s){return '<option>'+s+'</option>';}).join('') +
+                    '</select></div>' +
+                    '<div class="ff-field full-row"><label>Reason for Consult</label><textarea id="no_consultreason" rows="3"></textarea></div>';
+                break;
+            case 'lab':
+                html +=
+                    '<div class="ff-field full-row"><label>Test(s)</label><input id="no_labname" placeholder="e.g., CBC, BMP, Troponin"></div>' +
+                    '<div class="ff-field"><label>Priority</label><select id="no_labpriority"><option>Routine</option><option>STAT</option><option>Q4H</option><option>Q6H</option><option>Q12H</option><option>Daily AM</option></select></div>' +
+                    '<div class="ff-field"><label>Specimen</label><input id="no_labspec" placeholder="Blood / Urine / etc"></div>';
+                break;
+            case 'imaging':
+                html +=
+                    '<div class="ff-field full-row"><label>Study</label><input id="no_imgname" placeholder="e.g., CXR PA/lat, CT head w/o contrast"></div>' +
+                    '<div class="ff-field"><label>Priority</label><select id="no_imgpriority"><option>Routine</option><option>STAT</option><option>Portable</option></select></div>';
+                break;
+            case 'diet':
+                html +=
+                    '<div class="ff-field full-row"><label>Diet</label><select id="no_diettype">' +
+                        ['Regular','Cardiac','2g sodium','Renal','Diabetic / Carb-controlled','Clear liquids','Full liquids','NPO','Pureed','Pureed thickened liquids (nectar)','Soft/Mechanical','Other'].map(function(d){return '<option>'+d+'</option>';}).join('') +
+                    '</select></div>' +
+                    '<div class="ff-field full-row"><label>Special Instructions</label><input id="no_dietinstr" placeholder="e.g., 1500 mL fluid restriction"></div>';
+                break;
+            case 'activity':
+                html +=
+                    '<div class="ff-field full-row"><label>Activity</label><select id="no_activity">' +
+                        ['Bed rest','BRP only','OOB with assist','OOB ad lib','Ambulate q-shift','Ambulate ad lib','As tolerated','Other'].map(function(a){return '<option>'+a+'</option>';}).join('') +
+                    '</select></div>' +
+                    '<div class="ff-field full-row"><label>Special Instructions</label><input id="no_actinstr" placeholder="e.g., Weight bearing as tolerated R LE"></div>';
+                break;
+            case 'vitals-freq':
+                html +=
+                    '<div class="ff-field full-row"><label>Vital Signs Frequency</label><select id="no_vfreq">' +
+                        ['Q15min','Q30min','Q1H','Q2H','Q4H','Q8H','Q12H','Daily','Per protocol'].map(function(v){return '<option>'+v+'</option>';}).join('') +
+                    '</select></div>';
+                break;
+            case 'nursing':
+                html +=
+                    '<div class="ff-field full-row"><label>Nursing Order</label><textarea id="no_nursing" rows="3" placeholder="e.g., Strict I&O. SCDs while in bed."></textarea></div>';
+                break;
+            case 'code-status':
+                html +=
+                    '<div class="ff-field"><label>Code Status</label><select id="no_codestatus">' +
+                        ['Full Code','DNR','DNR/DNI','Comfort Care'].map(function(c){return '<option>'+c+'</option>';}).join('') +
+                    '</select></div>' +
+                    '<div class="ff-field full-row"><label>Reason / documentation source</label><input id="no_codereason" placeholder="e.g., Patient and family wishes documented"></div>';
+                break;
+        }
+        // Order entry source — every order gets one
+        html += '<div class="ff-field"><label>Order Entry</label><select id="no_entry">' +
+                    ['CPOE','Verbal','Telephone','Protocol'].map(function(e){return '<option>'+e+'</option>';}).join('') +
+                '</select></div>';
+        html += '</div>';
+
+        // Allergy preview if medication selected and a med name is typed
+        html += '<div id="orderAllergyWarn" style="display:none;"></div>';
+
+        f.innerHTML = html;
+
+        // Live allergy check on med name input (for medication orders)
+        if (newOrderType === 'medication') {
+            const medInput = document.getElementById('no_med');
+            if (medInput) {
+                medInput.addEventListener('input', function () {
+                    updateNewOrderAllergyPreview();
+                });
+            }
+        }
+    }
+
+    function updateNewOrderAllergyPreview() {
+        const medInput = document.getElementById('no_med');
+        const warnDiv = document.getElementById('orderAllergyWarn');
+        if (!medInput || !warnDiv || !currentPatient) return;
+        const medName = (medInput.value || '').trim();
+        if (!medName) { warnDiv.style.display = 'none'; warnDiv.innerHTML = ''; return; }
+        const hits = checkAllergyConflict(currentPatient, { medication: medName });
+        if (!hits.length) { warnDiv.style.display = 'none'; warnDiv.innerHTML = ''; return; }
+        const detail = hits.map(function (h) {
+            const matchLabel = h.matchType === 'exact' ? 'EXACT MATCH'
+                             : h.matchType === 'class' ? 'CLASS MATCH'
+                             : 'CROSS-REACTIVITY' + (h.crossRate ? ' (' + Math.round(h.crossRate * 100) + '% rate)' : '');
+            return '<div style="margin-bottom:4px;"><strong>' + esc(h.allergy) + '</strong> — <span style="font-size:11px;font-weight:700;text-transform:uppercase;">' + matchLabel + '</span>' +
+                (h.severity ? ' · severity: <strong>' + esc(h.severity) + '</strong>' : '') +
+                (h.note ? '<div style="font-size:11px;font-style:italic;">' + esc(h.note) + '</div>' : '') +
+            '</div>';
+        }).join('');
+        warnDiv.innerHTML = '<div class="allergy-warn" style="margin-top:10px;">' +
+            '<div class="aw-title">⚠ Allergy alert</div>' +
+            '<div class="aw-body">Patient allergic to ' + esc(hits.map(function(h){return h.allergy;}).join(', ')) + '.</div>' +
+            '<div class="aw-body" style="margin-top:6px;">' + detail + '</div>' +
+            '<label><input type="checkbox" id="orderAllergyAck"> I have verified this order is clinically appropriate to give to this patient.</label>' +
+        '</div>';
+        warnDiv.style.display = 'block';
+    }
+
+    window.submitNewOrder = function () {
+        if (!currentPatientId || chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const orderEntry = (document.getElementById('no_entry') || {}).value || 'CPOE';
+        const now = Date.now();
+        const order = {
+            orderType: newOrderType,
+            encounterId: encId,
+            placedBy: currentUserName,
+            placedAt: now,
+            orderEntry: orderEntry,
+            status: 'pending-ack',
+            acknowledgedBy: null,
+            acknowledgedAt: null
+        };
+
+        // Type-specific field collection
+        switch (newOrderType) {
+            case 'medication': {
+                const med = (document.getElementById('no_med').value || '').trim();
+                if (!med) { showToast('Medication name required.', 'warning'); return; }
+                order.medication = med;
+                order.dose = (document.getElementById('no_dose').value || '').trim();
+                order.route = document.getElementById('no_route').value;
+                order.frequency = document.getElementById('no_freq').value;
+                order.scheduledTime = (document.getElementById('no_sched').value || '').trim() || (order.frequency === 'PRN' ? 'PRN' : '');
+                order.isPRN = document.getElementById('no_isprn').value === 'true';
+                order.prnIndication = (document.getElementById('no_prn_ind').value || '').trim() || null;
+                // Allergy gate
+                const hits = checkAllergyConflict(currentPatient, { medication: med });
+                if (hits.length) {
+                    const ack = document.getElementById('orderAllergyAck');
+                    if (!ack || !ack.checked) {
+                        showToast('Allergy alert — check the verification box before placing this order.', 'warning');
+                        return;
+                    }
+                    order.allergyOverride = {
+                        allergens: hits.map(function (h) { return h.allergy; }),
+                        acknowledgedBy: currentUserName, acknowledgedAt: now
+                    };
+                }
+                break;
+            }
+            case 'treatment':
+                order.treatment = (document.getElementById('no_treat').value || '').trim();
+                if (!order.treatment) { showToast('Treatment description required.', 'warning'); return; }
+                order.frequency = (document.getElementById('no_treatfreq').value || '').trim();
+                order.scheduledTime = (document.getElementById('no_treatsched').value || '').trim();
+                break;
+            case 'consult':
+                order.consultSpecialty = document.getElementById('no_consultspec').value;
+                order.consultReason = (document.getElementById('no_consultreason').value || '').trim();
+                if (!order.consultReason) { showToast('Reason for consult required.', 'warning'); return; }
+                break;
+            case 'lab':
+                order.testName = (document.getElementById('no_labname').value || '').trim();
+                if (!order.testName) { showToast('Test name required.', 'warning'); return; }
+                order.priority = document.getElementById('no_labpriority').value;
+                order.specimen = (document.getElementById('no_labspec').value || '').trim();
+                break;
+            case 'imaging':
+                order.testName = (document.getElementById('no_imgname').value || '').trim();
+                if (!order.testName) { showToast('Imaging study required.', 'warning'); return; }
+                order.priority = document.getElementById('no_imgpriority').value;
+                break;
+            case 'diet':
+                order.dietType = document.getElementById('no_diettype').value;
+                order.dietSpecialInstructions = (document.getElementById('no_dietinstr').value || '').trim();
+                break;
+            case 'activity':
+                order.activityType = document.getElementById('no_activity').value;
+                order.activitySpecialInstructions = (document.getElementById('no_actinstr').value || '').trim();
+                break;
+            case 'vitals-freq':
+                order.vitalsFreq = document.getElementById('no_vfreq').value;
+                break;
+            case 'nursing':
+                order.nursingText = (document.getElementById('no_nursing').value || '').trim();
+                if (!order.nursingText) { showToast('Order text required.', 'warning'); return; }
+                break;
+            case 'code-status':
+                order.codeStatus = document.getElementById('no_codestatus').value;
+                order.codeReason = (document.getElementById('no_codereason').value || '').trim();
+                break;
+        }
+
+        // Write the order + an audit note
+        const orderId = database.ref('emr/orders/' + encId).push().key;
+        const updates = {};
+        updates['emr/orders/' + encId + '/' + orderId] = order;
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        const summary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: encId, type: 'chart-edit', authorRole: 'MD',
+            body: 'New order placed (' + orderEntry + '): ' + summary,
+            by: currentUserName, timestamp: now
+        };
+
+        database.ref().update(updates).then(function () {
+            showToast('Order placed. Pending acknowledgment.', 'success');
+            closeFlowModal();
+            // Switch to Orders tab so user sees their new order
+            if (currentTab !== 'orders') switchTab('orders');
+        }).catch(function (err) {
+            showToast('Order failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    // ===========================================================
     // [2850] LDAs TAB — list, add, site-check, discontinue
     // ===========================================================
     const LDA_TYPES = ['PIV','CVC','PICC','Art-line','Foley','NG','OG','ETT','Trach','Chest-tube','JP-drain','Hemovac','PEG','Epidural','External-fixator','Other'];
@@ -5679,6 +6221,25 @@
             showToast('Save failed: ' + (err.message || err), 'error');
         });
     };
+
+    // Phase 3B.1: Care team hover-to-discover tooltip
+    // Renders an Epic-style hover popover showing all assigned care team members.
+    // Used inside the bed-card initials chip + Manager view RN cell.
+    function careTeamHoverTooltip(enc) {
+        if (!enc || !enc.careTeam) return '';
+        const team = enc.careTeam;
+        const rows = CARE_TEAM_ROLES.map(function (r) {
+            const m = team[r.id];
+            if (!m) return '';
+            return '<div class="cth-row">' +
+                '<span class="cth-chip" style="background:' + esc(r.color) + ';">' + esc(r.short) + '</span>' +
+                '<span class="cth-role">' + esc(r.label) + '</span>' +
+                '<span class="cth-name">' + esc(m.name) + '</span>' +
+            '</div>';
+        }).filter(Boolean).join('');
+        if (!rows) return '<span class="ct-hover-tooltip"><span class="cth-empty">No care team assigned</span></span>';
+        return '<span class="ct-hover-tooltip"><div class="cth-title">Care Team</div>' + rows + '</span>';
+    }
 
     // Render the Care Team strip for the chart header (shown below main grid)
     function renderCareTeamStrip(enc) {
