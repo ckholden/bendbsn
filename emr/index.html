@@ -704,6 +704,22 @@
         .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
         .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
 
+        /* Phase 3G fix: My Patients filter active banner */
+        .filter-active-banner {
+            display: flex; align-items: center; gap: 12px;
+            background: var(--clx-accent-subtle, #e0f2f8);
+            border: 1px solid var(--clx-accent, #0f7490);
+            border-left: 4px solid var(--clx-accent, #0f7490);
+            color: var(--clx-accent, #0f7490);
+            padding: 10px 14px; border-radius: 6px;
+            margin-bottom: 12px; font-size: 13px;
+        }
+        .filter-active-banner .fab-icon { font-size: 16px; flex-shrink: 0; }
+        .filter-active-banner .fab-text { flex: 1; }
+        [data-theme="dark"] .filter-active-banner {
+            background: rgba(15,116,144,0.18); color: #67e8f9; border-color: rgba(15,116,144,0.5);
+        }
+
         /* Phase 3G: Care Team */
         .ct-strip {
             display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
@@ -1224,8 +1240,8 @@
     const UNIT_NAMES = { ED: 'ED', MS: 'Med-Surg', ICU: 'ICU', PCU: 'PCU / Step-Down', OB: 'OB / L&D' };
     const UNIT_ORDER = ['ED', 'MS', 'ICU', 'PCU', 'OB'];
     const UNIT_BED_COUNT = 10;
-    // Phase 2: ED hall beds (overflow)
-    const ED_HALL_BEDS = ['ED-H1', 'ED-H2', 'ED-H3', 'ED-H4'];
+    // Phase 2: ED hall beds (overflow). Bumped to 8 for surge capacity (Phase 3B.1.5).
+    const ED_HALL_BEDS = ['ED-H1', 'ED-H2', 'ED-H3', 'ED-H4', 'ED-H5', 'ED-H6', 'ED-H7', 'ED-H8'];
 
     // ===========================================================
     // [150] STATE
@@ -1262,6 +1278,7 @@
     let currentMar = [];
     let currentTar = [];
     let currentLdas = [];         // per-encounter LDAs for the encounter currently being viewed
+    let currentOrders = [];       // per-encounter orders (Phase 3B)
 
     let activeNoteType = 'soap';
     let activeNoteRole = 'RN';    // Phase 3A.5b — default role for new notes
@@ -1436,6 +1453,13 @@
             const chart = (seed.CHART_BY_PATIENT[p.id] || {}).current || {};
             writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
 
+            // Phase 3B: Orders for current encounter
+            //   - Non-medication orders come from SEED_ORDERS dict (consults, diet, etc.)
+            //   - Medication orders auto-generated from MAR seed items
+            //   - Treatment orders auto-generated from TAR seed items
+            //   - Each MAR/TAR item gets an orderId backref tying it to the originating order
+            writeSeededOrders(updates, p.id, encId, chart, enc.admissionDate, seed);
+
             // LDAs (lines/drains/airways) for current encounter
             const ldaList = (seed.SEED_LDAS || {})[p.id] || [];
             ldaList.forEach(function (lda) {
@@ -1490,13 +1514,31 @@
         return database.ref().update(updates);
     }
 
-    // Writes MAR/TAR/vitals/notes arrays for one (patient, encounter) pair
+    // Writes MAR/TAR/vitals/notes arrays for one (patient, encounter) pair.
+    // Phase 3B: Each MAR item auto-generates a paired medication order; MAR row gets orderId backref.
+    // Same for TAR items → treatment orders.
     function writeChartEntries(updates, patientId, encounterId, chart, baseTs) {
         const base = baseTs || Date.now();
         (chart.mar || []).forEach(function (item, i) {
             const key = database.ref('emr/mar/' + patientId).push().key;
+            const orderId = database.ref('emr/orders/' + encounterId).push().key;
+            // Auto-generate the medication order
+            updates['emr/orders/' + encounterId + '/' + orderId] = {
+                orderType: 'medication',
+                medication: item.medication, dose: item.dose, route: item.route,
+                frequency: item.frequency, scheduledTime: item.scheduledTime,
+                isPRN: !!item.isPRN, prnIndication: item.prnIndication || null,
+                status: 'active',
+                placedBy: 'Seed (admitting MD)',
+                placedAt: base,
+                orderEntry: 'CPOE',
+                acknowledgedBy: 'Seed', acknowledgedAt: base,
+                encounterId: encounterId
+            };
+            // MAR row references the order
             updates['emr/mar/' + patientId + '/' + key] = Object.assign({
                 encounterId: encounterId,
+                orderId: orderId,
                 status: item.status || 'scheduled',
                 administeredAt: item.administeredAt || null,
                 administeredBy: item.administeredBy || null,
@@ -1506,8 +1548,20 @@
         });
         (chart.tar || []).forEach(function (item, i) {
             const key = database.ref('emr/tar/' + patientId).push().key;
+            const orderId = database.ref('emr/orders/' + encounterId).push().key;
+            updates['emr/orders/' + encounterId + '/' + orderId] = {
+                orderType: 'treatment',
+                treatment: item.treatment, frequency: item.frequency, scheduledTime: item.scheduledTime,
+                status: 'active',
+                placedBy: 'Seed (admitting MD)',
+                placedAt: base,
+                orderEntry: 'CPOE',
+                acknowledgedBy: 'Seed', acknowledgedAt: base,
+                encounterId: encounterId
+            };
             updates['emr/tar/' + patientId + '/' + key] = Object.assign({
                 encounterId: encounterId,
+                orderId: orderId,
                 status: item.status || 'scheduled',
                 administeredAt: item.administeredAt || null,
                 administeredBy: item.administeredBy || null,
@@ -1533,6 +1587,27 @@
                 by: n.by || 'Past Nurse',
                 timestamp: base + (n.offsetH || 0) * 3600000
             };
+        });
+    }
+
+    // Phase 3B: Write the non-medication seeded orders (consult/diet/activity/labs/etc)
+    // from SEED_ORDERS dict for one patient's encounter.
+    function writeSeededOrders(updates, patientId, encounterId, chart, baseTs, seed) {
+        const base = baseTs || Date.now();
+        const ordersList = (seed.SEED_ORDERS || {})[patientId] || [];
+        ordersList.forEach(function (o, i) {
+            const orderId = database.ref('emr/orders/' + encounterId).push().key;
+            const placedAt = base + ((o.offsetH || 0) * 3600000);
+            const ackInfo = (o.status === 'acknowledged' || o.status === 'active' || o.status === 'completed')
+                ? { acknowledgedBy: 'Seed', acknowledgedAt: placedAt + 60000 }
+                : { acknowledgedBy: null, acknowledgedAt: null };
+            updates['emr/orders/' + encounterId + '/' + orderId] = Object.assign({
+                encounterId: encounterId,
+                placedAt: placedAt,
+                placedBy: o.placedBy || 'Seed (admitting MD)',
+                orderEntry: o.orderEntry || 'CPOE',
+                status: o.status || 'pending-ack'
+            }, ackInfo, o);
         });
     }
 
@@ -1627,8 +1702,9 @@
             r.ref.on('value', r.cb);
             patientUnsubscribers.push(function () { r.ref.off('value', r.cb); });
         });
-        // LDA listener — scoped to the active encounter (re-attaches if viewingEncounterId changes)
+        // LDA + Orders listeners — scoped to the active encounter (re-attach if viewingEncounterId changes)
         attachLdaListener();
+        attachOrdersListener();
     }
 
     let ldaUnsubscriber = null;
@@ -1645,11 +1721,28 @@
         ldaUnsubscriber = function () { ref.off('value', cb); };
     }
 
+    // Phase 3B: Orders listener (also encounter-scoped)
+    let ordersUnsubscriber = null;
+    function attachOrdersListener() {
+        if (ordersUnsubscriber) { try { ordersUnsubscriber(); } catch (e) {} ordersUnsubscriber = null; }
+        const encId = activeEncounterIdForView();
+        if (!encId) { currentOrders = []; if (currentTab === 'orders') renderOrdersTab(); return; }
+        const ref = database.ref('emr/orders/' + encId);
+        const cb = function (snap) {
+            currentOrders = snapshotToSortedArray(snap, 'placedAt', 'desc');
+            if (currentTab === 'orders') renderOrdersTab();
+            // Also refresh chart header to update any pending-ack indicator (added later in 3B.2)
+        };
+        ref.on('value', cb);
+        ordersUnsubscriber = function () { ref.off('value', cb); };
+    }
+
     function detachPatientListeners() {
         patientUnsubscribers.forEach(function (fn) { try { fn(); } catch (e) {} });
         patientUnsubscribers = [];
         if (ldaUnsubscriber) { try { ldaUnsubscriber(); } catch (e) {} ldaUnsubscriber = null; }
-        currentVitals = []; currentNotes = []; currentMar = []; currentTar = []; currentLdas = [];
+        if (ordersUnsubscriber) { try { ordersUnsubscriber(); } catch (e) {} ordersUnsubscriber = null; }
+        currentVitals = []; currentNotes = []; currentMar = []; currentTar = []; currentLdas = []; currentOrders = [];
     }
 
     function snapshotToSortedArray(snap, sortKey, dir) {
@@ -1706,10 +1799,20 @@
             totalOcc + ' occupied of ' + totalBeds + ' beds' + (currentUnit === 'all' ? ' across all units' : '');
 
         el.className = '';
+        // Phase 3G fix: prominent filter-active banner so users understand why fewer patients show
+        const filterBanner = myPatientsFilterOn
+            ? '<div class="filter-active-banner">' +
+                '<span class="fab-icon">👤</span>' +
+                '<span class="fab-text">Showing only patients on <strong>your</strong> care team. ' +
+                  '<span style="color:var(--clx-text-muted);">Total in hospital: ' + totalOcc + ' admitted.</span>' +
+                '</span>' +
+                '<button class="btn sm" onclick="toggleMyPatientsFilter()">Show All Patients</button>' +
+              '</div>'
+            : '';
         if (boardMode === 'manager') {
-            el.innerHTML = renderManagerView(units);
+            el.innerHTML = filterBanner + renderManagerView(units);
         } else {
-            el.innerHTML = renderCardsView(units);
+            el.innerHTML = filterBanner + renderCardsView(units);
         }
     }
 
@@ -2102,8 +2205,9 @@
         viewingEncounterId = encId;
         updateChartReadOnlyState();
         renderChartHeader();
-        // Re-attach LDA listener to the newly-active encounter
+        // Re-attach LDA + Orders listeners to the newly-active encounter
         attachLdaListener();
+        attachOrdersListener();
         // Re-render the active tab so filters apply
         switchTab(currentTab);
     };
@@ -4418,6 +4522,7 @@
             if (plan.marByPid   && plan.marByPid[p.id])   chart.mar   = (chart.mar   || []).concat(plan.marByPid[p.id]);
             if (plan.tarByPid   && plan.tarByPid[p.id])   chart.tar   = (chart.tar   || []).concat(plan.tarByPid[p.id]);
             writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
+            writeSeededOrders(updates, p.id, encId, chart, enc.admissionDate, seed);
             // LDAs
             const ldaList = (plan.ldasByPid || {})[p.id] || [];
             ldaList.forEach(function (lda) {
