@@ -812,6 +812,54 @@
             font-weight: 600;
         }
 
+        /* Phase 3B.2: MAR/TAR row order chip linking back to placing order */
+        .mar-order-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            margin-top: 4px;
+            font-size: 11px; color: var(--clx-accent, #0f7490);
+            background: var(--clx-accent-subtle, #e0f2f8);
+            padding: 2px 8px; border-radius: 10px;
+            cursor: pointer; border: 1px solid transparent;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .mar-order-chip:hover { border-color: var(--clx-accent, #0f7490); background: var(--clx-bg-surface, #fff); }
+        [data-theme="dark"] .mar-order-chip { background: rgba(15,116,144,0.16); color: #67e8f9; }
+
+        /* Brief flash highlight when jumping to an order from a MAR chip */
+        .ord-row.ord-row-flash { animation: ordFlash 1.6s ease; }
+        @keyframes ordFlash {
+            0%   { background: var(--clx-accent-subtle, #e0f2f8); box-shadow: 0 0 0 3px var(--clx-accent, #0f7490); }
+            100% { background: transparent; box-shadow: 0 0 0 0 transparent; }
+        }
+
+        /* Phase 3B.2: Bed-card new/overdue indicator pills */
+        .bc-indicators { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+        .bc-new-pill {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: #fef3c7; color: #854d0e; border: 1px solid #fde68a;
+            font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;
+            letter-spacing: 0.03em;
+        }
+        .bc-overdue-pill {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;
+            font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;
+            letter-spacing: 0.03em;
+        }
+        [data-theme="dark"] .bc-new-pill { background: rgba(234,179,8,0.18); color: #fde68a; border-color: rgba(234,179,8,0.4); }
+        [data-theme="dark"] .bc-overdue-pill { background: rgba(239,68,68,0.18); color: #fca5a5; border-color: rgba(239,68,68,0.4); }
+
+        /* Manager view count pills */
+        .mgr-count-pill {
+            display: inline-block; min-width: 22px; text-align: center;
+            font-size: 11px; font-weight: 700;
+            padding: 2px 7px; border-radius: 10px;
+        }
+        .mgr-count-pill.mgr-new { background: #fef3c7; color: #854d0e; }
+        .mgr-count-pill.mgr-overdue { background: #fee2e2; color: #b91c1c; }
+        [data-theme="dark"] .mgr-count-pill.mgr-new { background: rgba(234,179,8,0.18); color: #fde68a; }
+        [data-theme="dark"] .mgr-count-pill.mgr-overdue { background: rgba(239,68,68,0.18); color: #fca5a5; }
+
         /* Phase 3B: Orders tab */
         .orders-actions-bar {
             display: flex; align-items: center; gap: 12px;
@@ -1395,6 +1443,7 @@
     let currentTar = [];
     let currentLdas = [];         // per-encounter LDAs for the encounter currently being viewed
     let currentOrders = [];       // per-encounter orders (Phase 3B)
+    let allOrdersByEnc = {};      // Phase 3B.2: global listener at emr/orders — {encId: {orderId: order}} for board indicators
 
     let activeNoteType = 'soap';
     let activeNoteRole = 'RN';    // Phase 3A.5b — default role for new notes
@@ -1818,6 +1867,12 @@
         database.ref('userProfiles').on('value', function (snap) {
             allUserProfiles = snap.val() || {};
         });
+        // Phase 3B.2: global orders listener for bed-card "new"/"overdue" indicators.
+        // Volume at current seed size (~200-300 orders across 28 patients) is well within RTDB performance.
+        database.ref('emr/orders').on('value', function (snap) {
+            allOrdersByEnc = snap.val() || {};
+            renderBoard();
+        });
     }
 
     // Phase 2 helpers: encounter lookup
@@ -2004,11 +2059,21 @@
             const rnChip = primaryRN
                 ? '<span class="bc-rn-chip" data-careteam="' + esc(p._encounterId || '') + '">' + esc(initialsFor(primaryRN.name)) + careTeamHoverTooltip(enc) + '</span>'
                 : '';
+            // Phase 3B.2: new/overdue order indicators on bed cards
+            const counts = countNewAndOverdueForEnc(p._encounterId);
+            const newPill = counts.neew > 0
+                ? '<span class="bc-new-pill" title="' + counts.neew + ' order(s) awaiting acknowledgment">🆕 ' + counts.neew + '</span>'
+                : '';
+            const overduePill = counts.overdue > 0
+                ? '<span class="bc-overdue-pill" title="' + counts.overdue + ' scheduled med(s) overdue >30 min">⏰ ' + counts.overdue + '</span>'
+                : '';
+            const indicators = (newPill || overduePill) ? '<div class="bc-indicators">' + newPill + overduePill + '</div>' : '';
             return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + rnChip + '</div>' +
                 '<div class="pt-name">' + esc(p.name) + '</div>' +
                 '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
                 '<div class="pt-dx">' + esc(p.dx) + '</div>' +
+                indicators +
                 statusNoteHtml(enc) +
                 pendingChip +
                 (badges ? '<div class="pt-badges">' + badges + '</div>' : '') +
@@ -2174,6 +2239,8 @@
                 '<th class="' + sortedClass('dx') + '" onclick="setMgrSort(\'dx\')">DX' + arrow('dx') + '</th>' +
                 '<th>Status Note</th>' +
                 '<th class="' + sortedClass('rn') + '" onclick="setMgrSort(\'rn\')">RN' + arrow('rn') + '</th>' +
+                '<th class="' + sortedClass('neew') + '" onclick="setMgrSort(\'neew\')" title="New orders awaiting acknowledgment">🆕' + arrow('neew') + '</th>' +
+                '<th class="' + sortedClass('overdue') + '" onclick="setMgrSort(\'overdue\')" title="Overdue meds">⏰' + arrow('overdue') + '</th>' +
                 '<th class="' + sortedClass('code') + '" onclick="setMgrSort(\'code\')">Code' + arrow('code') + '</th>' +
                 '<th>Allergies</th>' +
                 '<th class="' + sortedClass('acuity') + '" onclick="setMgrSort(\'acuity\')">Acuity' + arrow('acuity') + '</th>' +
@@ -2181,7 +2248,7 @@
             '</tr></thead><tbody>';
         rows.forEach(function (r) {
             if (!r.patient) {
-                const cols = currentUnit === 'all' ? 11 : 10; // +1 for Primary RN column (Phase 3G)
+                const cols = currentUnit === 'all' ? 13 : 12; // +2 for new + overdue (Phase 3B.2)
                 html += '<tr class="mgr-empty"><td class="mgr-bed">' + esc(r.bedId) + '</td>' +
                     (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
                     '<td colspan="' + (cols - (currentUnit === 'all' ? 2 : 1)) + '">— Unoccupied —</td></tr>';
@@ -2197,6 +2264,14 @@
             const rnCell = primaryRN
                 ? '<span class="bc-rn-chip" style="margin-right:6px;">' + esc(initialsFor(primaryRN.name)) + careTeamHoverTooltip(enc) + '</span><span style="font-size:11px;color:var(--clx-text-muted);">' + esc(primaryRN.name.split(' ')[0]) + '</span>'
                 : '<span style="font-size:11px;color:var(--clx-text-muted);font-style:italic;">unassigned</span>';
+            // Phase 3B.2: order counts per-encounter
+            const mgrCounts = countNewAndOverdueForEnc(p._encounterId);
+            const mgrNewCell = mgrCounts.neew > 0
+                ? '<span class="mgr-count-pill mgr-new">' + mgrCounts.neew + '</span>'
+                : '<span style="color:var(--clx-text-muted);font-size:11px;">—</span>';
+            const mgrOverdueCell = mgrCounts.overdue > 0
+                ? '<span class="mgr-count-pill mgr-overdue">' + mgrCounts.overdue + '</span>'
+                : '<span style="color:var(--clx-text-muted);font-size:11px;">—</span>';
             html += '<tr onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<td class="mgr-bed">' + esc(r.bedId) + '</td>' +
                 (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
@@ -2205,6 +2280,8 @@
                 '<td class="mgr-dx">' + esc(p.dx) + '</td>' +
                 statusNoteMgrCellHtml(enc) +
                 '<td>' + rnCell + '</td>' +
+                '<td>' + mgrNewCell + '</td>' +
+                '<td>' + mgrOverdueCell + '</td>' +
                 '<td>' + esc(p.codeStatus) + '</td>' +
                 '<td class="' + allergiesClass + '">' + esc(allergiesTxt) + '</td>' +
                 '<td><span class="acuity-pill" style="background:' + acuityColor + ';">' + (p.acuity || 1) + '</span></td>' +
@@ -2236,6 +2313,16 @@
             case 'code':   va = a.patient.codeStatus || ''; vb = b.patient.codeStatus || ''; break;
             case 'acuity': va = a.patient.acuity || 0; vb = b.patient.acuity || 0; break;
             case 'rn':     va = rnNameOf(a); vb = rnNameOf(b); break;
+            case 'neew': {
+                const ca = countNewAndOverdueForEnc(a.patient && a.patient._encounterId);
+                const cb = countNewAndOverdueForEnc(b.patient && b.patient._encounterId);
+                va = ca.neew; vb = cb.neew; break;
+            }
+            case 'overdue': {
+                const ca = countNewAndOverdueForEnc(a.patient && a.patient._encounterId);
+                const cb = countNewAndOverdueForEnc(b.patient && b.patient._encounterId);
+                va = ca.overdue; vb = cb.overdue; break;
+            }
             default:       va = a.bedId; vb = b.bedId; // bed
         }
         if (va < vb) return mgrSortDir === 'asc' ? -1 : 1;
@@ -2249,7 +2336,8 @@
             mgrSortDir = mgrSortDir === 'asc' ? 'desc' : 'asc';
         } else {
             mgrSortBy = col;
-            mgrSortDir = (col === 'acuity') ? 'desc' : 'asc';
+            // Highest count first for indicator columns
+            mgrSortDir = (col === 'acuity' || col === 'neew' || col === 'overdue') ? 'desc' : 'asc';
         }
         renderBoard();
     };
@@ -3190,6 +3278,35 @@
     function renderMarTab()  { renderMedTar('mar'); }
     function renderTarTab()  { renderMedTar('tar'); }
 
+    // Phase 3B.2: render a chip on each MAR/TAR row linking to the placing order.
+    // Uses currentOrders (already scoped to the active encounter).
+    function renderMarOrderChip(item) {
+        if (!item || !item.orderId) return '';
+        const order = (currentOrders || []).find(function (o) { return o._key === item.orderId; });
+        if (!order) return '';
+        const placed = order.placedBy || 'Provider';
+        const when = order.placedAt ? fmtTimeShort(order.placedAt) : '';
+        const entry = order.orderEntry && order.orderEntry !== 'CPOE' ? ' · ' + esc(order.orderEntry) : '';
+        const statusBit = order.status && order.status !== 'active' ? ' · <span style="color:#9a3412;">' + esc(order.status) + '</span>' : '';
+        return '<div class="mar-order-chip" onclick="event.stopPropagation(); jumpToOrder(\'' + esc(item.orderId) + '\')" title="Click to view in Orders tab">' +
+            '📋 Order placed by ' + esc(placed) + (when ? ' · ' + esc(when) : '') + entry + statusBit +
+        '</div>';
+    }
+
+    // Jump from a MAR row's order chip over to the Orders tab (scrolls to the order, briefly highlights it)
+    window.jumpToOrder = function (orderId) {
+        switchTab('orders');
+        // Wait a tick for the tab to render, then scroll + highlight
+        setTimeout(function () {
+            const el = document.querySelector('[data-order-id="' + orderId + '"]');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('ord-row-flash');
+                setTimeout(function () { el.classList.remove('ord-row-flash'); }, 1600);
+            }
+        }, 80);
+    };
+
     function renderMedTar(kind) {
         const el = document.getElementById('tab-' + kind);
         const rawItems = (kind === 'mar') ? currentMar : currentTar;
@@ -3212,12 +3329,15 @@
             const isPRN = !!it.isPRN;
             const canAdmin = (status === 'scheduled' || (isPRN && status !== 'given'));
             const ro = chartReadOnly;
+            // Phase 3B.2: order chip linking back to placing order (if any)
+            const orderChip = renderMarOrderChip(it);
             return '<tr>' +
                 '<td data-label="Time"><strong>' + esc(it.scheduledTime || '—') + '</strong>' + (isPRN ? ' <span style="font-size:10px;color:var(--clx-text-muted);">PRN</span>' : '') + '</td>' +
                 '<td data-label="' + esc(labelHd) + '"><strong>' + esc(it[(kind === 'mar') ? 'medication' : 'treatment'] || '—') + '</strong>' +
                     (kind === 'mar' && it.dose ? '<div style="font-size:12px;color:var(--clx-text-secondary);">' + esc(it.dose) + (it.route ? ' · ' + esc(it.route) : '') + '</div>' : '') +
                     (it.frequency ? '<div style="font-size:11px;color:var(--clx-text-muted);">' + esc(it.frequency) + '</div>' : '') +
                     (isPRN && it.prnIndication ? '<div style="font-size:11px;color:var(--clx-text-muted);">PRN: ' + esc(it.prnIndication) + '</div>' : '') +
+                    orderChip +
                     adminInfo +
                 '</td>' +
                 '<td data-label="Status"><span class="mar-status ' + status + '">' + status + '</span></td>' +
@@ -5437,7 +5557,7 @@
             ? '<div class="ord-ack">Ack ' + esc(fmtTimeShort(o.acknowledgedAt)) + ' by ' + esc(o.acknowledgedBy) + '</div>'
             : '';
         const actionsHtml = ro ? '' : orderRowActions(o);
-        return '<div class="ord-row ord-status-' + statusClass + '">' +
+        return '<div class="ord-row ord-status-' + statusClass + '" data-order-id="' + esc(o._key) + '">' +
             '<div class="ord-main">' +
                 '<div class="ord-summary">' + summary + '</div>' +
                 '<div class="ord-meta">' + placed + '</div>' +
@@ -5489,12 +5609,154 @@
     }
 
     function orderRowActions(o) {
-        // Phase 3B.1: Acknowledge action only. Hold/Resume/Discontinue land in 3B.2.
-        if (o.status === 'pending-ack') {
+        // Phase 3B.2: Full lifecycle — pending-ack → active/acknowledged → held (resumable) / discontinued / completed
+        const s = (o.status || 'active');
+        if (s === 'pending-ack') {
             return '<button class="btn sm primary" onclick="acknowledgeOrder(\'' + esc(o._key) + '\')">Acknowledge</button>';
         }
-        return '';
+        if (s === 'held') {
+            // Any user can Resume. Instructor can also Discontinue.
+            let html = '<button class="btn sm primary" onclick="resumeOrder(\'' + esc(o._key) + '\')">Resume</button>';
+            if (userIsInstructor()) {
+                html += ' <button class="btn sm danger-solid" onclick="discontinueOrder(\'' + esc(o._key) + '\')">D/C</button>';
+            }
+            return html;
+        }
+        if (s === 'active' || s === 'acknowledged') {
+            // Any user can Hold. Instructor can Discontinue.
+            let html = '<button class="btn sm" onclick="holdOrder(\'' + esc(o._key) + '\')">Hold</button>';
+            if (userIsInstructor()) {
+                html += ' <button class="btn sm danger-solid" onclick="discontinueOrder(\'' + esc(o._key) + '\')">D/C</button>';
+            }
+            return html;
+        }
+        return ''; // discontinued / completed — no further actions
     }
+
+    // Role check used for Discontinue gate + any other instructor-only action.
+    // Real RNs escalate DC requests to providers in practice; we restrict to instructor role to teach that habit.
+    function userIsInstructor() {
+        if (!currentUserUid || !allUserProfiles) return false;
+        const p = allUserProfiles[currentUserUid];
+        if (!p) return false;
+        if (p.isAdmin === true) return true;
+        const roleStr = (p.role || p.role_label || '').toLowerCase();
+        return roleStr.indexOf('instructor') !== -1;
+    }
+
+    // ---- Hold action ----
+    window.holdOrder = function (orderId) {
+        if (!currentPatientId || chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) { showToast('Order not found.', 'error'); return; }
+        showPromptModal('Hold this order?',
+            'Enter reason (e.g., NPO for procedure, INR pending, patient refusing):',
+            function (reason) {
+                const r = (reason || '').trim();
+                if (!r) { showToast('Hold reason required.', 'warning'); return; }
+                const now = Date.now();
+                const updates = {};
+                updates['emr/orders/' + encId + '/' + orderId + '/status'] = 'held';
+                updates['emr/orders/' + encId + '/' + orderId + '/holdReason'] = r;
+                updates['emr/orders/' + encId + '/' + orderId + '/heldBy'] = currentUserName;
+                updates['emr/orders/' + encId + '/' + orderId + '/heldAt'] = now;
+                const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+                const summary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
+                updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+                    encounterId: encId, type: 'chart-edit', authorRole: 'RN',
+                    body: 'Order HELD: ' + summary + ' — Reason: ' + r,
+                    by: currentUserName, timestamp: now
+                };
+                database.ref().update(updates).then(function () {
+                    showToast('Order held.', 'success');
+                }).catch(function (err) { showToast('Hold failed: ' + (err.message || err), 'error'); });
+            },
+            { submitText: 'Hold order', placeholder: 'Reason for hold' });
+    };
+
+    // ---- Resume action ----
+    window.resumeOrder = function (orderId) {
+        if (!currentPatientId || chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) { showToast('Order not found.', 'error'); return; }
+        showConfirmModal('Resume this order?',
+            'Status will change from Held back to Active. Previous hold reason ("' + esc(order.holdReason || '—') + '") will be preserved in notes.',
+            function () {
+                const now = Date.now();
+                const updates = {};
+                updates['emr/orders/' + encId + '/' + orderId + '/status'] = 'active';
+                updates['emr/orders/' + encId + '/' + orderId + '/resumedBy'] = currentUserName;
+                updates['emr/orders/' + encId + '/' + orderId + '/resumedAt'] = now;
+                const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+                const summary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
+                updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+                    encounterId: encId, type: 'chart-edit', authorRole: 'RN',
+                    body: 'Order RESUMED: ' + summary + (order.holdReason ? ' (previously held for: ' + order.holdReason + ')' : ''),
+                    by: currentUserName, timestamp: now
+                };
+                database.ref().update(updates).then(function () {
+                    showToast('Order resumed.', 'success');
+                });
+            },
+            { confirmText: 'Resume' });
+    };
+
+    // ---- Discontinue action (instructor-only) ----
+    window.discontinueOrder = function (orderId) {
+        if (!currentPatientId || chartReadOnly) return;
+        if (!userIsInstructor()) { showToast('Only instructors can discontinue orders. RNs: message the provider.', 'warning', 5000); return; }
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) { showToast('Order not found.', 'error'); return; }
+        // Build a taxonomy dropdown for DC reason
+        const reasons = ['Order error', 'Patient refused', 'Therapy complete', 'Adverse reaction', 'Provider change', 'No longer indicated', 'Transitioned to PO', 'Transitioned to home regimen', 'Other'];
+        const opts = reasons.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join('');
+        const summary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
+        const body =
+            '<div class="adm-info-block"><span class="lbl">Order</span><span class="val">' + esc(summary) + '</span></div>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field"><label>Reason</label><select id="dc_reason_sel">' + opts + '</select></div>' +
+                '<div class="ff-field full-row"><label>Additional notes (optional)</label><textarea id="dc_reason_notes" rows="2" placeholder="Context for the D/C"></textarea></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn danger-solid" onclick="confirmDiscontinueOrder(\'' + esc(orderId) + '\')">Discontinue Order</button>' +
+            '</div>';
+        openFlowModal('Discontinue Order (instructor)', body);
+    };
+
+    window.confirmDiscontinueOrder = function (orderId) {
+        const encId = activeEncounterIdForView();
+        if (!encId || !currentPatientId) return;
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) return;
+        const reason = document.getElementById('dc_reason_sel').value;
+        const extra = (document.getElementById('dc_reason_notes').value || '').trim();
+        const fullReason = reason + (extra ? ' — ' + extra : '');
+        const now = Date.now();
+        const updates = {};
+        updates['emr/orders/' + encId + '/' + orderId + '/status'] = 'discontinued';
+        updates['emr/orders/' + encId + '/' + orderId + '/dcReason'] = fullReason;
+        updates['emr/orders/' + encId + '/' + orderId + '/dcReasonCategory'] = reason;
+        updates['emr/orders/' + encId + '/' + orderId + '/dcBy'] = currentUserName;
+        updates['emr/orders/' + encId + '/' + orderId + '/dcAt'] = now;
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        const summary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: encId, type: 'chart-edit', authorRole: 'MD',
+            body: 'Order DISCONTINUED: ' + summary + ' — ' + fullReason,
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Order discontinued.', 'success');
+            closeFlowModal();
+        });
+    };
 
     // ---- Acknowledge action ----
     window.acknowledgeOrder = function (orderId) {
@@ -6173,6 +6435,41 @@
             if (m && m.uid === currentUserUid) return true;
         }
         return false;
+    }
+
+    // Phase 3B.2: compute pending-ack + overdue-medication counts for an encounter (for board indicators)
+    // "Overdue" = medication order with status 'active' and a non-PRN scheduledTime that's >30 min past now.
+    function countNewAndOverdueForEnc(encId) {
+        if (!encId) return { neew: 0, overdue: 0 };
+        const orders = allOrdersByEnc[encId];
+        if (!orders) return { neew: 0, overdue: 0 };
+        let neew = 0, overdue = 0;
+        const now = Date.now();
+        Object.keys(orders).forEach(function (oid) {
+            const o = orders[oid];
+            if (!o) return;
+            if (o.status === 'pending-ack') neew++;
+            if (o.orderType === 'medication' && o.status === 'active' && !o.isPRN && o.scheduledTime) {
+                // Parse scheduledTime like "0800" or "0800,1200,1600" — find most recent past time today
+                const times = String(o.scheduledTime).split(',').map(function (t) { return t.trim(); }).filter(function (t) { return /^\d{3,4}$/.test(t); });
+                if (!times.length) return;
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                let mostRecentPast = null;
+                times.forEach(function (t) {
+                    const hh = parseInt(t.slice(0, -2), 10);
+                    const mm = parseInt(t.slice(-2), 10);
+                    if (isNaN(hh) || isNaN(mm)) return;
+                    const sched = today.getTime() + (hh * 60 + mm) * 60000;
+                    if (sched <= now && (mostRecentPast === null || sched > mostRecentPast)) {
+                        mostRecentPast = sched;
+                    }
+                });
+                if (mostRecentPast !== null && (now - mostRecentPast) > 30 * 60000) {
+                    overdue++;
+                }
+            }
+        });
+        return { neew: neew, overdue: overdue };
     }
 
     // Phase 3G: My Patients sidebar filter toggle
