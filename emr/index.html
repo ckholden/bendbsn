@@ -1323,8 +1323,10 @@
             <div style="font-size:11px;color:var(--clx-text-muted);margin-bottom:10px;">Note: continuing will refresh the simulation data (any in-progress patient documentation will be replaced with the new seeded scenario).</div>
             <div id="migrationStatus" style="font-size:13px;color:var(--clx-text-muted);min-height:20px;"></div>
             <div class="adm-buttons">
+                <button class="btn" id="migrationSkipBtn" onclick="skipMigration()">Skip for now</button>
                 <button class="btn primary" id="migrationConfirmBtn" onclick="runMigration()">Continue &amp; load latest</button>
             </div>
+            <div style="font-size:10px;color:var(--clx-text-muted);margin-top:6px;text-align:right;">"Skip" keeps the current data. The modal will reappear on next load.</div>
         </div>
     </div>
 
@@ -1506,11 +1508,27 @@
         document.getElementById('migrationOverlay').classList.add('visible');
     }
 
+    // Phase 3B.1.7: safety-net — skip migration without migrating, attach listeners to whatever's in the DB.
+    // The modal will reappear on next load (version still mismatched), but user isn't trapped.
+    window.skipMigration = function () {
+        document.getElementById('migrationOverlay').classList.remove('visible');
+        attachGlobalListeners();
+        showToast('Skipped. Data may be incomplete — reload to try again.', 'info', 6000);
+    };
+
     window.runMigration = function () {
         const btn = document.getElementById('migrationConfirmBtn');
         const status = document.getElementById('migrationStatus');
         btn.disabled = true; btn.textContent = 'Working…';
         status.textContent = 'Clearing existing data…';
+
+        // Watchdog: if the whole migration takes > 20 seconds, surface a retry/skip option
+        const watchdog = setTimeout(function () {
+            if (!document.getElementById('migrationOverlay').classList.contains('visible')) return;
+            status.innerHTML = '⚠ Migration is taking longer than expected. Check network or Firebase auth, or click <strong>Skip for now</strong> to continue.';
+            btn.disabled = false; btn.textContent = 'Retry';
+        }, 20000);
+
         const wipeUpdates = {
             'emr/patients': null,
             'emr/encounters': null,
@@ -1526,11 +1544,13 @@
             status.textContent = 'Seeding Phase 2 data…';
             return seedFresh();
         }).then(function () {
+            clearTimeout(watchdog);
             status.textContent = 'Done. Loading board…';
             document.getElementById('migrationOverlay').classList.remove('visible');
             attachGlobalListeners();
             showToast('Sim EMR data reset complete. 28 patients loaded.', 'success');
         }).catch(function (err) {
+            clearTimeout(watchdog);
             console.error('[EMR] Migration failed:', err);
             status.textContent = 'Error: ' + (err.message || err);
             btn.disabled = false;
