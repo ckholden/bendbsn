@@ -1665,21 +1665,28 @@
         (chart.mar || []).forEach(function (item, i) {
             const key = database.ref('emr/mar/' + patientId).push().key;
             const orderId = database.ref('emr/orders/' + encounterId).push().key;
-            // Auto-generate the medication order
+            // Auto-generate the medication order.
+            // DEFENSIVE: use || null for every optional field. Firebase REJECTS any undefined value
+            // anywhere in an atomic update() and the WHOLE batch fails with a cryptic error.
             updates['emr/orders/' + encounterId + '/' + orderId] = {
                 orderType: 'medication',
-                medication: item.medication, dose: item.dose, route: item.route,
-                frequency: item.frequency, scheduledTime: item.scheduledTime,
-                isPRN: !!item.isPRN, prnIndication: item.prnIndication || null,
+                medication: item.medication || '',
+                dose: item.dose || '',
+                route: item.route || '',
+                frequency: item.frequency || '',
+                scheduledTime: item.scheduledTime || null,
+                isPRN: !!item.isPRN,
+                prnIndication: item.prnIndication || null,
                 status: 'active',
                 placedBy: 'Seed (admitting MD)',
                 placedAt: base,
                 orderEntry: 'CPOE',
-                acknowledgedBy: 'Seed', acknowledgedAt: base,
+                acknowledgedBy: 'Seed',
+                acknowledgedAt: base,
                 encounterId: encounterId
             };
-            // MAR row references the order
-            updates['emr/mar/' + patientId + '/' + key] = Object.assign({
+            // MAR row references the order. Sanitize through sanitizeForFirebase to scrub any undefined from item spread.
+            updates['emr/mar/' + patientId + '/' + key] = sanitizeForFirebase(Object.assign({
                 encounterId: encounterId,
                 orderId: orderId,
                 status: item.status || 'scheduled',
@@ -1687,22 +1694,25 @@
                 administeredBy: item.administeredBy || null,
                 notes: item.notes || '',
                 createdAt: base + i
-            }, item);
+            }, item));
         });
         (chart.tar || []).forEach(function (item, i) {
             const key = database.ref('emr/tar/' + patientId).push().key;
             const orderId = database.ref('emr/orders/' + encounterId).push().key;
             updates['emr/orders/' + encounterId + '/' + orderId] = {
                 orderType: 'treatment',
-                treatment: item.treatment, frequency: item.frequency, scheduledTime: item.scheduledTime,
+                treatment: item.treatment || '',
+                frequency: item.frequency || '',
+                scheduledTime: item.scheduledTime || null,
                 status: 'active',
                 placedBy: 'Seed (admitting MD)',
                 placedAt: base,
                 orderEntry: 'CPOE',
-                acknowledgedBy: 'Seed', acknowledgedAt: base,
+                acknowledgedBy: 'Seed',
+                acknowledgedAt: base,
                 encounterId: encounterId
             };
-            updates['emr/tar/' + patientId + '/' + key] = Object.assign({
+            updates['emr/tar/' + patientId + '/' + key] = sanitizeForFirebase(Object.assign({
                 encounterId: encounterId,
                 orderId: orderId,
                 status: item.status || 'scheduled',
@@ -1710,15 +1720,15 @@
                 administeredBy: item.administeredBy || null,
                 notes: item.notes || '',
                 createdAt: base + i
-            }, item);
+            }, item));
         });
         (chart.vitals || []).forEach(function (v, i) {
             const key = database.ref('emr/vitals/' + patientId).push().key;
-            updates['emr/vitals/' + patientId + '/' + key] = Object.assign({
+            updates['emr/vitals/' + patientId + '/' + key] = sanitizeForFirebase(Object.assign({
                 encounterId: encounterId,
                 timestamp: v.timestamp || (base + (v.offsetH || 0) * 3600000),
                 by: v.by || 'Past Nurse'
-            }, v);
+            }, v));
         });
         (chart.notes || []).forEach(function (n, i) {
             const key = database.ref('emr/notes/' + patientId).push().key;
@@ -1733,6 +1743,23 @@
         });
     }
 
+    // Phase 3B.1.8: defensive scrub for Firebase writes.
+    // Firebase RTDB rejects `undefined` anywhere in an atomic update with "contains undefined in
+    // property X" and fails the ENTIRE batch. One bad seed item → the whole migration aborts.
+    // This helper walks an object and drops any undefined properties so a single missing field
+    // can't kill a 450-path migration.
+    function sanitizeForFirebase(obj) {
+        if (obj === null || typeof obj !== 'object') return obj;
+        const out = Array.isArray(obj) ? [] : {};
+        Object.keys(obj).forEach(function (k) {
+            const v = obj[k];
+            if (v === undefined) return; // drop undefined keys
+            if (v !== null && typeof v === 'object') out[k] = sanitizeForFirebase(v);
+            else out[k] = v;
+        });
+        return out;
+    }
+
     // Phase 3B: Write the non-medication seeded orders (consult/diet/activity/labs/etc)
     // from SEED_ORDERS dict for one patient's encounter.
     function writeSeededOrders(updates, patientId, encounterId, chart, baseTs, seed) {
@@ -1744,13 +1771,13 @@
             const ackInfo = (o.status === 'acknowledged' || o.status === 'active' || o.status === 'completed')
                 ? { acknowledgedBy: 'Seed', acknowledgedAt: placedAt + 60000 }
                 : { acknowledgedBy: null, acknowledgedAt: null };
-            updates['emr/orders/' + encounterId + '/' + orderId] = Object.assign({
+            updates['emr/orders/' + encounterId + '/' + orderId] = sanitizeForFirebase(Object.assign({
                 encounterId: encounterId,
                 placedAt: placedAt,
                 placedBy: o.placedBy || 'Seed (admitting MD)',
                 orderEntry: o.orderEntry || 'CPOE',
                 status: o.status || 'pending-ack'
-            }, ackInfo, o);
+            }, ackInfo, o));
         });
     }
 

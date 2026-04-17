@@ -1516,7 +1516,7 @@ const UNADMITTED_PRIOR_CHART = {
             { type: 'narrative', offsetH: 0, body: 'Admitted after mechanical fall with L hip fracture. ORIF planned.' },
             { type: 'soap', offsetH: 72, body: 'S: Pain controlled. O: Incision clean, WB as tolerated. A: POD#3 ORIF stable. P: Transfer to rehab.' }
         ],
-        mar: [{ medication: 'Oxycodone', dose: '5 mg', route: 'PO', frequency: 'Q4H PRN pain', status: 'given' }]
+        mar: [{ medication: 'Oxycodone', dose: '5 mg', route: 'PO', frequency: 'Q4H PRN pain', scheduledTime: 'PRN', isPRN: true, prnIndication: 'Pain >4/10', status: 'given' }]
     }],
     p_tyler_mcallister: [{
         notes: [
