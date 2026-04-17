@@ -118,7 +118,7 @@
         .mgr-table .mgr-bed { font-weight: 700; color: var(--clx-text-primary); }
         .mgr-table .mgr-empty { color: var(--clx-text-muted, #718096); font-style: italic; }
         .mgr-table .mgr-empty:hover { background: transparent; cursor: default; }
-        .mgr-table .acuity-pill {
+        .mgr-table .esi-pill {
             display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; color: #fff; min-width: 22px; text-align: center;
         }
         .mgr-table .mgr-dx { white-space: normal; max-width: 280px; }
@@ -164,14 +164,16 @@
             font-size: 16px; font-weight: 700; color: var(--clx-text-primary, #1a2532);
             margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
         }
-        .acuity-dot {
+        /* ESI triage dot — 1 = resuscitation (red) → 5 = non-urgent (green). Class names kept
+           as .esi-N (replacing legacy .acuity-N) so only one scale exists in the UI. */
+        .esi-dot {
             display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
         }
-        .acuity-1 { background: #16a34a; }
-        .acuity-2 { background: #84cc16; }
-        .acuity-3 { background: #eab308; }
-        .acuity-4 { background: #f97316; }
-        .acuity-5 { background: #dc2626; }
+        .esi-1 { background: #dc2626; }
+        .esi-2 { background: #f97316; }
+        .esi-3 { background: #eab308; }
+        .esi-4 { background: #84cc16; }
+        .esi-5 { background: #16a34a; }
         .bed-card .pt-name { font-size: 14px; font-weight: 600; color: var(--clx-text-primary); margin-bottom: 2px; }
         .bed-card .pt-meta { font-size: 11px; color: var(--clx-text-muted, #718096); margin-bottom: 6px; }
         .bed-card .pt-dx { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-bottom: 8px;
@@ -2161,7 +2163,7 @@
                 : '';
             const indicators = (newPill || overduePill) ? '<div class="bc-indicators">' + newPill + overduePill + '</div>' : '';
             return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
-                '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + rnChip + '</div>' +
+                '<div class="bed-num"><span class="esi-dot esi-' + (p.esiAcuity || 3) + '" title="ESI ' + (p.esiAcuity || '—') + ' (1 = resuscitation, 5 = non-urgent)"></span>' + esc(b.bedId) + rnChip + '</div>' +
                 '<div class="pt-name">' + esc(p.name) + '</div>' +
                 '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
                 '<div class="pt-dx">' + esc(p.dx) + '</div>' +
@@ -2299,9 +2301,10 @@
         const rows = wr.map(function (e) {
             const mins = Math.floor((Date.now() - (e.admissionDate || 0)) / 60000);
             const waitedStr = mins < 60 ? mins + ' min' : Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
-            const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(e.esiAcuity || 3) - 1] || '#9ca3af';
+            // ESI 1 = resuscitation (red) ... ESI 5 = non-urgent (green). Order matches the triage scale.
+            const esiColor = ['#dc2626','#f97316','#eab308','#84cc16','#16a34a'][(e.esiAcuity || 3) - 1] || '#9ca3af';
             return '<div class="wr-row">' +
-                '<div class="wr-acuity" style="background:' + acuityColor + ';">' + (e.esiAcuity || '—') + '</div>' +
+                '<div class="wr-acuity" style="background:' + esiColor + ';" title="ESI ' + (e.esiAcuity || '—') + '">' + (e.esiAcuity || '—') + '</div>' +
                 '<div class="wr-main">' +
                     '<div class="wr-name">' + esc(e._patient.name) + ' <span class="wr-meta">' + esc(e._patient.sex) + ' ' + esc(String(e._patient.age)) + ' · ' + esc(e._patient.mrn) + '</span></div>' +
                     '<div class="wr-cc">' + esc(e.chiefComplaint || '—') + '</div>' +
@@ -2362,7 +2365,7 @@
                 '<th class="' + sortedClass('overdue') + '" onclick="setMgrSort(\'overdue\')" title="Overdue meds">⏰' + arrow('overdue') + '</th>' +
                 '<th class="' + sortedClass('code') + '" onclick="setMgrSort(\'code\')">Code' + arrow('code') + '</th>' +
                 '<th>Allergies</th>' +
-                '<th class="' + sortedClass('acuity') + '" onclick="setMgrSort(\'acuity\')">Acuity' + arrow('acuity') + '</th>' +
+                '<th class="' + sortedClass('esi') + '" onclick="setMgrSort(\'esi\')" title="ESI triage score (1 = resuscitation, 5 = non-urgent)">ESI' + arrow('esi') + '</th>' +
                 '<th>Flags</th>' +
             '</tr></thead><tbody>';
         rows.forEach(function (r) {
@@ -2377,7 +2380,8 @@
             const allergiesArr = activeAllergies(p.allergies);
             const allergiesTxt = allergiesDisplayText(p.allergies);
             const allergiesClass = allergiesArr.length > 0 ? 'mgr-allergies has-allergy' : 'mgr-allergies';
-            const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(p.acuity || 1) - 1] || '#9ca3af';
+            // ESI 1 = resuscitation (red) ... ESI 5 = non-urgent (green).
+            const esiColor = ['#dc2626','#f97316','#eab308','#84cc16','#16a34a'][(p.esiAcuity || 3) - 1] || '#9ca3af';
             const enc = p._encounterId ? allEncounters[p._encounterId] : null;
             const primaryRN = (enc && enc.careTeam && enc.careTeam.primaryRN) ? enc.careTeam.primaryRN : null;
             const rnCell = primaryRN
@@ -2403,7 +2407,7 @@
                 '<td>' + mgrOverdueCell + '</td>' +
                 '<td>' + esc(p.codeStatus) + '</td>' +
                 '<td class="' + allergiesClass + '">' + esc(allergiesTxt) + '</td>' +
-                '<td><span class="acuity-pill" style="background:' + acuityColor + ';">' + (p.acuity || 1) + '</span></td>' +
+                '<td><span class="esi-pill" style="background:' + esiColor + ';" title="ESI ' + (p.esiAcuity || '—') + '">' + (p.esiAcuity || '—') + '</span></td>' +
                 '<td><div class="mgr-badges">' + buildBadges(p) + '</div></td>' +
             '</tr>';
         });
@@ -2430,7 +2434,7 @@
             case 'age':    va = a.patient.age || 0; vb = b.patient.age || 0; break;
             case 'dx':     va = (a.patient.dx || '').toLowerCase(); vb = (b.patient.dx || '').toLowerCase(); break;
             case 'code':   va = a.patient.codeStatus || ''; vb = b.patient.codeStatus || ''; break;
-            case 'acuity': va = a.patient.acuity || 0; vb = b.patient.acuity || 0; break;
+            case 'esi':    va = a.patient.esiAcuity || 99; vb = b.patient.esiAcuity || 99; break;
             case 'rn':     va = rnNameOf(a); vb = rnNameOf(b); break;
             case 'neew': {
                 const ca = countNewAndOverdueForEnc(a.patient && a.patient._encounterId);
@@ -2455,15 +2459,15 @@
             mgrSortDir = mgrSortDir === 'asc' ? 'desc' : 'asc';
         } else {
             mgrSortBy = col;
-            // Highest count first for indicator columns
-            mgrSortDir = (col === 'acuity' || col === 'neew' || col === 'overdue') ? 'desc' : 'asc';
+            // Highest count first for indicator columns; ESI sorts ascending so most acute (1) is at top
+            mgrSortDir = (col === 'neew' || col === 'overdue') ? 'desc' : 'asc';
         }
         renderBoard();
     };
 
     function buildUnitBeds(unit) {
         // Phase 2: beds store encounterId; look up encounter → patientId → patient.
-        // Also merge encounter-level fields (acuity/dx/code/isolation/fallRisk) onto the patient
+        // Also merge encounter-level fields (dx/code/isolation/fallRisk/esiAcuity) onto the patient
         // object so existing renderers keep working without big signature changes.
         const bedMap = allBeds[unit] || {};
         const out = [];
@@ -2477,7 +2481,7 @@
                     patientWithEncFields = Object.assign({}, p, {
                         unit: enc.unit, bed: enc.bed,
                         dx: enc.dx, md: enc.md, codeStatus: enc.codeStatus,
-                        acuity: enc.acuity, isolation: enc.isolation,
+                        isolation: enc.isolation,
                         fallRisk: enc.fallRisk, dnr: enc.dnr,
                         diet: enc.diet, activity: enc.activity, ivAccess: enc.ivAccess,
                         weightKg: enc.weightKg, heightIn: enc.heightIn,
@@ -2817,7 +2821,7 @@
             ['Admission Date', esc(fmtTime(enc.admissionDate))],
             ['Admission Source', esc(enc.admissionSource || '—')],
             ['Chief Complaint', esc(enc.chiefComplaint || '—')],
-            ['ESI Acuity', esc(enc.esiAcuity ? String(enc.esiAcuity) + ' / 5' : '—')],
+            ['ESI Triage', esc(enc.esiAcuity ? esiLabel(enc.esiAcuity) : '—')],
             ['Arrival Mode', esc(enc.arrivalMode || '—')],
             ['Primary Diagnosis', ef('dx', enc.dx)],
             ['Attending MD', ef('md', enc.md)],
@@ -2828,8 +2832,7 @@
             ['Weight', ef('weightKg', enc.weightKg, enc.weightKg != null ? enc.weightKg + ' kg' : '—')],
             ['Height', ef('heightIn', enc.heightIn, enc.heightIn != null ? enc.heightIn + ' in' : '—')],
             ['Isolation', ef('isolation', enc.isolation, enc.isolation || 'None')],
-            ['Fall Risk', ef('fallRisk', enc.fallRisk, enc.fallRisk ? 'Yes' : 'No')],
-            ['Acuity', ef('acuity', enc.acuity, enc.acuity != null ? String(enc.acuity) + ' / 5' : '—')]
+            ['Fall Risk', ef('fallRisk', enc.fallRisk, enc.fallRisk ? 'Yes' : 'No')]
         ] : [];
 
         const homeMedsList = (p.homeMedications && p.homeMedications.length)
@@ -3991,7 +3994,7 @@
             arrivalMode: ctx.triage.mode,
             codeStatus: 'Full Code',
             diet: 'NPO until eval', activity: 'As tolerated',
-            isolation: null, fallRisk: false, dnr: false, acuity: ctx.esi,
+            isolation: null, fallRisk: false, dnr: false,
             status: 'active'
         };
         updates['emr/encounters/' + encId] = encounter;
@@ -4120,7 +4123,6 @@
                 '<div class="ff-field"><label>Diet</label><input id="ad_diet" type="text" value="Regular"></div>' +
                 '<div class="ff-field"><label>Activity</label><input id="ad_activity" type="text" value="As tolerated"></div>' +
                 '<div class="ff-field"><label>IV Access</label><input id="ad_iv" type="text" placeholder="22g L hand"></div>' +
-                '<div class="ff-field"><label>Acuity (1-5)</label><input id="ad_acuity" type="number" min="1" max="5" value="3"></div>' +
                 '<div class="ff-field"><label>Isolation</label><select id="ad_iso"><option value="">None</option><option>Contact</option><option>Droplet</option><option>Airborne</option></select></div>' +
                 '<div class="ff-field"><label>Fall Risk</label><select id="ad_fall"><option value="false">No</option><option value="true">Yes</option></select></div>' +
             '</div>' +
@@ -4177,7 +4179,6 @@
             diet: document.getElementById('ad_diet').value,
             activity: document.getElementById('ad_activity').value,
             ivAccess: document.getElementById('ad_iv').value,
-            acuity: parseInt(document.getElementById('ad_acuity').value, 10) || 3,
             isolation: document.getElementById('ad_iso').value || null,
             fallRisk: document.getElementById('ad_fall').value === 'true',
             dnr: /DNR/.test(document.getElementById('ad_code').value),
@@ -4795,11 +4796,12 @@
                 '<div class="emr-panel-bd" style="padding:8px 12px;font-size:12px;">' +
                     list.map(function (p) {
                         const enc = p.currentEncounter;
-                        const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(enc.acuity || 1) - 1] || '#9ca3af';
+                        // ESI 1 = resuscitation (red) → 5 = non-urgent (green)
+                        const esiColor = ['#dc2626','#f97316','#eab308','#84cc16','#16a34a'][(enc.esiAcuity || 3) - 1] || '#9ca3af';
                         const issue = statusOverrides[p.id];
                         return '<div style="padding:6px 0;border-bottom:1px solid var(--clx-border);">' +
                             '<div style="display:flex;align-items:center;gap:8px;">' +
-                                '<span style="display:inline-block;width:18px;height:18px;border-radius:9px;background:' + acuityColor + ';color:#fff;font-size:11px;font-weight:700;text-align:center;line-height:18px;flex-shrink:0;">' + (enc.acuity || '?') + '</span>' +
+                                '<span title="ESI ' + (enc.esiAcuity || '—') + '" style="display:inline-block;width:18px;height:18px;border-radius:9px;background:' + esiColor + ';color:#fff;font-size:11px;font-weight:700;text-align:center;line-height:18px;flex-shrink:0;">' + (enc.esiAcuity || '—') + '</span>' +
                                 '<strong>' + esc(enc.bed) + '</strong> · ' + esc(p.name) + ' (' + esc(p.sex) + ' ' + esc(String(p.age)) + ')' +
                             '</div>' +
                             '<div style="margin-left:26px;color:var(--clx-text-secondary);font-size:11px;">' + esc(enc.dx || '') + '</div>' +
@@ -5243,7 +5245,6 @@
         isolation:   { level: 'encounter', kind: 'select', options: ['','Contact','Droplet','Airborne','Contact + Droplet','Enteric'] },
         fallRisk:    { level: 'encounter', kind: 'toggle' },
         dnr:         { level: 'encounter', kind: 'toggle' },
-        acuity:      { level: 'encounter', kind: 'number',   min: 1, max: 5 },
         weightKg:    { level: 'encounter', kind: 'number',   suffix: 'kg', min: 0, max: 300, step: 0.1 },
         heightIn:    { level: 'encounter', kind: 'number',   suffix: 'in', min: 0, max: 100 }
     };
@@ -5282,7 +5283,7 @@
             dx:'Diagnosis', md:'Attending MD', codeStatus:'Code Status',
             diet:'Diet', activity:'Activity', ivAccess:'IV Access',
             isolation:'Isolation', fallRisk:'Fall Risk', dnr:'DNR',
-            acuity:'Acuity (1–5)', weightKg:'Weight (kg)', heightIn:'Height (in)'
+            weightKg:'Weight (kg)', heightIn:'Height (in)'
         };
         const label = labelMap[fieldKey] || fieldKey;
 
@@ -5409,7 +5410,7 @@
                 dx:'Diagnosis', md:'Attending MD', codeStatus:'Code Status',
                 diet:'Diet', activity:'Activity', ivAccess:'IV Access',
                 isolation:'Isolation', fallRisk:'Fall Risk', dnr:'DNR',
-                acuity:'Acuity', weightKg:'Weight (kg)', heightIn:'Height (in)'
+                weightKg:'Weight (kg)', heightIn:'Height (in)'
             };
             const label = labelMap[fieldKey] || fieldKey;
             const noteKey = database.ref('emr/notes/' + p.id).push().key;
@@ -6410,7 +6411,7 @@
             ['Admission Source', enc.admissionSource],
             ['Admitting MD', enc.md],
             ['Chief Complaint', enc.chiefComplaint],
-            ['ESI Acuity', enc.esiAcuity],
+            ['ESI Triage', enc.esiAcuity ? esiLabel(enc.esiAcuity) : null],
             ['Arrival Mode', enc.arrivalMode],
             ['Code Status', enc.codeStatus],
             ['Diet', enc.diet],
@@ -6889,6 +6890,12 @@
     function esc(str) {
         if (str == null) return '';
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    // ESI triage score label: 1 = most acute, 5 = least acute
+    function esiLabel(n) {
+        const map = { 1: 'Resuscitation', 2: 'Emergent', 3: 'Urgent', 4: 'Less urgent', 5: 'Non-urgent' };
+        return n ? (n + ' — ' + (map[n] || '')) : '—';
     }
 
     function fmtTime(ts) {
