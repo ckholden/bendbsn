@@ -244,6 +244,26 @@
             color: var(--clx-accent, #0f7490);
             border-bottom-color: var(--clx-accent, #0f7490);
         }
+        /* Phase 3B.2b: inline count badges on the Orders tab button so users know to look there */
+        .chart-tab-badge {
+            display: inline-block;
+            margin-left: 4px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            vertical-align: middle;
+            line-height: 1.4;
+        }
+        .chart-tab-badge.new { background: #fef3c7; color: #854d0e; border: 1px solid #fde68a; }
+        .chart-tab-badge.overdue { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        [data-theme="dark"] .chart-tab-badge.new { background: rgba(234,179,8,0.22); color: #fde68a; border-color: rgba(234,179,8,0.4); }
+        [data-theme="dark"] .chart-tab-badge.overdue { background: rgba(220,38,38,0.22); color: #fca5a5; border-color: rgba(220,38,38,0.4); }
+        /* Soft pulse to draw the eye when unacknowledged orders exist */
+        @keyframes chartTabPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(234,179,8,0); } 50% { box-shadow: 0 0 0 3px rgba(234,179,8,0.22); } }
+        .chart-tab-badge.new { animation: chartTabPulse 2s ease-in-out infinite; }
+        @keyframes chartTabPulseOverdue { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); } 50% { box-shadow: 0 0 0 3px rgba(220,38,38,0.28); } }
+        .chart-tab-badge.overdue { animation: chartTabPulseOverdue 2s ease-in-out infinite; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
@@ -832,33 +852,70 @@
             100% { background: transparent; box-shadow: 0 0 0 0 transparent; }
         }
 
-        /* Phase 3B.2: Bed-card new/overdue indicator pills */
+        /* Phase 3B.2: Bed-card new/overdue indicator pills (position:relative for hover tooltip anchor) */
         .bc-indicators { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-        .bc-new-pill {
+        .bc-new-pill, .bc-overdue-pill {
             display: inline-flex; align-items: center; gap: 3px;
-            background: #fef3c7; color: #854d0e; border: 1px solid #fde68a;
             font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.03em; position: relative; cursor: help;
         }
-        .bc-overdue-pill {
-            display: inline-flex; align-items: center; gap: 3px;
-            background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;
-            font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;
-            letter-spacing: 0.03em;
-        }
+        .bc-new-pill { background: #fef3c7; color: #854d0e; border: 1px solid #fde68a; }
+        .bc-overdue-pill { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
         [data-theme="dark"] .bc-new-pill { background: rgba(234,179,8,0.18); color: #fde68a; border-color: rgba(234,179,8,0.4); }
         [data-theme="dark"] .bc-overdue-pill { background: rgba(239,68,68,0.18); color: #fca5a5; border-color: rgba(239,68,68,0.4); }
 
-        /* Manager view count pills */
+        /* Manager view count pills (same tooltip anchor) */
         .mgr-count-pill {
             display: inline-block; min-width: 22px; text-align: center;
             font-size: 11px; font-weight: 700;
             padding: 2px 7px; border-radius: 10px;
+            position: relative; cursor: help;
         }
         .mgr-count-pill.mgr-new { background: #fef3c7; color: #854d0e; }
         .mgr-count-pill.mgr-overdue { background: #fee2e2; color: #b91c1c; }
         [data-theme="dark"] .mgr-count-pill.mgr-new { background: rgba(234,179,8,0.18); color: #fde68a; }
         [data-theme="dark"] .mgr-count-pill.mgr-overdue { background: rgba(239,68,68,0.18); color: #fca5a5; }
+
+        /* Phase 3B.2b: Hover-to-discover tooltip on order indicator pills (lists actual orders) */
+        .orders-hover-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%; left: 0;
+            margin-top: 6px;
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+            padding: 10px 12px;
+            min-width: 260px;
+            max-width: 360px;
+            z-index: 600;
+            font-size: 12px; font-weight: 400; text-align: left;
+            white-space: normal; cursor: default;
+            letter-spacing: 0; text-transform: none;
+        }
+        .bc-new-pill:hover .orders-hover-tooltip,
+        .bc-overdue-pill:hover .orders-hover-tooltip,
+        .mgr-count-pill:hover .orders-hover-tooltip { display: block; }
+        .orders-hover-tooltip .oht-title {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 6px;
+        }
+        .orders-hover-tooltip .oht-row {
+            display: flex; justify-content: space-between; gap: 10px;
+            padding: 4px 0; border-bottom: 1px solid var(--clx-border, #d1dce8);
+            font-size: 12px;
+        }
+        .orders-hover-tooltip .oht-row:last-child { border-bottom: none; }
+        .orders-hover-tooltip .oht-text { flex: 1; min-width: 0; color: var(--clx-text-primary); }
+        .orders-hover-tooltip .oht-placed { font-size: 10px; color: var(--clx-text-muted, #718096); flex-shrink: 0; white-space: nowrap; }
+        .orders-hover-tooltip .oht-late { font-size: 10px; font-weight: 700; color: #b91c1c; flex-shrink: 0; white-space: nowrap; }
+        [data-theme="dark"] .orders-hover-tooltip .oht-late { color: #fca5a5; }
+        .orders-hover-tooltip .oht-more { font-size: 10px; color: var(--clx-text-muted, #718096); font-style: italic; padding-top: 4px; }
+        /* Manager view pills anchor tooltip to the right so it doesn't get clipped by the row edge */
+        .mgr-count-pill .orders-hover-tooltip { left: auto; right: 0; }
+        [data-theme="dark"] .orders-hover-tooltip { box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
 
         /* Phase 3B: Orders tab */
         .orders-actions-bar {
@@ -1872,6 +1929,10 @@
         database.ref('emr/orders').on('value', function (snap) {
             allOrdersByEnc = snap.val() || {};
             renderBoard();
+            // Phase 3B.2b: if a chart is open, refresh its Orders tab badge too (global listener also
+            // catches overdue transitions from the 30s elapsed-time re-render — this one catches
+            // "someone else just placed an order on my patient" in real time).
+            if (currentPatient) updateOrdersTabBadge();
         });
     }
 
@@ -1956,7 +2017,9 @@
         const cb = function (snap) {
             currentOrders = snapshotToSortedArray(snap, 'placedAt', 'desc');
             if (currentTab === 'orders') renderOrdersTab();
-            // Also refresh chart header to update any pending-ack indicator (added later in 3B.2)
+            // Phase 3B.2b: keep the Orders tab badge current so users see new pending-ack counts
+            // without having to click the tab first.
+            updateOrdersTabBadge();
         };
         ref.on('value', cb);
         ordersUnsubscriber = function () { ref.off('value', cb); };
@@ -2059,13 +2122,13 @@
             const rnChip = primaryRN
                 ? '<span class="bc-rn-chip" data-careteam="' + esc(p._encounterId || '') + '">' + esc(initialsFor(primaryRN.name)) + careTeamHoverTooltip(enc) + '</span>'
                 : '';
-            // Phase 3B.2: new/overdue order indicators on bed cards
+            // Phase 3B.2: new/overdue order indicators on bed cards (with hover-to-discover tooltips showing actual orders)
             const counts = countNewAndOverdueForEnc(p._encounterId);
             const newPill = counts.neew > 0
-                ? '<span class="bc-new-pill" title="' + counts.neew + ' order(s) awaiting acknowledgment">🆕 ' + counts.neew + '</span>'
+                ? '<span class="bc-new-pill">🆕 ' + counts.neew + ordersHoverTooltip(p._encounterId, 'new') + '</span>'
                 : '';
             const overduePill = counts.overdue > 0
-                ? '<span class="bc-overdue-pill" title="' + counts.overdue + ' scheduled med(s) overdue >30 min">⏰ ' + counts.overdue + '</span>'
+                ? '<span class="bc-overdue-pill">⏰ ' + counts.overdue + ordersHoverTooltip(p._encounterId, 'overdue') + '</span>'
                 : '';
             const indicators = (newPill || overduePill) ? '<div class="bc-indicators">' + newPill + overduePill + '</div>' : '';
             return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
@@ -2264,13 +2327,13 @@
             const rnCell = primaryRN
                 ? '<span class="bc-rn-chip" style="margin-right:6px;">' + esc(initialsFor(primaryRN.name)) + careTeamHoverTooltip(enc) + '</span><span style="font-size:11px;color:var(--clx-text-muted);">' + esc(primaryRN.name.split(' ')[0]) + '</span>'
                 : '<span style="font-size:11px;color:var(--clx-text-muted);font-style:italic;">unassigned</span>';
-            // Phase 3B.2: order counts per-encounter
+            // Phase 3B.2: order counts per-encounter (with hover tooltips)
             const mgrCounts = countNewAndOverdueForEnc(p._encounterId);
             const mgrNewCell = mgrCounts.neew > 0
-                ? '<span class="mgr-count-pill mgr-new">' + mgrCounts.neew + '</span>'
+                ? '<span class="mgr-count-pill mgr-new">' + mgrCounts.neew + ordersHoverTooltip(p._encounterId, 'new') + '</span>'
                 : '<span style="color:var(--clx-text-muted);font-size:11px;">—</span>';
             const mgrOverdueCell = mgrCounts.overdue > 0
-                ? '<span class="mgr-count-pill mgr-overdue">' + mgrCounts.overdue + '</span>'
+                ? '<span class="mgr-count-pill mgr-overdue">' + mgrCounts.overdue + ordersHoverTooltip(p._encounterId, 'overdue') + '</span>'
                 : '<span style="color:var(--clx-text-muted);font-size:11px;">—</span>';
             html += '<tr onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<td class="mgr-bed">' + esc(r.bedId) + '</td>' +
@@ -2631,6 +2694,8 @@
                   + '<div class="ch-block" style="grid-column: 1 / -1;">' + renderCareTeamStrip(enc) + '</div>'
                 : '');
         document.getElementById('chartHeader').innerHTML = html;
+        // Phase 3B.2b: keep the Orders tab badge in sync whenever the chart header re-renders
+        updateOrdersTabBadge();
     }
 
     function mostRecentCompletedEnc(pid) {
@@ -6437,20 +6502,21 @@
         return false;
     }
 
-    // Phase 3B.2: compute pending-ack + overdue-medication counts for an encounter (for board indicators)
-    // "Overdue" = medication order with status 'active' and a non-PRN scheduledTime that's >30 min past now.
-    function countNewAndOverdueForEnc(encId) {
-        if (!encId) return { neew: 0, overdue: 0 };
+    // Phase 3B.2: return the actual pending-ack + overdue-med orders for an encounter (used by
+    // both counters AND hover-to-discover tooltips, so parsing stays in one place).
+    function pendingAndOverdueOrdersFor(encId) {
+        if (!encId) return { pending: [], overdue: [] };
         const orders = allOrdersByEnc[encId];
-        if (!orders) return { neew: 0, overdue: 0 };
-        let neew = 0, overdue = 0;
+        if (!orders) return { pending: [], overdue: [] };
+        const pending = [], overdue = [];
         const now = Date.now();
         Object.keys(orders).forEach(function (oid) {
             const o = orders[oid];
             if (!o) return;
-            if (o.status === 'pending-ack') neew++;
+            if (o.status === 'pending-ack') {
+                pending.push(Object.assign({ _key: oid }, o));
+            }
             if (o.orderType === 'medication' && o.status === 'active' && !o.isPRN && o.scheduledTime) {
-                // Parse scheduledTime like "0800" or "0800,1200,1600" — find most recent past time today
                 const times = String(o.scheduledTime).split(',').map(function (t) { return t.trim(); }).filter(function (t) { return /^\d{3,4}$/.test(t); });
                 if (!times.length) return;
                 const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -6465,11 +6531,51 @@
                     }
                 });
                 if (mostRecentPast !== null && (now - mostRecentPast) > 30 * 60000) {
-                    overdue++;
+                    overdue.push(Object.assign({ _key: oid, _overdueMinutes: Math.floor((now - mostRecentPast) / 60000) }, o));
                 }
             }
         });
-        return { neew: neew, overdue: overdue };
+        return { pending: pending, overdue: overdue };
+    }
+
+    // Phase 3B.2: compute pending-ack + overdue-medication counts for an encounter (for board indicators)
+    // "Overdue" = medication order with status 'active' and a non-PRN scheduledTime that's >30 min past now.
+    function countNewAndOverdueForEnc(encId) {
+        const both = pendingAndOverdueOrdersFor(encId);
+        return { neew: both.pending.length, overdue: both.overdue.length };
+    }
+
+    // Phase 3B.2b: Epic-style hover tooltip showing actual orders behind the pill.
+    // kind = 'new' (pending-ack) | 'overdue' (overdue meds).
+    function ordersHoverTooltip(encId, kind) {
+        const both = pendingAndOverdueOrdersFor(encId);
+        const list = kind === 'overdue' ? both.overdue : both.pending;
+        if (!list.length) return '';
+        const title = kind === 'overdue' ? 'Overdue medications' : 'Orders awaiting acknowledgment';
+        const rows = list.slice(0, 8).map(function (o) {
+            const summary = orderRowSummary(o).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
+            const extra = kind === 'overdue'
+                ? '<span class="oht-late">' + o._overdueMinutes + ' min late</span>'
+                : '<span class="oht-placed">' + esc(o.placedBy || 'Provider') + (o.placedAt ? ' · ' + esc(fmtTimeShort(o.placedAt)) : '') + '</span>';
+            return '<div class="oht-row"><span class="oht-text">' + esc(summary) + '</span>' + extra + '</div>';
+        }).join('');
+        const more = list.length > 8 ? '<div class="oht-more">+ ' + (list.length - 8) + ' more — click to view all</div>' : '';
+        return '<span class="orders-hover-tooltip"><div class="oht-title">' + title + '</div>' + rows + more + '</span>';
+    }
+
+    // Phase 3B.2b: refresh the Orders chart-tab button label with pending-ack / overdue count badges
+    // so users know to visit the Orders tab without having to open it first. Called on chart open,
+    // when the global orders listener fires, and when the per-encounter orders listener fires.
+    function updateOrdersTabBadge() {
+        const btn = document.querySelector('.chart-tab[data-tab="orders"]');
+        if (!btn) return;
+        // Resolve which encounter this chart is showing
+        let encId = viewingEncounterId || (currentPatient && currentPatient.currentEncounterId) || null;
+        const counts = encId ? countNewAndOverdueForEnc(encId) : { neew: 0, overdue: 0 };
+        let label = '📋 Orders';
+        if (counts.neew > 0) label += ' <span class="chart-tab-badge new" title="' + counts.neew + ' order' + (counts.neew === 1 ? '' : 's') + ' awaiting acknowledgment">🆕 ' + counts.neew + '</span>';
+        if (counts.overdue > 0) label += ' <span class="chart-tab-badge overdue" title="' + counts.overdue + ' overdue medication' + (counts.overdue === 1 ? '' : 's') + '">⏰ ' + counts.overdue + '</span>';
+        btn.innerHTML = label;
     }
 
     // Phase 3G: My Patients sidebar filter toggle
@@ -6763,6 +6869,9 @@
             const ts = parseInt(el.getAttribute('data-elapsed-ts'), 10);
             if (!isNaN(ts)) el.textContent = fmtElapsed(ts);
         });
+        // Phase 3B.2b: overdue counts are wall-clock driven, so also refresh the open chart's
+        // Orders tab badge on the same 30s cadence. Cheap — just DOM text replacement.
+        if (currentPatient) updateOrdersTabBadge();
     }
     setInterval(refreshElapsedElements, 30000);
     </script>
