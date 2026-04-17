@@ -1049,6 +1049,35 @@
         [data-theme="dark"] .fyi-banner { background: rgba(234,179,8,0.12); color: #fde68a; border-color: rgba(234,179,8,0.3); }
         [data-theme="dark"] .fyi-banner.empty { background: transparent; color: var(--clx-text-muted); }
 
+        /* All Units view: collapse the 5 empty FYI rows into a disclosure so the board
+           isn't dominated by empty-state banners. Active banners still render inline above. */
+        .fyi-group-details { margin-bottom: 10px; }
+        .fyi-group-details > summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 10px; border-radius: 6px;
+            background: var(--clx-bg-surface-2);
+            border: 1px dashed var(--clx-border);
+            color: var(--clx-text-muted);
+            font-size: 12px; font-style: italic;
+            user-select: none;
+        }
+        .fyi-group-details > summary::-webkit-details-marker { display: none; }
+        .fyi-group-details > summary:hover { background: var(--clx-bg-surface); color: var(--clx-text-secondary); }
+        .fyi-group-details > summary .fyi-group-caret { transition: transform 0.15s; display: inline-block; font-size: 10px; }
+        .fyi-group-details[open] > summary .fyi-group-caret { transform: rotate(90deg); }
+        .fyi-group-details > summary .fyi-group-count {
+            margin-left: auto;
+            background: #fde68a; color: #854d0e;
+            padding: 1px 7px; border-radius: 10px;
+            font-size: 10px; font-weight: 700; font-style: normal;
+        }
+        .fyi-group-details[data-active="0"] > summary .fyi-group-count { display: none; }
+        .fyi-group-details > .fyi-group-body { padding-top: 6px; }
+        [data-theme="dark"] .fyi-group-details > summary { background: rgba(255,255,255,0.04); }
+        [data-theme="dark"] .fyi-group-details > summary .fyi-group-count { background: rgba(234,179,8,0.22); color: #fde68a; }
+
         /* Phase 3A: Flags tab */
         .flag-row {
             display: flex; justify-content: space-between; align-items: center;
@@ -2143,7 +2172,11 @@
             '</div>';
         }
 
-        return units.map(function (unit) {
+        // Phase 3B.2c: on All Units, render all FYI banners once at the top (active inline,
+        // empties collapsed into a disclosure) instead of stacking 5 empty rows per-unit.
+        const topFyi = units.length > 1 ? renderFyiBannersForUnits(units) : '';
+
+        return topFyi + units.map(function (unit) {
             const beds = buildUnitBeds(unit);
             const regular = beds.filter(function (b) { return b.bedId.indexOf('-H') === -1; });
             const hall = beds.filter(function (b) { return b.bedId.indexOf('-H') !== -1; });
@@ -2151,8 +2184,8 @@
             let html = '';
             if (units.length > 1) html += '<div class="mgr-section-title">' + esc(UNIT_NAMES[unit]) + '</div>';
 
-            // Per-unit FYI banner (editable by anyone)
-            html += renderFyiBanner(unit);
+            // Per-unit FYI banner (only when viewing a single unit — All Units view already has them at top)
+            if (units.length === 1) html += renderFyiBanner(unit);
             // Incoming Transfers (top of every unit that has pending incoming)
             html += renderIncomingTransfersSection(unit);
             // Cards view: Waiting Room at top for ED
@@ -2187,6 +2220,29 @@
             '<span class="fyi-meta">' + meta + '</span>' +
             '<button class="fyi-clear" onclick="clearFyiBanner(event, \'' + unit + '\')" title="Clear banner">×</button>' +
         '</div>';
+    }
+
+    // Phase 3B.2c: on All Units view we were stacking 5 empty "+ Add FYI banner" rows.
+    // Instead, show any ACTIVE banners inline, then collapse empty slots into a disclosure.
+    function renderFyiBannersForUnits(units) {
+        if (units.length === 1) return renderFyiBanner(units[0]);
+        const active = [], empty = [];
+        units.forEach(function (u) {
+            if (u === 'all' || !UNIT_NAMES[u]) return;
+            const b = unitBanners[u];
+            if (b && b.text) active.push(u); else empty.push(u);
+        });
+        let html = active.map(function (u) { return renderFyiBanner(u); }).join('');
+        if (empty.length) {
+            const summaryTxt = active.length
+                ? 'Add FYI for another unit (' + empty.length + ' available)'
+                : '📢 Add unit FYI banner (' + empty.length + ' units)';
+            html += '<details class="fyi-group-details" data-active="' + active.length + '">' +
+                '<summary><span class="fyi-group-caret">▶</span>' + esc(summaryTxt) + '<span class="fyi-group-count">' + active.length + ' active</span></summary>' +
+                '<div class="fyi-group-body">' + empty.map(function (u) { return renderFyiBanner(u); }).join('') + '</div>' +
+            '</details>';
+        }
+        return html;
     }
 
     window.editFyiBanner = function (unit) {
@@ -2265,8 +2321,8 @@
     }
 
     function renderManagerView(units) {
-        // Per-unit FYI banner at top
-        let fyiHtml = units.map(function (u) { return renderFyiBanner(u); }).join('');
+        // Per-unit FYI banner at top — on All Units, active banners inline + empties collapsed.
+        let fyiHtml = renderFyiBannersForUnits(units);
         // Incoming transfers for each selected unit (shown at top)
         let incomingHtml = units.map(function (u) { return renderIncomingTransfersSection(u); }).join('');
         // Waiting-room section (bottom for Manager view)
