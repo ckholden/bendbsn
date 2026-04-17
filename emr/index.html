@@ -2239,14 +2239,30 @@
             ? '<span class="ch-value" style="font-weight:400;font-size:11px;color:var(--clx-text-muted);" data-elapsed-ts="' + enc.admissionDate + '">' + esc(fmtElapsed(enc.admissionDate)) + '</span>'
             : '';
 
+        // Phase 3G fix: make DX / MD / Code Status / Allergies editable in chart header.
+        // Only editable when viewing the current encounter (not read-only historical or inactive).
+        const isLive = enc && !chartReadOnly && p.currentEncounterId && (!viewingEncounterId || viewingEncounterId === p.currentEncounterId);
+        const headerDxHtml = isLive
+            ? editableFieldHtml('dx', dxLabel, dxLabel)
+            : esc(dxLabel);
+        const headerMdHtml = isLive
+            ? editableFieldHtml('md', mdLabel, mdLabel)
+            : esc(mdLabel);
+        const headerCodeHtml = isLive
+            ? '<span class="ch-value' + (isDnr ? ' warn' : '') + '">' + editableFieldHtml('codeStatus', codeLabel, codeLabel) + '</span>'
+            : '<span class="ch-value' + (isDnr ? ' warn' : '') + '">' + esc(codeLabel) + '</span>';
+        const headerAllergiesHtml = isLive
+            ? '<span class="' + allergyClass + '">' + editableFieldHtml('allergies', p.allergies, allergiesTxt) + '</span>'
+            : '<span class="' + allergyClass + '">' + esc(allergiesTxt) + '</span>';
+
         const html =
             '<div class="ch-block"><span class="ch-label">Patient</span><span class="ch-value large">' + esc(p.name) + '</span><span class="ch-value" style="font-weight:400;">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • DOB ' + esc(p.dob) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">MRN</span><span class="ch-value">' + esc(p.mrn) + '</span></div>' +
             '<div class="ch-block"><span class="ch-label">Bed</span><span class="ch-value">' + esc(bedLabel) + '</span>' + (enc ? '<span class="ch-value" style="font-weight:400;font-size:11px;color:var(--clx-text-muted);">Admitted ' + esc(fmtTime(enc.admissionDate)) + '</span>' + admittedElapsed : '') + '</div>' +
-            '<div class="ch-block"><span class="ch-label">Diagnosis</span><span class="ch-value" title="' + esc(dxLabel) + '">' + esc(dxLabel) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">MD</span><span class="ch-value">' + esc(mdLabel) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Code Status</span><span class="ch-value' + (isDnr ? ' warn' : '') + '">' + esc(codeLabel) + '</span></div>' +
-            '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesTxt) + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Diagnosis</span><span class="ch-value" title="' + esc(dxLabel) + '">' + headerDxHtml + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">MD</span><span class="ch-value">' + headerMdHtml + '</span></div>' +
+            '<div class="ch-block"><span class="ch-label">Code Status</span>' + headerCodeHtml + '</div>' +
+            '<div class="ch-block"><span class="ch-label">Allergies</span>' + headerAllergiesHtml + '</div>' +
             (enc && enc.status === 'active'
                 ? '<div class="ch-block" style="grid-column: 1 / -1;"><span class="ch-label">Status Note</span>' + statusNoteHtml(enc) + '</div>'
                   + '<div class="ch-block" style="grid-column: 1 / -1;">' + renderCareTeamStrip(enc) + '</div>'
