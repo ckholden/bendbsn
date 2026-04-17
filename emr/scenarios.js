@@ -34,8 +34,22 @@
     // SCENARIO 1: Quiet Day — current 18 admitted + 4 waiting room
     // =========================================================
     function quietDay(seed) {
-        // Reuse the existing seed dictionaries verbatim
-        const patients = seed.SEED_PATIENTS.slice();
+        // Reuse the existing seed dictionaries verbatim, but inject a pending transfer
+        // on Helen Cho (TKR POD#2 — pending PCU step-down for cardiac monitoring)
+        // so students can practice the receiving-unit accept workflow.
+        const patients = seed.SEED_PATIENTS.map(function (p) {
+            if (p.id !== 'p_helen_cho') return p;
+            const enc = Object.assign({}, p.currentEncounter, {
+                pendingTransfer: {
+                    toUnit: 'PCU',
+                    reason: 'Step-down for telemetry monitoring x 24h post-op (cardiac hx).',
+                    requestedBy: 'Dr. Reuben Park, MD-SIM',
+                    requestedAt: minutesAgoTS(45),
+                    reportGivenTo: 'PCU Charge RN'
+                }
+            });
+            return Object.assign({}, p, { currentEncounter: enc });
+        });
         const unadmitted = seed.SEED_UNADMITTED_PATIENTS.slice();
 
         // Add 4 patients to ED waiting room. Mix of new + returning.
@@ -170,7 +184,9 @@
     }
 
     // =========================================================
-    // SCENARIO 3: ED Surge — empty floors, ED slammed
+    // SCENARIO 3: ED Surge — ED slammed + floors full + boarders
+    // (Realistic: when ED is overwhelmed, floors are usually also
+    //  full because admits can't move out of the ED.)
     // =========================================================
     function edSurge(seed) {
         const unadmitted = seed.SEED_UNADMITTED_PATIENTS.slice();
@@ -359,7 +375,7 @@
         };
 
         // Convert to scenario shape — patients are inline with their encounters
-        const patients = surgePatients.map(function (sp) {
+        const acutePatients = surgePatients.map(function (sp) {
             return Object.assign({}, sp.patient, {
                 currentEncounter: Object.assign({
                     unit: 'ED', bed: sp.inBed,
@@ -369,15 +385,107 @@
             });
         });
 
+        // ===== HALL BED BOARDERS — 4 admitted patients with PENDING TRANSFERS to upstairs =====
+        // Each has pendingTransfer set so the receiving unit's Incoming Transfers section shows them
+        // and students can practice the accept-with-bed-assignment workflow.
+        const hallBoarders = [
+            {
+                id: 'p_surge_boarder_chen', name: 'Margaret Chen', sex: 'F', age: 68, dob: '1957-02-14',
+                mrn: 'SIM-31020', allergies: ['NKDA'], pmh: 'CHF (EF 35%), HTN, T2DM.',
+                homeMedications: [{med:'Carvedilol',dose:'12.5 mg',route:'PO',freq:'BID'},{med:'Furosemide',dose:'40 mg',route:'PO',freq:'Daily'}],
+                socialHx: 'Retired teacher.',
+                currentEncounter: { unit: 'ED', bed: 'ED-H1', admissionSource: 'ED-walkin', admissionDate: minutesAgoTS(280),
+                    md: 'Dr. Reuben Park, MD-SIM', dx: 'CHF exacerbation',
+                    chiefComplaint: 'SOB, orthopnea, LE edema', esiAcuity: 3, arrivalMode: 'walk-in',
+                    codeStatus: 'Full Code', diet: '2g sodium', activity: 'Bed rest',
+                    ivAccess: '20g L AC', acuity: 3, isolation: null, fallRisk: true, dnr: false,
+                    pendingTransfer: {
+                        toUnit: 'MS', reason: 'Admit to Med-Surg for diuresis and CHF management',
+                        requestedBy: 'Dr. Reuben Park, MD-SIM', requestedAt: minutesAgoTS(160),
+                        reportGivenTo: 'MS Charge RN'
+                    }
+                }
+            },
+            {
+                id: 'p_surge_boarder_jackson', name: 'Robert Jackson', sex: 'M', age: 52, dob: '1973-09-08',
+                mrn: 'SIM-31021', allergies: ['Sulfa'], pmh: 'Type 2 DM, hyperlipidemia.',
+                homeMedications: [{med:'Metformin',dose:'1000 mg',route:'PO',freq:'BID'}],
+                socialHx: 'Truck driver.',
+                currentEncounter: { unit: 'ED', bed: 'ED-H2', admissionSource: 'ED-walkin', admissionDate: minutesAgoTS(220),
+                    md: 'Dr. Reuben Park, MD-SIM', dx: 'DKA resolving',
+                    chiefComplaint: 'N/V, polyuria, polydipsia', esiAcuity: 2, arrivalMode: 'walk-in',
+                    codeStatus: 'Full Code', diet: 'Carb-controlled diabetic', activity: 'As tolerated',
+                    ivAccess: '18g L AC', acuity: 3, isolation: null, fallRisk: false, dnr: false,
+                    pendingTransfer: {
+                        toUnit: 'MS', reason: 'Admit to Med-Surg for ongoing insulin protocol and observation',
+                        requestedBy: 'Dr. Reuben Park, MD-SIM', requestedAt: minutesAgoTS(110),
+                        reportGivenTo: 'MS Charge RN'
+                    }
+                }
+            },
+            {
+                id: 'p_surge_boarder_williams', name: 'Carol Williams', sex: 'F', age: 75, dob: '1950-05-22',
+                mrn: 'SIM-31022', allergies: ['Penicillin'], pmh: 'COPD on home O2 2L, HTN.',
+                homeMedications: [{med:'Tiotropium',dose:'1 cap',route:'INH',freq:'Daily'}],
+                socialHx: 'Retired. Former smoker (40 pack-yr, quit 2015).',
+                currentEncounter: { unit: 'ED', bed: 'ED-H3', admissionSource: 'ED-EMS', admissionDate: minutesAgoTS(340),
+                    md: 'Dr. Lin Okafor, MD-SIM', dx: 'COPD exacerbation, hypoxic',
+                    chiefComplaint: 'Severe SOB, increased sputum production', esiAcuity: 2, arrivalMode: 'EMS',
+                    codeStatus: 'DNR/DNI', diet: 'Regular', activity: 'Bed rest, HOB 30°',
+                    ivAccess: '20g R AC', acuity: 4, isolation: null, fallRisk: true, dnr: true,
+                    pendingTransfer: {
+                        toUnit: 'ICU', reason: 'Admit to ICU for BiPAP standby, ABG q4h, hypercapnic resp failure risk',
+                        requestedBy: 'Dr. Lin Okafor, MD-SIM', requestedAt: minutesAgoTS(220),
+                        reportGivenTo: 'ICU Charge RN'
+                    }
+                }
+            },
+            {
+                id: 'p_surge_boarder_patel', name: 'Vikram Patel', sex: 'M', age: 60, dob: '1965-12-03',
+                mrn: 'SIM-31023', allergies: ['NKDA'], pmh: 'HTN, hyperlipidemia, prior NSTEMI 2022.',
+                homeMedications: [{med:'Atorvastatin',dose:'40 mg',route:'PO',freq:'Daily'},{med:'Aspirin',dose:'81 mg',route:'PO',freq:'Daily'}],
+                socialHx: 'Software engineer.',
+                currentEncounter: { unit: 'ED', bed: 'ED-H4', admissionSource: 'ED-EMS', admissionDate: minutesAgoTS(180),
+                    md: 'Dr. Lin Okafor, MD-SIM', dx: 'Unstable angina',
+                    chiefComplaint: 'Recurrent chest pain at rest, troponin neg x 2', esiAcuity: 2, arrivalMode: 'EMS',
+                    codeStatus: 'Full Code', diet: 'Cardiac', activity: 'Bed rest',
+                    ivAccess: '20g L AC', acuity: 3, isolation: null, fallRisk: false, dnr: false,
+                    pendingTransfer: {
+                        toUnit: 'PCU', reason: 'Admit to PCU/step-down for telemetry and serial troponins',
+                        requestedBy: 'Dr. Lin Okafor, MD-SIM', requestedAt: minutesAgoTS(85),
+                        reportGivenTo: 'PCU Charge RN'
+                    }
+                }
+            }
+        ];
+
+        // ===== FULL FLOOR CENSUS — reuse Quiet Day floor patients to make hospital feel realistically full =====
+        const floorPatients = seed.SEED_PATIENTS.filter(function (p) {
+            const u = p.currentEncounter && p.currentEncounter.unit;
+            return u !== 'ED'; // everyone except current ED patients (since we have our own ED slate)
+        });
+
+        const allPatients = acutePatients.concat(hallBoarders).concat(floorPatients);
+
+        // Status note overrides for in-bed acute patients (boarders use pendingTransfer instead)
+        const statusNotes = {
+            p_surge_marcus_alvarez: 'STEMI — cath lab activated, ETA <5 min. ASA + heparin given.',
+            p_surge_robert_kim: 'Septic shock — pressors, awaiting ICU bed. Lactate 4.8.',
+            p_surge_dorothy_morgan: 'AMS — daughter (POA) ETA 45 min. CT ordered.',
+            p_surge_bradley_torres: 'Polysubstance OD — partial Narcan response, suicide precautions pending eval.',
+            p_surge_aisha_johnson: '28 wk pregnancy + MVA — fetal monitoring active, OB notified.',
+            p_surge_kevin_kid: 'Peds fever 40.1 — peds eval, possible transfer to peds-equipped facility.'
+        };
+
         return {
             label: 'ED Surge',
-            description: 'Empty floors. ED slammed: 6 patients in beds (incl. STEMI, septic shock, AMS, peds fever, polysubstance OD, MVA pregnant), 6 in waiting room. Forces triage prioritization + multi-task management.',
-            patients: patients,
+            description: 'Realistic ED surge: 6 acute patients in ED beds (STEMI, septic shock, AMS, peds fever, OD, MVA pregnant), 4 boarders in ED hall beds awaiting upstairs admit, 6 in waiting room. Floors at full census — nothing can move. Forces triage, throughput, and bed-management thinking.',
+            patients: allPatients,
             unadmitted: unadmitted,
             waitingRoom: waitingRoom,
-            chartByPatient: {},
+            chartByPatient: seed.CHART_BY_PATIENT || {}, // floor patients keep their existing chart data
             unadmittedPriorChart: seed.UNADMITTED_PRIOR_CHART || {},
-            ldasByPid: {
+            ldasByPid: Object.assign({}, seed.SEED_LDAS || {}, {
                 p_surge_marcus_alvarez: [
                     { type: 'PIV', site: 'L AC', size: '18g', daysAgo: 0.02, insertedBy: 'EMS (seeded)' },
                     { type: 'PIV', site: 'R AC', size: '18g', daysAgo: 0.02, insertedBy: 'ED RN (seeded)' }
@@ -388,11 +496,16 @@
                     { type: 'Foley', site: 'Urethral', size: '14 Fr', daysAgo: 0.03, insertedBy: 'ED RN (seeded)', notes: 'For strict I&O — sepsis protocol' }
                 ],
                 p_surge_dorothy_morgan: [{ type: 'PIV', site: 'L hand', size: '20g', daysAgo: 0.02, insertedBy: 'ED RN (seeded)' }],
-                p_surge_bradley_torres: [{ type: 'PIV', site: 'R AC', size: '18g', daysAgo: 0.02, insertedBy: 'EMS (seeded)' }]
-            },
+                p_surge_bradley_torres: [{ type: 'PIV', site: 'R AC', size: '18g', daysAgo: 0.02, insertedBy: 'EMS (seeded)' }],
+                p_surge_boarder_chen: [{ type: 'PIV', site: 'L AC', size: '20g', daysAgo: 0.2, insertedBy: 'ED RN (seeded)' }],
+                p_surge_boarder_jackson: [{ type: 'PIV', site: 'L AC', size: '18g', daysAgo: 0.15, insertedBy: 'ED RN (seeded)' }],
+                p_surge_boarder_williams: [{ type: 'PIV', site: 'R AC', size: '20g', daysAgo: 0.24, insertedBy: 'ED RN (seeded)' }],
+                p_surge_boarder_patel: [{ type: 'PIV', site: 'L AC', size: '20g', daysAgo: 0.13, insertedBy: 'ED RN (seeded)' }]
+            }),
             notesByPid: surgeNotes,
             marByPid: surgeMar,
-            tarByPid: surgeTar
+            tarByPid: surgeTar,
+            statusNotes: statusNotes
         };
     }
 
@@ -471,9 +584,18 @@
                 ],
                 socialHx: 'Retired. Lives alone with cat.',
                 currentEncounter: { unit: 'MS', bed: 'MS-07', admissionSource: 'ED-walkin', admissionDate: daysAgoTS(1, 16),
-                    md: 'Dr. Reuben Park, MD-SIM', dx: 'CHF exacerbation — diuresis',
+                    md: 'Dr. Reuben Park, MD-SIM', dx: 'CHF exacerbation — clinical decline',
                     codeStatus: 'DNR/DNI', diet: '2g sodium, 1500 mL fluid', activity: 'OOB with assist',
-                    ivAccess: '20g L AC', acuity: 3, isolation: null, fallRisk: true, dnr: true }
+                    ivAccess: '20g L AC', acuity: 4, isolation: null, fallRisk: true, dnr: true,
+                    statusNote: 'Worsening hypoxia despite IV diuresis; cardiology recommending ICU transfer for closer monitoring',
+                    pendingTransfer: {
+                        toUnit: 'ICU',
+                        reason: 'Worsening hypoxia, escalating O2 requirement, may need BiPAP. ICU transfer per cardiology.',
+                        requestedBy: 'Dr. Reuben Park, MD-SIM',
+                        requestedAt: minutesAgoTS(35),
+                        reportGivenTo: 'ICU Charge RN'
+                    }
+                }
             },
             {
                 id: 'p_pcu_michael_obrien', name: 'Michael O\'Brien', sex: 'M', age: 65, dob: '1960-08-22', mrn: 'SIM-32004',

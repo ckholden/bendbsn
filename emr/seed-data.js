@@ -1153,6 +1153,163 @@ const CHART_BY_PATIENT = {
 };
 
 // =========================================================
+// ORDERS seed (Phase 3B) — diet/activity/consult/nursing/code-status
+// orders per patient. Medication orders are AUTO-GENERATED at seed
+// time from the patient's MAR items (one order per med), so this
+// dictionary only contains the non-medication orders.
+//
+// Order shape:
+//   { orderType, orderText, status, placedBy, placedAt (offsetH from admit),
+//     orderEntry: 'CPOE'|'Verbal'|'Telephone'|'Protocol',
+//     // type-specific fields
+//     consultSpecialty, consultReason
+//     dietType, dietSpecialInstructions
+//     activityType, activitySpecialInstructions
+//     vitalsFreq
+//     nursingText
+//     codeStatus, codeReason
+//   }
+// =========================================================
+const SEED_ORDERS = {
+    p_marcus_webb: [
+        { orderType: 'consult', consultSpecialty: 'Cardiology', consultReason: 'Chest pain r/o ACS, troponin pending', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1.5, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'NPO', dietSpecialInstructions: 'NPO until ACS r/o complete', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1.5, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1.5, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q1H', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1.5, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Continuous cardiac monitoring; notify provider for chest pain or arrhythmia', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1.5, status: 'active' }
+    ],
+    p_amara_diallo: [
+        { orderType: 'diet', dietType: 'Regular', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1, status: 'active' },
+        { orderType: 'activity', activityType: 'As tolerated', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Peak flow before & after each nebulizer treatment', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -1, status: 'active' }
+    ],
+    p_leonard_kowalski: [
+        { orderType: 'consult', consultSpecialty: 'Neurology', consultReason: 'TIA r/o CVA — eval and recommendations', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'pending-ack' },
+        { orderType: 'diet', dietType: 'NPO', dietSpecialInstructions: 'NPO until bedside swallow eval', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest', activitySpecialInstructions: 'Fall precautions, bed alarm on', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q1H', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Neuro checks (NIHSS) Q1H x 12h then Q2H', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'active' },
+        { orderType: 'lab', testName: 'CT head without contrast, STAT', priority: 'STAT', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'pending-ack' },
+        { orderType: 'lab', testName: 'INR, PT, PTT', priority: 'STAT', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'active' }
+    ],
+    p_sofia_reyes: [
+        { orderType: 'consult', consultSpecialty: 'General Surgery', consultReason: 'Acute appendicitis — pre-op eval', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'NPO', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'nursing', nursingText: 'SCDs to bilateral lower extremities while in bed', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'active' }
+    ],
+    p_thomas_brandt: [
+        { orderType: 'consult', consultSpecialty: 'Orthopedic Surgery', consultReason: 'R hip fracture — OR planning', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'acknowledged' },
+        { orderType: 'consult', consultSpecialty: 'Anesthesia', consultReason: 'Pre-op eval, age 78 with DNR', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -1, status: 'pending-ack' },
+        { orderType: 'diet', dietType: 'NPO', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest', activitySpecialInstructions: 'Fall precautions, bed alarm on, low bed', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'code-status', codeStatus: 'DNR', codeReason: 'Patient and family wishes documented', orderEntry: 'CPOE', placedBy: 'Dr. Maya Lin, MD-SIM', offsetH: -2, status: 'active' }
+    ],
+    p_priya_kapoor: [
+        { orderType: 'consult', consultSpecialty: 'Critical Care', consultReason: 'Septic shock — ICU transfer when bed available', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'NPO', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q15min', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Hourly UO; notify provider if UO <30 mL/hr or MAP <65', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'lab', testName: 'Lactate', priority: 'STAT, repeat Q6H', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'lab', testName: 'Blood cultures x 2', priority: 'STAT', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'lab', testName: 'UA + urine culture', priority: 'STAT', orderEntry: 'CPOE', placedBy: 'Dr. Avery Chen, MD-SIM', offsetH: -3, status: 'active' }
+    ],
+    p_james_holloway: [
+        { orderType: 'consult', consultSpecialty: 'Gastroenterology', consultReason: 'Acute pancreatitis — eval', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -2, status: 'pending-ack' },
+        { orderType: 'consult', consultSpecialty: 'Social Work', consultReason: 'ETOH use disorder — counseling, declined previously', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -1, status: 'pending-ack' },
+        { orderType: 'diet', dietType: 'NPO', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'activity', activityType: 'As tolerated', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Strict I&O', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -2, status: 'active' }
+    ],
+    p_helen_cho: [
+        { orderType: 'consult', consultSpecialty: 'Physical Therapy', consultReason: 'Post-op TKR POD#2 — gait training, weight bearing as tolerated', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -48, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'Regular', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -48, status: 'active' },
+        { orderType: 'activity', activityType: 'OOB with PT', activitySpecialInstructions: 'Weight bearing as tolerated R LE', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -48, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -48, status: 'active' },
+        { orderType: 'nursing', nursingText: 'CPM machine 30°→90° as tolerated, Q4H x 30min', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -48, status: 'active' }
+    ],
+    p_robert_dimaggio: [
+        { orderType: 'consult', consultSpecialty: 'Cardiology', consultReason: 'CHF exacerbation — meds optimization', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -22, status: 'acknowledged' },
+        { orderType: 'diet', dietType: '2g sodium', dietSpecialInstructions: '1500 mL fluid restriction', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -22, status: 'active' },
+        { orderType: 'activity', activityType: 'OOB with assist', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -22, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -22, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Daily weight (same scale, same time, AM); strict I&O', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -22, status: 'active' },
+        { orderType: 'code-status', codeStatus: 'DNR/DNI', codeReason: 'Patient wishes; documented advance directive', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -22, status: 'active' }
+    ],
+    p_angela_freeman: [
+        { orderType: 'consult', consultSpecialty: 'Endocrinology', consultReason: 'DKA — diabetes management, transition planning', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -18, status: 'pending-ack' },
+        { orderType: 'diet', dietType: 'Carb-controlled diabetic', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -18, status: 'active' },
+        { orderType: 'activity', activityType: 'As tolerated', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -18, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q1H', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -18, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Bedside glucose Q1H while on insulin drip; Q2H once on subcutaneous', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -18, status: 'active' },
+        { orderType: 'lab', testName: 'BMP + electrolytes', priority: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -18, status: 'active' }
+    ],
+    p_walter_huang: [
+        { orderType: 'consult', consultSpecialty: 'Speech-Language Pathology', consultReason: 'Post-CVA dysphagia, recurrent aspiration — eval and recommendations', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -16, status: 'acknowledged' },
+        { orderType: 'consult', consultSpecialty: 'Palliative Care', consultReason: 'Goals of care, recurrent admissions, advanced dementia', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -8, status: 'pending-ack' },
+        { orderType: 'diet', dietType: 'Pureed, thickened liquids (nectar)', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -16, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest', activitySpecialInstructions: 'HOB ≥30° at all times, fall precautions', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -16, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Droplet precautions; oral suction Q4H; oral care Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -16, status: 'active' },
+        { orderType: 'code-status', codeStatus: 'DNR', codeReason: 'POA decision; documented advance directive', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -16, status: 'active' }
+    ],
+    p_dorothy_nguyen: [
+        { orderType: 'consult', consultSpecialty: 'Pulmonology', consultReason: 'Hypercapnic respiratory failure on BiPAP', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -4, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'NPO (BiPAP)', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -4, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest, HOB 30°', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -4, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q15min until stable, then Q1H', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -4, status: 'active' },
+        { orderType: 'nursing', nursingText: 'BiPAP settings: IPAP 14, EPAP 5, FiO2 40%; check mask seal Q1H', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -4, status: 'active' },
+        { orderType: 'lab', testName: 'ABG', priority: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -4, status: 'active' },
+        { orderType: 'code-status', codeStatus: 'DNR/DNI', codeReason: 'Patient and family wishes', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -4, status: 'active' }
+    ],
+    p_miguel_torres: [
+        { orderType: 'consult', consultSpecialty: 'Cardiology', consultReason: 'STEMI s/p PCI — post-cath management', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -3, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'Cardiac (low-sodium, low-fat)', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest x 24h', activitySpecialInstructions: 'HOB <30° to protect femoral access site', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q15min x 4, then Q30min x 4, then Q1H', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Femoral site check Q15min x 1h, then Q1H x 6h, then Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'lab', testName: 'aPTT', priority: 'Q6H (heparin protocol)', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'lab', testName: 'Troponin', priority: 'Q6H x 3', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -3, status: 'active' }
+    ],
+    p_rachel_okonkwo: [
+        { orderType: 'consult', consultSpecialty: 'OB/MFM', consultReason: 'Eclampsia postpartum — co-management', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -2, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'Clear liquids', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed rest, seizure precautions', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q1H + DTRs + RR', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -2, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Mag toxicity check Q1H (DTRs, RR, UO); calcium gluconate at bedside; padded side rails', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -2, status: 'active' }
+    ],
+    p_denise_abara: [
+        { orderType: 'consult', consultSpecialty: 'Cardiothoracic Surgery', consultReason: 'Post-CABG POD#3 — daily round', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -72, status: 'active' },
+        { orderType: 'diet', dietType: 'Cardiac', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -72, status: 'active' },
+        { orderType: 'activity', activityType: 'OOB with assist', activitySpecialInstructions: 'Sternal precautions: no pushing, pulling, or lifting >5 lb', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -72, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -72, status: 'active' },
+        { orderType: 'nursing', nursingText: 'HEPARIN ALLERGY (HIT documented) — NO heparin or enoxaparin. Use bivalirudin if anticoag needed.', orderEntry: 'CPOE', placedBy: 'Dr. Lin Okafor, MD-SIM', offsetH: -72, status: 'active' }
+    ],
+    p_frank_ostrowski: [
+        { orderType: 'consult', consultSpecialty: 'Pulmonology', consultReason: 'COPD — O2 weaning, ambulation tolerance', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -24, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'Regular', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -24, status: 'active' },
+        { orderType: 'activity', activityType: 'Ambulate q4h with O2', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -24, status: 'active' },
+        { orderType: 'nursing', nursingText: 'O2 weaning trial Q4H — RA SpO2 check; document distance ambulated and SpO2 nadir', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -24, status: 'active' },
+        { orderType: 'code-status', codeStatus: 'DNR', codeReason: 'Patient wishes documented', orderEntry: 'CPOE', placedBy: 'Dr. Reuben Park, MD-SIM', offsetH: -24, status: 'active' }
+    ],
+    p_kezia_williams: [
+        { orderType: 'consult', consultSpecialty: 'Anesthesia', consultReason: 'Epidural placed, ongoing labor pain management', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -3, status: 'acknowledged' },
+        { orderType: 'diet', dietType: 'Clear liquids / ice chips', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'activity', activityType: 'Bed/ambulation per provider', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q15min + contraction pattern + FHR', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -3, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Continuous fetal monitoring; cervical exam Q2H or as indicated', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -3, status: 'active' }
+    ],
+    p_natalie_chen: [
+        { orderType: 'diet', dietType: 'Regular', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -24, status: 'active' },
+        { orderType: 'activity', activityType: 'OOB ad lib', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -24, status: 'active' },
+        { orderType: 'vitals-freq', vitalsFreq: 'Q4H', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -24, status: 'active' },
+        { orderType: 'nursing', nursingText: 'Fundus + lochia assessment Q4H; perineal/peri-pad check Q4H; breastfeeding support PRN', orderEntry: 'CPOE', placedBy: 'Dr. Sora Patel, MD-SIM', offsetH: -24, status: 'active' }
+    ]
+};
+
+// =========================================================
 // LDAs (Lines / Drains / Airways) seed — keyed by patient ID
 // Attached to the patient's current encounter during migration.
 // =========================================================

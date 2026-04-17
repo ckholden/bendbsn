@@ -4203,9 +4203,14 @@
 
         html += '</div>'; // close scroll area
 
-        html += '<div class="adm-buttons">' +
+        html += '<div class="adm-buttons" style="flex-wrap:wrap;">' +
             '<button class="btn" onclick="renderScenarioPickerBack()">← Back to scenarios</button>' +
-            '<button class="btn danger-solid" onclick="confirmScenarioLoad(\'' + esc(scenarioKey) + '\')">⚠ Wipe &amp; Load This Scenario</button>' +
+            '<button class="btn" onclick="confirmScenarioAppend(\'' + esc(scenarioKey) + '\')">➕ Append to current state</button>' +
+            '<button class="btn danger-solid" onclick="confirmScenarioLoad(\'' + esc(scenarioKey) + '\')">⚠ Wipe &amp; Load Fresh</button>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--clx-text-muted);margin-top:8px;line-height:1.45;">' +
+            '<strong>Append</strong>: keep current state, add new patients/encounters from this scenario. Skips any patient ID or bed conflict.<br>' +
+            '<strong>Wipe &amp; Load</strong>: erase everything, load fresh.' +
         '</div>';
 
         openFlowModal('Preview: ' + plan.label, html, 'Review what will be loaded before resetting hospital state');
@@ -4226,6 +4231,179 @@
             { danger: true, confirmText: 'Yes, Wipe and Load' }
         );
     };
+
+    // Append-mode: skip patients/beds that already exist; add only the rest
+    window.confirmScenarioAppend = function (scenarioKey) {
+        const scenarios = window.EMR_SCENARIOS;
+        let plan;
+        try { plan = scenarios[scenarioKey].build(window.EMR_SEED); }
+        catch (e) { showToast('Scenario rebuild failed', 'error'); return; }
+        showConfirmModal(
+            'Append "' + plan.label + '"?',
+            'Adds new patients and encounters from this scenario to the current hospital state. Patients with the same ID as an existing patient are skipped. Bed assignments that conflict with currently-occupied beds are skipped (the patient is still added but unbedded). No data is deleted.',
+            function () { applyScenarioPlanAdditive(scenarioKey, plan); },
+            { confirmText: 'Append' }
+        );
+    };
+
+    function applyScenarioPlanAdditive(scenarioKey, plan) {
+        const seed = window.EMR_SEED;
+        const now = Date.now();
+
+        const existingPatientIds = new Set(Object.keys(allPatients));
+        const occupiedBeds = new Set();
+        Object.keys(allBeds).forEach(function (unit) {
+            const bm = allBeds[unit] || {};
+            Object.keys(bm).forEach(function (bedId) { if (bm[bedId]) occupiedBeds.add(unit + '/' + bedId); });
+        });
+
+        const updates = {};
+        let added = 0, skippedPatient = 0, skippedBed = 0;
+
+        // Pre-allocate WR encounter IDs (same pattern as wipe-and-load)
+        const wrClaims = {};
+        const wrEncIdByIndex = [];
+        (plan.waitingRoom || []).forEach(function (wr, i) {
+            const preEncId = database.ref('emr/encounters').push().key;
+            wrEncIdByIndex[i] = preEncId;
+            if (!wr.isNew && wr.patientId) wrClaims[wr.patientId] = preEncId;
+        });
+
+        // ---- Admitted patients ----
+        (plan.patients || []).forEach(function (p) {
+            if (existingPatientIds.has(p.id)) { skippedPatient++; return; }
+            const enc = p.currentEncounter;
+            if (!enc) return;
+            const bedKey = enc.unit + '/' + enc.bed;
+            const encId = database.ref('emr/encounters').push().key;
+            const encRec = Object.assign({}, enc, { patientId: p.id, status: 'active' });
+            if (plan.statusNotes && plan.statusNotes[p.id]) {
+                encRec.statusNote = plan.statusNotes[p.id];
+                encRec.statusNoteUpdatedAt = now;
+                encRec.statusNoteUpdatedBy = 'Scenario seed';
+            }
+            // Bed conflict? Patient still admitted but bed left as-listed (will collide if existing patient is there)
+            // Strategy: if bed occupied, leave bed='WAITING' and add a status note
+            if (occupiedBeds.has(bedKey)) {
+                skippedBed++;
+                encRec.bed = 'WAITING';
+                encRec.statusNote = (encRec.statusNote || '') + ' [Append: original bed ' + enc.bed + ' was occupied; placed in waiting room]';
+            } else {
+                updates['emr/beds/' + enc.unit + '/' + enc.bed] = encId;
+                occupiedBeds.add(bedKey);
+            }
+            updates['emr/encounters/' + encId] = encRec;
+            updates['emr/patients/' + p.id] = {
+                id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
+                allergies: (p.allergies || []).map(seed.expandAllergy),
+                pmh: p.pmh || '', socialHx: p.socialHx || '',
+                homeMedications: p.homeMedications || [],
+                currentEncounterId: encId, status: 'admitted', createdAt: now
+            };
+            existingPatientIds.add(p.id);
+            added++;
+            // Chart data
+            const chart = (plan.chartByPatient[p.id] || {}).current || {};
+            if (plan.notesByPid && plan.notesByPid[p.id]) chart.notes = (chart.notes || []).concat(plan.notesByPid[p.id]);
+            if (plan.marByPid   && plan.marByPid[p.id])   chart.mar   = (chart.mar   || []).concat(plan.marByPid[p.id]);
+            if (plan.tarByPid   && plan.tarByPid[p.id])   chart.tar   = (chart.tar   || []).concat(plan.tarByPid[p.id]);
+            writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
+            // LDAs
+            const ldaList = (plan.ldasByPid || {})[p.id] || [];
+            ldaList.forEach(function (lda) {
+                const ldaKey = database.ref('emr/ldas/' + encId).push().key;
+                const insertTs = now - Math.floor((lda.daysAgo || 0) * 86400000);
+                updates['emr/ldas/' + encId + '/' + ldaKey] = {
+                    encounterId: encId, patientId: p.id,
+                    type: lda.type, site: lda.site, size: lda.size,
+                    insertDate: insertTs, insertedBy: lda.insertedBy || 'Seeded',
+                    status: lda.status || 'active', notes: lda.notes || '',
+                    lastAssessedAt: null, lastAssessedBy: null, lastDressingChange: null
+                };
+            });
+        });
+
+        // ---- Unadmitted patients (skip if already exist) ----
+        (plan.unadmitted || []).forEach(function (p) {
+            if (existingPatientIds.has(p.id)) return;
+            const claimedEncId = wrClaims[p.id] || null;
+            updates['emr/patients/' + p.id] = {
+                id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
+                allergies: (p.allergies || []).map(seed.expandAllergy),
+                pmh: p.pmh || '', socialHx: p.socialHx || '',
+                homeMedications: p.homeMedications || [],
+                currentEncounterId: claimedEncId,
+                status: claimedEncId ? 'admitted' : 'inactive',
+                createdAt: now
+            };
+            existingPatientIds.add(p.id);
+            added++;
+            const priorChartList = (plan.unadmittedPriorChart || {})[p.id] || [];
+            (p.priorEncounters || []).forEach(function (priorEnc, idx) {
+                const encId = database.ref('emr/encounters').push().key;
+                updates['emr/encounters/' + encId] = Object.assign({}, priorEnc, {
+                    patientId: p.id, status: 'completed'
+                });
+                writeChartEntries(updates, p.id, encId, priorChartList[idx] || {}, priorEnc.admissionDate);
+            });
+        });
+
+        // ---- Waiting room ----
+        (plan.waitingRoom || []).forEach(function (wr, i) {
+            let patientId;
+            const encId = wrEncIdByIndex[i];
+            if (wr.isNew) {
+                if (existingPatientIds.has(wr.patient.id)) { skippedPatient++; return; }
+                patientId = wr.patient.id;
+                updates['emr/patients/' + patientId] = {
+                    id: patientId, name: wr.patient.name, sex: wr.patient.sex,
+                    age: wr.patient.age, dob: wr.patient.dob, mrn: wr.patient.mrn,
+                    allergies: (wr.patient.allergies || []).map(seed.expandAllergy),
+                    pmh: wr.patient.pmh || '', socialHx: wr.patient.socialHx || '',
+                    homeMedications: wr.patient.homeMedications || [],
+                    currentEncounterId: encId, status: 'admitted', createdAt: now
+                };
+                existingPatientIds.add(patientId);
+                added++;
+            } else {
+                // Returning patient — skip if patient is already admitted (has currentEncounterId)
+                const existing = allPatients[wr.patientId];
+                if (existing && existing.currentEncounterId) { skippedPatient++; return; }
+                patientId = wr.patientId;
+                if (!existingPatientIds.has(patientId)) return; // unadmitted block didn't write them — skip
+                added++;
+            }
+            updates['emr/encounters/' + encId] = Object.assign({}, wr.encounter, {
+                patientId: patientId, status: 'active'
+            });
+            (wr.notes || []).forEach(function (n) {
+                const noteKey = database.ref('emr/notes/' + patientId).push().key;
+                updates['emr/notes/' + patientId + '/' + noteKey] = {
+                    encounterId: encId, type: n.type || 'narrative',
+                    authorRole: n.authorRole || 'RN',
+                    body: n.body, by: n.by || 'Seed RN',
+                    timestamp: now + (n.offsetMin || 0) * 60000
+                };
+            });
+        });
+
+        updates['emr/meta/scenarioLoadedAt'] = now;
+        updates['emr/meta/scenarioLoadedBy'] = currentUserName + ' (append)';
+
+        showToast('Appending scenario "' + plan.label + '"…', 'info');
+        database.ref().update(updates).then(function () {
+            const summary = added + ' added';
+            const skipParts = [];
+            if (skippedPatient) skipParts.push(skippedPatient + ' patient ID conflicts');
+            if (skippedBed) skipParts.push(skippedBed + ' bed conflicts (placed in waiting room)');
+            const suffix = skipParts.length ? ' · skipped: ' + skipParts.join(', ') : '';
+            showToast('Append complete: ' + summary + suffix, 'success', 8000);
+            closeFlowModal();
+        }).catch(function (err) {
+            console.error('[EMR] Scenario append failed:', err);
+            showToast('Append failed: ' + (err.message || err), 'error');
+        });
+    }
 
     function applyScenarioPlan(scenarioKey, plan) {
         const seed = window.EMR_SEED;
@@ -4262,6 +4440,18 @@
     // Convert a scenario plan (from scenarios.js) into a Firebase multi-path update payload
     function scenarioPlanToWrites(plan, seed, now) {
         const updates = {};
+
+        // ---- Pre-allocate encounter IDs for waiting-room RETURNING patients ----
+        // (Returning WR patients reference an unadmitted patient by ID; we need the encId
+        //  before writing the unadmitted patient record so currentEncounterId can be set
+        //  in the same atomic update without a parent/child path conflict.)
+        const wrClaims = {};      // patientId -> preallocated encId
+        const wrEncIdByIndex = []; // mirror waitingRoom[] indices to their encId
+        (plan.waitingRoom || []).forEach(function (wr, i) {
+            const preEncId = database.ref('emr/encounters').push().key;
+            wrEncIdByIndex[i] = preEncId;
+            if (!wr.isNew && wr.patientId) wrClaims[wr.patientId] = preEncId;
+        });
 
         // ---- Admitted patients ----
         (plan.patients || []).forEach(function (p) {
@@ -4322,12 +4512,17 @@
 
         // ---- Unadmitted patients (with prior encounters) ----
         (plan.unadmitted || []).forEach(function (p) {
+            // If this unadmitted patient is "claimed" by a waiting-room encounter (returning patient),
+            // set currentEncounterId now to the pre-allocated encId so we don't need a child write later.
+            const claimedEncId = wrClaims[p.id] || null;
             updates['emr/patients/' + p.id] = {
                 id: p.id, name: p.name, sex: p.sex, age: p.age, dob: p.dob, mrn: p.mrn,
                 allergies: (p.allergies || []).map(seed.expandAllergy),
                 pmh: p.pmh || '', socialHx: p.socialHx || '',
                 homeMedications: p.homeMedications || [],
-                currentEncounterId: null, status: 'inactive', createdAt: now
+                currentEncounterId: claimedEncId,
+                status: claimedEncId ? 'admitted' : 'inactive',
+                createdAt: now
             };
             const priorChartList = (plan.unadmittedPriorChart || {})[p.id] || [];
             (p.priorEncounters || []).forEach(function (priorEnc, idx) {
@@ -4340,27 +4535,27 @@
         });
 
         // ---- Waiting room encounters ----
-        (plan.waitingRoom || []).forEach(function (wr) {
+        (plan.waitingRoom || []).forEach(function (wr, i) {
             let patientId;
+            const encId = wrEncIdByIndex[i];   // pre-allocated above
             if (wr.isNew) {
                 patientId = wr.patient.id;
+                // Write the brand-new patient record ONCE with final currentEncounterId set
                 updates['emr/patients/' + patientId] = {
                     id: patientId, name: wr.patient.name, sex: wr.patient.sex,
                     age: wr.patient.age, dob: wr.patient.dob, mrn: wr.patient.mrn,
                     allergies: (wr.patient.allergies || []).map(seed.expandAllergy),
                     pmh: wr.patient.pmh || '', socialHx: wr.patient.socialHx || '',
                     homeMedications: wr.patient.homeMedications || [],
-                    currentEncounterId: null, status: 'inactive', createdAt: now
+                    currentEncounterId: encId, status: 'admitted', createdAt: now
                 };
             } else {
                 patientId = wr.patientId;
+                // Patient record already written by the unadmitted block above with claimedEncId set
             }
-            const encId = database.ref('emr/encounters').push().key;
             updates['emr/encounters/' + encId] = Object.assign({}, wr.encounter, {
                 patientId: patientId, status: 'active'
             });
-            updates['emr/patients/' + patientId + '/currentEncounterId'] = encId;
-            updates['emr/patients/' + patientId + '/status'] = 'admitted';
             // No bed assignment — bed is 'WAITING' (no emr/beds entry)
             // Triage notes
             (wr.notes || []).forEach(function (n) {
