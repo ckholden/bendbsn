@@ -1310,6 +1310,99 @@ const SEED_ORDERS = {
 };
 
 // =========================================================
+// Fake MD list — used by Care Team picker (Attending / Consulting MD dropdowns)
+// and by scenarios for auto-assigning mdAttending based on encounter dx/unit.
+// All names are obviously fictional ("Dr. X, MD-SIM").
+// =========================================================
+const SEED_MD_LIST = [
+    // Emergency Medicine (cover ED admits)
+    { id: 'md_avery_chen',    name: 'Dr. Avery Chen, MD-SIM',     specialty: 'Emergency Medicine' },
+    { id: 'md_sora_patel',    name: 'Dr. Sora Patel, MD-SIM',     specialty: 'Emergency Medicine' },
+    { id: 'md_maya_lin',      name: 'Dr. Maya Lin, MD-SIM',       specialty: 'Emergency Medicine' },
+
+    // Hospitalist / Internal Medicine (Med-Surg, general admits)
+    { id: 'md_reuben_park',   name: 'Dr. Reuben Park, MD-SIM',    specialty: 'Hospitalist (Internal Medicine)' },
+    { id: 'md_alex_nakamura', name: 'Dr. Alex Nakamura, MD-SIM',  specialty: 'Hospitalist (Internal Medicine)' },
+
+    // Critical Care / Intensivist (ICU)
+    { id: 'md_lin_okafor',    name: 'Dr. Lin Okafor, MD-SIM',     specialty: 'Critical Care (Intensivist)' },
+    { id: 'md_evelyn_holt',   name: 'Dr. Evelyn Holt, MD-SIM',    specialty: 'Critical Care (Intensivist)' },
+
+    // Cardiology
+    { id: 'md_marcus_kowalski', name: 'Dr. Marcus Kowalski, MD-SIM', specialty: 'Cardiology' },
+    { id: 'md_jordan_park',     name: 'Dr. Jordan Park, MD-SIM',     specialty: 'Cardiology — Interventional' },
+
+    // Cardiothoracic Surgery
+    { id: 'md_sarah_vasquez', name: 'Dr. Sarah Vasquez, MD-SIM',  specialty: 'Cardiothoracic Surgery' },
+
+    // Orthopedic Surgery
+    { id: 'md_james_patel',   name: 'Dr. James Patel, MD-SIM',    specialty: 'Orthopedic Surgery' },
+
+    // General Surgery
+    { id: 'md_eleanor_nguyen', name: 'Dr. Eleanor Nguyen, MD-SIM', specialty: 'General Surgery' },
+
+    // Neurology
+    { id: 'md_fatima_hassan', name: 'Dr. Fatima Hassan, MD-SIM',  specialty: 'Neurology' },
+
+    // Pulmonology
+    { id: 'md_benjamin_carter', name: 'Dr. Benjamin Carter, MD-SIM', specialty: 'Pulmonology' },
+
+    // Endocrinology
+    { id: 'md_diana_romano',  name: 'Dr. Diana Romano, MD-SIM',   specialty: 'Endocrinology' },
+
+    // Gastroenterology
+    { id: 'md_wei_zhang',     name: 'Dr. Wei Zhang, MD-SIM',      specialty: 'Gastroenterology' },
+
+    // Nephrology
+    { id: 'md_amara_okafor',  name: 'Dr. Amara Okafor, MD-SIM',   specialty: 'Nephrology' },
+
+    // Infectious Disease
+    { id: 'md_david_miller',  name: 'Dr. David Miller, MD-SIM',   specialty: 'Infectious Disease' },
+
+    // OB / GYN
+    { id: 'md_rachel_stein',  name: 'Dr. Rachel Stein, MD-SIM',   specialty: 'OB/GYN' },
+
+    // Psychiatry
+    { id: 'md_theodora_adams', name: 'Dr. Theodora Adams, MD-SIM', specialty: 'Psychiatry' },
+
+    // Pediatrics
+    { id: 'md_priya_sharma',  name: 'Dr. Priya Sharma, MD-SIM',   specialty: 'Pediatrics' }
+];
+
+// Helper: look up an MD by name string (used to match enc.md → SEED_MD_LIST entry)
+function findMdByName(nameStr) {
+    if (!nameStr) return null;
+    return SEED_MD_LIST.find(function (m) { return m.name === nameStr; }) || null;
+}
+
+// Helper: pick a sensible Attending MD specialty for a given unit + diagnosis.
+// Used by scenario auto-assign when encounter.md doesn't match a SEED_MD_LIST entry.
+function pickMdForEncounter(enc) {
+    if (!enc) return null;
+    const unit = enc.unit || '';
+    const dx = (enc.dx || '').toLowerCase();
+    function pick(spec) {
+        const opts = SEED_MD_LIST.filter(function (m) { return m.specialty.indexOf(spec) === 0 || m.specialty === spec; });
+        return opts.length ? opts[0] : null;
+    }
+    // Specialty hints from dx text
+    if (dx.indexOf('stemi') !== -1 || dx.indexOf('chf') !== -1 || dx.indexOf('mi') !== -1 || dx.indexOf('cabg') !== -1 || dx.indexOf('angina') !== -1) return pick('Cardiology') || pick('Critical Care');
+    if (dx.indexOf('hip fracture') !== -1 || dx.indexOf('tkr') !== -1 || dx.indexOf('thr') !== -1 || dx.indexOf('orif') !== -1) return pick('Orthopedic Surgery');
+    if (dx.indexOf('appendicitis') !== -1 || dx.indexOf('cholecyst') !== -1) return pick('General Surgery');
+    if (dx.indexOf('tia') !== -1 || dx.indexOf('cva') !== -1 || dx.indexOf('stroke') !== -1) return pick('Neurology');
+    if (dx.indexOf('copd') !== -1 || dx.indexOf('asthma') !== -1 || dx.indexOf('pneumonia') !== -1 || dx.indexOf('aspiration') !== -1) return pick('Pulmonology');
+    if (dx.indexOf('dka') !== -1 || dx.indexOf('hyperglyc') !== -1) return pick('Endocrinology');
+    if (dx.indexOf('pancreatitis') !== -1 || dx.indexOf('gi bleed') !== -1) return pick('Gastroenterology');
+    if (dx.indexOf('sepsis') !== -1 || dx.indexOf('uti') !== -1) return pick('Infectious Disease');
+    if (dx.indexOf('eclamp') !== -1 || dx.indexOf('labor') !== -1 || dx.indexOf('postpartum') !== -1) return pick('OB/GYN');
+    // Unit hints
+    if (unit === 'ED')  return pick('Emergency Medicine');
+    if (unit === 'ICU') return pick('Critical Care');
+    if (unit === 'OB')  return pick('OB/GYN');
+    return pick('Hospitalist');
+}
+
+// =========================================================
 // LDAs (Lines / Drains / Airways) seed — keyed by patient ID
 // Attached to the patient's current encounter during migration.
 // =========================================================
@@ -1482,5 +1575,8 @@ window.EMR_SEED = {
     CHART_BY_PATIENT: CHART_BY_PATIENT,
     UNADMITTED_PRIOR_CHART: UNADMITTED_PRIOR_CHART,
     SEED_LDAS: SEED_LDAS,
-    SEED_ORDERS: SEED_ORDERS
+    SEED_ORDERS: SEED_ORDERS,
+    SEED_MD_LIST: SEED_MD_LIST,
+    findMdByName: findMdByName,
+    pickMdForEncounter: pickMdForEncounter
 };

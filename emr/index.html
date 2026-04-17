@@ -800,6 +800,7 @@
         }
         .ct-hover-tooltip .cth-role { font-size: 11px; color: var(--clx-text-muted, #718096); flex-shrink: 0; min-width: 90px; }
         .ct-hover-tooltip .cth-name { font-size: 12px; color: var(--clx-text-primary); font-weight: 600; }
+        .ct-hover-tooltip .cth-spec { display: block; font-size: 10px; color: var(--clx-text-muted, #718096); font-weight: 400; font-style: italic; margin-top: 1px; }
         .ct-hover-tooltip .cth-empty { color: var(--clx-text-muted); font-style: italic; font-size: 11px; }
         [data-theme="dark"] .ct-hover-tooltip { box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
 
@@ -1305,23 +1306,24 @@
         </div>
     </div>
 
-    <!-- Phase 2: Migration Modal (shown once when SEED_VERSION in DB < latest) -->
+    <!-- Migration Modal — friendly "what's new" framing -->
     <div class="adm-overlay" id="migrationOverlay" role="dialog" aria-modal="true" aria-labelledby="migrationTitle">
         <div class="adm-modal" id="migrationModal">
-            <h2 id="migrationTitle">Sim EMR — Data Update Required</h2>
-            <div class="adm-sub">Phase 2 introduces encounters (hospital visits) as a separate record from patients. The existing simulation data is incompatible with the new schema and will be reset.</div>
+            <h2 id="migrationTitle">🎉 What's new in Sim EMR</h2>
+            <div class="adm-sub">A few new features have been added to the simulation. Click Continue to load the latest scenario data so you can try them out.</div>
             <div style="background:var(--clx-bg-surface-2);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:13px;">
-                <strong>What happens when you click Reset:</strong>
-                <ul style="margin:8px 0 0 18px;line-height:1.55;">
-                    <li>All existing EMR data is cleared (patients, beds, vitals, notes, MAR, TAR)</li>
-                    <li>28 fictional patients are seeded (18 currently admitted + 10 unadmitted with history)</li>
-                    <li>Several patients receive prior-encounter records to practice history review</li>
-                    <li>This only runs once — other users will see the new data immediately after</li>
+                <ul style="margin:0 0 0 18px;line-height:1.65;">
+                    <li><strong>📋 Provider Orders &amp; CPOE-lite</strong> — Place medication, consult, lab, diet, and other orders with allergy checking and acknowledge workflow.</li>
+                    <li><strong>👥 Care Team assignments</strong> — Assign yourself as Primary RN, edit the full care team (RN, CNA, MD, Case Mgr, etc.). Hover any RN initials chip to see the full team.</li>
+                    <li><strong>🚩 Pending transfers</strong> — Some patients are now waiting for receiving units to accept them. Practice the bed-management workflow.</li>
+                    <li><strong>🛏️ More ED hall beds</strong> — Surge capacity expanded to 8 hall beds.</li>
+                    <li><strong>🎬 Scenario launcher</strong> — Sidebar → Scenarios. Spin up the whole hospital state in one click.</li>
                 </ul>
             </div>
+            <div style="font-size:11px;color:var(--clx-text-muted);margin-bottom:10px;">Note: continuing will refresh the simulation data (any in-progress patient documentation will be replaced with the new seeded scenario).</div>
             <div id="migrationStatus" style="font-size:13px;color:var(--clx-text-muted);min-height:20px;"></div>
             <div class="adm-buttons">
-                <button class="btn primary" id="migrationConfirmBtn" onclick="runMigration()">Reset &amp; Re-seed</button>
+                <button class="btn primary" id="migrationConfirmBtn" onclick="runMigration()">Continue &amp; load latest</button>
             </div>
         </div>
     </div>
@@ -1546,10 +1548,19 @@
         seed.SEED_PATIENTS.forEach(function (p) {
             const encId = database.ref('emr/encounters').push().key;
             const enc = p.currentEncounter;
-            updates['emr/encounters/' + encId] = Object.assign({}, enc, {
-                patientId: p.id,
-                status: 'active'
-            });
+            const encRec = Object.assign({}, enc, { patientId: p.id, status: 'active' });
+            // Phase 3B.1.5: auto-assign Attending MD from SEED_MD_LIST
+            const seedFindMd2 = seed.findMdByName || function () { return null; };
+            const seedPickMd2 = seed.pickMdForEncounter || function () { return null; };
+            const matchedMd2 = seedFindMd2(enc.md) || seedPickMd2(enc);
+            if (matchedMd2) {
+                encRec.careTeam = encRec.careTeam || {};
+                encRec.careTeam.mdAttending = {
+                    uid: matchedMd2.id, name: matchedMd2.name, specialty: matchedMd2.specialty,
+                    assignedAt: now
+                };
+            }
+            updates['emr/encounters/' + encId] = encRec;
             updates['emr/beds/' + enc.unit + '/' + enc.bed] = encId;
 
             const patientRec = {
@@ -4795,6 +4806,18 @@
                 encRec.statusNoteUpdatedAt = now;
                 encRec.statusNoteUpdatedBy = 'Scenario seed';
             }
+            // Phase 3B.1.5: auto-assign Attending MD from SEED_MD_LIST
+            // Match by enc.md name first; fall back to specialty-matching helper.
+            const seedFindMd = seed.findMdByName || function () { return null; };
+            const seedPickMd = seed.pickMdForEncounter || function () { return null; };
+            const matchedMd = seedFindMd(enc.md) || seedPickMd(enc);
+            if (matchedMd) {
+                encRec.careTeam = encRec.careTeam || {};
+                encRec.careTeam.mdAttending = {
+                    uid: matchedMd.id, name: matchedMd.name, specialty: matchedMd.specialty,
+                    assignedAt: now
+                };
+            }
             updates['emr/encounters/' + encId] = encRec;
             updates['emr/beds/' + enc.unit + '/' + enc.bed] = encId;
             updates['emr/patients/' + p.id] = {
@@ -6153,20 +6176,46 @@
         if (!enc) return;
         const team = enc.careTeam || {};
         const userOpts = userProfileList();
-        const optHtml = function (selectedUid) {
+        const mdList = (window.EMR_SEED && window.EMR_SEED.SEED_MD_LIST) || [];
+
+        function optHtmlForRole(r, selectedUid) {
+            // MD roles use the fake MD list grouped by specialty
+            if (r.id === 'mdAttending' || r.id === 'mdConsult') {
+                // Group by specialty for nicer organization
+                const bySpec = {};
+                mdList.forEach(function (m) {
+                    if (!bySpec[m.specialty]) bySpec[m.specialty] = [];
+                    bySpec[m.specialty].push(m);
+                });
+                let html = '<option value="">— Unassigned —</option>';
+                Object.keys(bySpec).sort().forEach(function (spec) {
+                    html += '<optgroup label="' + esc(spec) + '">';
+                    bySpec[spec].forEach(function (m) {
+                        const sel = (selectedUid === m.id) ? ' selected' : '';
+                        html += '<option value="' + esc(m.id) + '"' + sel + ' data-name="' + esc(m.name) + '" data-specialty="' + esc(m.specialty) + '">' + esc(m.name) + '</option>';
+                    });
+                    html += '</optgroup>';
+                });
+                return html;
+            }
+            // Other roles use real authed users from userProfileList
             return '<option value="">— Unassigned —</option>' +
                 userOpts.map(function (u) {
                     const sel = (selectedUid === u.uid) ? ' selected' : '';
-                    return '<option value="' + esc(u.uid) + '"' + sel + '>' + esc(u.name) + '</option>';
+                    return '<option value="' + esc(u.uid) + '"' + sel + ' data-name="' + esc(u.name) + '">' + esc(u.name) + '</option>';
                 }).join('');
-        };
+        }
+
         const rows = CARE_TEAM_ROLES.map(function (r) {
             const m = team[r.id];
             const selUid = m ? m.uid : '';
+            const hint = (r.id === 'mdAttending' || r.id === 'mdConsult')
+                ? '<span style="font-size:10px;color:var(--clx-text-muted);font-style:italic;margin-left:6px;">simulated MDs</span>'
+                : '';
             return '<div class="ct-row">' +
                 '<span class="ct-role-chip" style="background:' + esc(r.color) + ';">' + esc(r.short) + '</span>' +
-                '<span class="ct-role-label">' + esc(r.label) + '</span>' +
-                '<select id="ct_' + esc(r.id) + '" style="flex:1;padding:6px 8px;border:1px solid var(--clx-border);border-radius:4px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">' + optHtml(selUid) + '</select>' +
+                '<span class="ct-role-label">' + esc(r.label) + hint + '</span>' +
+                '<select id="ct_' + esc(r.id) + '" style="flex:1;padding:6px 8px;border:1px solid var(--clx-border);border-radius:4px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">' + optHtmlForRole(r, selUid) + '</select>' +
             '</div>';
         }).join('');
         const body = '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:12px;">Pick from authenticated users. Select "Unassigned" to clear a role. Changes are audited in the notes history.</p>' +
@@ -6186,6 +6235,7 @@
         const enc = allEncounters[encId];
         const oldTeam = (enc && enc.careTeam) || {};
         const userOpts = userProfileList();
+        const mdList = (window.EMR_SEED && window.EMR_SEED.SEED_MD_LIST) || [];
         const updates = {};
         const changes = []; // for audit note
         CARE_TEAM_ROLES.forEach(function (r) {
@@ -6199,8 +6249,14 @@
                 updates['emr/encounters/' + encId + '/careTeam/' + r.id] = null;
                 changes.push(r.label + ': ' + (oldM ? oldM.name : '—') + ' → unassigned');
             } else {
-                const u = userOpts.find(function (x) { return x.uid === newUid; });
-                const newM = { uid: newUid, name: (u && u.name) || newUid, assignedAt: Date.now() };
+                let newM;
+                if (r.id === 'mdAttending' || r.id === 'mdConsult') {
+                    const md = mdList.find(function (x) { return x.id === newUid; });
+                    newM = { uid: newUid, name: (md && md.name) || newUid, specialty: (md && md.specialty) || '', assignedAt: Date.now() };
+                } else {
+                    const u = userOpts.find(function (x) { return x.uid === newUid; });
+                    newM = { uid: newUid, name: (u && u.name) || newUid, assignedAt: Date.now() };
+                }
                 updates['emr/encounters/' + encId + '/careTeam/' + r.id] = newM;
                 changes.push(r.label + ': ' + (oldM ? oldM.name : '—') + ' → ' + newM.name);
             }
@@ -6231,10 +6287,11 @@
         const rows = CARE_TEAM_ROLES.map(function (r) {
             const m = team[r.id];
             if (!m) return '';
+            const specialty = m.specialty ? '<span class="cth-spec">' + esc(m.specialty) + '</span>' : '';
             return '<div class="cth-row">' +
                 '<span class="cth-chip" style="background:' + esc(r.color) + ';">' + esc(r.short) + '</span>' +
                 '<span class="cth-role">' + esc(r.label) + '</span>' +
-                '<span class="cth-name">' + esc(m.name) + '</span>' +
+                '<span class="cth-name">' + esc(m.name) + specialty + '</span>' +
             '</div>';
         }).filter(Boolean).join('');
         if (!rows) return '<span class="ct-hover-tooltip"><span class="cth-empty">No care team assigned</span></span>';
