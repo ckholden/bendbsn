@@ -704,6 +704,58 @@
         .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
         .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
 
+        /* Phase 3G: Care Team */
+        .ct-strip {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+            padding: 8px 10px; background: var(--clx-bg-surface-2, #f5f8fa);
+            border-radius: 6px; margin-top: 4px; font-size: 12px;
+        }
+        .ct-strip-label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted, #718096);
+        }
+        .ct-empty { font-size: 12px; color: var(--clx-text-muted, #718096); font-style: italic; }
+        .ct-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #fff; font-size: 11px; font-weight: 600;
+            padding: 3px 9px; border-radius: 12px;
+            white-space: nowrap;
+        }
+        .ct-strip-actions { margin-left: auto; display: flex; gap: 4px; }
+        @media (max-width: 600px) { .ct-strip-actions { margin-left: 0; width: 100%; } }
+
+        /* Care team edit modal rows */
+        .ct-edit-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .ct-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 0;
+        }
+        .ct-role-chip {
+            color: #fff; font-size: 10px; font-weight: 700;
+            padding: 3px 8px; border-radius: 10px; min-width: 40px; text-align: center;
+            flex-shrink: 0;
+        }
+        .ct-role-label { font-size: 13px; font-weight: 600; min-width: 110px; flex-shrink: 0; }
+
+        /* Bed-card Primary RN initials chip */
+        .bc-rn-chip {
+            display: inline-flex; align-items: center; justify-content: center;
+            background: #16a34a; color: #fff;
+            font-size: 9px; font-weight: 700;
+            min-width: 22px; height: 18px;
+            padding: 0 5px; border-radius: 10px;
+            margin-left: auto;
+        }
+        [data-theme="dark"] .bc-rn-chip { background: #15803d; }
+
+        /* My Patients sidebar filter — active state */
+        #myPatientsFilter.active {
+            background: var(--clx-accent-subtle, #e0f2f8);
+            color: var(--clx-accent, #0f7490);
+            border-left-color: var(--clx-accent, #0f7490);
+            font-weight: 600;
+        }
+
         /* Phase 3F-lite: Scenario picker */
         .scenario-list { display: flex; flex-direction: column; gap: 8px; }
         .scenario-card {
@@ -1003,6 +1055,11 @@
                 <span class="clx-sidebar-icon">🎬</span>
                 <span class="clx-sidebar-label">Scenarios</span>
             </button>
+            <button class="clx-sidebar-item" id="myPatientsFilter" onclick="toggleMyPatientsFilter()">
+                <span class="clx-sidebar-icon">👤</span>
+                <span class="clx-sidebar-label">My Patients</span>
+                <span class="unit-acuity" id="cnt-mine">—</span>
+            </button>
 
             <div class="clx-sidebar-section" style="margin-top:10px;">Account</div>
             <a href="/home/" class="clx-sidebar-item">
@@ -1182,6 +1239,8 @@
     let allEncounters = {};       // { encounterId: encounterObj }  ← Phase 2
     let allBeds = {};             // { unit: { bedId: encounterId | null } }  ← Phase 2: stores encounterId
     let unitBanners = {};         // { unit: { text, updatedAt, updatedBy } }  ← Phase 3A.5b
+    let allUserProfiles = {};     // { uid: { displayName, email, role, ... } }  ← Phase 3G (Care Team)
+    let myPatientsFilterOn = false; // ← Phase 3G ("My Patients" sidebar filter)
     let currentUnit = 'all';      // 'all' | 'ED' | 'MS' | 'ICU' | 'PCU' | 'OB'
     let boardMode = 'cards';      // 'cards' | 'manager'
     let mgrSortBy = 'bed';
@@ -1510,6 +1569,10 @@
             unitBanners = snap.val() || {};
             renderBoard();
         });
+        // Phase 3G: load all user profiles for the Care Team picker
+        database.ref('userProfiles').on('value', function (snap) {
+            allUserProfiles = snap.val() || {};
+        });
     }
 
     // Phase 2 helpers: encounter lookup
@@ -1532,6 +1595,12 @@
             const el = document.getElementById('cnt-' + unit);
             if (el) el.textContent = occ + '/' + UNIT_BED_COUNT;
         });
+        // Phase 3G: My Patients sidebar count
+        const mineEl = document.getElementById('cnt-mine');
+        if (mineEl) {
+            const n = countMyPatients();
+            mineEl.textContent = n > 0 ? String(n) : '0';
+        }
     }
 
     function attachPatientListeners(pid) {
@@ -1657,8 +1726,13 @@
             const pendingChip = pending
                 ? '<div class="pending-chip" title="Awaiting ' + esc(UNIT_NAMES[pending.toUnit] || pending.toUnit) + ' bed acceptance">⇄ Outbound → ' + esc(UNIT_NAMES[pending.toUnit] || pending.toUnit) + '</div>'
                 : '';
+            // Phase 3G: Primary RN initials chip
+            const primaryRN = (enc && enc.careTeam && enc.careTeam.primaryRN) ? enc.careTeam.primaryRN : null;
+            const rnChip = primaryRN
+                ? '<span class="bc-rn-chip" title="Primary RN: ' + esc(primaryRN.name) + '">' + esc(initialsFor(primaryRN.name)) + '</span>'
+                : '';
             return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
-                '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + '</div>' +
+                '<div class="bed-num"><span class="acuity-dot acuity-' + (p.acuity || 1) + '" title="Acuity ' + (p.acuity || 1) + '"></span>' + esc(b.bedId) + rnChip + '</div>' +
                 '<div class="pt-name">' + esc(p.name) + '</div>' +
                 '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
                 '<div class="pt-dx">' + esc(p.dx) + '</div>' +
@@ -1826,6 +1900,7 @@
                 '<th class="' + sortedClass('age') + '" onclick="setMgrSort(\'age\')">Age/Sex' + arrow('age') + '</th>' +
                 '<th class="' + sortedClass('dx') + '" onclick="setMgrSort(\'dx\')">DX' + arrow('dx') + '</th>' +
                 '<th>Status Note</th>' +
+                '<th class="' + sortedClass('rn') + '" onclick="setMgrSort(\'rn\')">RN' + arrow('rn') + '</th>' +
                 '<th class="' + sortedClass('code') + '" onclick="setMgrSort(\'code\')">Code' + arrow('code') + '</th>' +
                 '<th>Allergies</th>' +
                 '<th class="' + sortedClass('acuity') + '" onclick="setMgrSort(\'acuity\')">Acuity' + arrow('acuity') + '</th>' +
@@ -1833,7 +1908,7 @@
             '</tr></thead><tbody>';
         rows.forEach(function (r) {
             if (!r.patient) {
-                const cols = currentUnit === 'all' ? 10 : 9; // +1 for Status Note column
+                const cols = currentUnit === 'all' ? 11 : 10; // +1 for Primary RN column (Phase 3G)
                 html += '<tr class="mgr-empty"><td class="mgr-bed">' + esc(r.bedId) + '</td>' +
                     (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
                     '<td colspan="' + (cols - (currentUnit === 'all' ? 2 : 1)) + '">— Unoccupied —</td></tr>';
@@ -1845,6 +1920,10 @@
             const allergiesClass = allergiesArr.length > 0 ? 'mgr-allergies has-allergy' : 'mgr-allergies';
             const acuityColor = ['#16a34a','#84cc16','#eab308','#f97316','#dc2626'][(p.acuity || 1) - 1] || '#9ca3af';
             const enc = p._encounterId ? allEncounters[p._encounterId] : null;
+            const primaryRN = (enc && enc.careTeam && enc.careTeam.primaryRN) ? enc.careTeam.primaryRN : null;
+            const rnCell = primaryRN
+                ? '<span class="bc-rn-chip" title="' + esc(primaryRN.name) + '" style="margin-right:6px;">' + esc(initialsFor(primaryRN.name)) + '</span><span style="font-size:11px;color:var(--clx-text-muted);">' + esc(primaryRN.name.split(' ')[0]) + '</span>'
+                : '<span style="font-size:11px;color:var(--clx-text-muted);font-style:italic;">unassigned</span>';
             html += '<tr onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<td class="mgr-bed">' + esc(r.bedId) + '</td>' +
                 (currentUnit === 'all' ? '<td>' + esc(UNIT_NAMES[r.unit]) + '</td>' : '') +
@@ -1852,6 +1931,7 @@
                 '<td>' + esc(String(p.age)) + ' / ' + esc(p.sex) + '</td>' +
                 '<td class="mgr-dx">' + esc(p.dx) + '</td>' +
                 statusNoteMgrCellHtml(enc) +
+                '<td>' + rnCell + '</td>' +
                 '<td>' + esc(p.codeStatus) + '</td>' +
                 '<td class="' + allergiesClass + '">' + esc(allergiesTxt) + '</td>' +
                 '<td><span class="acuity-pill" style="background:' + acuityColor + ';">' + (p.acuity || 1) + '</span></td>' +
@@ -1871,6 +1951,10 @@
             if (!bOcc) return -1;
         }
         let va, vb;
+        function rnNameOf(row) {
+            const enc = row.patient && row.patient._encounterId ? allEncounters[row.patient._encounterId] : null;
+            return (enc && enc.careTeam && enc.careTeam.primaryRN) ? enc.careTeam.primaryRN.name.toLowerCase() : 'zzz_unassigned';
+        }
         switch (mgrSortBy) {
             case 'unit':   va = a.unit; vb = b.unit; break;
             case 'name':   va = a.patient.name.toLowerCase(); vb = b.patient.name.toLowerCase(); break;
@@ -1878,6 +1962,7 @@
             case 'dx':     va = (a.patient.dx || '').toLowerCase(); vb = (b.patient.dx || '').toLowerCase(); break;
             case 'code':   va = a.patient.codeStatus || ''; vb = b.patient.codeStatus || ''; break;
             case 'acuity': va = a.patient.acuity || 0; vb = b.patient.acuity || 0; break;
+            case 'rn':     va = rnNameOf(a); vb = rnNameOf(b); break;
             default:       va = a.bedId; vb = b.bedId; // bed
         }
         if (va < vb) return mgrSortDir === 'asc' ? -1 : 1;
@@ -1931,6 +2016,14 @@
         }
         // ED hall beds
         if (unit === 'ED') ED_HALL_BEDS.forEach(function (b) { out.push(buildOne(b)); });
+        // Phase 3G: My Patients filter — only return beds with patients on current user's care team
+        if (myPatientsFilterOn) {
+            return out.filter(function (b) {
+                if (!b.patient || !b.patient._encounterId) return false;
+                const enc = allEncounters[b.patient._encounterId];
+                return userIsOnCareTeam(enc);
+            });
+        }
         return out;
     }
 
@@ -2156,6 +2249,7 @@
             '<div class="ch-block"><span class="ch-label">Allergies</span><span class="' + allergyClass + '">' + esc(allergiesTxt) + '</span></div>' +
             (enc && enc.status === 'active'
                 ? '<div class="ch-block" style="grid-column: 1 / -1;"><span class="ch-label">Status Note</span>' + statusNoteHtml(enc) + '</div>'
+                  + '<div class="ch-block" style="grid-column: 1 / -1;">' + renderCareTeamStrip(enc) + '</div>'
                 : '');
         document.getElementById('chartHeader').innerHTML = html;
     }
@@ -5298,6 +5392,199 @@
         if (unit === 'ED') ED_HALL_BEDS.forEach(function (b) { if (!bedMap[b]) out.push(b); });
         return out;
     }
+    // ===========================================================
+    // [2680] PHASE 3G — CARE TEAM ASSIGNMENT
+    // ===========================================================
+    const CARE_TEAM_ROLES = [
+        { id: 'primaryRN',   label: 'Primary RN',    short: 'P-RN',  color: '#16a34a' },
+        { id: 'chargeRN',    label: 'Charge RN',     short: 'C-RN',  color: '#0e7490' },
+        { id: 'mdAttending', label: 'Attending MD',  short: 'MD',    color: '#1e40af' },
+        { id: 'mdConsult',   label: 'Consulting MD', short: 'Cons',  color: '#7c3aed' },
+        { id: 'caseManager', label: 'Case Manager',  short: 'CM',    color: '#9a3412' }
+    ];
+    function careTeamRoleColor(roleId) {
+        const r = CARE_TEAM_ROLES.find(function (r) { return r.id === roleId; });
+        return r ? r.color : '#6b7280';
+    }
+    function careTeamRoleLabel(roleId) {
+        const r = CARE_TEAM_ROLES.find(function (r) { return r.id === roleId; });
+        return r ? r.label : roleId;
+    }
+    function initialsFor(name) {
+        if (!name) return '??';
+        const parts = String(name).trim().split(/\s+/);
+        if (parts.length === 1) return (parts[0][0] || '?').toUpperCase() + (parts[0][1] || '').toUpperCase();
+        return (parts[0][0] || '?').toUpperCase() + (parts[parts.length - 1][0] || '?').toUpperCase();
+    }
+    // List of all userProfiles as an array, sorted by display name. Includes current user even if not in /userProfiles yet.
+    function userProfileList() {
+        const list = [];
+        Object.keys(allUserProfiles || {}).forEach(function (uid) {
+            const p = allUserProfiles[uid] || {};
+            list.push({ uid: uid, name: p.displayName || p.name || (p.email || '').split('@')[0] || uid, email: p.email || '', role: p.role || '' });
+        });
+        // Ensure current user appears even if their profile node is missing
+        if (currentUserUid && !list.find(function (u) { return u.uid === currentUserUid; })) {
+            list.push({ uid: currentUserUid, name: currentUserName, email: currentUserEmail || '', role: '' });
+        }
+        list.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        return list;
+    }
+
+    // Returns true if currentUser is assigned to ANY role on this encounter's care team
+    function userIsOnCareTeam(enc) {
+        if (!enc || !enc.careTeam || !currentUserUid) return false;
+        for (const role of CARE_TEAM_ROLES) {
+            const m = enc.careTeam[role.id];
+            if (m && m.uid === currentUserUid) return true;
+        }
+        return false;
+    }
+
+    // Phase 3G: My Patients sidebar filter toggle
+    window.toggleMyPatientsFilter = function () {
+        myPatientsFilterOn = !myPatientsFilterOn;
+        const btn = document.getElementById('myPatientsFilter');
+        if (btn) btn.classList.toggle('active', myPatientsFilterOn);
+        if (myPatientsFilterOn) showToast('My Patients filter ON — only showing patients you\'re on the care team for.', 'info', 4000);
+        renderBoard();
+    };
+
+    // Count my-team patients (used for sidebar badge)
+    function countMyPatients() {
+        let n = 0;
+        Object.keys(allEncounters).forEach(function (k) {
+            const e = allEncounters[k];
+            if (e && e.status === 'active' && userIsOnCareTeam(e)) n++;
+        });
+        return n;
+    }
+
+    // ---- Assign Me as Primary RN (one click) ----
+    window.assignMeAsPrimaryRN = function () {
+        if (!currentPatientId || chartReadOnly) return;
+        const p = currentPatient;
+        if (!p || !p.currentEncounterId) return;
+        const updates = {};
+        const me = { uid: currentUserUid, name: currentUserName, assignedAt: Date.now() };
+        updates['emr/encounters/' + p.currentEncounterId + '/careTeam/primaryRN'] = me;
+        // Also write a chart-edit audit note
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: p.currentEncounterId, type: 'chart-edit',
+            authorRole: 'RN',
+            body: 'Care team change: Primary RN assigned to ' + currentUserName + '.',
+            by: currentUserName, timestamp: Date.now()
+        };
+        database.ref().update(updates).then(function () {
+            showToast('You are now Primary RN for ' + p.name + '.', 'success');
+        });
+    };
+
+    // ---- Open Edit Care Team modal ----
+    window.openEditCareTeamModal = function () {
+        if (!currentPatientId || chartReadOnly) return;
+        const p = currentPatient;
+        const enc = p && p.currentEncounterId ? allEncounters[p.currentEncounterId] : null;
+        if (!enc) return;
+        const team = enc.careTeam || {};
+        const userOpts = userProfileList();
+        const optHtml = function (selectedUid) {
+            return '<option value="">— Unassigned —</option>' +
+                userOpts.map(function (u) {
+                    const sel = (selectedUid === u.uid) ? ' selected' : '';
+                    return '<option value="' + esc(u.uid) + '"' + sel + '>' + esc(u.name) + '</option>';
+                }).join('');
+        };
+        const rows = CARE_TEAM_ROLES.map(function (r) {
+            const m = team[r.id];
+            const selUid = m ? m.uid : '';
+            return '<div class="ct-row">' +
+                '<span class="ct-role-chip" style="background:' + esc(r.color) + ';">' + esc(r.short) + '</span>' +
+                '<span class="ct-role-label">' + esc(r.label) + '</span>' +
+                '<select id="ct_' + esc(r.id) + '" style="flex:1;padding:6px 8px;border:1px solid var(--clx-border);border-radius:4px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">' + optHtml(selUid) + '</select>' +
+            '</div>';
+        }).join('');
+        const body = '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:12px;">Pick from authenticated users. Select "Unassigned" to clear a role. Changes are audited in the notes history.</p>' +
+            '<div class="ct-edit-list">' + rows + '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="saveCareTeamEdits()">Save Care Team</button>' +
+            '</div>';
+        openFlowModal('Edit Care Team — ' + (p ? p.name : ''), body, 'Multidisciplinary assignment');
+    };
+
+    window.saveCareTeamEdits = function () {
+        if (!currentPatientId) return;
+        const p = currentPatient;
+        const encId = p ? p.currentEncounterId : null;
+        if (!encId) return;
+        const enc = allEncounters[encId];
+        const oldTeam = (enc && enc.careTeam) || {};
+        const userOpts = userProfileList();
+        const updates = {};
+        const changes = []; // for audit note
+        CARE_TEAM_ROLES.forEach(function (r) {
+            const sel = document.getElementById('ct_' + r.id);
+            if (!sel) return;
+            const newUid = sel.value || null;
+            const oldM = oldTeam[r.id] || null;
+            const oldUid = oldM ? oldM.uid : null;
+            if (newUid === oldUid) return; // no change
+            if (!newUid) {
+                updates['emr/encounters/' + encId + '/careTeam/' + r.id] = null;
+                changes.push(r.label + ': ' + (oldM ? oldM.name : '—') + ' → unassigned');
+            } else {
+                const u = userOpts.find(function (x) { return x.uid === newUid; });
+                const newM = { uid: newUid, name: (u && u.name) || newUid, assignedAt: Date.now() };
+                updates['emr/encounters/' + encId + '/careTeam/' + r.id] = newM;
+                changes.push(r.label + ': ' + (oldM ? oldM.name : '—') + ' → ' + newM.name);
+            }
+        });
+        if (!changes.length) { closeFlowModal(); return; }
+        // Audit note
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: encId, type: 'chart-edit',
+            authorRole: 'RN',
+            body: 'Care team changes: ' + changes.join('; ') + '.',
+            by: currentUserName, timestamp: Date.now()
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Care team updated.', 'success');
+            closeFlowModal();
+        }).catch(function (err) {
+            showToast('Save failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    // Render the Care Team strip for the chart header (shown below main grid)
+    function renderCareTeamStrip(enc) {
+        if (!enc || enc.status !== 'active') return '';
+        const team = enc.careTeam || {};
+        const meIsPrimary = team.primaryRN && team.primaryRN.uid === currentUserUid;
+        const chips = CARE_TEAM_ROLES.map(function (r) {
+            const m = team[r.id];
+            if (m) {
+                return '<span class="ct-chip" style="background:' + esc(r.color) + ';" title="' + esc(r.label) + ': ' + esc(m.name) + '">' +
+                    esc(r.short) + ' · ' + esc(m.name) +
+                '</span>';
+            }
+            return '';
+        }).filter(Boolean).join('');
+        const primaryBtn = !chartReadOnly && !meIsPrimary
+            ? '<button class="btn sm" onclick="assignMeAsPrimaryRN()" title="Assign yourself as Primary RN">📌 Assign me as Primary RN</button>'
+            : '';
+        const editBtn = !chartReadOnly
+            ? '<button class="btn sm" onclick="openEditCareTeamModal()">✎ Edit Care Team</button>'
+            : '';
+        return '<div class="ct-strip">' +
+            '<span class="ct-strip-label">Care Team:</span>' +
+            (chips || '<span class="ct-empty">No team assigned</span>') +
+            '<span class="ct-strip-actions">' + primaryBtn + ' ' + editBtn + '</span>' +
+        '</div>';
+    }
+
     // ---- Allergy normalization helpers (Phase 3A.5b) ----
     // Allergies can be either legacy strings ('Penicillin') OR new objects ({substance, type, reaction, severity, note}).
     // These helpers handle both transparently.
