@@ -401,7 +401,11 @@
     }
 
     // Phase 3B.1.6: re-enabled to announce the new Sim EMR feature
-    initOnboarding();
+    // 2026-04-17: disabled per user request — was showing repeatedly for some
+    // users (likely browser localStorage being cleared). Leave function defined
+    // above so it can be re-enabled later if we wire up Firebase-profile
+    // persistence instead of localStorage for the dismissal flag.
+    // initOnboarding();
 
 })();
 
