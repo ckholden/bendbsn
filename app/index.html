@@ -7532,15 +7532,22 @@
             function runsText(runs) { return runs.map(r => r.text).join(''); }
             function runsHaveStrike(runs) { return runs.some(r => r.strike); }
             // jsPDF has no native strikethrough — manually draw a line through
-            // rendered text. Block-level (matches our "majority wins" approach
-            // for bold/italic), so per-block strike works correctly. The bullet
-            // case is per-item, so it's pixel-perfect for lists.
+            // rendered text. doc.text() puts the TEXT BASELINE at y (in mm),
+            // so the middle of the x-height is roughly 1/3 of the font size
+            // above baseline. We use 0.35 in mm to land right through the
+            // middle of most glyphs at common sizes (9-12pt).
             function drawStrikeLine(text, x, baselineY, fontSize, color) {
+                if (!text) return;
                 const w = doc.getTextWidth(text);
-                doc.setLineWidth(0.3);
-                doc.setDrawColor(color || 60);
-                const strikeY = baselineY - fontSize * 0.28;
+                if (!w) return;
+                doc.setLineWidth(0.35);
+                doc.setDrawColor(color || 50);
+                const strikeY = baselineY - (fontSize * 0.35 * 0.3528);
                 doc.line(x, strikeY, x + w, strikeY);
+                // Diagnostic: helps confirm the new code is actually running.
+                // If you don't see this log when exporting, your browser has
+                // an old cached version of /app/ — hard refresh with Ctrl+Shift+R.
+                if (window._rtStrikeDebug !== false) console.log('[PDF strike] "' + text + '" @ y=' + strikeY.toFixed(1));
             }
             function renderParagraph(runs, x, width, fontSize) {
                 doc.setFont('helvetica', runsStyle(runs));
