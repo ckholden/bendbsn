@@ -387,7 +387,12 @@
     }
 
     function walkBlocks(root, blocks) {
-        let loose = null; // accumulates text/inline runs at the root level
+        // Accumulator for loose text/inline runs at the root level. A <br>
+        // flushes this as its own paragraph (Chrome's contenteditable often
+        // emits <br>-separated content instead of <p>/<ul><li> — we have to
+        // treat hard breaks as paragraph boundaries or everything collapses
+        // into one block on export).
+        let loose = null;
         function flushLoose() {
             if (loose && loose.length) {
                 blocks.push({ type: 'paragraph', runs: loose });
@@ -403,15 +408,15 @@
             if (c.nodeType !== 1) return;
             const tag = c.tagName;
             if (tag === 'BR') {
-                if (!loose) loose = [];
-                loose.push({ text: '\n', bold: false, italic: false, strike: false });
+                flushLoose(); // hard break at root → new paragraph
                 return;
             }
             if (tag === 'P' || tag === 'DIV') {
                 flushLoose();
-                const runs = [];
-                collectRuns(c, runs, { bold: false, italic: false, strike: false });
-                if (runs.length) blocks.push({ type: 'paragraph', runs: runs });
+                // A <p>/<div> that contains <br>s gets split into multiple paragraphs
+                splitByBr(c, { bold: false, italic: false, strike: false }).forEach(function (runs) {
+                    if (runs.length) blocks.push({ type: 'paragraph', runs: runs });
+                });
                 return;
             }
             if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
@@ -426,9 +431,13 @@
                 const items = [];
                 c.childNodes.forEach(function (li) {
                     if (li.nodeType === 1 && li.tagName === 'LI') {
-                        const runs = [];
-                        collectRuns(li, runs, { bold: false, italic: false, strike: false });
-                        if (runs.length) items.push(runs);
+                        // A single <li> can contain <br>s (Chrome emits this when
+                        // user presses Shift+Enter inside a list item, or when
+                        // bullets are applied to multi-line text). Split into
+                        // sub-items so each line gets its own bullet.
+                        splitByBr(li, { bold: false, italic: false, strike: false }).forEach(function (runs) {
+                            if (runs.length) items.push(runs);
+                        });
                     }
                 });
                 if (items.length) blocks.push({ type: 'list', ordered: tag === 'OL', items: items });
@@ -446,6 +455,42 @@
             collectRuns(c, loose, startStyle);
         });
         flushLoose();
+    }
+
+    // Walk a container's children, collecting runs; every <br> starts a new
+    // sub-segment. Returns an array of run-arrays. Used for both <p>/<div>
+    // (→ separate paragraphs per segment) and <li> (→ separate list items).
+    function splitByBr(container, startStyle) {
+        const segments = [];
+        let current = [];
+        function flush() { if (current.length) { segments.push(current); current = []; } }
+        function walk(node, style) {
+            node.childNodes.forEach(function (c) {
+                if (c.nodeType === 3) {
+                    if (c.nodeValue) {
+                        current.push({
+                            text: c.nodeValue,
+                            bold: !!style.bold,
+                            italic: !!style.italic,
+                            strike: !!style.strike
+                        });
+                    }
+                    return;
+                }
+                if (c.nodeType !== 1) return;
+                const tag = c.tagName;
+                if (tag === 'BR') { flush(); return; }
+                const next = {
+                    bold: style.bold || (tag === 'STRONG' || tag === 'B'),
+                    italic: style.italic || (tag === 'EM' || tag === 'I'),
+                    strike: style.strike || (tag === 'S' || tag === 'DEL' || tag === 'STRIKE')
+                };
+                walk(c, next);
+            });
+        }
+        walk(container, startStyle || { bold: false, italic: false, strike: false });
+        flush();
+        return segments;
     }
 
     function collectRuns(node, runs, style) {
