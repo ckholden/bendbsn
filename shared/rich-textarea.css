@@ -1,14 +1,12 @@
-/* BendBSN shared Rich Textarea module
-   Wraps a plain <textarea> with a markdown-formatting toolbar (bold, italic,
-   strikethrough, bullets, numbered lists, headers) plus a live-preview toggle.
-   Storage stays plain text (markdown), so Firebase, auto-save, export, and the
-   existing lastActiveTextarea pattern all keep working unchanged. */
+/* BendBSN shared Rich Textarea — WYSIWYG (contenteditable) styling.
+   The student types in a real-looking formatted editor; the original
+   <textarea> is hidden but kept in the DOM as the canonical form value. */
 
 .rt-wrap {
     border: 1px solid var(--clx-border, #d1dce8);
     border-radius: 6px;
     background: var(--clx-bg-surface, #fff);
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 .rt-wrap:focus-within {
     border-color: var(--clx-accent, #0f7490);
@@ -48,10 +46,7 @@
     background: var(--clx-bg-hover, #e6edf5);
     color: var(--clx-text-primary, #1a202c);
 }
-.rt-btn:active {
-    background: var(--clx-accent, #0f7490);
-    color: #fff;
-}
+.rt-btn:active,
 .rt-btn.active {
     background: var(--clx-accent, #0f7490);
     color: #fff;
@@ -67,73 +62,58 @@
     margin: 0 4px;
 }
 
-.rt-spacer { flex: 1; }
-
-.rt-preview-toggle {
-    font-size: 11px;
-    color: var(--clx-text-muted, #718096);
-    padding: 0 10px;
-}
-.rt-preview-toggle .rt-preview-icon {
-    margin-right: 3px;
-}
-
-/* Textarea styling under the toolbar — remove its border since .rt-wrap owns it */
-.rt-wrap > textarea {
+/* --- The editable canvas ---------------------------------------------- */
+.rt-editor {
     display: block;
     width: 100%;
-    border: none;
-    border-radius: 0 0 6px 6px;
-    outline: none;
-    resize: vertical;
     padding: 8px 10px;
+    outline: none;
     background: transparent;
     color: var(--clx-text-primary, #1a202c);
     font-family: inherit;
     font-size: inherit;
     line-height: 1.5;
     box-sizing: border-box;
+    overflow-wrap: anywhere;
+    border-radius: 0 0 6px 6px;
+    resize: vertical;
+    overflow-y: auto;
+    /* Allow user to drag-resize the editor vertically */
+    min-height: 3.5em;
 }
 
-/* Preview pane */
-.rt-preview {
-    min-height: 60px;
-    padding: 8px 12px;
-    border-radius: 0 0 6px 6px;
-    background: var(--clx-bg-surface, #fff);
-    font-family: inherit;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--clx-text-primary, #1a202c);
-    overflow-wrap: anywhere;
-}
-.rt-preview:empty::before {
-    content: "Nothing to preview yet.";
+/* Placeholder — shown only when the editor is truly empty */
+.rt-editor[data-placeholder]:empty::before,
+.rt-editor[data-placeholder]:has(> br:only-child)::before {
+    content: attr(data-placeholder);
     color: var(--clx-text-muted, #718096);
+    pointer-events: none;
     font-style: italic;
 }
-.rt-preview h1, .rt-preview h2, .rt-preview h3 {
-    margin: 0.6em 0 0.3em; line-height: 1.25;
+
+/* Formatted elements inside the editor — make them look like typical
+   word processor output so students can trust what they see. */
+.rt-editor p { margin: 0 0 0.6em; }
+.rt-editor p:last-child { margin-bottom: 0; }
+.rt-editor h1,
+.rt-editor h2,
+.rt-editor h3 {
+    margin: 0.5em 0 0.3em; line-height: 1.25;
 }
-.rt-preview h1 { font-size: 1.35em; }
-.rt-preview h2 { font-size: 1.18em; }
-.rt-preview h3 { font-size: 1.05em; }
-.rt-preview ul, .rt-preview ol { margin: 0.3em 0 0.6em 1.4em; padding: 0; }
-.rt-preview li { margin: 0.15em 0; }
-.rt-preview strong { font-weight: 700; }
-.rt-preview em { font-style: italic; }
-.rt-preview s, .rt-preview del { text-decoration: line-through; color: var(--clx-text-muted, #718096); }
-.rt-preview p { margin: 0 0 0.6em; }
-.rt-preview p:last-child { margin-bottom: 0; }
+.rt-editor h1 { font-size: 1.35em; font-weight: 700; }
+.rt-editor h2 { font-size: 1.18em; font-weight: 700; }
+.rt-editor h3 { font-size: 1.05em; font-weight: 700; }
+.rt-editor ul,
+.rt-editor ol { margin: 0.3em 0 0.6em 1.6em; padding: 0; }
+.rt-editor li { margin: 0.15em 0; }
+.rt-editor strong { font-weight: 700; }
+.rt-editor em { font-style: italic; }
+.rt-editor s,
+.rt-editor del { text-decoration: line-through; color: var(--clx-text-muted, #718096); }
 
-/* In preview mode, hide the textarea and show the preview pane */
-.rt-wrap.rt-previewing > textarea { display: none; }
-.rt-wrap:not(.rt-previewing) > .rt-preview { display: none; }
-
-/* Mobile: smaller toolbar buttons so it doesn't wrap awkwardly on narrow columns */
+/* Mobile: slightly chunkier toolbar buttons for touch targets */
 @media (max-width: 480px) {
-    .rt-btn { min-width: 30px; height: 32px; font-size: 14px; }
-    .rt-preview-toggle { font-size: 12px; padding: 0 8px; }
+    .rt-btn { min-width: 32px; height: 34px; font-size: 14px; }
 }
 
 /* Dark mode */
@@ -142,14 +122,11 @@
 [data-theme="dark"] .rt-btn { color: var(--clx-text-secondary, #cbd5e0); }
 [data-theme="dark"] .rt-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 [data-theme="dark"] .rt-divider { background: var(--clx-border, #2d3748); }
-[data-theme="dark"] .rt-preview { background: var(--clx-bg-surface, #1a202c); }
 [data-theme="dark"] .rt-wrap:focus-within { box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.35); }
 
-/* Print: hide the toolbar and preview-toggle chrome — just print the text content */
+/* Print — hide the toolbar, keep the editor content */
 @media print {
     .rt-toolbar { display: none !important; }
     .rt-wrap { border: none !important; }
-    .rt-wrap > textarea { padding: 0 !important; }
-    .rt-wrap.rt-previewing > .rt-preview { display: block !important; padding: 0 !important; }
-    .rt-wrap.rt-previewing > textarea { display: none; }
+    .rt-editor { padding: 0 !important; min-height: 0 !important; }
 }

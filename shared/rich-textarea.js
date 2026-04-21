@@ -1,298 +1,244 @@
-/* BendBSN shared Rich Textarea module
-   -----------------------------------------------
-   Wraps a plain <textarea> with a markdown-formatting toolbar (B / I / S /
-   bullets / numbered / H1 / H2) plus a live Preview toggle.
+/* BendBSN shared Rich Textarea module — WYSIWYG (contenteditable) version
+   -----------------------------------------------------------------------
+   Wraps a plain <textarea> with a Word-style formatting toolbar. The
+   student sees actual bold text, real bullet points, etc. while typing —
+   no markdown syntax. Under the hood:
 
-   Public API (attached to window.richTextarea):
-     richTextarea.attach(textareaEl)
-         Wraps a single textarea.
-     richTextarea.attachAll(selectorOrNodeList)
-         Wraps all matching textareas.
-     richTextarea.renderMarkdown(str) => safe HTML string
-         Used by preview pane + any caller that wants to render saved notes.
-     richTextarea.stripMarkdown(str) => plain text
-         Strips markdown syntax for plain-text export paths.
+     • A contentEditable <div class="rt-editor"> sits in place of the
+       visible textarea (the textarea itself is hidden but kept in the
+       DOM as the canonical form value).
+     • On every edit, the editor's sanitized innerHTML is written to the
+       hidden textarea's .value, so auto-save, Firebase saves, and form
+       serialization keep working unchanged.
+     • The textarea's .value setter is monkey-patched so programmatic
+       writes (e.g., draft restore, Load Document) reflect back into the
+       editor.
+     • An allowlist sanitizer strips anything other than: strong, em, s,
+       ul, ol, li, h1, h2, h3, br, p, div. All attributes are stripped —
+       no inline styles, no classes, no scripts.
 
-   Markdown subset (intentional — nursing docs, not a CMS):
-     **bold**     *italic*     ~~strike~~
-     # H1         ## H2        ### H3
-     - bullets (also • or *)   1. numbered
-     Multiple newlines → paragraphs. Single newline → <br>.
-     Everything else is HTML-escaped.
-
-   Design choices:
-     - Plain textarea stays in the DOM (lastActiveTextarea keeps working, all
-       existing Insert-at-cursor helpers keep working, exports keep reading
-       .value as markdown source of truth).
-     - No CDN dependency — ~250 lines of purpose-built renderer and toolbar.
-     - Idempotent: calling attach() twice on the same textarea is a no-op.
+   Public API:
+     richTextarea.attach(textareaEl)        Wrap a single textarea
+     richTextarea.attachAll(selector|list)  Wrap matching textareas
+     richTextarea.insertAtCursor(ta, text)  Insert plain text at current
+                                            cursor (replaces the old
+                                            lastActiveTextarea.value
+                                            slice pattern — safe whether
+                                            the textarea has been
+                                            attached or not)
+     richTextarea.setValue(ta, content)     Programmatic set (preferred
+                                            over ta.value = ...)
+     richTextarea.renderHtml(str)           Sanitize untrusted HTML
+     richTextarea.stripToPlain(str)         Strip tags → plain text
 */
 (function () {
     'use strict';
+    if (window.richTextarea) return;
 
-    if (window.richTextarea) return; // already loaded
+    // --- Sanitizer -------------------------------------------------------
+    const ALLOWED_TAGS = new Set([
+        'STRONG', 'B', 'EM', 'I', 'S', 'DEL', 'STRIKE',
+        'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'BR', 'P', 'DIV', 'SPAN'
+    ]);
+    // Some browsers emit <b> / <i> / <strike> via execCommand — normalize to the modern tags
+    const TAG_NORMALIZE = { B: 'STRONG', I: 'EM', STRIKE: 'S', DEL: 'S' };
 
-    // --- Utility ---------------------------------------------------------
-    function esc(s) {
-        return String(s == null ? '' : s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    function renameEl(el, newTag) {
+        const replacement = document.createElement(newTag);
+        while (el.firstChild) replacement.appendChild(el.firstChild);
+        el.parentNode.replaceChild(replacement, el);
+        return replacement;
     }
 
-    // --- Markdown renderer ----------------------------------------------
-    // Block-level first (headers, lists), then inline (bold/italic/strike)
-    // on the remaining text. Unsafe HTML is always escaped first.
-    function renderMarkdown(md) {
-        if (md == null || md === '') return '';
-        const raw = String(md);
-
-        // Escape HTML up front; all markdown tokens are pure ASCII so this is safe
-        let text = esc(raw);
-
-        // Headers — must be at line start. Do ### first so it doesn't get eaten by #.
-        text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-        text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-        text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-
-        // Lists: walk line-by-line so consecutive bullets/numbers collapse into a single <ul>/<ol>
-        const lines = text.split('\n');
-        const out = [];
-        let inUl = false, inOl = false;
-        function closeLists() {
-            if (inUl) { out.push('</ul>'); inUl = false; }
-            if (inOl) { out.push('</ol>'); inOl = false; }
-        }
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            // Bullets: -, *, or • at line start (with optional leading spaces)
-            const ulm = line.match(/^\s*(?:[-*•])\s+(.+)$/);
-            const olm = line.match(/^\s*\d+\.\s+(.+)$/);
-            if (ulm) {
-                if (inOl) { out.push('</ol>'); inOl = false; }
-                if (!inUl) { out.push('<ul>'); inUl = true; }
-                out.push('<li>' + ulm[1] + '</li>');
-            } else if (olm) {
-                if (inUl) { out.push('</ul>'); inUl = false; }
-                if (!inOl) { out.push('<ol>'); inOl = true; }
-                out.push('<li>' + olm[1] + '</li>');
-            } else {
-                closeLists();
-                out.push(line);
+    function walkClean(node) {
+        for (let i = node.childNodes.length - 1; i >= 0; i--) {
+            let c = node.childNodes[i];
+            if (c.nodeType === 1) {
+                let tag = c.tagName;
+                if (TAG_NORMALIZE[tag]) {
+                    c = renameEl(c, TAG_NORMALIZE[tag]);
+                    tag = c.tagName;
+                }
+                if (!ALLOWED_TAGS.has(tag)) {
+                    // Unwrap: replace element with its children
+                    const frag = document.createDocumentFragment();
+                    while (c.firstChild) frag.appendChild(c.firstChild);
+                    c.parentNode.replaceChild(frag, c);
+                    continue;
+                }
+                // Strip ALL attributes (no classes, no inline styles, no data-*)
+                while (c.attributes && c.attributes.length) {
+                    c.removeAttribute(c.attributes[0].name);
+                }
+                walkClean(c);
+            } else if (c.nodeType !== 3) {
+                // Strip comments, processing instructions, etc.
+                node.removeChild(c);
             }
         }
-        closeLists();
-        text = out.join('\n');
-
-        // Inline: bold (**), italic (*), strikethrough (~~)
-        text = text.replace(/\*\*([^*\n][^*\n]*?)\*\*/g, '<strong>$1</strong>');
-        // Italic: match single * but not ** (already consumed). Use negative lookbehind/ahead.
-        text = text.replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>');
-        text = text.replace(/~~([^~\n]+?)~~/g, '<s>$1</s>');
-
-        // Paragraph/line-break handling.
-        // Walk line-by-line and buffer consecutive prose lines into a <p>. When we hit
-        // a block-level tag line (<ul>, <ol>, <li>, </ul>, </ol>, <h1..3>), flush the
-        // prose buffer and emit the block as-is. A blank line also flushes.
-        const blockStart = /^<(?:ul|ol|li|h[1-3]|\/ul|\/ol)\b/;
-        const finalLines = text.split('\n');
-        const rendered = [];
-        let para = [];
-        function flushPara() {
-            if (!para.length) return;
-            const joined = para.join('<br>').replace(/^(?:<br>)+|(?:<br>)+$/g, '');
-            if (joined) rendered.push('<p>' + joined + '</p>');
-            para = [];
-        }
-        for (let i = 0; i < finalLines.length; i++) {
-            const line = finalLines[i];
-            if (line.trim() === '') {
-                flushPara();
-                continue;
-            }
-            if (blockStart.test(line.trim())) {
-                flushPara();
-                rendered.push(line.trim());
-                continue;
-            }
-            para.push(line);
-        }
-        flushPara();
-        return rendered.join('');
     }
 
-    // --- Strip-to-plain (for export paths that don't understand markdown) ---
-    function stripMarkdown(md) {
-        if (md == null) return '';
-        let t = String(md);
-        // Headers — keep the heading text, drop the # marks
-        t = t.replace(/^#{1,3}\s+/gm, '');
-        // Bold/italic/strike — keep inner
-        t = t.replace(/\*\*([^*\n]+?)\*\*/g, '$1');
-        t = t.replace(/\*([^*\n]+?)\*/g, '$1');
-        t = t.replace(/~~([^~\n]+?)~~/g, '$1');
-        // Bullets: convert "- item" / "* item" / "• item" to "• item" for readability
-        t = t.replace(/^\s*[-*]\s+/gm, '• ');
-        return t;
+    function sanitizeHtml(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html || '';
+        walkClean(tmp);
+        return tmp.innerHTML;
     }
 
-    // --- Selection helpers ----------------------------------------------
-    function wrapSelection(ta, marker, placeholder) {
-        const s = ta.selectionStart, e = ta.selectionEnd;
-        const before = ta.value.slice(0, s);
-        const sel = ta.value.slice(s, e);
-        const after = ta.value.slice(e);
-        const txt = sel || placeholder;
-        ta.value = before + marker + txt + marker + after;
-        const mL = marker.length;
-        if (sel) {
-            ta.selectionStart = s + mL;
-            ta.selectionEnd = e + mL;
+    // Plain-text extraction — used when a caller wants the un-formatted
+    // string (e.g., for a clipboard-friendly copy). Bullets become "• ",
+    // numbered lists get their indices re-emitted, paragraphs stay on their
+    // own lines.
+    function stripToPlain(html) {
+        if (html == null || html === '') return '';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return extractText(tmp).replace(/\n{3,}/g, '\n\n').trim();
+    }
+    function extractText(node) {
+        let out = '';
+        node.childNodes.forEach(function (c) {
+            if (c.nodeType === 3) {
+                out += c.nodeValue;
+            } else if (c.nodeType === 1) {
+                const tag = c.tagName;
+                if (tag === 'BR') out += '\n';
+                else if (tag === 'LI') {
+                    const parentTag = c.parentNode && c.parentNode.tagName;
+                    if (parentTag === 'OL') {
+                        const idx = Array.prototype.indexOf.call(c.parentNode.children, c) + 1;
+                        out += '\n' + idx + '. ' + extractText(c);
+                    } else {
+                        out += '\n• ' + extractText(c);
+                    }
+                } else if (tag === 'UL' || tag === 'OL') {
+                    out += extractText(c) + '\n';
+                } else if (tag === 'P' || tag === 'DIV' || tag === 'H1' || tag === 'H2' || tag === 'H3') {
+                    out += extractText(c) + '\n';
+                } else {
+                    out += extractText(c);
+                }
+            }
+        });
+        return out;
+    }
+
+    // --- Textarea value setter hook --------------------------------------
+    // Intercept `ta.value = X` so programmatic writes (draft restore, Load
+    // Document, etc.) feed back into the contenteditable editor.
+    function hookValueSetter(ta, onChange) {
+        if (ta.dataset.rtValueHooked === '1') return;
+        ta.dataset.rtValueHooked = '1';
+        const proto = Object.getPrototypeOf(ta);
+        const desc = Object.getOwnPropertyDescriptor(proto, 'value');
+        Object.defineProperty(ta, 'value', {
+            get: function () { return desc.get.call(this); },
+            set: function (v) {
+                desc.set.call(this, v);
+                onChange(v);
+            },
+            configurable: true
+        });
+    }
+    // Bypass the hooked setter — used when the editor itself is syncing.
+    function setTextareaRaw(ta, v) {
+        const proto = Object.getPrototypeOf(ta);
+        const desc = Object.getOwnPropertyDescriptor(proto, 'value');
+        desc.set.call(ta, v);
+    }
+
+    // --- Editor <-> textarea sync ---------------------------------------
+    function editorToTextarea(editor, ta) {
+        const html = sanitizeHtml(editor.innerHTML);
+        // If the HTML is just an empty <br> or empty paragraph, store empty string
+        const clean = html.replace(/<br\s*\/?>/gi, '').replace(/<(p|div)>\s*<\/\1>/gi, '');
+        setTextareaRaw(ta, clean ? html : '');
+    }
+    function textareaToEditor(editor, val) {
+        if (val == null) val = '';
+        const looksLikeHtml = /<(?:strong|b|em|i|s|del|ul|ol|li|h[1-3]|br|p|div|span)\b/i.test(val);
+        if (looksLikeHtml) {
+            editor.innerHTML = sanitizeHtml(val);
         } else {
-            ta.selectionStart = s + mL;
-            ta.selectionEnd = s + mL + placeholder.length;
+            // Plain text → preserve newlines by converting to <br>
+            editor.innerHTML = val
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>');
         }
-        ta.focus();
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    function prefixLines(ta, prefixFn) {
-        const s = ta.selectionStart, e = ta.selectionEnd;
-        // Expand selection to whole lines
-        let lineStart = s;
-        while (lineStart > 0 && ta.value[lineStart - 1] !== '\n') lineStart--;
-        let lineEnd = e;
-        while (lineEnd < ta.value.length && ta.value[lineEnd] !== '\n') lineEnd++;
-        const before = ta.value.slice(0, lineStart);
-        const block = ta.value.slice(lineStart, lineEnd);
-        const after = ta.value.slice(lineEnd);
-        // Empty selection on an empty line → just insert the prefix + placeholder
-        const emptySel = (s === e) && block.trim() === '';
-        const applied = emptySel
-            ? prefixFn(0) + 'item'
-            : block.split('\n').map(function (line, idx) {
-                  // Skip already-prefixed lines — toggle off instead
-                  const pre = prefixFn(idx);
-                  if (line.startsWith(pre)) return line.slice(pre.length);
-                  // Strip any existing bullet/number prefix first so switching lists works
-                  const stripped = line.replace(/^\s*(?:[-*•]\s+|\d+\.\s+)/, '');
-                  return pre + stripped;
-              }).join('\n');
-        ta.value = before + applied + after;
-        ta.selectionStart = lineStart;
-        ta.selectionEnd = lineStart + applied.length;
-        ta.focus();
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
+    // --- Toolbar ---------------------------------------------------------
+    function mkBtn(cls, title, html, onClick) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'rt-btn ' + cls;
+        b.title = title;
+        b.setAttribute('aria-label', title);
+        b.innerHTML = html;
+        // Prevent the button from stealing focus — keep cursor in the editor
+        b.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+        b.addEventListener('click', function (ev) { ev.preventDefault(); onClick(); });
+        return b;
     }
 
-    function togglePrefix(ta, prefix) {
-        // For headers — just toggle the prefix on the current line(s).
-        const s = ta.selectionStart;
-        let lineStart = s;
-        while (lineStart > 0 && ta.value[lineStart - 1] !== '\n') lineStart--;
-        let lineEnd = ta.selectionEnd;
-        while (lineEnd < ta.value.length && ta.value[lineEnd] !== '\n') lineEnd++;
-        const before = ta.value.slice(0, lineStart);
-        const block = ta.value.slice(lineStart, lineEnd);
-        const after = ta.value.slice(lineEnd);
-        const applied = block.split('\n').map(function (line) {
-            if (line.startsWith(prefix)) return line.slice(prefix.length);
-            // Strip any other heading prefix before applying new one
-            const stripped = line.replace(/^#{1,3}\s+/, '');
-            return (stripped ? prefix + stripped : prefix + 'Heading');
-        }).join('\n');
-        ta.value = before + applied + after;
-        ta.focus();
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
+    function exec(editor, cmd, arg) {
+        editor.focus();
+        // document.execCommand is "deprecated" but still supported in every major
+        // browser and there is no drop-in replacement for rich-text editing
+        // commands. Evergreen support: Chrome, Firefox, Safari, Edge.
+        try { document.execCommand(cmd, false, arg || null); } catch (e) {}
+        // Dispatch input so our editor→textarea sync picks up the change
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    // --- Toolbar builder -------------------------------------------------
-    function buildToolbar(ta, previewEl, wrap) {
+    function buildToolbar(editor, ta) {
         const bar = document.createElement('div');
         bar.className = 'rt-toolbar';
         bar.setAttribute('role', 'toolbar');
         bar.setAttribute('aria-label', 'Formatting toolbar');
 
-        function mkBtn(cls, title, html, onClick) {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'rt-btn ' + cls;
-            b.title = title;
-            b.setAttribute('aria-label', title);
-            b.innerHTML = html;
-            b.addEventListener('click', function (ev) { ev.preventDefault(); onClick(); });
-            // Prevent toolbar button from stealing focus before the textarea action
-            b.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
-            return b;
-        }
-
         bar.appendChild(mkBtn('rt-btn-bold', 'Bold (Ctrl+B)', 'B',
-            function () { wrapSelection(ta, '**', 'bold text'); }));
+            function () { exec(editor, 'bold'); }));
         bar.appendChild(mkBtn('rt-btn-italic', 'Italic (Ctrl+I)', 'I',
-            function () { wrapSelection(ta, '*', 'italic text'); }));
+            function () { exec(editor, 'italic'); }));
         bar.appendChild(mkBtn('rt-btn-strike', 'Strikethrough', 'S',
-            function () { wrapSelection(ta, '~~', 'strikethrough'); }));
+            function () { exec(editor, 'strikeThrough'); }));
 
-        const div1 = document.createElement('div'); div1.className = 'rt-divider'; bar.appendChild(div1);
+        const d1 = document.createElement('div'); d1.className = 'rt-divider'; bar.appendChild(d1);
 
         bar.appendChild(mkBtn('rt-btn-ul', 'Bulleted list', '•',
-            function () { prefixLines(ta, function () { return '- '; }); }));
+            function () { exec(editor, 'insertUnorderedList'); }));
         bar.appendChild(mkBtn('rt-btn-ol', 'Numbered list', '1.',
-            function () { prefixLines(ta, function (i) { return (i + 1) + '. '; }); }));
+            function () { exec(editor, 'insertOrderedList'); }));
 
-        const div2 = document.createElement('div'); div2.className = 'rt-divider'; bar.appendChild(div2);
+        const d2 = document.createElement('div'); d2.className = 'rt-divider'; bar.appendChild(d2);
 
         bar.appendChild(mkBtn('rt-btn-h1', 'Heading 1', 'H1',
-            function () { togglePrefix(ta, '# '); }));
+            function () { exec(editor, 'formatBlock', 'H1'); }));
         bar.appendChild(mkBtn('rt-btn-h2', 'Heading 2', 'H2',
-            function () { togglePrefix(ta, '## '); }));
+            function () { exec(editor, 'formatBlock', 'H2'); }));
+        bar.appendChild(mkBtn('rt-btn-p', 'Normal text', '¶',
+            function () { exec(editor, 'formatBlock', 'P'); }));
 
-        const spacer = document.createElement('div'); spacer.className = 'rt-spacer'; bar.appendChild(spacer);
+        const d3 = document.createElement('div'); d3.className = 'rt-divider'; bar.appendChild(d3);
 
-        const previewBtn = document.createElement('button');
-        previewBtn.type = 'button';
-        previewBtn.className = 'rt-btn rt-preview-toggle';
-        previewBtn.title = 'Toggle preview (Ctrl+Shift+P)';
-        previewBtn.setAttribute('aria-label', 'Toggle preview');
-        previewBtn.innerHTML = '<span class="rt-preview-icon">👁</span>Preview';
-        previewBtn.addEventListener('click', function (ev) {
-            ev.preventDefault();
-            togglePreview(wrap, ta, previewEl, previewBtn);
-        });
-        bar.appendChild(previewBtn);
+        bar.appendChild(mkBtn('rt-btn-clear', 'Clear formatting', '⌫',
+            function () { exec(editor, 'removeFormat'); }));
 
         return bar;
     }
 
-    function togglePreview(wrap, ta, previewEl, btn) {
-        const isPreviewing = wrap.classList.toggle('rt-previewing');
-        if (isPreviewing) {
-            previewEl.innerHTML = renderMarkdown(ta.value);
-            btn.innerHTML = '<span class="rt-preview-icon">✎</span>Edit';
-        } else {
-            btn.innerHTML = '<span class="rt-preview-icon">👁</span>Preview';
-            ta.focus();
-        }
-    }
-
-    // --- Keyboard shortcuts ---------------------------------------------
-    function attachShortcuts(ta) {
-        ta.addEventListener('keydown', function (ev) {
+    // --- Keyboard shortcuts ----------------------------------------------
+    function attachShortcuts(editor) {
+        editor.addEventListener('keydown', function (ev) {
             if (!(ev.ctrlKey || ev.metaKey)) return;
-            const key = ev.key.toLowerCase();
-            if (key === 'b') {
-                ev.preventDefault();
-                wrapSelection(ta, '**', 'bold text');
-            } else if (key === 'i') {
-                ev.preventDefault();
-                wrapSelection(ta, '*', 'italic text');
-            }
+            const k = ev.key.toLowerCase();
+            if (k === 'b') { ev.preventDefault(); exec(editor, 'bold'); }
+            else if (k === 'i') { ev.preventDefault(); exec(editor, 'italic'); }
         });
     }
 
-    // --- Public attach --------------------------------------------------
+    // --- Attach ----------------------------------------------------------
     function attach(ta) {
         if (!ta || ta.tagName !== 'TEXTAREA') return null;
         if (ta.dataset.rtAttached === '1') return ta.parentNode;
@@ -301,17 +247,74 @@
         // Build wrapper
         const wrap = document.createElement('div');
         wrap.className = 'rt-wrap';
-        const previewEl = document.createElement('div');
-        previewEl.className = 'rt-preview';
-        previewEl.setAttribute('aria-live', 'polite');
+
+        const editor = document.createElement('div');
+        editor.className = 'rt-editor';
+        editor.contentEditable = 'true';
+        editor.setAttribute('role', 'textbox');
+        editor.setAttribute('aria-multiline', 'true');
+        if (ta.placeholder) editor.dataset.placeholder = ta.placeholder;
+        if (ta.id) editor.dataset.rtEditorFor = ta.id;
+        // Copy min-height from the textarea so the editor feels the same size
+        try {
+            const cs = window.getComputedStyle(ta);
+            if (cs && cs.minHeight && cs.minHeight !== '0px') {
+                editor.style.minHeight = cs.minHeight;
+            } else {
+                const rows = parseInt(ta.getAttribute('rows') || '0', 10);
+                editor.style.minHeight = (rows > 0 ? (rows * 1.5) : 4.5) + 'em';
+            }
+        } catch (e) { editor.style.minHeight = '4.5em'; }
+
+        const toolbar = buildToolbar(editor, ta);
+
+        // Hide original textarea (keep it in the DOM for form-value access)
+        ta.style.display = 'none';
 
         const parent = ta.parentNode;
         parent.insertBefore(wrap, ta);
-        wrap.appendChild(buildToolbar(ta, previewEl, wrap));
+        wrap.appendChild(toolbar);
+        wrap.appendChild(editor);
         wrap.appendChild(ta);
-        wrap.appendChild(previewEl);
 
-        attachShortcuts(ta);
+        // Seed editor with current textarea value (treats HTML if detected, plain-text otherwise)
+        textareaToEditor(editor, ta.value);
+
+        // Editor → textarea on every edit
+        editor.addEventListener('input', function () { editorToTextarea(editor, ta); });
+        editor.addEventListener('blur', function () { editorToTextarea(editor, ta); });
+
+        // Paste as plain text (no <span style>, no pasted images)
+        editor.addEventListener('paste', function (ev) {
+            ev.preventDefault();
+            const cd = ev.clipboardData || window.clipboardData;
+            const text = cd ? cd.getData('text/plain') : '';
+            document.execCommand('insertText', false, text);
+        });
+
+        // Forward focus to the hidden textarea so lastActiveTextarea tracking
+        // keeps working (the /app/ listener is attached to the textarea's focus).
+        editor.addEventListener('focus', function () {
+            // Fire a focus event on the textarea too (don't call .focus() — that'd
+            // move focus away from the editor). Manually dispatch.
+            try {
+                ta.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+            } catch (e) {
+                // Older browsers: fall back to a generic event
+                const ev = document.createEvent('Event');
+                ev.initEvent('focus', true, true);
+                ta.dispatchEvent(ev);
+            }
+        });
+
+        // Programmatic textarea.value = X → reflect back into editor (only when
+        // the editor isn't the active element, to avoid clobbering live typing)
+        hookValueSetter(ta, function (v) {
+            if (document.activeElement !== editor) {
+                textareaToEditor(editor, v);
+            }
+        });
+
         return wrap;
     }
 
@@ -330,10 +333,49 @@
         return wraps;
     }
 
+    // --- Public helpers --------------------------------------------------
+    // Insert plain text at the current cursor position of the editor
+    // associated with `ta`. Falls back to a plain-textarea insert if the
+    // textarea hasn't been attached (e.g., dynamic modal textareas).
+    function insertAtCursor(ta, text) {
+        if (!ta || !text) return;
+        const wrap = ta.dataset && ta.dataset.rtAttached === '1' ? ta.parentNode : null;
+        const editor = wrap ? wrap.querySelector('.rt-editor') : null;
+        if (!editor) {
+            // Plain textarea fallback (legacy path)
+            const s = ta.selectionStart || 0;
+            const e = ta.selectionEnd || 0;
+            const v = ta.value || '';
+            ta.value = v.slice(0, s) + text + v.slice(e);
+            try { ta.setSelectionRange(s + text.length, s + text.length); } catch (err) {}
+            ta.focus();
+            return;
+        }
+        editor.focus();
+        // If there's no existing selection within the editor, move the caret to the end
+        const sel = window.getSelection();
+        if (!sel.rangeCount || !editor.contains(sel.anchorNode)) {
+            const r = document.createRange();
+            r.selectNodeContents(editor);
+            r.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(r);
+        }
+        // Insert — execCommand handles line-break preservation (\n → <br>) cleanly
+        document.execCommand('insertText', false, text);
+    }
+
+    // Set the full contents programmatically (preferred over ta.value = for
+    // callers who want to avoid the monkey-patch path — equivalent, but
+    // explicit).
+    function setValue(ta, content) { ta.value = content == null ? '' : content; }
+
     window.richTextarea = {
         attach: attach,
         attachAll: attachAll,
-        renderMarkdown: renderMarkdown,
-        stripMarkdown: stripMarkdown
+        insertAtCursor: insertAtCursor,
+        setValue: setValue,
+        renderHtml: sanitizeHtml,
+        stripToPlain: stripToPlain
     };
 })();

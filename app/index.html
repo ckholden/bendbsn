@@ -4553,15 +4553,8 @@
 
             const vitalsStr = 'VS: ' + parts.join(' | ') + '. ';
 
-            // Insert at cursor position in textarea
-            const start = lastActiveTextarea.selectionStart;
-            const end = lastActiveTextarea.selectionEnd;
-            const text = lastActiveTextarea.value;
-            lastActiveTextarea.value = text.substring(0, start) + vitalsStr + text.substring(end);
-
-            // Move cursor to end of inserted text
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + vitalsStr.length;
-            lastActiveTextarea.focus();
+            // Insert at cursor (rich-textarea-aware: routes to contenteditable editor if attached)
+            window.richTextarea.insertAtCursor(lastActiveTextarea, vitalsStr);
 
             // Clear vitals fields
             document.getElementById('vsBpSys').value = '';
@@ -4703,12 +4696,7 @@
             if (!name) { showToast('Please enter at least a medication name.', 'warning'); return; }
 
             const medStr = buildMedNarrative() + ' ';
-            const start = lastActiveTextarea.selectionStart;
-            const end = lastActiveTextarea.selectionEnd;
-            const text = lastActiveTextarea.value;
-            lastActiveTextarea.value = text.substring(0, start) + medStr + text.substring(end);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + medStr.length;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, medStr);
 
             if (name) { saveMedRecent(name); renderMedRecents(); }
             clearMedFields();
@@ -4923,10 +4911,7 @@
             if (data.isEmpty) { showToast('Please complete the screening before inserting.', 'warning'); return; }
             if (!lastActiveTextarea) { showToast('Click in a text field first, then insert the screening.', 'warning'); return; }
             const str = data.display + '. ';
-            const start = lastActiveTextarea.selectionStart;
-            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, str);
             showToast(`${data.label} screening inserted.`, 'success');
         }
 
@@ -5015,12 +5000,7 @@
                 return;
             }
             const lineStr = parts.join(', ') + '. ';
-            const lStart = lastActiveTextarea.selectionStart;
-            const lEnd = lastActiveTextarea.selectionEnd;
-            const lText = lastActiveTextarea.value;
-            lastActiveTextarea.value = lText.substring(0, lStart) + lineStr + lText.substring(lEnd);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = lStart + lineStr.length;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, lineStr);
             showToast('Line/Drain/Airway inserted into note.', 'success');
         }
 
@@ -5095,10 +5075,7 @@
             const t = calcIOTotals();
             if (t.totalIn === 0 && t.totalOut === 0) { showToast('Enter at least one I&O value.', 'warning'); return; }
             const str = buildIODisplay() + '. ';
-            const start = lastActiveTextarea.selectionStart;
-            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, str);
             showToast('I&O inserted.', 'success');
         }
 
@@ -5167,10 +5144,7 @@
             if (!lastActiveTextarea) { showToast('Click in a text field first.', 'warning'); return; }
             if (!document.getElementById('bgValue')?.value) { showToast('Enter a BG value.', 'warning'); return; }
             const str = buildBGDisplay() + '. ';
-            const start = lastActiveTextarea.selectionStart;
-            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, str);
             showToast('BG check inserted.', 'success');
         }
 
@@ -5254,10 +5228,7 @@
             if (!lastActiveTextarea) { showToast('Click in a text field first.', 'warning'); return; }
             if (!document.getElementById('painInitScore')?.value) { showToast('Enter an initial pain score.', 'warning'); return; }
             const str = buildPainDisplay() + ' ';
-            const start = lastActiveTextarea.selectionStart;
-            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, str);
             showToast('Pain assessment inserted.', 'success');
         }
 
@@ -5312,10 +5283,7 @@
             const situation = document.getElementById('notifySituation')?.value?.trim();
             if (!provider && !situation) { showToast('Enter provider name or situation.', 'warning'); return; }
             const str = buildNotifyDisplay() + ' ';
-            const start = lastActiveTextarea.selectionStart;
-            lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, str);
             showToast('Provider notification inserted.', 'success');
         }
 
@@ -5394,10 +5362,7 @@
                     return;
                 }
                 const str = narrative + ' ';
-                const start = lastActiveTextarea.selectionStart;
-                lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + str + lastActiveTextarea.value.slice(start);
-                lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + str.length;
-                lastActiveTextarea.focus();
+                window.richTextarea.insertAtCursor(lastActiveTextarea, str);
                 showToast('Full narrative inserted into note.', 'success');
             }
         }
@@ -5646,12 +5611,7 @@
         function insertLineNarrative() {
             var narrative = document.getElementById('lineNarrativeText').value;
             if (!lastActiveTextarea) { showToast('Please click in a text field first.', 'warning'); return; }
-            var start = lastActiveTextarea.selectionStart;
-            var end = lastActiveTextarea.selectionEnd;
-            var text = lastActiveTextarea.value;
-            lastActiveTextarea.value = text.substring(0, start) + narrative + ' ' + text.substring(end);
-            lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + narrative.length + 1;
-            lastActiveTextarea.focus();
+            window.richTextarea.insertAtCursor(lastActiveTextarea, narrative + ' ');
             showToast('Narrative inserted.', 'success');
         }
 
