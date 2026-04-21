@@ -293,16 +293,15 @@
         });
 
         // Forward focus to the hidden textarea so lastActiveTextarea tracking
-        // keeps working (the /app/ listener is attached to the textarea's focus).
+        // keeps working. /app/ listens on `focusin` (which bubbles) to detect
+        // textarea focus. The native `focus` event does NOT bubble even when
+        // dispatched with { bubbles: true }, so we must dispatch `focusin`.
         editor.addEventListener('focus', function () {
-            // Fire a focus event on the textarea too (don't call .focus() — that'd
-            // move focus away from the editor). Manually dispatch.
             try {
-                ta.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+                ta.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
             } catch (e) {
-                // Older browsers: fall back to a generic event
                 const ev = document.createEvent('Event');
-                ev.initEvent('focus', true, true);
+                ev.initEvent('focusin', true, true);
                 ta.dispatchEvent(ev);
             }
         });
