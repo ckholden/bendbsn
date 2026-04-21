@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v169';
+const CACHE_VERSION = 'v170';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -70,6 +70,8 @@ const OFFLINE_URLS = [
     '/shared/clinical-ui.css',
     '/shared/app-shell.css',
     '/shared/header.js',
+    '/shared/rich-textarea.css',
+    '/shared/rich-textarea.js',
     '/manifest.json',
     '/logo.svg',
     '/logo-dark.svg',

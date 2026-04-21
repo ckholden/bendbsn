@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
+    <link rel="stylesheet" href="/shared/rich-textarea.css">
     <title>BendBSN — Nursing Documentation</title>
     <script>
         if (localStorage.getItem('bendbsn_auth') !== 'true') {
@@ -8323,6 +8324,34 @@
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
+    <script src="/shared/rich-textarea.js"></script>
+    <script>
+        // Attach formatting toolbars to all documentation textareas once the DOM is ready.
+        // Covers: Notify-SBAR, DAR, DARP, SOAP, SOAPIE, SBAR, PIE, Narrative, and every H2T section.
+        // Does NOT touch the feedback form textarea (not a clinical doc field) or the
+        // dynamic line-narrative modal textarea (it's re-created on every open).
+        (function () {
+            function wireToolbars() {
+                if (!window.richTextarea) return;
+                window.richTextarea.attachAll(
+                    '#notifySituation, #notifyBackground, #notifyAssessment, #notifyRecommendation, ' +
+                    '#darData, #darAction, #darResponse, ' +
+                    '#darpData, #darpAction, #darpResponse, #darpPlan, ' +
+                    '#soapSubjective, #soapObjective, #soapAssessment, #soapPlan, ' +
+                    '#soapieSubjective, #soapieObjective, #soapieAssessment, #soapiePlan, #soapieIntervention, #soapieEvaluation, ' +
+                    '#sbarSituation, #sbarBackground, #sbarAssessment, #sbarRecommendation, ' +
+                    '#pieProblem, #pieIntervention, #pieEvaluation, ' +
+                    '#narrativeText, ' +
+                    'textarea[id^="h2t"]'
+                );
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', wireToolbars);
+            } else {
+                wireToolbars();
+            }
+        })();
+    </script>
 </body>
 </html>
 
