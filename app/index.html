@@ -7530,16 +7530,30 @@
                 return 'normal';
             }
             function runsText(runs) { return runs.map(r => r.text).join(''); }
+            function runsHaveStrike(runs) { return runs.some(r => r.strike); }
+            // jsPDF has no native strikethrough — manually draw a line through
+            // rendered text. Block-level (matches our "majority wins" approach
+            // for bold/italic), so per-block strike works correctly. The bullet
+            // case is per-item, so it's pixel-perfect for lists.
+            function drawStrikeLine(text, x, baselineY, fontSize, color) {
+                const w = doc.getTextWidth(text);
+                doc.setLineWidth(0.3);
+                doc.setDrawColor(color || 60);
+                const strikeY = baselineY - fontSize * 0.28;
+                doc.line(x, strikeY, x + w, strikeY);
+            }
             function renderParagraph(runs, x, width, fontSize) {
                 doc.setFont('helvetica', runsStyle(runs));
                 doc.setFontSize(fontSize);
                 doc.setTextColor(50);
                 const text = runsText(runs).replace(/\n/g, ' ');
                 if (!text.trim()) return;
+                const hasStrike = runsHaveStrike(runs);
                 const lines = doc.splitTextToSize(text, width);
                 lines.forEach(line => {
                     pageBreakIfNeeded();
                     doc.text(line, x, y);
+                    if (hasStrike) drawStrikeLine(line, x, y, fontSize, 80);
                     y += lineH;
                 });
             }
@@ -7549,10 +7563,12 @@
                 doc.setFontSize(size);
                 doc.setTextColor(31, 78, 121);
                 const text = runsText(runs).replace(/\n/g, ' ');
+                const hasStrike = runsHaveStrike(runs);
                 const lines = doc.splitTextToSize(text, cw - 4);
                 lines.forEach(line => {
                     pageBreakIfNeeded();
                     doc.text(line, m + 2, y);
+                    if (hasStrike) drawStrikeLine(line, m + 2, y, size, 80);
                     y += size * 0.55;
                 });
                 y += 1;
@@ -7569,10 +7585,12 @@
                     const indent = m + 4 + doc.getTextWidth(ordered ? '99. ' : '• ');
                     doc.setFont('helvetica', runsStyle(runs));
                     const text = runsText(runs).replace(/\n/g, ' ');
+                    const hasStrike = runsHaveStrike(runs);
                     const lines = doc.splitTextToSize(text, cw - (indent - m) - 4);
                     lines.forEach((line, li) => {
                         if (li > 0) pageBreakIfNeeded();
                         doc.text(line, indent, y);
+                        if (hasStrike) drawStrikeLine(line, indent, y, 9, 80);
                         y += lineH;
                     });
                 });
