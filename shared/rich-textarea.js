@@ -369,12 +369,126 @@
     // explicit).
     function setValue(ta, content) { ta.value = content == null ? '' : content; }
 
+    // --- Export parser ---------------------------------------------------
+    // Parse the editor's (or any stored) HTML into a structured block list
+    // suitable for PDF / Word rendering. Strips tags we don't allow, then
+    // walks the DOM to produce:
+    //   [{ type: 'paragraph', runs: [{text, bold, italic, strike}, ...] },
+    //    { type: 'heading', level: 1|2|3, runs: [...] },
+    //    { type: 'list', ordered: true|false, items: [[runs], [runs], ...] }]
+    // Empty input returns [].
+    function parseForExport(html) {
+        if (html == null || html === '') return [];
+        const tmp = document.createElement('div');
+        tmp.innerHTML = sanitizeHtml(html);
+        const blocks = [];
+        walkBlocks(tmp, blocks);
+        return blocks;
+    }
+
+    function walkBlocks(root, blocks) {
+        let loose = null; // accumulates text/inline runs at the root level
+        function flushLoose() {
+            if (loose && loose.length) {
+                blocks.push({ type: 'paragraph', runs: loose });
+            }
+            loose = null;
+        }
+        root.childNodes.forEach(function (c) {
+            if (c.nodeType === 3) {
+                if (!loose) loose = [];
+                loose.push({ text: c.nodeValue, bold: false, italic: false, strike: false });
+                return;
+            }
+            if (c.nodeType !== 1) return;
+            const tag = c.tagName;
+            if (tag === 'BR') {
+                if (!loose) loose = [];
+                loose.push({ text: '\n', bold: false, italic: false, strike: false });
+                return;
+            }
+            if (tag === 'P' || tag === 'DIV') {
+                flushLoose();
+                const runs = [];
+                collectRuns(c, runs, { bold: false, italic: false, strike: false });
+                if (runs.length) blocks.push({ type: 'paragraph', runs: runs });
+                return;
+            }
+            if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
+                flushLoose();
+                const runs = [];
+                collectRuns(c, runs, { bold: false, italic: false, strike: false });
+                blocks.push({ type: 'heading', level: parseInt(tag[1], 10), runs: runs });
+                return;
+            }
+            if (tag === 'UL' || tag === 'OL') {
+                flushLoose();
+                const items = [];
+                c.childNodes.forEach(function (li) {
+                    if (li.nodeType === 1 && li.tagName === 'LI') {
+                        const runs = [];
+                        collectRuns(li, runs, { bold: false, italic: false, strike: false });
+                        if (runs.length) items.push(runs);
+                    }
+                });
+                if (items.length) blocks.push({ type: 'list', ordered: tag === 'OL', items: items });
+                return;
+            }
+            // Inline element at the root — bucket with surrounding text.
+            // Seed the style from this element's own tag so <strong>/<em>/<s>
+            // at the root level still register correctly.
+            if (!loose) loose = [];
+            const startStyle = {
+                bold: tag === 'STRONG' || tag === 'B',
+                italic: tag === 'EM' || tag === 'I',
+                strike: tag === 'S' || tag === 'DEL' || tag === 'STRIKE'
+            };
+            collectRuns(c, loose, startStyle);
+        });
+        flushLoose();
+    }
+
+    function collectRuns(node, runs, style) {
+        node.childNodes.forEach(function (c) {
+            if (c.nodeType === 3) {
+                if (c.nodeValue) {
+                    runs.push({
+                        text: c.nodeValue,
+                        bold: !!style.bold,
+                        italic: !!style.italic,
+                        strike: !!style.strike
+                    });
+                }
+                return;
+            }
+            if (c.nodeType !== 1) return;
+            const tag = c.tagName;
+            if (tag === 'BR') {
+                runs.push({ text: '\n', bold: !!style.bold, italic: !!style.italic, strike: !!style.strike });
+                return;
+            }
+            const next = {
+                bold: style.bold || (tag === 'STRONG' || tag === 'B'),
+                italic: style.italic || (tag === 'EM' || tag === 'I'),
+                strike: style.strike || (tag === 'S' || tag === 'DEL' || tag === 'STRIKE')
+            };
+            collectRuns(c, runs, next);
+        });
+    }
+
+    // Convenience: flatten a runs array to plain text (no formatting).
+    function runsToText(runs) {
+        return (runs || []).map(function (r) { return r.text; }).join('');
+    }
+
     window.richTextarea = {
         attach: attach,
         attachAll: attachAll,
         insertAtCursor: insertAtCursor,
         setValue: setValue,
         renderHtml: sanitizeHtml,
-        stripToPlain: stripToPlain
+        stripToPlain: stripToPlain,
+        parseForExport: parseForExport,
+        runsToText: runsToText
     };
 })();

@@ -4428,22 +4428,46 @@
             '.dcteach': 'Discharge teaching completed. Patient/family verbalized understanding of medications, follow-up, and return precautions. '
         };
 
-        // Smart phrase expansion function
-        function expandSmartPhrases(e) {
-            const textarea = e.target;
-            const text = textarea.value;
-            const cursorPos = textarea.selectionStart;
-
-            // Look for phrase shortcuts (words starting with .)
-            for (const [shortcut, expansion] of Object.entries(smartPhrases)) {
-                const regex = new RegExp(shortcut.replace('.', '\\.') + '(?=\\s|$)', 'gi');
-                if (regex.test(text)) {
-                    textarea.value = text.replace(regex, expansion);
-                    // Adjust cursor position
-                    const diff = expansion.length - shortcut.length;
-                    textarea.selectionStart = textarea.selectionEnd = cursorPos + diff;
-                    break;
-                }
+        // Smart phrase expansion function — WYSIWYG aware.
+        // Called on every input event on a contenteditable rich-editor. We
+        // look at the text node immediately before the caret; if it ends with
+        // ".xx " (trigger + whitespace), and .xx is a known phrase, we
+        // replace it with the expansion in place and reposition the caret
+        // after the inserted text. A re-entrancy flag prevents loops.
+        let _smartExpanding = false;
+        function expandSmartPhrasesEditor(e) {
+            if (_smartExpanding) return;
+            const editor = e.currentTarget;
+            if (!editor) return;
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount) return;
+            const range = sel.getRangeAt(0);
+            if (!range.collapsed) return;
+            const node = range.startContainer;
+            if (!node || node.nodeType !== 3) return;
+            const text = node.nodeValue;
+            const offset = range.startOffset;
+            const before = text.slice(0, offset);
+            // Match a shortcut followed by exactly one whitespace char at cursor.
+            const m = before.match(/\.([a-z0-9]+)(\s)$/i);
+            if (!m) return;
+            const shortcut = '.' + m[1].toLowerCase();
+            if (!smartPhrases[shortcut]) return;
+            const expansion = smartPhrases[shortcut];
+            _smartExpanding = true;
+            try {
+                const replaceLen = m[0].length; // shortcut + the one trailing space
+                node.nodeValue = text.slice(0, offset - replaceLen) + expansion + text.slice(offset);
+                const newOffset = offset - replaceLen + expansion.length;
+                const newRange = document.createRange();
+                newRange.setStart(node, Math.min(newOffset, node.nodeValue.length));
+                newRange.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+                // Re-dispatch input so rich-textarea syncs the expanded text to the hidden textarea.
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+            } finally {
+                _smartExpanding = false;
             }
         }
 
@@ -6099,10 +6123,14 @@
             // Load custom phrases
             loadCustomPhrases();
 
-            // Attach listeners
-            document.querySelectorAll('textarea').forEach(ta => {
-                ta.addEventListener('input', expandSmartPhrases);
-            });
+            // Attach smart-phrase listener to each rich-textarea editor.
+            // Runs on a small delay so rich-textarea.attachAll has had a chance
+            // to wrap the textareas and create the .rt-editor elements.
+            setTimeout(function () {
+                document.querySelectorAll('.rt-editor').forEach(ed => {
+                    ed.addEventListener('input', expandSmartPhrasesEditor);
+                });
+            }, 0);
 
             });
 
@@ -7221,7 +7249,12 @@
             nc.forEach(item => {
                 const label = item.l ? `${item.l} - ${item.t}` : item.t;
                 out.push(label + ':');
-                out.push(item.x);
+                // Section bodies are now rich HTML — strip tags for plain-text export
+                // (bullets become "• ", numbered "1. ", formatting stripped).
+                const body = (window.richTextarea && window.richTextarea.stripToPlain)
+                    ? window.richTextarea.stripToPlain(item.x)
+                    : item.x;
+                out.push(body);
                 out.push('');
             });
             return out.join('\n').trim();
@@ -7479,28 +7512,107 @@
                 doc.setTextColor(0);
             }
 
-            // Content
-            nc.forEach(s => {
-                const lines = doc.splitTextToSize(s.x, cw - 4);
-                const sh = 12 + lines.length * 4.5;
-                if (y + sh > 280) { doc.addPage(); y = 15; }
+            // Content — section bodies are now rich HTML; render with structure.
+            // Helpers (scoped to this export):
+            const lineH = 4.5;
+            function pageBreakIfNeeded() {
+                if (y > 280) { doc.addPage(); y = 15; }
+            }
+            function runsStyle(runs) {
+                // If ANY run is bold/italic, the whole wrapped paragraph gets that style.
+                // jsPDF doesn't support mid-line font changes without manual measurement,
+                // so we fall back to "majority wins" — simple but predictable.
+                let anyBold = false, anyItalic = false;
+                runs.forEach(r => { if (r.bold) anyBold = true; if (r.italic) anyItalic = true; });
+                if (anyBold && anyItalic) return 'bolditalic';
+                if (anyBold) return 'bold';
+                if (anyItalic) return 'italic';
+                return 'normal';
+            }
+            function runsText(runs) { return runs.map(r => r.text).join(''); }
+            function renderParagraph(runs, x, width, fontSize) {
+                doc.setFont('helvetica', runsStyle(runs));
+                doc.setFontSize(fontSize);
+                doc.setTextColor(50);
+                const text = runsText(runs).replace(/\n/g, ' ');
+                if (!text.trim()) return;
+                const lines = doc.splitTextToSize(text, width);
+                lines.forEach(line => {
+                    pageBreakIfNeeded();
+                    doc.text(line, x, y);
+                    y += lineH;
+                });
+            }
+            function renderHeading(runs, level) {
+                const size = level === 1 ? 12 : level === 2 ? 11 : 10;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(size);
+                doc.setTextColor(31, 78, 121);
+                const text = runsText(runs).replace(/\n/g, ' ');
+                const lines = doc.splitTextToSize(text, cw - 4);
+                lines.forEach(line => {
+                    pageBreakIfNeeded();
+                    doc.text(line, m + 2, y);
+                    y += size * 0.55;
+                });
+                y += 1;
+            }
+            function renderList(items, ordered) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(50);
+                items.forEach((runs, i) => {
+                    pageBreakIfNeeded();
+                    const prefix = ordered ? (i + 1) + '. ' : '• ';
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(prefix, m + 4, y);
+                    const indent = m + 4 + doc.getTextWidth(ordered ? '99. ' : '• ');
+                    doc.setFont('helvetica', runsStyle(runs));
+                    const text = runsText(runs).replace(/\n/g, ' ');
+                    const lines = doc.splitTextToSize(text, cw - (indent - m) - 4);
+                    lines.forEach((line, li) => {
+                        if (li > 0) pageBreakIfNeeded();
+                        doc.text(line, indent, y);
+                        y += lineH;
+                    });
+                });
+                y += 1;
+            }
 
-                // Section header - inline bold label
+            nc.forEach(s => {
+                // Section header
+                if (y + 10 > 280) { doc.addPage(); y = 15; }
                 doc.setFontSize(10);
-                doc.setFont('helvetica','bold');
+                doc.setFont('helvetica', 'bold');
                 doc.setTextColor(31, 78, 121);
                 const label = s.l ? (s.l + ' - ' + s.t + ':') : (s.t + ':');
                 doc.text(label, m, y + 5);
-
                 y += 9;
-                doc.setFont('helvetica','normal');
-                doc.setFontSize(9);
-                doc.setTextColor(50);
-                lines.forEach(line => {
-                    if (y > 280) { doc.addPage(); y = 15; }
-                    doc.text(line, m + 2, y);
-                    y += 4.5;
-                });
+
+                // Body blocks (may include paragraphs, headings, bulleted/numbered lists)
+                const blocks = (window.richTextarea && window.richTextarea.parseForExport)
+                    ? window.richTextarea.parseForExport(s.x)
+                    : [{ type: 'paragraph', runs: [{ text: s.x, bold: false, italic: false, strike: false }] }];
+                if (!blocks.length) {
+                    // Empty section — fallback to raw value if any
+                    const raw = (s.x || '').trim();
+                    if (raw) {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(9);
+                        doc.setTextColor(50);
+                        doc.splitTextToSize(raw, cw - 4).forEach(line => {
+                            pageBreakIfNeeded();
+                            doc.text(line, m + 2, y);
+                            y += lineH;
+                        });
+                    }
+                } else {
+                    blocks.forEach(b => {
+                        if (b.type === 'paragraph') renderParagraph(b.runs, m + 2, cw - 4, 9);
+                        else if (b.type === 'heading') renderHeading(b.runs, b.level);
+                        else if (b.type === 'list') renderList(b.items, b.ordered);
+                    });
+                }
                 y += 4;
             });
 
@@ -7549,6 +7661,46 @@
                 const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe Assessment',narrative:'Narrative Note'};
 
                 const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+
+                // Helpers: convert our rich-textarea blocks into docx Paragraphs
+                function runsToTextRuns(runs) {
+                    return (runs || []).map(r => new TextRun({
+                        text: r.text,
+                        bold: !!r.bold,
+                        italics: !!r.italic,
+                        strike: !!r.strike
+                    }));
+                }
+                function blocksToParagraphs(blocks) {
+                    const out = [];
+                    (blocks || []).forEach(b => {
+                        if (b.type === 'paragraph') {
+                            out.push(new Paragraph({
+                                children: runsToTextRuns(b.runs),
+                                spacing: { after: 80 }
+                            }));
+                        } else if (b.type === 'heading') {
+                            const size = b.level === 1 ? 26 : b.level === 2 ? 24 : 22;
+                            out.push(new Paragraph({
+                                children: (b.runs || []).map(r => new TextRun({
+                                    text: r.text, bold: true, italics: !!r.italic, strike: !!r.strike, size: size
+                                })),
+                                spacing: { before: 120, after: 80 }
+                            }));
+                        } else if (b.type === 'list') {
+                            (b.items || []).forEach((runs, i) => {
+                                const prefix = b.ordered ? (i + 1) + '. ' : '• ';
+                                const children = [new TextRun({ text: prefix })].concat(runsToTextRuns(runs));
+                                out.push(new Paragraph({
+                                    children: children,
+                                    indent: { left: 360 },
+                                    spacing: { after: 40 }
+                                }));
+                            });
+                        }
+                    });
+                    return out;
+                }
                 const ch = [];
 
                 // Title
@@ -7695,16 +7847,22 @@
                     }));
                 }
 
-                // Note content
+                // Note content — parse each section body as rich HTML blocks
                 nc.forEach(s => {
                     ch.push(new Paragraph({
                         children: [new TextRun({text: (s.l ? s.l + ' - ' : '') + s.t, bold: true, size: 22, color: '1f4e79'})],
                         spacing: {before: 150, after: 80}
                     }));
-                    ch.push(new Paragraph({
-                        children: [new TextRun(s.x)],
-                        spacing: {after: 120}
-                    }));
+                    const blocks = (window.richTextarea && window.richTextarea.parseForExport)
+                        ? window.richTextarea.parseForExport(s.x)
+                        : [];
+                    const paragraphs = blocksToParagraphs(blocks);
+                    if (paragraphs.length) {
+                        paragraphs.forEach(p => ch.push(p));
+                    } else {
+                        // Fallback for back-compat / empty-blocks edge case
+                        ch.push(new Paragraph({ children: [new TextRun(s.x || '')], spacing: { after: 120 } }));
+                    }
                 });
 
                 // Disclaimer
