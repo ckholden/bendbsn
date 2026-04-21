@@ -412,11 +412,16 @@
                 return;
             }
             if (tag === 'P' || tag === 'DIV') {
+                // <p> and <div> are TRANSPARENT block containers — recurse
+                // into them so nested <ul>/<ol>/<h1-3> get detected as their
+                // proper block types. Without this, Chrome's contenteditable
+                // wrapping (which puts each line in a <div>, including divs
+                // that contain a <ul>) flattens the whole list into a single
+                // paragraph of run-after-run text with no bullets.
+                // Nested <br>s inside are still handled because walkBlocks
+                // treats every <br> as a paragraph boundary.
                 flushLoose();
-                // A <p>/<div> that contains <br>s gets split into multiple paragraphs
-                splitByBr(c, { bold: false, italic: false, strike: false }).forEach(function (runs) {
-                    if (runs.length) blocks.push({ type: 'paragraph', runs: runs });
-                });
+                walkBlocks(c, blocks);
                 return;
             }
             if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
