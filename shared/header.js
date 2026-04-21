@@ -354,7 +354,7 @@
 
         overlay.innerHTML =
             '<div class="bsn-onboarding-modal">' +
-                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">🏥 New in BendBSN: Sim Chart (EMR)</h2>' +
+                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">🏥 New in BendBSN: Sim EMR</h2>' +
                 '<p style="font-size:14px;color:var(--clx-text-secondary,#4a5568);margin:0 0 12px;">A full simulation EMR for practicing realistic clinical workflows \u2014 you can do everything you would on a real shift, with fictional patients.</p>' +
                 '<ul class="bsn-onboarding-list">' +
                     '<li><strong>Place &amp; acknowledge orders</strong> \u2014 medications, consults, labs, diet, activity, and more (with allergy checking).</li>' +
@@ -366,7 +366,7 @@
                 '</ul>' +
                 '<div class="bsn-onboarding-btns">' +
                     '<button class="bsn-onboarding-dismiss" id="bsnOnboardDismiss">Maybe later</button>' +
-                    '<button class="bsn-onboarding-primary" id="bsnOnboardExplore">Open Sim Chart →</button>' +
+                    '<button class="bsn-onboarding-primary" id="bsnOnboardExplore">Open Sim EMR →</button>' +
                 '</div>' +
             '</div>';
 
