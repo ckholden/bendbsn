@@ -652,6 +652,7 @@
                 localStorage.setItem('bendbsn_displayName', displayName);
                 localStorage.setItem('bendbsn_uid', user.uid);
 
+                localStorage.setItem('bendbsn_login_at', String(Date.now()));
                 // Cache role from Firebase profile (fire-and-forget)
                 database.ref('userProfiles/' + user.uid).once('value').then(function(snap) {
                     const profile = snap.val() || {};
@@ -804,6 +805,7 @@
                 localStorage.setItem('bendbsn_user', user.email || '');
                 localStorage.setItem('bendbsn_displayName', name);
                 localStorage.setItem('bendbsn_uid', user.uid || '');
+                localStorage.setItem('bendbsn_login_at', String(Date.now()));
                 window.location.href = '/home/';
 
             } catch (error) {
@@ -1159,6 +1161,7 @@
                     localStorage.setItem('bendbsn_user', user.email || '');
                     localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
                     localStorage.setItem('bendbsn_uid', user.uid);
+                    localStorage.setItem('bendbsn_login_at', String(Date.now()));
                     if (profile.role_id) {
                         cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: !!profile.role_year, year: profile.role_year || null });
                     }
@@ -1256,6 +1259,7 @@
                 localStorage.setItem("bendbsn_displayName", name);
                 localStorage.setItem("bendbsn_uid", user.uid);
 
+                localStorage.setItem("bendbsn_login_at", String(Date.now()));
                 await logLoginEvent(user.email, name, true);
 
                 modal.classList.remove("show");
@@ -1279,6 +1283,7 @@
                 localStorage.setItem('bendbsn_user', user.email || '');
                 localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
                 localStorage.setItem('bendbsn_uid', user.uid || '');
+                localStorage.setItem('bendbsn_login_at', String(Date.now()));
                 window.location.href = '/home/';
             } else if (localStorage.getItem('bendbsn_auth') === 'true') {
                 localStorage.removeItem('bendbsn_auth');
@@ -1542,6 +1547,19 @@
             if (!_isIos() && window.innerWidth > 768) return;
             if (_isIos()) _pwaBannerPlatform = 'ios';
             setTimeout(_maybeShowPwaBanner, 1500);
+        });
+
+        // If shared/header.js force-logged-us-out, surface a friendly toast
+        // so the user knows why they got bounced to the login page.
+        window.addEventListener('DOMContentLoaded', function () {
+            try {
+                if (sessionStorage.getItem('bendbsn_force_logout') === '1') {
+                    sessionStorage.removeItem('bendbsn_force_logout');
+                    setTimeout(function () {
+                        if (window.showToast) showToast('You\u2019ve been signed out for a fresh update. Please log in again.', 'info', 6000);
+                    }, 200);
+                }
+            } catch (e) {}
         });
 
         function _maybeShowPwaBanner() {

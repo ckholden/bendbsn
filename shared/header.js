@@ -13,6 +13,41 @@
 (function () {
     'use strict';
 
+    // ── Force-logout for stale sessions ────────────────────
+    // Bump FORCE_LOGOUT_BEFORE to a current Unix-ms timestamp whenever a
+    // sitewide forced re-login is needed (e.g. after a major data migration
+    // so stale localStorage / profile snapshots get blown away). Any client
+    // whose stored bendbsn_login_at is older — or missing entirely — gets
+    // signed out and bounced to the login page.
+    var FORCE_LOGOUT_BEFORE = 1714010000000;  // 2026-04-22 sitewide refresh
+    try {
+        var isAuthed = localStorage.getItem('bendbsn_auth') === 'true';
+        var loginAt  = parseInt(localStorage.getItem('bendbsn_login_at') || '0', 10);
+        var loginPath = location.pathname === '/' || location.pathname === '/index.html';
+        if (isAuthed && !loginPath && loginAt < FORCE_LOGOUT_BEFORE) {
+            // Clear auth + ephemeral caches (keep synced data like phrases —
+            // those re-pull from Firebase on next login).
+            ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid',
+             'bendbsn_role_v2', 'bendbsn_login_at'].forEach(function (k) {
+                try { localStorage.removeItem(k); } catch (e) {}
+            });
+            // Wipe per-note draft autosaves so stale role/year never resurrects.
+            try {
+                Object.keys(localStorage)
+                    .filter(function (k) { return k.indexOf('bendbsn_draft_') === 0; })
+                    .forEach(function (k) { localStorage.removeItem(k); });
+            } catch (e) {}
+            // Sign out of Firebase Auth too, if available.
+            if (window.firebase && firebase.apps && firebase.apps.length) {
+                try { firebase.auth().signOut(); } catch (e) {}
+            }
+            // Friendly notice on the login page.
+            try { sessionStorage.setItem('bendbsn_force_logout', '1'); } catch (e) {}
+            location.replace('/');
+            return;
+        }
+    } catch (e) { /* never block page render on the check */ }
+
     // ── Header injection ──────────────────────────────────
     var isLoginPage = location.pathname === '/' || location.pathname === '/index.html';
     var logoHref = isLoginPage ? '/' : '/home/';

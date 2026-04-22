@@ -417,21 +417,28 @@
 
         <!-- Smart Phrases -->
         <div class="prof-card">
-            <div class="prof-card-hd">My Smart Phrases</div>
-            <div class="prof-card-bd">
-                <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:12px;">Type a shortcut (e.g. <code style="background:var(--clx-bg-surface-2);padding:1px 5px;border-radius:4px;">.vs</code>) in any note field and it auto-expands. Global phrases from your instructor are always available.</p>
-                <div id="myPhrasesList" style="margin-bottom:14px;display:flex;flex-direction:column;gap:6px;"></div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="prof-card-hd phrases-toggle" onclick="toggleMyPhrases()" style="cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none;">
+                <span style="flex:1;">My Smart Phrases</span>
+                <span id="phrasesCount" style="font-size:11px;font-weight:500;color:var(--clx-text-muted);text-transform:none;letter-spacing:0;"></span>
+                <span id="phrasesToggleIcon" style="font-size:13px;color:var(--clx-text-muted);transition:transform 0.2s;">▶</span>
+            </div>
+            <div class="prof-card-bd" id="myPhrasesBody" style="display:none;">
+                <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Type a shortcut (e.g. <code style="background:var(--clx-bg-surface-2);padding:1px 5px;border-radius:4px;">.vs</code>) in any note field and it auto-expands. Global phrases from your instructor are always available.</p>
+
+                <!-- Add form on top so it's always one click away -->
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;padding:10px;background:var(--clx-bg-surface-2);border:1px solid var(--clx-border);border-radius:8px;margin-bottom:14px;">
                     <div style="display:flex;flex-direction:column;gap:3px;">
-                        <label style="font-size:11px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Shortcut</label>
-                        <input id="newPhraseShortcut" type="text" placeholder=".myshortcut" style="width:140px;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:monospace;">
+                        <label style="font-size:10px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Shortcut</label>
+                        <input id="newPhraseShortcut" type="text" placeholder=".myshortcut" style="width:140px;padding:6px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:monospace;">
                     </div>
                     <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:160px;">
-                        <label style="font-size:11px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Expansion text</label>
-                        <input id="newPhraseText" type="text" placeholder="Text that replaces the shortcut" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                        <label style="font-size:10px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Expansion text</label>
+                        <input id="newPhraseText" type="text" placeholder="Text that replaces the shortcut" style="width:100%;padding:6px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
                     </div>
-                    <button class="prof-edit-btn" onclick="addMyPhrase()" style="padding:7px 14px;font-size:13px;height:34px;align-self:flex-end;">+ Add</button>
+                    <button class="prof-edit-btn" onclick="addMyPhrase()" style="padding:6px 14px;font-size:13px;height:32px;align-self:flex-end;">+ Add</button>
                 </div>
+
+                <div id="myPhrasesList"></div>
             </div>
         </div>
 
@@ -681,11 +688,46 @@
             // Seed defaults the first time + sync from Firebase if signed in
             const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
             if (window.syncSmartPhrasesFromFirebase) {
-                window.syncSmartPhrasesFromFirebase(db, currentUid, function () { renderPhraseList(); });
+                window.syncSmartPhrasesFromFirebase(db, currentUid, function () { renderPhraseList(); updatePhrasesCount(); });
             } else {
                 renderPhraseList();
+                updatePhrasesCount();
             }
         }
+
+        // Show "(N phrases)" in the collapsible header so the count is
+        // visible even when the panel is closed.
+        function updatePhrasesCount() {
+            const el = document.getElementById('phrasesCount');
+            if (!el) return;
+            const all = window.getAllSmartPhrases ? window.getAllSmartPhrases() : {};
+            const n = Object.keys(all).length;
+            el.textContent = n === 0 ? '' : '(' + n + ' phrase' + (n === 1 ? '' : 's') + ')';
+        }
+
+        // Collapsible panel — default collapsed so the page stays compact.
+        // Preference persists in localStorage so it remembers per-device.
+        const PHRASES_OPEN_KEY = 'bendbsn_profile_phrases_open';
+        function toggleMyPhrases() {
+            const body = document.getElementById('myPhrasesBody');
+            const icon = document.getElementById('phrasesToggleIcon');
+            if (!body) return;
+            const opening = body.style.display === 'none';
+            body.style.display = opening ? 'block' : 'none';
+            if (icon) icon.textContent = opening ? '▼' : '▶';
+            try { localStorage.setItem(PHRASES_OPEN_KEY, opening ? '1' : '0'); } catch (e) {}
+        }
+        // Restore preference on first paint (default = collapsed).
+        (function () {
+            try {
+                if (localStorage.getItem(PHRASES_OPEN_KEY) === '1') {
+                    const body = document.getElementById('myPhrasesBody');
+                    const icon = document.getElementById('phrasesToggleIcon');
+                    if (body) body.style.display = 'block';
+                    if (icon) icon.textContent = '▼';
+                }
+            } catch (e) {}
+        })();
 
         function renderPhraseList() {
             const list = document.getElementById('myPhrasesList');
@@ -775,6 +817,7 @@
             shortcutEl.value = '';
             textEl.value = '';
             renderPhraseList();
+            updatePhrasesCount();
             showToast('Phrase "' + shortcut + '" saved.', 'success');
         }
 
@@ -789,6 +832,7 @@
                 localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
             }
             renderPhraseList();
+            updatePhrasesCount();
             showToast('Phrase deleted.', 'success');
         }
 
@@ -803,6 +847,7 @@
                     if (window.syncSmartPhrasesToFirebase) window.syncSmartPhrasesToFirebase(db, currentUid);
                     showToast(added === 0 ? 'All defaults already present.' : 'Restored ' + added + ' default phrase' + (added === 1 ? '' : 's') + '.', 'success');
                     renderPhraseList();
+                    updatePhrasesCount();
                 },
                 { confirmText: 'Restore' }
             );
