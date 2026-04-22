@@ -911,6 +911,10 @@
             <span class="clx-sidebar-icon">👤</span>
             <span class="clx-sidebar-label">Profile</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">📋</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
         <button class="clx-sidebar-item" onclick="toggleDarkMode()">
             <span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span>
@@ -3932,15 +3936,18 @@
                         const apaLink = document.getElementById('apaMenuLink');
                         if (apaLink) apaLink.style.display = 'none';
                     }
-                    // Auto-populate role/year from Firebase if no localStorage cache
-                    const cached = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
-                    if (!cached.id && profile.role_id) {
+                    // Always sync role/year from Firebase profile — the profile is
+                    // the source of truth. Previously this only ran when the
+                    // localStorage cache was empty, which meant a stale cached
+                    // value (e.g. "Year 1" from a prior session) would shadow an
+                    // updated profile (e.g. user bumped to Year 2 in /profile/).
+                    if (profile.role_id) {
                         const data = { id: profile.role_id, label: profile.role_label || '', requires_year: !!profile.role_year, year: profile.role_year || null };
                         try { localStorage.setItem('bendbsn_role_v2', JSON.stringify(data)); } catch(e) {}
                         const noteRole = document.getElementById('noteRole');
                         if (noteRole && noteRole.querySelector('[value="' + CSS.escape(profile.role_id) + '"]')) {
                             noteRole.value = profile.role_id;
-                            onNoteRoleChange(true);
+                            onNoteRoleChange(true);  // rebuilds year options + reads cache (now updated)
                         }
                         if (profile.role_year) {
                             const noteYear = document.getElementById('noteYear');

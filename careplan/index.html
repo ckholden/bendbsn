@@ -338,6 +338,7 @@
         <a href="/careplan/" class="clx-sidebar-item active"><span class="clx-sidebar-icon">🗂️</span><span class="clx-sidebar-label">Care Plans</span></a>
         <a href="/rotationlog/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🕐</span><span class="clx-sidebar-label">Rotation Log</span></a>
         <a href="/profile/" class="clx-sidebar-item"><span class="clx-sidebar-icon">👤</span><span class="clx-sidebar-label">Profile</span></a>
+        <a href="/clinical/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📋</span><span class="clx-sidebar-label">Clinical Packet</span></a>
         <a href="/apa/" class="clx-sidebar-item"><span class="clx-sidebar-icon">📄</span><span class="clx-sidebar-label">APA Generator</span></a>
         <a href="/labsched/" class="clx-sidebar-item"><span class="clx-sidebar-icon">🗓️</span><span class="clx-sidebar-label">Lab Sched Generator</span></a>
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -354,7 +355,6 @@
     <div class="cp-page">
         <div class="cp-page-title">Care Plan Builder</div>
         <div class="cp-page-sub">Build NANDA-I based nursing care plans for clinical education scenarios</div>
-        <div class="edu-notice">EDUCATIONAL USE ONLY — All patients and scenarios are fictional. Not for use in actual clinical settings.</div>
 
         <div class="cp-tabs" role="tablist">
             <button class="cp-tab active" onclick="showCpTab('builder')" role="tab">Build Plan</button>
@@ -532,8 +532,13 @@
                 if (!filtered.length) {
                     dropdown.innerHTML = '<div class="nanda-option" style="color:var(--clx-text-muted);">No matches found</div>';
                 } else {
+                    // Use a data attribute + delegated click instead of inline onclick.
+                    // The previous code used JSON.stringify(JSON.stringify(n)) inside
+                    // an onclick="..." attribute, which produced quote-mismatched
+                    // HTML and silently broke the click handler — students could
+                    // not select a diagnosis at all.
                     dropdown.innerHTML = filtered.slice(0,20).map(n =>
-                        '<div class="nanda-option" onclick="selectNanda(' + JSON.stringify(JSON.stringify(n)) + ')">' +
+                        '<div class="nanda-option" data-nanda-code="' + escapeHtml(n.code) + '">' +
                         '<div class="nanda-option-code">' + escapeHtml(n.code) + ' — ' + escapeHtml(n.domain) + '</div>' +
                         '<div class="nanda-option-label">' + escapeHtml(n.label) + '</div>' +
                         '</div>'
@@ -543,8 +548,7 @@
             }, 120);
         }
 
-        function selectNanda(jsonStr) {
-            const n = JSON.parse(jsonStr);
+        function selectNanda(n) {
             document.getElementById('nandaDropdown').classList.remove('open');
             document.getElementById('nandaSearch').value = '';
             if (dxCards.length >= 5) { showToast('Maximum 5 diagnoses per plan.', 'warning'); return; }
@@ -552,6 +556,17 @@
             dxCards.push({ nanda: n, rt: '', aeb: '', stGoal: '', ltGoal: '', interventions: [{text:'',rationale:''}], evaluation: '' });
             renderDxCards();
         }
+
+        // Delegated click handler on the dropdown — picks up the data-nanda-code
+        // attribute set in the markup above and looks up the full diagnosis.
+        document.getElementById('nandaDropdown').addEventListener('click', function (e) {
+            const opt = e.target.closest('.nanda-option');
+            if (!opt) return;
+            const code = opt.getAttribute('data-nanda-code');
+            if (!code) return;
+            const n = NANDA_LIST.find(function (x) { return x.code === code; });
+            if (n) selectNanda(n);
+        });
 
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.nanda-search-wrap')) {
