@@ -137,7 +137,7 @@
             border-color: var(--clx-accent, #0f7490);
             box-shadow: 0 2px 8px rgba(15,116,144,0.25);
         }
-        .resource-card.hidden { display: none; }
+        .resource-card.hidden { display: none !important; }
 
         /* ---- Commit 4: search highlights, pinned, hero ---- */
         /* Search match highlight */
@@ -155,46 +155,30 @@
 
         /* Pinned state */
         .resource-card.pinned { order: -1; }
-        .resource-card.pinned::before {
-            content: "★ Pinned";
-            position: absolute;
-            top: 10px;
-            right: 58px;
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--clx-accent, #0f7490);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            background: var(--clx-accent-subtle, #e0f2f8);
-            padding: 2px 8px;
-            border-radius: 999px;
-            pointer-events: none;
-            z-index: 2;
+        .resource-card.pinned .card-header {
+            border-left: 3px solid var(--clx-accent, #0f7490);
         }
-        .resource-card.collapsible { position: relative; }
+        /* Pin button — flex child of card-header, left of expand-icon */
         .card-pin-btn {
-            position: absolute;
-            top: 10px;
-            right: 48px;
-            width: 32px;
-            height: 32px;
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
             border: none;
             background: transparent;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             color: var(--clx-text-muted, #9ca3af);
             padding: 0;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             border-radius: 999px;
             transition: background 0.15s, color 0.15s, transform 0.15s;
-            z-index: 3;
+            margin-right: 4px;
         }
         .card-pin-btn:hover { background: var(--clx-accent-subtle, #e0f2f8); color: var(--clx-accent, #0f7490); transform: scale(1.12); }
         .card-pin-btn.pinned-on { color: #f59e0b; }
         .card-pin-btn.pinned-on:hover { color: #d97706; }
-        .resource-card.pinned .card-pin-btn { right: 130px; }  /* shift so "Pinned" badge sits between */
 
         /* Pinned heading row */
         .pinned-heading {
@@ -894,20 +878,15 @@
             .container { padding: 0 !important; max-width: 100% !important; }
             .content { border-radius: 0 !important; padding: 12px !important; }
             .resource-card { border-radius: 0 !important; }
-            /* Hide "Pinned" badge text on narrow screens — star color is enough */
-            .resource-card.pinned::before { display: none; }
-            .resource-card.pinned .card-pin-btn { right: 48px; }  /* back to default position */
         }
 
         /* ---- Commit 5: Mobile polish (phones, <720px) ---- */
         @media (max-width: 719px) {
-            /* Standard 44×44 tap targets per WCAG/iOS HIG */
+            /* Standard 44px tap targets per WCAG/iOS HIG */
             .card-pin-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 22px;
-                top: 6px;
-                right: 44px;
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
             }
             /* Demote hero treatment on phones — let it look like a normal card */
             .resource-card.resource-card-hero .card-header {
@@ -943,8 +922,6 @@
             .abbrev-glossary { padding: 12px; }
             .abbrev-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 
-            /* Ensure card header has enough room for the pin button */
-            .resource-card .card-header { padding-right: 88px; }
         }
 
         /* ---- Sticky resource navigator on tablet+ ---- */
@@ -1513,7 +1490,7 @@
                 <div id="labValuesCard" class="card resource-card resource-card-hero collapsible collapsed full-width" data-tags="labs cbc bmp abg coagulation cardiac reference normal ranges" data-category="labs-vitals">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🔬 Lab Values Reference<span class="rc-subtitle">Normal ranges for CBC, CMP, ABG, coagulation, cardiac panels</span></h2></div>
-                        <span class="rc-category-badge">Clinical</span>
+                        <span class="rc-category-badge">Labs &amp; Vitals</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -1627,7 +1604,7 @@
                 <div id="section-vital-signs" class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges adult bp hr rr temp" data-category="labs-vitals">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>❤️ Vital Signs Normal Ranges<span class="rc-subtitle">Adult BP, HR, RR, temp, SpO₂ with clinical notes</span></h2></div>
-                        <span class="rc-category-badge">Clinical</span>
+                        <span class="rc-category-badge">Labs &amp; Vitals</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -2121,7 +2098,7 @@
                 <div id="section-disease-cards" class="card resource-card collapsible collapsed full-width" data-tags="disease condition pathophysiology assessment nursing priority CHF MI stroke sepsis diagnosis" data-category="conditions-dx">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🏥 Disease / Condition Fast Cards<span class="rc-subtitle">40+ conditions — patho, S&amp;S, nursing priorities, meds</span></h2></div>
-                        <span class="rc-category-badge">Conditions</span>
+                        <span class="rc-category-badge">Conditions &amp; Dx</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2153,7 +2130,7 @@
                 <div id="section-mnemonics" class="card resource-card collapsible collapsed full-width" data-tags="mnemonics frameworks OLDCARTS SOAP PIE assessment priority pharmacology" data-category="drug-pharm">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🧠 Mnemonics &amp; Frameworks<span class="rc-subtitle">OLDCARTS, SBAR, 6 Rights, ROME, MUDPILES &amp; more</span></h2></div>
-                        <span class="rc-category-badge">Study</span>
+                        <span class="rc-category-badge">Drug &amp; Pharm</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2169,7 +2146,7 @@
                 <div id="section-procedure-guide" class="card resource-card collapsible collapsed full-width" data-tags="procedure nursing care before during after foley IV catheter dressing peri pre post" data-category="procedures">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🔬 Pre/Peri/Post Procedure Guide<span class="rc-subtitle">Nursing actions before, during &amp; after 20+ procedures</span></h2></div>
-                        <span class="rc-category-badge">Clinical</span>
+                        <span class="rc-category-badge">Procedure</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2185,7 +2162,7 @@
                 <div id="section-ecg-rhythms" class="card resource-card collapsible collapsed full-width" data-tags="ECG EKG rhythm cardiac telemetry afib vtach vfib heart block assessment" data-category="assessments">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>❤️ ECG / Rhythm Quick Reference<span class="rc-subtitle">20 rhythms with waveforms, criteria &amp; nursing response</span></h2></div>
-                        <span class="rc-category-badge">Clinical</span>
+                        <span class="rc-category-badge">Assessments</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content" style="max-height:none !important;">
@@ -2971,6 +2948,8 @@
         function injectPinButtons() {
             document.querySelectorAll('.resource-card.collapsible').forEach(card => {
                 if (card.querySelector('.card-pin-btn')) return;
+                const header = card.querySelector('.card-header');
+                if (!header) return;
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'card-pin-btn';
@@ -2979,9 +2958,17 @@
                 btn.setAttribute('aria-label', 'Pin resource to top');
                 btn.addEventListener('click', function (e) {
                     e.stopPropagation();
+                    e.preventDefault();
                     togglePin(card.id);
                 });
-                card.appendChild(btn);
+                // Insert immediately before the expand-icon so flex order is
+                // [title] [category-badge] [★pin] [▼expand]
+                const expandIcon = header.querySelector('.expand-icon');
+                if (expandIcon) {
+                    header.insertBefore(btn, expandIcon);
+                } else {
+                    header.appendChild(btn);
+                }
             });
         }
 
