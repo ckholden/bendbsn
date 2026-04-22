@@ -6744,7 +6744,16 @@
         const AUTOSAVE_DELAY = 800;
         let autosaveTimer = null;
 
-        const DRAFT_EXCLUDE = new Set(['medName','medDose','medFreq','medRoute','medSite','medTime','medIndication','medPrnParams','medEffect','drugDropdown','lineType','lineLocation','lineSize','lineStatus','lineOutput','lineDressing','lineNotes']);
+        // Excluded from drafts: ephemeral form bits (med/IV builders) plus
+        // profile-level fields. noteRole and noteYear come from the user's
+        // Firebase profile via auth; restoring them from a stale draft would
+        // shadow the source-of-truth value (was the "year reverts to Year 1
+        // even though profile says Year 2" bug).
+        const DRAFT_EXCLUDE = new Set([
+            'medName','medDose','medFreq','medRoute','medSite','medTime','medIndication','medPrnParams','medEffect','drugDropdown',
+            'lineType','lineLocation','lineSize','lineStatus','lineOutput','lineDressing','lineNotes',
+            'noteRole','noteYear'
+        ]);
         function collectDraftFields() {
             const container = document.querySelector('.form-container');
             if (!container) return {};
@@ -6786,6 +6795,9 @@
         function restoreDraftFields(payload) {
             if (!payload || !payload.fields) return;
             Object.keys(payload.fields).forEach(id => {
+                // Same exclusion list as the writer — protects against stale
+                // drafts saved before noteRole/noteYear were excluded.
+                if (DRAFT_EXCLUDE.has(id)) return;
                 const el = document.getElementById(id);
                 if (!el) return;
                 if (el.type === 'checkbox' || el.type === 'radio') {
