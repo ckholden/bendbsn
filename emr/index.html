@@ -467,6 +467,15 @@
         [data-theme="dark"] .mar-status.given     { background: rgba(34,197,94,0.18); color: #86efac; }
         [data-theme="dark"] .mar-status.held      { background: rgba(234,179,8,0.18); color: #fde68a; }
         [data-theme="dark"] .mar-status.refused   { background: rgba(239,68,68,0.18); color: #fca5a5; }
+        /* Per-row overdue / due-soon highlighting (Round 2 polish) */
+        .mar-table tr.mar-row-overdue td:first-child { border-left: 4px solid #dc2626; padding-left: 6px; }
+        .mar-table tr.mar-row-overdue { background: rgba(220, 38, 38, 0.04); }
+        .mar-table tr.mar-row-overdue:hover { background: rgba(220, 38, 38, 0.07); }
+        .mar-table tr.mar-row-duesoon td:first-child { border-left: 4px solid #f59e0b; padding-left: 6px; }
+        .mar-table tr.mar-row-duesoon { background: rgba(245, 158, 11, 0.04); }
+        [data-theme="dark"] .mar-table tr.mar-row-overdue { background: rgba(220, 38, 38, 0.10); }
+        [data-theme="dark"] .mar-table tr.mar-row-overdue:hover { background: rgba(220, 38, 38, 0.16); }
+        [data-theme="dark"] .mar-table tr.mar-row-duesoon { background: rgba(245, 158, 11, 0.08); }
 
         .mar-table-wrap { overflow-x: auto; }
 
@@ -856,6 +865,16 @@
 
         /* Phase 3B.2: Bed-card new/overdue indicator pills (position:relative for hover tooltip anchor) */
         .bc-indicators { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+        .bc-crit-pill {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 6px; font-size: 10px; font-weight: 700; border-radius: 999px;
+            background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;
+            position: relative; cursor: help;
+        }
+        [data-theme="dark"] .bc-crit-pill { background: rgba(239,68,68,0.22); color: #fca5a5; border-color: rgba(239,68,68,0.5); }
+        .bc-crit-pill:hover .orders-hover-tooltip {
+            opacity: 1; visibility: visible; transform: translateY(0);
+        }
         .bc-new-pill, .bc-overdue-pill {
             display: inline-flex; align-items: center; gap: 3px;
             font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;
@@ -1647,6 +1666,7 @@
     let allOrdersByEnc = {};      // Phase 3B.2: global listener at emr/orders — {encId: {orderId: order}} for board indicators
     let currentLabs = [];         // Phase 3C: ALL labs for current patient (filtered by encounter at render time)
     let currentImaging = [];      // Phase 3C: ALL imaging studies for current patient (filtered by encounter at render time)
+    let allLabsByPatient = {};    // Round-2 polish: global listener at emr/labs for board-side critical-value indicators — {pid: {labId: lab}}
 
     let activeNoteType = 'soap';
     let activeNoteRole = 'RN';    // Phase 3A.5b — default role for new notes
@@ -2148,6 +2168,41 @@
             // "someone else just placed an order on my patient" in real time).
             if (currentPatient) updateOrdersTabBadge();
         });
+        // Round-2 polish: global labs listener for the bed-card critical-value
+        // pill (🔬 N critical). Same payload shape as orders — Firebase RTDB
+        // handles a few hundred labs without breaking a sweat.
+        database.ref('emr/labs').on('value', function (snap) {
+            allLabsByPatient = snap.val() || {};
+            renderBoard();
+        });
+    }
+
+    // Returns the count of unresulted-or-recently-resulted CRITICAL labs
+    // (HH or LL flag) for a patient — used for the board-side critical-value
+    // pill. "Recent" = collected within the last 6 hours so resolved
+    // critical values from a prior shift don't keep flagging the patient.
+    function criticalLabsForPatient(pid) {
+        const labs = allLabsByPatient[pid];
+        if (!labs) return [];
+        const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+        return Object.values(labs).filter(function (l) {
+            return l && (l.flag === 'HH' || l.flag === 'LL') &&
+                   l.collectedAt && l.collectedAt > sixHoursAgo;
+        });
+    }
+
+    // Hover tooltip for the critical pill — lists test name + value (max 6).
+    function criticalLabsHoverTooltip(pid) {
+        const list = criticalLabsForPatient(pid);
+        if (!list.length) return '';
+        const rows = list.slice(0, 6).map(function (l) {
+            const flagTxt = (l.flag === 'LL') ? 'critical low' : 'critical high';
+            return '<div class="oht-row"><span class="oht-text">' +
+                esc(l.testName || '?') + ' ' + esc(String(l.value)) + ' ' + esc(l.unit || '') +
+                '</span><span class="oht-late">' + flagTxt + '</span></div>';
+        }).join('');
+        const more = list.length > 6 ? '<div class="oht-more">+ ' + (list.length - 6) + ' more</div>' : '';
+        return '<span class="orders-hover-tooltip"><div class="oht-title">Critical lab values</div>' + rows + more + '</span>';
     }
 
     // Phase 2 helpers: encounter lookup
@@ -2354,7 +2409,12 @@
             const overduePill = counts.overdue > 0
                 ? '<span class="bc-overdue-pill">⏰ ' + counts.overdue + ordersHoverTooltip(p._encounterId, 'overdue') + '</span>'
                 : '';
-            const indicators = (newPill || overduePill) ? '<div class="bc-indicators">' + newPill + overduePill + '</div>' : '';
+            // Round-2 polish: critical lab pill (HH/LL within last 6h)
+            const critLabs = criticalLabsForPatient(p.id);
+            const critPill = critLabs.length > 0
+                ? '<span class="bc-crit-pill">🔬 ' + critLabs.length + ' critical' + criticalLabsHoverTooltip(p.id) + '</span>'
+                : '';
+            const indicators = (newPill || overduePill || critPill) ? '<div class="bc-indicators">' + newPill + overduePill + critPill + '</div>' : '';
             return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<div class="bed-num"><span class="esi-dot esi-' + (p.esiAcuity || 3) + '" title="ESI ' + (p.esiAcuity || '—') + ' (1 = resuscitation, 5 = non-urgent)"></span>' + esc(b.bedId) + rnChip + '</div>' +
                 '<div class="pt-name">' + esc(p.name) + '</div>' +
@@ -3625,6 +3685,48 @@
         }, 80);
     };
 
+    // Per-row overdue check for MAR/TAR rows. PRN rows are never overdue
+    // (no scheduled time). For scheduled rows, parse comma-separated military
+    // times ("0900,2100"), pick the most recent past time today, and flag
+    // overdue if status is still 'scheduled' and that time was >30 min ago.
+    // Returns { overdue: bool, minutesLate: number, dueSoon: bool }.
+    function rowDueState(it) {
+        const out = { overdue: false, minutesLate: 0, dueSoon: false };
+        if (!it || it.isPRN) return out;
+        const status = (it.status || 'scheduled').toLowerCase();
+        if (status !== 'scheduled') return out;
+        const sched = String(it.scheduledTime || '').trim();
+        if (!sched) return out;
+        const now = new Date();
+        const today = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+        let mostRecentPast = null;
+        sched.split(',').forEach(function (t) {
+            const m = t.trim().match(/^(\d{1,2}):?(\d{2})$/);
+            if (!m) return;
+            const hh = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+            if (hh > 23 || mm > 59) return;
+            const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+            if (dt.getTime() <= now.getTime() && (mostRecentPast == null || dt > mostRecentPast)) {
+                mostRecentPast = dt;
+            }
+            // "Due soon" = next scheduled time within 30 min from now
+            const minsUntil = (dt.getTime() - now.getTime()) / 60000;
+            if (minsUntil > 0 && minsUntil <= 30) out.dueSoon = true;
+        });
+        if (!mostRecentPast) return out;
+        const minsLate = Math.round((now.getTime() - mostRecentPast.getTime()) / 60000);
+        if (minsLate > 30) {
+            out.overdue = true;
+            out.minutesLate = minsLate;
+        }
+        return out;
+    }
+    function fmtMinsLate(n) {
+        if (n < 60) return n + ' min late';
+        const h = Math.floor(n / 60), m = n % 60;
+        return h + 'h ' + (m > 0 ? m + 'm ' : '') + 'late';
+    }
+
     function renderMedTar(kind) {
         const el = document.getElementById('tab-' + kind);
         const rawItems = (kind === 'mar') ? currentMar : currentTar;
@@ -3644,6 +3746,14 @@
             const adminInfo = (status !== 'scheduled' && it.administeredAt)
                 ? '<div style="font-size:11px;color:var(--clx-text-muted);margin-top:4px;">' + esc(fmtTime(it.administeredAt)) + ' by ' + esc(it.administeredBy || '—') + (it.notes ? ' — ' + esc(it.notes) : '') + '</div>'
                 : '';
+            // Per-row overdue / due-soon state for visual triage. Overdue rows
+            // get a red left border + a "⏰ Xm late" chip in the Time column.
+            // Due-soon rows (next scheduled within 30 min) get an amber border.
+            const due = rowDueState(it);
+            const rowCls = due.overdue ? ' mar-row-overdue' : (due.dueSoon ? ' mar-row-duesoon' : '');
+            const lateChip = due.overdue
+                ? '<div style="margin-top:3px;font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:0.04em;text-transform:uppercase;">⏰ ' + fmtMinsLate(due.minutesLate) + '</div>'
+                : (due.dueSoon ? '<div style="margin-top:3px;font-size:10px;font-weight:700;color:#b45309;">⌛ Due soon</div>' : '');
             // Hold / refused reason — surfaced inline below the med name so
             // the off-going RN's reasoning is visible during board scan
             // (no click required). Pulls from the linked order's holdReason
@@ -3662,8 +3772,8 @@
             const ro = chartReadOnly;
             // Phase 3B.2: order chip linking back to placing order (if any)
             const orderChip = renderMarOrderChip(it);
-            return '<tr>' +
-                '<td data-label="Time"><strong>' + esc(it.scheduledTime || '—') + '</strong>' + (isPRN ? ' <span style="font-size:10px;color:var(--clx-text-muted);">PRN</span>' : '') + '</td>' +
+            return '<tr class="' + rowCls.trim() + '">' +
+                '<td data-label="Time"><strong>' + esc(it.scheduledTime || '—') + '</strong>' + (isPRN ? ' <span style="font-size:10px;color:var(--clx-text-muted);">PRN</span>' : '') + lateChip + '</td>' +
                 '<td data-label="' + esc(labelHd) + '"><strong>' + esc(it[(kind === 'mar') ? 'medication' : 'treatment'] || '—') + '</strong>' +
                     (kind === 'mar' && it.dose ? '<div style="font-size:12px;color:var(--clx-text-secondary);">' + esc(it.dose) + (it.route ? ' · ' + esc(it.route) : '') + '</div>' : '') +
                     (it.frequency ? '<div style="font-size:11px;color:var(--clx-text-muted);">' + esc(it.frequency) + '</div>' : '') +

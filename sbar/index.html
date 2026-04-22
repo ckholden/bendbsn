@@ -1136,6 +1136,73 @@
             // Same effect as "+ New SBAR" — just keep the legacy clear name for compatibility
             startNewSbarReport();
         }
+
+        // ============================================================
+        // Prefill from last RN Note — pulls patient name + age + sex
+        // from the most recent userDocuments entry so the student isn't
+        // staring at a fully blank Situation tab. Only fires when those
+        // fields are empty AND no SBAR report is currently loaded.
+        // ============================================================
+        function _parseAgeSexFromDemo(demo) {
+            // patientDemo is freeform — common forms: "42yom", "68 F", "55yof",
+            // "M 22", "Female 78". Extract first 2-3 digit number + first M/F.
+            if (!demo) return { age: '', sex: '' };
+            const ageMatch = String(demo).match(/\b(\d{1,3})\b/);
+            const sexMatch = String(demo).match(/\b(M|F|Male|Female|Man|Woman|Boy|Girl)\b/i);
+            let sex = '';
+            if (sexMatch) {
+                const s = sexMatch[1].toLowerCase();
+                if (s === 'm' || s === 'male' || s === 'man' || s === 'boy') sex = 'Male';
+                else if (s === 'f' || s === 'female' || s === 'woman' || s === 'girl') sex = 'Female';
+            }
+            return { age: ageMatch ? ageMatch[1] : '', sex: sex };
+        }
+
+        function prefillSbarFromLastRnNote() {
+            if (!currentUid) return;
+            // Don't clobber existing entry or a loaded report
+            if (currentSbarReportKey) return;
+            const nameEl = document.getElementById('sPatientName');
+            if (nameEl && nameEl.value.trim()) return;
+
+            database.ref('userDocuments/' + currentUid).orderByChild('updatedAt').limitToLast(1).once('value')
+                .then(function (snap) {
+                    const val = snap.val() || {};
+                    const docs = Object.values(val);
+                    if (!docs.length) return;
+                    const last = docs[docs.length - 1];
+                    const c = (last && last.content) || {};
+                    const pName = c.patientId || last.patientName || '';
+                    if (!pName || (nameEl && nameEl.value.trim())) return;
+                    nameEl.value = pName;
+                    // Parse age + sex from patientDemo
+                    const parsed = _parseAgeSexFromDemo(c.patientDemo);
+                    const ageEl = document.getElementById('sPatientAge');
+                    const sexEl = document.getElementById('sPatientSex');
+                    if (ageEl && !ageEl.value && parsed.age) ageEl.value = parsed.age;
+                    if (sexEl && !sexEl.value && parsed.sex) sexEl.value = parsed.sex;
+                    // Friendly hint above the form so the student knows where it came from
+                    const sitTab = document.getElementById('sbar-tab-situation');
+                    const card = sitTab && sitTab.querySelector('.sbar-card');
+                    if (card && !document.getElementById('sbarPrefillHint')) {
+                        const hint = document.createElement('div');
+                        hint.id = 'sbarPrefillHint';
+                        hint.style.cssText = 'font-size:11px;color:var(--clx-text-muted);background:var(--clx-accent-subtle);border:1px solid var(--clx-accent);border-radius:6px;padding:6px 10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;';
+                        hint.innerHTML = '<span>\u2728 Pre-filled patient info from your most recent RN Note</span>' +
+                            '<a href="#" style="color:var(--clx-accent);font-weight:600;" onclick="event.preventDefault();[\'sPatientName\',\'sPatientAge\',\'sPatientSex\'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=\'\';});this.parentNode.remove();">clear</a>';
+                        card.insertBefore(hint, card.firstChild);
+                    }
+                })
+                .catch(function (err) {
+                    console.warn('[sbar] prefill from RN note failed', err);
+                });
+        }
+
+        // Fire after auth resolves. Use Firebase Auth state since currentUid
+        // is read from localStorage at script load — may be stale.
+        firebase.auth().onAuthStateChanged(function (user) {
+            if (user && user.uid) prefillSbarFromLastRnNote();
+        });
     </script>
 </body>
 </html>

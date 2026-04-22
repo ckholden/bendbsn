@@ -574,6 +574,9 @@
 
         // Set today's date
         document.getElementById('rlDate').valueAsDate = new Date();
+        // Pre-populate stable shift fields from the last saved entry — students
+        // log the same facility / preceptor / shift template all term.
+        applyShiftTemplate();
 
         // Tab switch
         function showRlTab(tab) {
@@ -666,9 +669,54 @@
                 rlEntries.push({...entry, _id: entryId});
                 renderRlTable();
                 updateRlStats();
+                // Cache last shift for next visit's prefill (facility / unit /
+                // shift / start / end / preceptor / population — the parts
+                // that are stable across consecutive shifts at the same site).
+                try {
+                    localStorage.setItem('bendbsn_rotationlog_last_shift', JSON.stringify({
+                        facility: entry.facility,
+                        unit: unit,           // raw unit value, before "Other" remap
+                        unitOther: unitOther,
+                        shift: entry.shift,
+                        shiftStart: entry.shiftStart,
+                        shiftEnd: entry.shiftEnd,
+                        preceptor: entry.preceptor,
+                        population: entry.population
+                    }));
+                } catch (e) {}
                 clearRlForm();
                 showToast('Entry added.', 'success');
             }).catch(e => showToast('Save failed: ' + e.message, 'error'));
+        }
+
+        // Prefill the form from the last saved shift at first paint. Runs
+        // after rlDate is defaulted to today so today's date isn't clobbered.
+        function applyShiftTemplate() {
+            try {
+                const raw = localStorage.getItem('bendbsn_rotationlog_last_shift');
+                if (!raw) return;
+                const t = JSON.parse(raw);
+                if (!t || typeof t !== 'object') return;
+                const setIf = (id, val) => { const el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; };
+                setIf('rlFacility', t.facility);
+                setIf('rlUnit', t.unit);
+                setIf('rlUnitOther', t.unitOther);
+                setIf('rlShift', t.shift);
+                setIf('rlShiftStart', t.shiftStart);
+                setIf('rlShiftEnd', t.shiftEnd);
+                setIf('rlPreceptor', t.preceptor);
+                setIf('rlPopulation', t.population);
+                if (typeof calcShiftHours === 'function') calcShiftHours();
+                // Friendly hint that fields were prefilled — dismissable by user
+                const wrap = document.querySelector('#rl-tab-log .rl-card');
+                if (wrap && !document.getElementById('shiftPrefillHint')) {
+                    const hint = document.createElement('div');
+                    hint.id = 'shiftPrefillHint';
+                    hint.style.cssText = 'font-size:11px;color:var(--clx-text-muted);margin:-6px 0 12px 0;display:flex;align-items:center;gap:6px;';
+                    hint.innerHTML = '✨ Pre-filled from your last shift &mdash; <a href="#" style="color:var(--clx-accent);" onclick="event.preventDefault();clearRlForm();this.parentNode.remove();">reset all fields</a>';
+                    wrap.insertBefore(hint, wrap.firstChild);
+                }
+            } catch (e) {}
         }
 
         function deleteRlEntry(id) {

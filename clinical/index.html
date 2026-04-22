@@ -499,8 +499,24 @@
             }
             currentUid = user.uid;
             packetsRef = database.ref('emr-clinical/packets/' + currentUid);
+
+            // Safety net: if the Firebase listener doesn't fire within 5s
+            // (rules glitch, connectivity stutter, etc.), force-render an
+            // empty state so users aren't staring at a perpetual spinner.
+            // The on('value') callback below clears this timer once it
+            // actually fires for the first time.
+            let _firstRenderFired = false;
+            const _spinnerWatchdog = setTimeout(function () {
+                if (_firstRenderFired) return;
+                console.warn('[CAP] packets listener timeout — falling back to empty state');
+                allPackets = [];
+                renderList();
+            }, 5000);
+
             // Real-time listener — keep list in sync if user opens packets in another tab
             packetsRef.on('value', function (snap) {
+                _firstRenderFired = true;
+                clearTimeout(_spinnerWatchdog);
                 const val = snap.val() || {};
                 allPackets = Object.keys(val).map(function (k) {
                     const p = val[k] || {};
