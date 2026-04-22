@@ -193,21 +193,46 @@
             display: none;
         }
         .pinned-heading.visible { display: block; }
+        [data-theme="dark"] .pinned-heading { color: var(--clx-text-secondary); }
+        [data-theme="dark"] .card-pin-btn { color: var(--clx-text-muted); }
+        [data-theme="dark"] .card-pin-btn:hover { background: rgba(15,116,144,0.18); color: #fbbf24; }
 
-        /* Featured hero cards (Drug Info + Lab Values) */
+        /* Featured hero cards (Drug Info + Lab Values) — most-used resources
+           get a richer header treatment, gradient backdrop, and subtle
+           "Featured" pill so students immediately see them. */
         .resource-card.resource-card-hero .card-header {
-            padding: 22px 28px;
-            background: linear-gradient(135deg, var(--clx-accent-subtle, #e0f2f8) 0%, var(--clx-bg-surface, #fff) 100%);
+            padding: 18px 24px !important;
+            background: linear-gradient(135deg, var(--clx-accent-subtle, #e0f2f8) 0%, var(--clx-bg-surface, #fff) 70%) !important;
+            position: relative;
         }
         .resource-card.resource-card-hero .card-header h2 {
-            font-size: 20px;
+            font-size: 17px !important;
+            font-weight: 700 !important;
+        }
+        .resource-card.resource-card-hero .card-header h2::before {
+            content: 'Featured';
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: var(--clx-accent, #0f7490);
+            color: #fff;
+            vertical-align: middle;
         }
         .resource-card.resource-card-hero {
-            border-top-width: 4px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            border-top-width: 4px !important;
+            box-shadow: 0 3px 14px rgba(15,116,144,0.12) !important;
         }
         [data-theme="dark"] .resource-card.resource-card-hero .card-header {
-            background: linear-gradient(135deg, rgba(15,116,144,0.18) 0%, var(--clx-bg-surface) 100%);
+            background: linear-gradient(135deg, rgba(15,116,144,0.22) 0%, var(--clx-bg-surface) 70%) !important;
+        }
+        /* Demote hero header on phones — students want compact density on mobile */
+        @media (max-width: 600px) {
+            .resource-card.resource-card-hero .card-header h2::before { display: none; }
         }
 
         /* Empty state for no search matches */
@@ -222,6 +247,11 @@
             display: none;
         }
         .resource-empty-state.visible { display: block; }
+        [data-theme="dark"] .resource-empty-state {
+            background: var(--clx-bg-surface-2);
+            border-color: var(--clx-border);
+            color: var(--clx-text-secondary);
+        }
         .resource-empty-state .empty-emoji {
             font-size: 32px;
             margin-bottom: 10px;
@@ -269,7 +299,15 @@
             margin-bottom: 0;
             border-top: 3px solid var(--rc-accent, #1f4e79);
         }
-        .resource-card.collapsible:after { content: none; }
+        /* Defensively kill the generic .collapsible:after arrow on resource cards
+           in EVERY state (collapsed/expanded/hover). The generic
+           .collapsible.collapsed:after rule below (line ~691) has equal
+           specificity to .resource-card.collapsible:after, so without the
+           .collapsed-qualified override here, the later cascade wins and we
+           get a stray ▶ arrow rendered inside the card body area. */
+        .resource-card.collapsible:after,
+        .resource-card.collapsible.collapsed:after,
+        .resource-card.collapsible.expanded:after { content: none !important; }
         .resource-card.collapsible:hover {
             box-shadow: 0 6px 18px rgba(0,0,0,0.1);
             transform: translateY(-2px);
@@ -678,17 +716,20 @@
             background: #f1f5f9;
             border-radius: 4px;
         }
-        .collapsible {
+        /* Generic small-collapsible widget. Scoped with :not(.resource-card)
+           so it never bleeds onto the accordion cards (which manage their
+           own .expand-icon and have a different layout). */
+        .collapsible:not(.resource-card) {
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .collapsible:after {
+        .collapsible:not(.resource-card):after {
             content: '▼';
             font-size: 10px;
         }
-        .collapsible.collapsed:after {
+        .collapsible:not(.resource-card).collapsed:after {
             content: '▶';
         }
         .collapse-content {
@@ -1182,9 +1223,11 @@
             font-weight: 600 !important;
         }
 
-        /* ===== ACCORDION CARDS ===== */
+        /* ===== ACCORDION CARDS =====
+           NOTE: no margin-bottom — the grid `gap` handles spacing. Adding
+           margin here on top of grid gap creates uneven gutters between
+           rows vs columns. */
         .resource-card.collapsible {
-            margin-bottom: 14px !important;
             border: 1px solid var(--clx-border) !important;
             background: var(--clx-bg-surface) !important;
             border-radius: 12px !important;
@@ -1422,8 +1465,11 @@
                     <span id="resourceCount" class="nav-count">Showing all resources</span>
                 </div>
                 <div class="search-box">
-                    <input type="text" id="resourceSearch" placeholder="Search resources, tools, or skills..." oninput="filterResourcesDebounced()">
-                    <button type="button" onclick="clearResourceSearch()">Clear</button>
+                    <input type="text" id="resourceSearch" placeholder="Search resources, tools, or skills..."
+                           oninput="filterResourcesDebounced()"
+                           onkeydown="if(event.key==='Escape'){clearResourceSearch();this.blur();}"
+                           aria-label="Search resources">
+                    <button type="button" onclick="clearResourceSearch()" aria-label="Clear search">Clear</button>
                 </div>
                 <div class="resource-filters">
                     <button type="button" class="resource-chip active" onclick="setCategoryFilter('all', this)">All <span class="chip-count" data-count-for="all"></span></button>
@@ -1858,10 +1904,10 @@
                 </div>
 
                 <!-- SBAR Communication Template (promoted from Clinical Toolkit) -->
-                <div id="section-sbar-template" class="card resource-card collapsible collapsed" data-tags="SBAR communication handoff situation background assessment recommendation report" data-category="conditions-dx">
+                <div id="section-sbar-template" class="card resource-card collapsible collapsed" data-tags="SBAR communication handoff situation background assessment recommendation report" data-category="assessments">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>📋 SBAR Communication Template<span class="rc-subtitle">Quick-reference script for calling providers and bedside report</span></h2></div>
-                        <span class="rc-category-badge">Communication</span>
+                        <span class="rc-category-badge">Assessments</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
@@ -2084,7 +2130,7 @@
                         <span class="rc-category-badge">Drug Ref</span>
                         <span class="expand-icon">▼</span>
                     </div>
-                    <div class="card-content" style="max-height:none !important;">
+                    <div class="card-content">
                         <p style="font-size:12px;color:#c62828;background:#ffebee;padding:8px;border-radius:6px;margin-bottom:12px;"><strong>Educational reference only.</strong> Verify all drug information with current clinical pharmacology resources before application.</p>
                         <input type="text" id="pharmSearch" placeholder="Search by drug class or drug name…" oninput="filterPharmCards(this.value)"
                             style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
@@ -2101,7 +2147,7 @@
                         <span class="rc-category-badge">Conditions &amp; Dx</span>
                         <span class="expand-icon">▼</span>
                     </div>
-                    <div class="card-content" style="max-height:none !important;">
+                    <div class="card-content">
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                             <input type="text" id="diseaseSearch" placeholder="Search conditions…" oninput="filterDiseaseCards()"
                                 style="flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
@@ -2133,7 +2179,7 @@
                         <span class="rc-category-badge">Drug &amp; Pharm</span>
                         <span class="expand-icon">▼</span>
                     </div>
-                    <div class="card-content" style="max-height:none !important;">
+                    <div class="card-content">
                         <input type="text" id="mnemonicSearch" placeholder="Search mnemonics…" oninput="filterMnemonics(this.value)"
                             style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
                         <div id="mnemonicGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
@@ -2149,7 +2195,7 @@
                         <span class="rc-category-badge">Procedure</span>
                         <span class="expand-icon">▼</span>
                     </div>
-                    <div class="card-content" style="max-height:none !important;">
+                    <div class="card-content">
                         <input type="text" id="procedureSearch" placeholder="Search procedures…" oninput="filterProcedures(this.value)"
                             style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
                         <div id="procedureGrid" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
@@ -2165,7 +2211,7 @@
                         <span class="rc-category-badge">Assessments</span>
                         <span class="expand-icon">▼</span>
                     </div>
-                    <div class="card-content" style="max-height:none !important;">
+                    <div class="card-content">
                         <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Waveform representations for pattern recognition. Always correlate ECG findings with clinical assessment — treat the patient, not the monitor.</p>
                         <input type="text" id="ecgSearch" placeholder="Search rhythms…" oninput="filterEcgCards(this.value)"
                             style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);margin-bottom:12px;font-family:inherit;">
@@ -2218,7 +2264,7 @@
                         <h2>📈 Lab Value Trend Tracker</h2>
                         <span class="expand-icon">▼</span>
                     </div>
-                    <div class="card-content" style="max-height:none !important;">
+                    <div class="card-content">
                         <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Session-based tracker (not saved to account). Add lab values across time points to spot trends. Export to CSV when done.</p>
                         <!-- Add entry row -->
                         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 120px 1fr auto;gap:8px;align-items:end;margin-bottom:10px;flex-wrap:wrap;" id="labTrendAddRow">
@@ -2850,6 +2896,7 @@
             // the card's visible state thereafter reflects user intent, not
             // search intent.
             card.classList.remove('auto-opened');
+            try { _autoOpenedCards.delete(card.id); } catch (e) {}
             const content = card.querySelector('.card-content');
             const expanding = card.classList.contains('collapsed');
 
@@ -3034,6 +3081,45 @@
             else countEl.textContent = `Showing ${visible} of ${total} resources`;
         }
 
+        // Track which cards auto-opened in the CURRENT search pass so they
+        // can be re-collapsed cleanly when the search query is cleared.
+        // Using a separate Set (not the .auto-opened class alone) lets us
+        // reliably distinguish search-opened cards from user-opened ones,
+        // even when classes get clobbered by intermediate state changes.
+        const _autoOpenedCards = new Set();
+        let _firstMatchedCardId = null;
+
+        function _autoOpenCard(card) {
+            // Only flag the card as auto-opened if it was actually collapsed.
+            // If user already had it open, leave it alone — don't claim
+            // ownership over their interaction state.
+            if (!card.classList.contains('collapsed')) return;
+            card.classList.remove('collapsed');
+            card.classList.add('expanded', 'fully-open', 'auto-opened');
+            const content = card.querySelector('.card-content');
+            if (content) content.style.maxHeight = '';
+            const hdr = card.querySelector('.card-header');
+            if (hdr) hdr.setAttribute('aria-expanded', 'true');
+            _autoOpenedCards.add(card.id);
+            // Notify any expand-observers (pharm/disease/mnemonics/etc.) so
+            // their dynamic grids render even when expansion happens via
+            // search instead of a header click. The MutationObservers fire
+            // automatically because we toggled the class list.
+        }
+
+        function _autoCloseCard(card) {
+            // Only re-collapse cards that WE opened. Manual opens are
+            // preserved across search clears.
+            if (!_autoOpenedCards.has(card.id)) return;
+            card.classList.remove('auto-opened', 'expanded', 'fully-open');
+            card.classList.add('collapsed');
+            const content = card.querySelector('.card-content');
+            if (content) content.style.maxHeight = '';
+            const hdr = card.querySelector('.card-header');
+            if (hdr) hdr.setAttribute('aria-expanded', 'false');
+            _autoOpenedCards.delete(card.id);
+        }
+
         function filterResources() {
             const query = (document.getElementById('resourceSearch') || {}).value || '';
             const q = query.trim().toLowerCase();
@@ -3041,6 +3127,13 @@
             const cards = Array.from(document.querySelectorAll('.resource-card'));
             let visible = 0;
             const queryRegex = q ? new RegExp(escapeRegExp(q), 'gi') : null;
+            _firstMatchedCardId = null;
+
+            // If query was cleared, re-collapse every card WE opened, regardless
+            // of whether it matches the current category filter.
+            if (!queryRegex) {
+                cards.forEach(_autoCloseCard);
+            }
 
             cards.forEach(card => {
                 clearHighlights(card);  // always reset before re-applying
@@ -3058,30 +3151,21 @@
                 const matchesQuery = !q || tags.includes(q) || fullText.includes(q);
                 const show = matchesTag && matchesCategory && matchesQuery;
                 card.classList.toggle('hidden', !show);
-                if (!show) return;
+
+                // If a card is hidden and we previously auto-opened it, close
+                // it now so it doesn't surprise the user when it reappears.
+                if (!show) {
+                    _autoCloseCard(card);
+                    return;
+                }
                 visible += 1;
+                if (!_firstMatchedCardId) _firstMatchedCardId = card.id;
 
                 if (queryRegex) {
                     const hits = applyHighlight(card, queryRegex);
-                    // Auto-expand on match IF the query actually hit the card chrome OR body
-                    if (hits > 0 || bodyText.includes(q)) {
-                        if (card.classList.contains('collapsed')) {
-                            // Manually open without animation overhead
-                            card.classList.remove('collapsed');
-                            card.classList.add('expanded', 'fully-open', 'auto-opened');
-                            const content = card.querySelector('.card-content');
-                            if (content) content.style.maxHeight = '';
-                            const hdr = card.querySelector('.card-header');
-                            if (hdr) hdr.setAttribute('aria-expanded', 'true');
-                        }
-                    }
-                } else {
-                    // Query cleared — re-collapse cards we auto-opened
-                    if (card.classList.contains('auto-opened')) {
-                        card.classList.remove('auto-opened', 'expanded', 'fully-open');
-                        card.classList.add('collapsed');
-                        const hdr = card.querySelector('.card-header');
-                        if (hdr) hdr.setAttribute('aria-expanded', 'false');
+                    // Auto-expand on any match — header chrome OR body text.
+                    if (hits > 0 || bodyText.includes(q) || tags.includes(q)) {
+                        _autoOpenCard(card);
                     }
                 }
             });
@@ -3090,6 +3174,35 @@
             // Empty state
             const emptyEl = document.getElementById('resourceEmptyState');
             if (emptyEl) emptyEl.classList.toggle('visible', visible === 0);
+
+            // After a real search produces matches, scroll the first match
+            // into view so students don't think nothing happened. Skip when:
+            //  - no query (would scroll on page-load filter pass)
+            //  - empty results (empty state is already visible at top)
+            //  - user hasn't scrolled past the navigator yet (avoid jumpiness)
+            if (queryRegex && _firstMatchedCardId && visible > 0) {
+                _scrollFirstMatchIntoView(_firstMatchedCardId);
+            }
+        }
+
+        // Debounced scroll to first match. Only scrolls when the first match
+        // is actually below the fold — never scrolls UP. This prevents the
+        // page from jumping while the user is still typing.
+        let _scrollDebounce = null;
+        function _scrollFirstMatchIntoView(cardId) {
+            if (_scrollDebounce) clearTimeout(_scrollDebounce);
+            _scrollDebounce = setTimeout(function () {
+                const card = document.getElementById(cardId);
+                if (!card) return;
+                const rect = card.getBoundingClientRect();
+                // Sticky navigator is ~140-200px tall; only scroll if the card
+                // is below it AND below the viewport top.
+                const navHeight = (document.querySelector('.resource-navigator')?.getBoundingClientRect().bottom) || 0;
+                if (rect.top < navHeight || rect.top > window.innerHeight) {
+                    const targetY = window.scrollY + rect.top - navHeight - 16;
+                    window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+                }
+            }, 220);
         }
 
         // Debounced handler for input event
@@ -4487,40 +4600,27 @@ Generated: ${new Date().toLocaleString()}`;
     }
     function filterPharmCards(q) { renderPharmCards(q); }
 
-    // Attach pharm card init when card is first expanded
+    // Pre-populate the heavy dynamic grids during browser idle time so their
+    // body text is INDEXABLE for search even before the card is expanded.
+    // Without this, searching "CHF" or "OLDCARTS" would not match the
+    // disease / mnemonics cards (their bodies were empty until first
+    // manual expand), giving the false impression that search is broken.
+    function _prerenderDynamicGrids() {
+        try { if (typeof renderPharmCards === 'function') renderPharmCards(''); } catch (e) {}
+        try { if (typeof renderDiseaseCards === 'function') renderDiseaseCards('', ''); } catch (e) {}
+        try { if (typeof renderMnemonics === 'function') renderMnemonics(''); } catch (e) {}
+        try { if (typeof renderProcedureCards === 'function') renderProcedureCards(''); } catch (e) {}
+        try { if (typeof renderEcgCards === 'function') renderEcgCards(''); } catch (e) {}
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-        const pharmCard = document.getElementById('section-pharm-cards');
-        if (pharmCard) {
-            const origToggle = pharmCard.querySelector('.card-header');
-            if (origToggle) {
-                const observer = new MutationObserver(function() {
-                    if (pharmCard.classList.contains('expanded')) {
-                        renderPharmCards('');
-                        renderDiseaseCards('','');
-                        renderMnemonics('');
-                        renderProcedureCards('');
-                        renderEcgCards('');
-                        observer.disconnect();
-                    }
-                });
-                observer.observe(pharmCard, {attributes: true, attributeFilter: ['class']});
-            }
-        }
-        // Wire each card's expansion to init its content
-        ['section-disease-cards','section-mnemonics','section-procedure-guide','section-ecg-rhythms'].forEach(function(id) {
-            const card = document.getElementById(id);
-            if (!card) return;
-            const obs = new MutationObserver(function() {
-                if (card.classList.contains('expanded')) {
-                    if (id === 'section-disease-cards') renderDiseaseCards('','');
-                    if (id === 'section-mnemonics') renderMnemonics('');
-                    if (id === 'section-procedure-guide') renderProcedureCards('');
-                    if (id === 'section-ecg-rhythms') renderEcgCards('');
-                    obs.disconnect();
-                }
-            });
-            obs.observe(card, {attributes: true, attributeFilter: ['class']});
-        });
+        // Use requestIdleCallback so the prerender doesn't block paint;
+        // fall back to a small timeout for browsers without rIC (Safari).
+        const schedulePrerender = window.requestIdleCallback
+            ? function (fn) { window.requestIdleCallback(fn, { timeout: 1500 }); }
+            : function (fn) { setTimeout(fn, 250); };
+        schedulePrerender(_prerenderDynamicGrids);
+
         // Lab trend: set default datetime
         const ltDt = document.getElementById('ltDateTime');
         if (ltDt) {
