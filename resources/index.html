@@ -197,42 +197,14 @@
         [data-theme="dark"] .card-pin-btn { color: var(--clx-text-muted); }
         [data-theme="dark"] .card-pin-btn:hover { background: rgba(15,116,144,0.18); color: #fbbf24; }
 
-        /* Featured hero cards (Drug Info + Lab Values) — most-used resources
-           get a richer header treatment, gradient backdrop, and subtle
-           "Featured" pill so students immediately see them. */
-        .resource-card.resource-card-hero .card-header {
-            padding: 18px 24px !important;
-            background: linear-gradient(135deg, var(--clx-accent-subtle, #e0f2f8) 0%, var(--clx-bg-surface, #fff) 70%) !important;
-            position: relative;
-        }
-        .resource-card.resource-card-hero .card-header h2 {
-            font-size: 17px !important;
-            font-weight: 700 !important;
-        }
-        .resource-card.resource-card-hero .card-header h2::before {
-            content: 'Featured';
-            display: inline-block;
-            margin-right: 8px;
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 2px 7px;
-            border-radius: 4px;
-            background: var(--clx-accent, #0f7490);
-            color: #fff;
-            vertical-align: middle;
-        }
+        /* Hero cards (Drug Info + Lab Values) — subtle accent only, no pill. */
         .resource-card.resource-card-hero {
             border-top-width: 4px !important;
             box-shadow: 0 3px 14px rgba(15,116,144,0.12) !important;
         }
-        [data-theme="dark"] .resource-card.resource-card-hero .card-header {
-            background: linear-gradient(135deg, rgba(15,116,144,0.22) 0%, var(--clx-bg-surface) 70%) !important;
-        }
-        /* Demote hero header on phones — students want compact density on mobile */
-        @media (max-width: 600px) {
-            .resource-card.resource-card-hero .card-header h2::before { display: none; }
+        .resource-card.resource-card-hero .card-header h2 {
+            font-size: 17px !important;
+            font-weight: 700 !important;
         }
 
         /* Empty state for no search matches */
@@ -3129,67 +3101,74 @@
         }
 
         function filterResources() {
-            const query = (document.getElementById('resourceSearch') || {}).value || '';
-            const q = query.trim().toLowerCase();
-            const pinned = new Set(getPinned());
-            const cards = Array.from(document.querySelectorAll('.resource-card'));
-            let visible = 0;
-            const queryRegex = q ? new RegExp(escapeRegExp(q), 'gi') : null;
-            _firstMatchedCardId = null;
+            try {
+                const input = document.getElementById('resourceSearch');
+                const q = (input && input.value ? input.value : '').trim().toLowerCase();
+                const category = activeCategoryFilter || 'all';
+                const pinned = new Set(getPinned());
+                const cards = Array.from(document.querySelectorAll('.resource-card'));
+                let visible = 0;
+                _firstMatchedCardId = null;
 
-            // If query was cleared, re-collapse every card WE opened, regardless
-            // of whether it matches the current category filter.
-            if (!queryRegex) {
-                cards.forEach(_autoCloseCard);
-            }
-
-            cards.forEach(card => {
-                clearHighlights(card);  // always reset before re-applying
-
-                const tags = (card.dataset.tags || '').toLowerCase();
-                const category = (card.dataset.category || '').toLowerCase();
-                const headerText = (card.querySelector('.card-header')?.textContent || '').toLowerCase();
-                const bodyText = (card.querySelector('.card-content')?.textContent || '').toLowerCase();
-                const fullText = headerText + ' ' + bodyText;
-
-                const matchesTag = activeResourceFilter === 'all' || tags.includes(activeResourceFilter);
-                const matchesCategory =
-                    activeCategoryFilter === 'all' ||
-                    (activeCategoryFilter === 'pinned' ? pinned.has(card.id) : category === activeCategoryFilter);
-                const matchesQuery = !q || tags.includes(q) || fullText.includes(q);
-                const show = matchesTag && matchesCategory && matchesQuery;
-                card.classList.toggle('hidden', !show);
-
-                // If a card is hidden and we previously auto-opened it, close
-                // it now so it doesn't surprise the user when it reappears.
-                if (!show) {
-                    _autoCloseCard(card);
-                    return;
+                // If query was cleared, re-collapse every card WE opened.
+                if (!q) {
+                    cards.forEach(_autoCloseCard);
                 }
-                visible += 1;
-                if (!_firstMatchedCardId) _firstMatchedCardId = card.id;
 
-                if (queryRegex) {
-                    const hits = applyHighlight(card, queryRegex);
-                    // Auto-expand on any match — header chrome OR body text.
-                    if (hits > 0 || bodyText.includes(q) || tags.includes(q)) {
-                        _autoOpenCard(card);
+                cards.forEach(card => {
+                    // ALWAYS clear existing highlights so stale <mark> wrappers
+                    // don't accumulate or break subsequent runs.
+                    try { clearHighlights(card); } catch (e) { /* swallow */ }
+
+                    const tags = (card.dataset.tags || '').toLowerCase();
+                    const cardCat = (card.dataset.category || '').toLowerCase();
+                    // Grab header + body text robustly (don't assume structure)
+                    const text = (card.textContent || '').toLowerCase();
+
+                    // Category filter: 'all' shows everything; 'pinned' filters
+                    // by localStorage-tracked pins; otherwise exact category match.
+                    const catMatch =
+                        category === 'all' ||
+                        (category === 'pinned' ? pinned.has(card.id) : cardCat === category);
+
+                    // Query filter: match on tags OR any text in the card.
+                    const qMatch = !q || tags.indexOf(q) !== -1 || text.indexOf(q) !== -1;
+
+                    const show = catMatch && qMatch;
+                    card.classList.toggle('hidden', !show);
+
+                    if (!show) {
+                        _autoCloseCard(card);
+                        return;
                     }
+                    visible += 1;
+                    if (!_firstMatchedCardId) _firstMatchedCardId = card.id;
+
+                    // Apply <mark> highlights + auto-expand when there's a query.
+                    if (q) {
+                        let hits = 0;
+                        try {
+                            const regex = new RegExp(escapeRegExp(q), 'gi');
+                            hits = applyHighlight(card, regex);
+                        } catch (e) { /* invalid regex, swallow */ }
+                        if (hits > 0 || text.indexOf(q) !== -1 || tags.indexOf(q) !== -1) {
+                            _autoOpenCard(card);
+                        }
+                    }
+                });
+
+                updateResourceCount(visible, cards.length);
+
+                const emptyEl = document.getElementById('resourceEmptyState');
+                if (emptyEl) emptyEl.classList.toggle('visible', visible === 0);
+
+                if (q && _firstMatchedCardId && visible > 0) {
+                    _scrollFirstMatchIntoView(_firstMatchedCardId);
                 }
-            });
-            updateResourceCount(visible, cards.length);
-
-            // Empty state
-            const emptyEl = document.getElementById('resourceEmptyState');
-            if (emptyEl) emptyEl.classList.toggle('visible', visible === 0);
-
-            // After a real search produces matches, scroll the first match
-            // into view so students don't think nothing happened. Skip when:
-            //  - no query (would scroll on page-load filter pass)
-            //  - empty results (empty state is already visible at top)
-            //  - user hasn't scrolled past the navigator yet (avoid jumpiness)
-            if (queryRegex && _firstMatchedCardId && visible > 0) {
-                _scrollFirstMatchIntoView(_firstMatchedCardId);
+            } catch (err) {
+                // Never let the filter brick the page. Log + show everything.
+                console.error('[resources] filterResources failed:', err);
+                document.querySelectorAll('.resource-card.hidden').forEach(c => c.classList.remove('hidden'));
             }
         }
 
