@@ -160,11 +160,12 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
         /* Category accent colors */
-        .resource-card[data-category="drug"] { --rc-accent: #7b1fa2; }
-        .resource-card[data-category="clinical"] { --rc-accent: #1565c0; }
-        .resource-card[data-category="condition"] { --rc-accent: #c62828; }
-        .resource-card[data-category="calculator"] { --rc-accent: #e65100; }
-        .resource-card[data-category="study"] { --rc-accent: #2e7d32; }
+        .resource-card[data-category="drug-pharm"]    { --rc-accent: #7b1fa2; }
+        .resource-card[data-category="labs-vitals"]   { --rc-accent: #0277bd; }
+        .resource-card[data-category="assessments"]   { --rc-accent: #1565c0; }
+        .resource-card[data-category="procedures"]    { --rc-accent: #00796b; }
+        .resource-card[data-category="calculators"]   { --rc-accent: #e65100; }
+        .resource-card[data-category="conditions-dx"] { --rc-accent: #c62828; }
         /* Category badge in header */
         .rc-category-badge {
             font-size: 10px;
@@ -356,16 +357,67 @@
         tr:hover { background: #f1f5f9; }
         .abbrev-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 4px;
-            font-size: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--clx-space-1);
+            font-size: var(--clx-type-xs);
         }
         .abbrev-item {
-            padding: 4px 8px;
-            background: #e8f4fc;
-            border-radius: 4px;
+            padding: var(--clx-space-1) var(--clx-space-2);
+            background: var(--clx-bg-surface-2);
+            border-radius: var(--clx-radius-sm);
+            border: 1px solid var(--clx-border);
+            color: var(--clx-text-secondary);
         }
-        .abbrev-item strong { color: #1f4e79; }
+        .abbrev-item strong {
+            color: var(--clx-accent);
+            margin-right: 4px;
+        }
+        /* Footer glossary strip — sits outside filter, always visible */
+        .abbrev-glossary {
+            grid-column: 1 / -1;
+            margin-top: var(--clx-space-5);
+            padding: var(--clx-space-4);
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: var(--clx-radius-md);
+        }
+        .abbrev-glossary-header {
+            display: flex;
+            align-items: baseline;
+            gap: var(--clx-space-2);
+            margin-bottom: var(--clx-space-3);
+            padding-bottom: var(--clx-space-2);
+            border-bottom: 1px solid var(--clx-border);
+        }
+        .abbrev-glossary-header strong {
+            font-size: var(--clx-type-base);
+            color: var(--clx-text-primary);
+        }
+        .abbrev-glossary-subtitle {
+            font-size: var(--clx-type-xs);
+            color: var(--clx-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        /* Chip count badge — shows # cards per category */
+        .chip-count {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 0 6px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.6;
+            color: var(--clx-text-muted);
+            background: var(--clx-bg-surface);
+            border-radius: 999px;
+            min-width: 18px;
+            text-align: center;
+        }
+        .resource-chip.active .chip-count {
+            color: var(--clx-accent);
+            background: #fff;
+        }
+        .chip-count:empty { display: none; }
         .calc-result {
             margin-top: 10px;
             padding: 12px;
@@ -1200,18 +1252,19 @@
                     <button type="button" onclick="clearResourceSearch()">Clear</button>
                 </div>
                 <div class="resource-filters">
-                    <button type="button" class="resource-chip active" onclick="setCategoryFilter('all', this)">All</button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('drug', this)" style="--chip-color:#7b1fa2;">💊 Drug Reference</button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('clinical', this)" style="--chip-color:#1565c0;">🩺 Clinical</button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('condition', this)" style="--chip-color:#c62828;">🏥 Conditions</button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('calculator', this)" style="--chip-color:#e65100;">🧮 Calculators</button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('study', this)" style="--chip-color:#2e7d32;">📖 Study Tools</button>
+                    <button type="button" class="resource-chip active" onclick="setCategoryFilter('all', this)">All <span class="chip-count" data-count-for="all"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('drug-pharm', this)" style="--chip-color:#7b1fa2;">💊 Drug &amp; Pharm <span class="chip-count" data-count-for="drug-pharm"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('labs-vitals', this)" style="--chip-color:#0277bd;">🧪 Labs &amp; Vitals <span class="chip-count" data-count-for="labs-vitals"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('assessments', this)" style="--chip-color:#1565c0;">🩺 Assessments <span class="chip-count" data-count-for="assessments"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('procedures', this)" style="--chip-color:#00796b;">📋 Procedures <span class="chip-count" data-count-for="procedures"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('calculators', this)" style="--chip-color:#e65100;">🧮 Calculators <span class="chip-count" data-count-for="calculators"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('conditions-dx', this)" style="--chip-color:#c62828;">🏥 Conditions &amp; Dx <span class="chip-count" data-count-for="conditions-dx"></span></button>
                 </div>
             </div>
 
             <div class="grid" id="resourceGrid">
                 <!-- Drug Information -->
-                <div id="section-drug-lookup" class="card resource-card collapsible collapsed full-width" data-tags="drugs medication pharma reference" data-category="drug">
+                <div id="section-drug-lookup" class="card resource-card collapsible collapsed full-width" data-tags="drugs medication pharma reference rxnav lookup" data-category="drug-pharm">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>💊 Drug Information<span class="rc-subtitle">Search medications via DailyMed &amp; Drugs.com</span></h2></div>
                         <span class="rc-category-badge">Drug Ref</span>
@@ -1242,7 +1295,7 @@
                 </div>
 
                 <!-- Lab Values -->
-                <div id="labValuesCard" class="card resource-card collapsible collapsed full-width" data-tags="labs cbc bmp abg coagulation cardiac reference" data-category="clinical">
+                <div id="labValuesCard" class="card resource-card collapsible collapsed full-width" data-tags="labs cbc bmp abg coagulation cardiac reference normal ranges" data-category="labs-vitals">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🔬 Lab Values Reference<span class="rc-subtitle">Normal ranges for CBC, CMP, ABG, coagulation, cardiac panels</span></h2></div>
                         <span class="rc-category-badge">Clinical</span>
@@ -1268,7 +1321,7 @@
                     </div>
 
                 <!-- ABG Tic-Tac-Toe Interpreter -->
-                <div id="section-abg-interpreter" class="card resource-card collapsible collapsed" data-tags="abg arterial blood gas interpretation respiratory tic-tac-toe acid base" data-category="calculator">
+                <div id="section-abg-interpreter" class="card resource-card collapsible collapsed" data-tags="abg arterial blood gas interpretation respiratory tic-tac-toe acid base" data-category="calculators">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🫁 ABG Tic-Tac-Toe Interpreter<span class="rc-subtitle">Enter pH, PaCO₂, HCO₃ for instant acid-base interpretation</span></h2></div>
                         <span class="rc-category-badge">Calculator</span>
@@ -1356,7 +1409,7 @@
                 </div>
 
                 <!-- Vital Signs -->
-                <div id="section-vital-signs" class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges" data-category="clinical">
+                <div id="section-vital-signs" class="card resource-card collapsible collapsed" data-tags="vitals assessment normal ranges adult bp hr rr temp" data-category="labs-vitals">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>❤️ Vital Signs Normal Ranges<span class="rc-subtitle">Adult BP, HR, RR, temp, SpO₂ with clinical notes</span></h2></div>
                         <span class="rc-category-badge">Clinical</span>
@@ -1384,7 +1437,7 @@
                 </div>
 
                 <!-- IV Calculations -->
-                <div id="section-iv-drip" class="card resource-card collapsible collapsed" data-tags="calculations iv drip math clinical" data-category="calculator">
+                <div id="section-iv-drip" class="card resource-card collapsible collapsed" data-tags="calculations iv drip math gtt rate" data-category="calculators">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>💉 IV Drip Rate Calculator<span class="rc-subtitle">Volume, time &amp; drop factor → gtts/min or mL/hr</span></h2></div>
                         <span class="rc-category-badge">Calculator</span>
@@ -1427,7 +1480,7 @@
                 </div>
 
                 <!-- Dosage Calculator -->
-                <div id="section-dosage-calculator" class="card resource-card collapsible collapsed" data-tags="calculations dosage math meds" data-category="calculator">
+                <div id="section-dosage-calculator" class="card resource-card collapsible collapsed" data-tags="calculations dosage math meds desired have" data-category="calculators">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>💊 Dosage Calculator<span class="rc-subtitle">D/H×Q and weight-based dosing formulas</span></h2></div>
                         <span class="rc-category-badge">Calculator</span>
@@ -1478,56 +1531,14 @@
                     </div>
                 </div>
 
-                <!-- Common Abbreviations -->
-                <div id="section-abbreviations" class="card resource-card collapsible collapsed" data-tags="study abbreviations documentation" data-category="study">
+                <!-- Pediatric Vital Signs (promoted from Clinical Toolkit) -->
+                <div id="section-peds-vitals" class="card resource-card collapsible collapsed" data-tags="pediatric vitals children infants newborn HR RR BP normal ranges" data-category="labs-vitals">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <div style="flex:1;min-width:0;"><h2>📝 Common Abbreviations<span class="rc-subtitle">AC, BID, PO, PRN, STAT, I&amp;O and 20+ more</span></h2></div>
-                        <span class="rc-category-badge">Study</span>
+                        <div style="flex:1;min-width:0;"><h2>👶 Pediatric Vital Signs<span class="rc-subtitle">Newborn through adolescent — HR, RR, BP normal ranges</span></h2></div>
+                        <span class="rc-category-badge">Labs &amp; Vitals</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
-                    <div class="abbrev-grid">
-                        <div class="abbrev-item"><strong>AC</strong> - Before meals</div>
-                        <div class="abbrev-item"><strong>PC</strong> - After meals</div>
-                        <div class="abbrev-item"><strong>BID</strong> - Twice daily</div>
-                        <div class="abbrev-item"><strong>TID</strong> - Three times daily</div>
-                        <div class="abbrev-item"><strong>QID</strong> - Four times daily</div>
-                        <div class="abbrev-item"><strong>PRN</strong> - As needed</div>
-                        <div class="abbrev-item"><strong>STAT</strong> - Immediately</div>
-                        <div class="abbrev-item"><strong>PO</strong> - By mouth</div>
-                        <div class="abbrev-item"><strong>IV</strong> - Intravenous</div>
-                        <div class="abbrev-item"><strong>IM</strong> - Intramuscular</div>
-                        <div class="abbrev-item"><strong>SQ/SubQ</strong> - Subcutaneous</div>
-                        <div class="abbrev-item"><strong>SL</strong> - Sublingual</div>
-                        <div class="abbrev-item"><strong>NPO</strong> - Nothing by mouth</div>
-                        <div class="abbrev-item"><strong>WDL</strong> - Within defined limits</div>
-                        <div class="abbrev-item"><strong>SOB</strong> - Shortness of breath</div>
-                        <div class="abbrev-item"><strong>ROM</strong> - Range of motion</div>
-                        <div class="abbrev-item"><strong>ADL</strong> - Activities of daily living</div>
-                        <div class="abbrev-item"><strong>I&O</strong> - Intake and output</div>
-                        <div class="abbrev-item"><strong>BRP</strong> - Bathroom privileges</div>
-                        <div class="abbrev-item"><strong>OOB</strong> - Out of bed</div>
-                        <div class="abbrev-item"><strong>HS</strong> - At bedtime</div>
-                        <div class="abbrev-item"><strong>QHS</strong> - Every bedtime</div>
-                        <div class="abbrev-item"><strong>GT</strong> - Gastrostomy tube</div>
-                        <div class="abbrev-item"><strong>NG</strong> - Nasogastric</div>
-                    </div>
-                    </div><!-- end card-content -->
-                </div>
-
-                <!-- Clinical Toolkit -->
-                <div id="section-clinical-toolkit" class="card resource-card collapsible collapsed full-width" data-tags="clinical toolkit vitals pain apgar sbar handoff" data-category="clinical">
-                    <div class="card-header" onclick="toggleResourceCard(this)">
-                        <div style="flex:1;min-width:0;"><h2>🩺 Clinical Toolkit<span class="rc-subtitle">APGAR, Glasgow, FLACC pain scale, SBAR template &amp; checklists</span></h2></div>
-                        <span class="rc-category-badge">Clinical</span>
-                        <span class="expand-icon">▼</span>
-                    </div>
-                    <div class="card-content">
-                    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Quick reference tools for clinical rotations</p>
-
-                    <!-- Pediatric Vital Signs -->
-                    <h3 class="collapsible" onclick="toggleCollapse(this)">👶 Pediatric Vital Signs</h3>
-                    <div class="collapse-content">
                         <table>
                             <tr><th>Age</th><th>HR (bpm)</th><th>RR (/min)</th><th>BP (mmHg)</th></tr>
                             <tr><td>Newborn</td><td>100-160</td><td>30-60</td><td>60-90/30-60</td></tr>
@@ -1538,16 +1549,22 @@
                             <tr><td>Adolescent (13+ yr)</td><td>60-100</td><td>12-20</td><td>110-135/65-85</td></tr>
                         </table>
                     </div>
+                </div>
 
-                    <!-- Pain Scales -->
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">😣 Pain Assessment Scales</h3>
-                    <div class="collapse-content hidden">
+                <!-- Pain Assessment Scales (promoted from Clinical Toolkit) -->
+                <div id="section-pain-scales" class="card resource-card collapsible collapsed" data-tags="pain scales NRS FLACC numeric rating wong-baker assessment" data-category="assessments">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>😣 Pain Assessment Scales<span class="rc-subtitle">NRS &amp; FLACC — verbal and non-verbal pain rating</span></h2></div>
+                        <span class="rc-category-badge">Assessments</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                         <div style="margin-bottom: 15px;">
                             <strong>Numeric Rating Scale (NRS)</strong>
                             <p style="font-size: 12px; margin-top: 5px;">0 = No pain | 1-3 = Mild | 4-6 = Moderate | 7-10 = Severe</p>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <strong>FLACC Scale (Non-verbal/Pediatric)</strong>
+                        <div>
+                            <strong>FLACC Scale (Non-verbal / Pediatric)</strong>
                             <table style="font-size: 11px;">
                                 <tr><th>Category</th><th>0</th><th>1</th><th>2</th></tr>
                                 <tr><td><strong>F</strong>ace</td><td>Relaxed</td><td>Occasional grimace</td><td>Frequent grimace</td></tr>
@@ -1556,13 +1573,19 @@
                                 <tr><td><strong>C</strong>ry</td><td>No cry</td><td>Moans, whimpers</td><td>Crying steadily</td></tr>
                                 <tr><td><strong>C</strong>onsolability</td><td>Content</td><td>Reassured by touch</td><td>Difficult to console</td></tr>
                             </table>
-                            <p style="font-size: 11px; color: #666; margin-top: 5px;">Score 0-10: 0 = No pain, 1-3 = Mild, 4-6 = Moderate, 7-10 = Severe</p>
+                            <p style="font-size: 11px; color: var(--clx-text-muted); margin-top: 5px;">Score 0-10: 0 = No pain, 1-3 = Mild, 4-6 = Moderate, 7-10 = Severe</p>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Glasgow Coma Scale -->
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🧠 Glasgow Coma Scale (GCS)</h3>
-                    <div class="collapse-content hidden">
+                <!-- Glasgow Coma Scale (promoted from Clinical Toolkit) -->
+                <div id="section-gcs" class="card resource-card collapsible collapsed" data-tags="GCS glasgow coma scale neuro neurological eye verbal motor LOC assessment" data-category="assessments">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>🧠 Glasgow Coma Scale (GCS)<span class="rc-subtitle">Eye / Verbal / Motor scoring with severity interpretation</span></h2></div>
+                        <span class="rc-category-badge">Assessments</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                         <table style="font-size: 12px;">
                             <tr><th>Response</th><th>Score</th><th>Description</th></tr>
                             <tr><td rowspan="4"><strong>Eye Opening</strong></td><td>4</td><td>Spontaneous</td></tr>
@@ -1583,86 +1606,97 @@
                         </table>
                         <p style="font-size: 11px; margin-top: 10px;"><strong>Interpretation:</strong> 15 = Normal | 13-14 = Mild | 9-12 = Moderate | 3-8 = Severe</p>
                     </div>
+                </div>
 
-                    <!-- APGAR Calculator -->
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">👶 APGAR Score Calculator</h3>
-                    <div class="collapse-content hidden">
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px;">
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600;">Appearance (Color)</label>
-                                <select id="apgar-appearance" onchange="calculateAPGAR()" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ddd;">
+                <!-- APGAR Score Calculator (promoted from Clinical Toolkit) -->
+                <div id="section-apgar" class="card resource-card collapsible collapsed" data-tags="APGAR newborn appearance pulse grimace activity respiration neonatal score" data-category="assessments">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>👶 APGAR Score Calculator<span class="rc-subtitle">Newborn assessment — Appearance, Pulse, Grimace, Activity, Respiration</span></h2></div>
+                        <span class="rc-category-badge">Assessments</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--clx-space-3); margin-bottom: var(--clx-space-3);">
+                            <div class="clx-field">
+                                <label class="clx-field-label">Appearance (Color)</label>
+                                <select id="apgar-appearance" onchange="calculateAPGAR()" class="clx-select clx-select-sm">
                                     <option value="0">Blue/Pale all over</option>
                                     <option value="1">Body pink, extremities blue</option>
                                     <option value="2">Completely pink</option>
                                 </select>
                             </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600;">Pulse (Heart Rate)</label>
-                                <select id="apgar-pulse" onchange="calculateAPGAR()" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ddd;">
+                            <div class="clx-field">
+                                <label class="clx-field-label">Pulse (Heart Rate)</label>
+                                <select id="apgar-pulse" onchange="calculateAPGAR()" class="clx-select clx-select-sm">
                                     <option value="0">Absent</option>
-                                    <option value="1">< 100 bpm</option>
-                                    <option value="2">> 100 bpm</option>
+                                    <option value="1">&lt; 100 bpm</option>
+                                    <option value="2">&gt; 100 bpm</option>
                                 </select>
                             </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600;">Grimace (Reflex)</label>
-                                <select id="apgar-grimace" onchange="calculateAPGAR()" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ddd;">
+                            <div class="clx-field">
+                                <label class="clx-field-label">Grimace (Reflex)</label>
+                                <select id="apgar-grimace" onchange="calculateAPGAR()" class="clx-select clx-select-sm">
                                     <option value="0">No response</option>
                                     <option value="1">Grimace</option>
                                     <option value="2">Cry, cough, sneeze</option>
                                 </select>
                             </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600;">Activity (Muscle Tone)</label>
-                                <select id="apgar-activity" onchange="calculateAPGAR()" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ddd;">
+                            <div class="clx-field">
+                                <label class="clx-field-label">Activity (Muscle Tone)</label>
+                                <select id="apgar-activity" onchange="calculateAPGAR()" class="clx-select clx-select-sm">
                                     <option value="0">Limp</option>
                                     <option value="1">Some flexion</option>
                                     <option value="2">Active movement</option>
                                 </select>
                             </div>
-                            <div>
-                                <label style="font-size: 12px; font-weight: 600;">Respiration</label>
-                                <select id="apgar-respiration" onchange="calculateAPGAR()" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ddd;">
+                            <div class="clx-field">
+                                <label class="clx-field-label">Respiration</label>
+                                <select id="apgar-respiration" onchange="calculateAPGAR()" class="clx-select clx-select-sm">
                                     <option value="0">Absent</option>
                                     <option value="1">Slow, irregular</option>
                                     <option value="2">Good, crying</option>
                                 </select>
                             </div>
                         </div>
-                        <div id="apgar-result" class="calc-result" style="display: block; background: #e8f4fc; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                        <div id="apgar-result" class="calc-result" style="display: block; background: var(--clx-accent-subtle); padding: var(--clx-space-3); border-radius: var(--clx-radius-sm); margin-top: var(--clx-space-2);">
                             <strong>APGAR Score:</strong> <span id="apgar-score">0</span>/10
                             <span id="apgar-interpretation" style="margin-left: 10px; font-size: 12px;"></span>
                         </div>
                     </div>
+                </div>
 
-                    <!-- SBAR Template -->
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">📋 SBAR Communication Template</h3>
-                    <div class="collapse-content hidden">
-                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; font-size: 12px;">
+                <!-- SBAR Communication Template (promoted from Clinical Toolkit) -->
+                <div id="section-sbar-template" class="card resource-card collapsible collapsed" data-tags="SBAR communication handoff situation background assessment recommendation report" data-category="conditions-dx">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>📋 SBAR Communication Template<span class="rc-subtitle">Quick-reference script for calling providers and bedside report</span></h2></div>
+                        <span class="rc-category-badge">Communication</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 12px; color: var(--clx-text-muted); margin-bottom: var(--clx-space-3);">For a guided builder with autosave + export, use the <a href="/sbar/" style="color: var(--clx-accent);">SBAR Generator</a>.</p>
+                        <div style="background: var(--clx-bg-surface-2); padding: var(--clx-space-3); border-radius: var(--clx-radius-sm); font-size: 12px;">
                             <div style="margin-bottom: 12px;">
-                                <strong style="color: #1f4e79;">S - Situation</strong>
+                                <strong style="color: var(--clx-accent);">S - Situation</strong>
                                 <p style="margin-top: 4px;">"I am calling about [patient name] in [room/unit]. The problem I am calling about is..."</p>
                             </div>
                             <div style="margin-bottom: 12px;">
-                                <strong style="color: #1f4e79;">B - Background</strong>
+                                <strong style="color: var(--clx-accent);">B - Background</strong>
                                 <p style="margin-top: 4px;">"The patient's diagnosis is... They were admitted on [date] for... Relevant history includes..."</p>
                             </div>
                             <div style="margin-bottom: 12px;">
-                                <strong style="color: #1f4e79;">A - Assessment</strong>
+                                <strong style="color: var(--clx-accent);">A - Assessment</strong>
                                 <p style="margin-top: 4px;">"My assessment is that... Vital signs are... Changes from baseline include..."</p>
                             </div>
                             <div>
-                                <strong style="color: #1f4e79;">R - Recommendation</strong>
+                                <strong style="color: var(--clx-accent);">R - Recommendation</strong>
                                 <p style="margin-top: 4px;">"I recommend... Would you like me to... Is there anything else you need?"</p>
                             </div>
                         </div>
                     </div>
-
-                    </div><!-- end card-content -->
                 </div>
 
                 <!-- NANDA Diagnoses Quick Reference -->
-                <div id="section-nanda" class="card resource-card collapsible collapsed" data-tags="nanda diagnoses study care plan" data-category="study">
+                <div id="section-nanda" class="card resource-card collapsible collapsed" data-tags="nanda diagnoses care plan nursing dx" data-category="conditions-dx">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>🩺 NANDA Nursing Diagnoses</h2>
                         <span class="expand-icon">▼</span>
@@ -1706,16 +1740,14 @@
                 </div>
 
                 <!-- Procedure Checklists -->
-                <div id="section-procedures" class="card resource-card collapsible collapsed" data-tags="checklists clinical skills procedures">
+                <!-- Foley Catheter Insertion (promoted from Procedure Checklists) -->
+                <div id="section-foley" class="card resource-card collapsible collapsed" data-tags="foley catheter insertion sterile urinary procedure checklist" data-category="procedures">
                     <div class="card-header" onclick="toggleResourceCard(this)">
-                        <h2>📋 Procedure Checklists</h2>
+                        <div style="flex:1;min-width:0;"><h2>🩺 Foley Catheter Insertion<span class="rc-subtitle">Sterile insertion checklist — 16 steps</span></h2></div>
+                        <span class="rc-category-badge">Procedure</span>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
-                    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Interactive checklists for common nursing procedures</p>
-
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🩺 Foley Catheter Insertion</h3>
-                    <div class="collapse-content hidden">
                         <div class="checklist" id="foley-checklist">
                             <label class="checklist-item"><input type="checkbox"> Verify order and check for allergies (latex, iodine)</label>
                             <label class="checklist-item"><input type="checkbox"> Gather supplies: catheter kit, extra gloves, lighting</label>
@@ -1734,11 +1766,18 @@
                             <label class="checklist-item"><input type="checkbox"> Position bag below bladder level</label>
                             <label class="checklist-item"><input type="checkbox"> Document: catheter size, balloon volume, urine output, patient tolerance</label>
                         </div>
-                        <button onclick="clearChecklist('foley-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                        <button onclick="clearChecklist('foley-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
+                </div>
 
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">💉 IV Insertion</h3>
-                    <div class="collapse-content hidden">
+                <!-- IV Insertion (promoted from Procedure Checklists) -->
+                <div id="section-iv-insertion" class="card resource-card collapsible collapsed" data-tags="IV insertion peripheral catheter venipuncture procedure checklist" data-category="procedures">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>💉 IV Insertion<span class="rc-subtitle">Peripheral IV start checklist — 18 steps</span></h2></div>
+                        <span class="rc-category-badge">Procedure</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                         <div class="checklist" id="iv-checklist">
                             <label class="checklist-item"><input type="checkbox"> Verify order, check patient ID, assess for allergies</label>
                             <label class="checklist-item"><input type="checkbox"> Gather supplies: IV catheter, tegaderm, extension set, flush, tourniquet</label>
@@ -1759,11 +1798,18 @@
                             <label class="checklist-item"><input type="checkbox"> Label dressing with date, time, initials, gauge</label>
                             <label class="checklist-item"><input type="checkbox"> Document: site, catheter gauge, number of attempts, patient tolerance</label>
                         </div>
-                        <button onclick="clearChecklist('iv-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                        <button onclick="clearChecklist('iv-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
+                </div>
 
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🩹 Wound Care/Dressing Change</h3>
-                    <div class="collapse-content hidden">
+                <!-- Wound Care / Dressing Change (promoted from Procedure Checklists) -->
+                <div id="section-wound-care" class="card resource-card collapsible collapsed" data-tags="wound care dressing change sterile assessment procedure checklist" data-category="procedures">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>🩹 Wound Care / Dressing Change<span class="rc-subtitle">Assessment + sterile dressing change — 13 steps</span></h2></div>
+                        <span class="rc-category-badge">Procedure</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                         <div class="checklist" id="wound-checklist">
                             <label class="checklist-item"><input type="checkbox"> Review order and wound care instructions</label>
                             <label class="checklist-item"><input type="checkbox"> Gather supplies based on wound type</label>
@@ -1779,11 +1825,18 @@
                             <label class="checklist-item"><input type="checkbox"> Label dressing with date, time, initials</label>
                             <label class="checklist-item"><input type="checkbox"> Document: wound assessment, treatment, patient response</label>
                         </div>
-                        <button onclick="clearChecklist('wound-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                        <button onclick="clearChecklist('wound-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
+                </div>
 
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">💊 Medication Administration (5 Rights)</h3>
-                    <div class="collapse-content hidden">
+                <!-- Medication Administration / 5 Rights (promoted from Procedure Checklists) -->
+                <div id="section-five-rights" class="card resource-card collapsible collapsed" data-tags="5 rights medication administration safety check med pass nursing" data-category="procedures">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>💊 Medication Administration (5 Rights)<span class="rc-subtitle">Patient · Drug · Dose · Route · Time — plus 7 safety steps</span></h2></div>
+                        <span class="rc-category-badge">Procedure</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                         <div class="checklist" id="med-checklist">
                             <label class="checklist-item"><input type="checkbox"> <strong>Right Patient</strong> - Check 2 identifiers (name, DOB, MRN)</label>
                             <label class="checklist-item"><input type="checkbox"> <strong>Right Drug</strong> - Verify medication matches order</label>
@@ -1798,11 +1851,18 @@
                             <label class="checklist-item"><input type="checkbox"> Stay with patient for PO meds to ensure swallowed</label>
                             <label class="checklist-item"><input type="checkbox"> Document immediately after administration</label>
                         </div>
-                        <button onclick="clearChecklist('med-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
+                        <button onclick="clearChecklist('med-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
+                </div>
 
-                    <h3 class="collapsible collapsed" onclick="toggleCollapse(this)">🫁 Tracheostomy Care</h3>
-                    <div class="collapse-content hidden">
+                <!-- Tracheostomy Care (promoted from Procedure Checklists) -->
+                <div id="section-trach-care" class="card resource-card collapsible collapsed" data-tags="tracheostomy trach care suction inner cannula stoma procedure checklist" data-category="procedures">
+                    <div class="card-header" onclick="toggleResourceCard(this)">
+                        <div style="flex:1;min-width:0;"><h2>🫁 Tracheostomy Care<span class="rc-subtitle">Inner cannula clean + stoma care + tie change — 13 steps</span></h2></div>
+                        <span class="rc-category-badge">Procedure</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="card-content">
                         <div class="checklist" id="trach-checklist">
                             <label class="checklist-item"><input type="checkbox"> Verify order, gather supplies, explain to patient</label>
                             <label class="checklist-item"><input type="checkbox"> Position patient (semi-Fowler's)</label>
@@ -1818,8 +1878,7 @@
                             <label class="checklist-item"><input type="checkbox"> Ensure ties allow 1-2 finger breadth</label>
                             <label class="checklist-item"><input type="checkbox"> Document: stoma condition, secretions, patient tolerance</label>
                         </div>
-                        <button onclick="clearChecklist('trach-checklist')" style="margin-top: 10px; padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Reset Checklist</button>
-                    </div>
+                        <button onclick="clearChecklist('trach-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
                 </div>
 
@@ -1827,7 +1886,7 @@
                 <!-- ======================================================
                      PHARMACOLOGY QUICK CARDS
                 ====================================================== -->
-                <div id="section-pharm-cards" class="card resource-card collapsible collapsed full-width" data-tags="pharmacology drugs medication nursing considerations side effects" data-category="drug">
+                <div id="section-pharm-cards" class="card resource-card collapsible collapsed full-width" data-tags="pharmacology drugs medication nursing considerations side effects classes" data-category="drug-pharm">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>💊 Pharmacology Quick Cards<span class="rc-subtitle">27 drug classes — mechanisms, side effects, nursing considerations</span></h2></div>
                         <span class="rc-category-badge">Drug Ref</span>
@@ -1844,7 +1903,7 @@
                 <!-- ======================================================
                      DISEASE / CONDITION FAST CARDS
                 ====================================================== -->
-                <div id="section-disease-cards" class="card resource-card collapsible collapsed full-width" data-tags="disease condition pathophysiology assessment nursing priority CHF MI stroke sepsis" data-category="condition">
+                <div id="section-disease-cards" class="card resource-card collapsible collapsed full-width" data-tags="disease condition pathophysiology assessment nursing priority CHF MI stroke sepsis diagnosis" data-category="conditions-dx">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🏥 Disease / Condition Fast Cards<span class="rc-subtitle">40+ conditions — patho, S&amp;S, nursing priorities, meds</span></h2></div>
                         <span class="rc-category-badge">Conditions</span>
@@ -1876,7 +1935,7 @@
                 <!-- ======================================================
                      MNEMONICS & FRAMEWORKS
                 ====================================================== -->
-                <div id="section-mnemonics" class="card resource-card collapsible collapsed full-width" data-tags="mnemonics frameworks SBAR OLDCARTS SOAP PIE assessment priority" data-category="study">
+                <div id="section-mnemonics" class="card resource-card collapsible collapsed full-width" data-tags="mnemonics frameworks OLDCARTS SOAP PIE assessment priority pharmacology" data-category="drug-pharm">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🧠 Mnemonics &amp; Frameworks<span class="rc-subtitle">OLDCARTS, SBAR, 6 Rights, ROME, MUDPILES &amp; more</span></h2></div>
                         <span class="rc-category-badge">Study</span>
@@ -1892,7 +1951,7 @@
                 <!-- ======================================================
                      PRE / PERI / POST PROCEDURE GUIDE
                 ====================================================== -->
-                <div id="section-procedure-guide" class="card resource-card collapsible collapsed full-width" data-tags="procedure nursing care before during after foley IV catheter dressing" data-category="clinical">
+                <div id="section-procedure-guide" class="card resource-card collapsible collapsed full-width" data-tags="procedure nursing care before during after foley IV catheter dressing peri pre post" data-category="procedures">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>🔬 Pre/Peri/Post Procedure Guide<span class="rc-subtitle">Nursing actions before, during &amp; after 20+ procedures</span></h2></div>
                         <span class="rc-category-badge">Clinical</span>
@@ -1908,7 +1967,7 @@
                 <!-- ======================================================
                      ECG / RHYTHM QUICK REFERENCE
                 ====================================================== -->
-                <div id="section-ecg-rhythms" class="card resource-card collapsible collapsed full-width" data-tags="ECG EKG rhythm cardiac telemetry afib vtach vfib heart block" data-category="clinical">
+                <div id="section-ecg-rhythms" class="card resource-card collapsible collapsed full-width" data-tags="ECG EKG rhythm cardiac telemetry afib vtach vfib heart block assessment" data-category="assessments">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <div style="flex:1;min-width:0;"><h2>❤️ ECG / Rhythm Quick Reference<span class="rc-subtitle">20 rhythms with waveforms, criteria &amp; nursing response</span></h2></div>
                         <span class="rc-category-badge">Clinical</span>
@@ -1962,7 +2021,7 @@
                 <!-- ======================================================
                      LAB VALUE TREND TRACKER
                 ====================================================== -->
-                <div id="section-lab-trend" class="card resource-card collapsible collapsed" data-tags="labs laboratory trend tracker values electrolytes CBC BMP">
+                <div id="section-lab-trend" class="card resource-card collapsible collapsed" data-tags="labs laboratory trend tracker values electrolytes CBC BMP" data-category="labs-vitals">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>📈 Lab Value Trend Tracker</h2>
                         <span class="expand-icon">▼</span>
@@ -2049,6 +2108,40 @@
                         <li><a href="https://www.jointcommission.org/resources/patient-safety-topics/patient-safety/" target="_blank">⚕️ Joint Commission Patient Safety</a></li>
                         <li><a href="https://www.ahrq.gov/patient-safety/index.html" target="_blank">🛡️ AHRQ Patient Safety</a></li>
                     </ul>
+                    </div>
+                </div>
+
+                <!-- Abbreviations Glossary (footer strip — always visible, not filtered) -->
+                <div id="section-abbreviations" class="abbrev-glossary full-width">
+                    <div class="abbrev-glossary-header">
+                        <strong>📝 Common Abbreviations</strong>
+                        <span class="abbrev-glossary-subtitle">Quick-reference glossary</span>
+                    </div>
+                    <div class="abbrev-grid">
+                        <div class="abbrev-item"><strong>AC</strong> Before meals</div>
+                        <div class="abbrev-item"><strong>PC</strong> After meals</div>
+                        <div class="abbrev-item"><strong>BID</strong> Twice daily</div>
+                        <div class="abbrev-item"><strong>TID</strong> Three times daily</div>
+                        <div class="abbrev-item"><strong>QID</strong> Four times daily</div>
+                        <div class="abbrev-item"><strong>PRN</strong> As needed</div>
+                        <div class="abbrev-item"><strong>STAT</strong> Immediately</div>
+                        <div class="abbrev-item"><strong>PO</strong> By mouth</div>
+                        <div class="abbrev-item"><strong>IV</strong> Intravenous</div>
+                        <div class="abbrev-item"><strong>IM</strong> Intramuscular</div>
+                        <div class="abbrev-item"><strong>SQ/SubQ</strong> Subcutaneous</div>
+                        <div class="abbrev-item"><strong>SL</strong> Sublingual</div>
+                        <div class="abbrev-item"><strong>NPO</strong> Nothing by mouth</div>
+                        <div class="abbrev-item"><strong>WDL</strong> Within defined limits</div>
+                        <div class="abbrev-item"><strong>SOB</strong> Shortness of breath</div>
+                        <div class="abbrev-item"><strong>ROM</strong> Range of motion</div>
+                        <div class="abbrev-item"><strong>ADL</strong> Activities of daily living</div>
+                        <div class="abbrev-item"><strong>I&amp;O</strong> Intake and output</div>
+                        <div class="abbrev-item"><strong>BRP</strong> Bathroom privileges</div>
+                        <div class="abbrev-item"><strong>OOB</strong> Out of bed</div>
+                        <div class="abbrev-item"><strong>HS</strong> At bedtime</div>
+                        <div class="abbrev-item"><strong>QHS</strong> Every bedtime</div>
+                        <div class="abbrev-item"><strong>GT</strong> Gastrostomy tube</div>
+                        <div class="abbrev-item"><strong>NG</strong> Nasogastric</div>
                     </div>
                 </div>
 
@@ -2628,6 +2721,20 @@
                 if (show) visible += 1;
             });
             updateResourceCount(visible, cards.length);
+        }
+
+        // Populate count badges on category chips (one-time on load)
+        function populateChipCounts() {
+            const cards = Array.from(document.querySelectorAll('.resource-card'));
+            const counts = { all: cards.length };
+            cards.forEach(card => {
+                const cat = (card.dataset.category || '').toLowerCase();
+                if (cat) counts[cat] = (counts[cat] || 0) + 1;
+            });
+            document.querySelectorAll('.chip-count[data-count-for]').forEach(el => {
+                const key = el.dataset.countFor;
+                el.textContent = counts[key] != null ? counts[key] : '';
+            });
         }
 
         function setResourceFilter(tag, button) {
@@ -3692,6 +3799,7 @@ Generated: ${new Date().toLocaleString()}`;
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadShiftPlan();
+            populateChipCounts();
             filterResources();
             restoreTimerState();
             startSessionHeartbeat();

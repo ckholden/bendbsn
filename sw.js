@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v190';
+const CACHE_VERSION = 'v191';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
