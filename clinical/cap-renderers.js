@@ -850,12 +850,299 @@
         bindFields(rootEl, state, onChange);
     };
 
-    // ---------- Placeholders for not-yet-implemented modules ----------
-    R.caseStudy     = placeholder('Case Study');
-    R.headToToe     = placeholder('Head-to-Toe Assessment');
-    R.conceptMap    = placeholder('Concept Map');
-    R.references    = placeholder('APA References');
-    R.hendrich      = placeholder('Hendrich II Fall Model');
+    // ---------- HEAD-TO-TOE ASSESSMENT ----------
+    const H2T_SYSTEMS = [
+        { key:'neuro',      label:'Neurological',      hint:'LOC, orientation, pupils (PERRLA), EOM, cranial nerves, MAE, GCS, sensation/motor.' },
+        { key:'heent',      label:'HEENT',              hint:'Hair/scalp, eyes, ears, nose/smell, mouth/oral mucosa, dentition.' },
+        { key:'cardio',     label:'Cardiovascular',     hint:'Heart sounds (S1/S2 RRR), apical pulse, peripheral pulses (radial/DP/PT), edema, cap refill.' },
+        { key:'resp',       label:'Respiratory',        hint:'Breath sounds (CTA bilat), effort, O2/SpO₂, cough/sputum, chest expansion.' },
+        { key:'gi',         label:'Gastrointestinal',   hint:'Bowel sounds (BS x4 quads), abdomen (soft / NT / ND), last BM, diet/intake, N/V.' },
+        { key:'gu',         label:'Genitourinary',      hint:'Voiding pattern, Foley if applicable, urine color/clarity, output.' },
+        { key:'msk',        label:'Musculoskeletal',    hint:'ROM (active/passive), gait, grip strength, balance, fall risk, ambulation.' },
+        { key:'skin',       label:'Skin / Integumentary', hint:'Color, warmth, turgor, intact / wounds / pressure injuries, IV sites, Braden score reference.' },
+        { key:'psych',      label:'Psychosocial',       hint:'Mood, affect, behavior, support system, cognition (ref Mini-Cog), safety concerns.' }
+    ];
+    R.headToToe = function (rootEl, state, onChange) {
+        const sysHtml = H2T_SYSTEMS.map(function (s) {
+            return '<div class="cap-h2t-row">' +
+                '<label class="cap-label">' + esc(s.label) + '</label>' +
+                '<p class="cap-fineprint" style="margin:-2px 0 4px;">' + esc(s.hint) + '</p>' +
+                '<textarea data-cap-field="' + s.key + '" rows="3" class="cap-tf"></textarea>' +
+            '</div>';
+        }).join('');
+        rootEl.innerHTML = panelHint(
+            'Head-to-Toe Assessment',
+            'Comprehensive systems assessment. One textarea per system — paste your assessment findings (normal + abnormal).',
+            sysHtml
+        );
+        bindFields(rootEl, state, onChange);
+    };
+
+    // ---------- HENDRICH II FALL MODEL ----------
+    const HENDRICH_FACTORS = [
+        { id:'confusion',      label:'Confusion / Disorientation / Impulsivity', pts:4 },
+        { id:'depression',     label:'Symptomatic Depression',                   pts:2 },
+        { id:'elimination',    label:'Altered Elimination',                      pts:1 },
+        { id:'dizziness',      label:'Dizziness / Vertigo',                      pts:1 },
+        { id:'male',           label:'Male Gender',                              pts:1 },
+        { id:'antiepileptics', label:'Any Administered Antiepileptics',          pts:2 },
+        { id:'benzos',         label:'Any Administered Benzodiazepines',         pts:1 }
+    ];
+    const GET_UP_GO_OPTS = [
+        { val:0, label:'Able to rise in a single movement — no loss of balance with steps' },
+        { val:1, label:'Pushes up, successful in one attempt' },
+        { val:3, label:'Multiple attempts, but successful' },
+        { val:4, label:'Unable to rise without assistance during test' }
+    ];
+    R.hendrich = function (rootEl, state, onChange) {
+        if (!state.factors) state.factors = {};
+        if (state.getUpGo == null) state.getUpGo = '';
+        function render() {
+            let total = 0;
+            const factorsHtml = HENDRICH_FACTORS.map(function (f) {
+                const isOn = !!state.factors[f.id];
+                if (isOn) total += f.pts;
+                return '<label class="cap-hendrich-row' + (isOn ? ' selected' : '') + '">' +
+                    '<input type="checkbox" data-hendrich="' + f.id + '"' + (isOn ? ' checked' : '') + '>' +
+                    '<span class="cap-hendrich-label">' + esc(f.label) + '</span>' +
+                    '<span class="cap-hendrich-pts">+' + f.pts + '</span>' +
+                '</label>';
+            }).join('');
+            const ugVal = parseInt(state.getUpGo, 10);
+            if (!isNaN(ugVal)) total += ugVal;
+            const ugHtml = GET_UP_GO_OPTS.map(function (o) {
+                const isOn = state.getUpGo == String(o.val);
+                return '<label class="cap-morse-opt' + (isOn ? ' selected' : '') + '">' +
+                    '<input type="radio" name="cap-hendrich-ug" value="' + o.val + '" data-ug' + (isOn ? ' checked' : '') + '>' +
+                    '<span>' + esc(o.label) + '</span>' +
+                    '<span class="cap-morse-pts">+' + o.val + '</span>' +
+                '</label>';
+            }).join('');
+            const risk = total >= 5 ? { label: 'High Risk for Falling (≥5)', cls: 'high' } : { label: 'Lower Risk (<5)', cls: 'low' };
+            rootEl.innerHTML = panelHint(
+                'Hendrich II Fall Risk Model',
+                'Check applicable risk factors and pick a Get-Up-and-Go score. Total ≥5 = High Risk for falling.',
+                '<div class="cap-hendrich-list">' + factorsHtml + '</div>' +
+                '<h4 style="margin:14px 0 6px;font-size:13px;color:var(--clx-text-primary);">Get-Up-and-Go Test</h4>' +
+                '<div class="cap-morse-opts">' + ugHtml + '</div>' +
+                scoreBlock(total, 'Total Hendrich II Score', risk.label, risk.cls) +
+                '<p class="cap-fineprint">Score interpretation: 0–4 lower risk · ≥5 high risk for falling.</p>'
+            );
+            rootEl.querySelectorAll('input[type="checkbox"][data-hendrich]').forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    state.factors[cb.dataset.hendrich] = cb.checked;
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            rootEl.querySelectorAll('input[type="radio"][data-ug]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    state.getUpGo = r.value;
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+        }
+        render();
+    };
+
+    // ---------- APA REFERENCES ----------
+    R.references = function (rootEl, state, onChange) {
+        if (!Array.isArray(state.refs)) state.refs = [''];
+        function render() {
+            const rowsHtml = state.refs.map(function (r, i) {
+                return '<div class="cap-ref-row">' +
+                    '<span class="cap-ref-num">' + (i + 1) + '.</span>' +
+                    '<textarea data-ref="' + i + '" rows="3" class="cap-tf" placeholder="Author, A. A. (Year). Title of work. Journal Name, Volume(Issue), pages. https://doi.org/...">' + esc(r) + '</textarea>' +
+                    '<button class="cap-row-del" data-del="' + i + '" title="Delete reference">&times;</button>' +
+                '</div>';
+            }).join('');
+            rootEl.innerHTML = panelHint(
+                'APA References',
+                'Hanging-indent format. Minimum 2 references published within the last 5 years (typical NUR requirement). For URL-based citations, use the <a href="/apa/" target="_blank" style="color:var(--clx-accent);">APA Generator</a> tool to autobuild and paste here.',
+                rowsHtml +
+                '<button class="cap-add-row" id="cap-ref-add">+ Add reference</button>'
+            );
+            rootEl.querySelectorAll('textarea[data-ref]').forEach(function (ta) {
+                ta.addEventListener('input', function () {
+                    const i = parseInt(ta.dataset.ref, 10);
+                    state.refs[i] = ta.value;
+                    if (typeof onChange === 'function') onChange();
+                });
+            });
+            rootEl.querySelectorAll('[data-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const i = parseInt(btn.dataset.del, 10);
+                    state.refs.splice(i, 1);
+                    if (!state.refs.length) state.refs.push('');
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            const addBtn = rootEl.querySelector('#cap-ref-add');
+            if (addBtn) addBtn.addEventListener('click', function () {
+                state.refs.push('');
+                if (typeof onChange === 'function') onChange();
+                render();
+            });
+        }
+        render();
+    };
+
+    // ---------- CONCEPT MAP ----------
+    R.conceptMap = function (rootEl, state, onChange) {
+        if (!Array.isArray(state.problems)) state.problems = [emptyProblem()];
+        function emptyProblem() {
+            return { name:'', data:'', dx:'', goals:'', interventions:'', evaluation:'' };
+        }
+        function render() {
+            const problemsHtml = state.problems.map(function (p, i) {
+                return '<div class="cap-cm-problem">' +
+                    '<div class="cap-cm-head">' +
+                        '<input type="text" data-cm="' + i + '" data-col="name" value="' + esc(p.name) + '" placeholder="Problem name (e.g., Impaired Skin Integrity)" class="cap-tf cap-cm-name">' +
+                        '<button class="cap-row-del" data-del="' + i + '" title="Remove problem">&times;</button>' +
+                    '</div>' +
+                    '<div class="cap-cm-grid">' +
+                        '<div class="cap-field"><label class="cap-label">Supporting Data (assessment cues)</label><textarea data-cm="' + i + '" data-col="data" rows="2" class="cap-tf">' + esc(p.data) + '</textarea></div>' +
+                        '<div class="cap-field"><label class="cap-label">NANDA Diagnosis</label><textarea data-cm="' + i + '" data-col="dx" rows="2" class="cap-tf">' + esc(p.dx) + '</textarea></div>' +
+                        '<div class="cap-field"><label class="cap-label">Goals / Outcomes</label><textarea data-cm="' + i + '" data-col="goals" rows="2" class="cap-tf">' + esc(p.goals) + '</textarea></div>' +
+                        '<div class="cap-field"><label class="cap-label">Interventions &amp; Rationales</label><textarea data-cm="' + i + '" data-col="interventions" rows="2" class="cap-tf">' + esc(p.interventions) + '</textarea></div>' +
+                        '<div class="cap-field"><label class="cap-label">Evaluation Criteria</label><textarea data-cm="' + i + '" data-col="evaluation" rows="2" class="cap-tf">' + esc(p.evaluation) + '</textarea></div>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            rootEl.innerHTML = panelHint(
+                'Concept Map',
+                'Place the resident at the center; map their key problems. For each: supporting data → NANDA dx → goals → interventions + rationales → evaluation criteria. (For a hand-drawn map, use PPT/Canva/Word and submit alongside the packet.)',
+                '<div class="cap-cm-center">' +
+                    '<label class="cap-label">Resident summary (center node)</label>' +
+                    '<textarea data-cap-field="center" rows="2" class="cap-tf" placeholder="e.g., 78 y/o male, post-CVA with L-sided hemiplegia, T2DM, Stage II sacral pressure injury. Resides in LTC."></textarea>' +
+                '</div>' +
+                problemsHtml +
+                '<button class="cap-add-row" id="cap-cm-add">+ Add problem</button>'
+            );
+            // bind center
+            const center = rootEl.querySelector('[data-cap-field="center"]');
+            if (center) {
+                center.value = state.center || '';
+                center.addEventListener('input', function () {
+                    state.center = center.value;
+                    if (typeof onChange === 'function') onChange();
+                });
+            }
+            // problem rows
+            rootEl.querySelectorAll('[data-cm]').forEach(function (el) {
+                const i = parseInt(el.dataset.cm, 10);
+                const col = el.dataset.col;
+                el.addEventListener('input', function () {
+                    if (!state.problems[i]) return;
+                    state.problems[i][col] = el.value;
+                    if (typeof onChange === 'function') onChange();
+                });
+            });
+            rootEl.querySelectorAll('[data-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const i = parseInt(btn.dataset.del, 10);
+                    state.problems.splice(i, 1);
+                    if (!state.problems.length) state.problems.push(emptyProblem());
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            const addBtn = rootEl.querySelector('#cap-cm-add');
+            if (addBtn) addBtn.addEventListener('click', function () {
+                state.problems.push(emptyProblem());
+                if (typeof onChange === 'function') onChange();
+                render();
+            });
+        }
+        render();
+    };
+
+    // ---------- CASE STUDY (8-section academic format) ----------
+    R.caseStudy = function (rootEl, state, onChange) {
+        rootEl.innerHTML = panelHint(
+            'Case Study (Patient Care Assignment)',
+            'Academic case-study assignment. Some sections may be longer than what fits on screen — sections are collapsible.',
+            // 1
+            '<details class="cap-cs-section" open>' +
+                '<summary><span class="cap-cs-num">1</span>Assessment</summary>' +
+                '<div class="cap-cs-body">' +
+                    field('Subjective Data', 'subjective', { rows: 4 }) +
+                    field('Objective Data',  'objective',  { rows: 4 }) +
+                '</div>' +
+            '</details>' +
+            // 2
+            '<details class="cap-cs-section" open>' +
+                '<summary><span class="cap-cs-num">2</span>Nursing Diagnoses</summary>' +
+                '<div class="cap-cs-body">' +
+                    '<p class="cap-hint">Three priority diagnoses, one from each category (NANDA-I format).</p>' +
+                    field('Skin Integrity', 'dx_skin', { rows: 2 }) +
+                    field('Mobility',       'dx_mobility', { rows: 2 }) +
+                    field('Psychosocial / Emotional Health', 'dx_psych', { rows: 2 }) +
+                '</div>' +
+            '</details>' +
+            // 3
+            '<details class="cap-cs-section">' +
+                '<summary><span class="cap-cs-num">3</span>Planning (Goals / Outcomes)</summary>' +
+                '<div class="cap-cs-body">' +
+                    '<p class="cap-hint">Short-term and long-term goals for each diagnosis.</p>' +
+                    field('Skin — short-term',   'plan_skin_st', { rows: 2 }) +
+                    field('Skin — long-term',    'plan_skin_lt', { rows: 2 }) +
+                    field('Mobility — short-term', 'plan_mobility_st', { rows: 2 }) +
+                    field('Mobility — long-term',  'plan_mobility_lt', { rows: 2 }) +
+                    field('Psychosocial — short-term', 'plan_psych_st', { rows: 2 }) +
+                    field('Psychosocial — long-term',  'plan_psych_lt', { rows: 2 }) +
+                '</div>' +
+            '</details>' +
+            // 4
+            '<details class="cap-cs-section">' +
+                '<summary><span class="cap-cs-num">4</span>Nursing Interventions and Rationales</summary>' +
+                '<div class="cap-cs-body">' +
+                    '<p class="cap-hint">At least 3 evidence-based interventions per diagnosis; include rationale and expected outcome.</p>' +
+                    field('Skin Integrity — interventions, rationales, outcomes', 'iv_skin', { rows: 5 }) +
+                    field('Mobility — interventions, rationales, outcomes',       'iv_mobility', { rows: 5 }) +
+                    field('Psychosocial — interventions, rationales, outcomes',   'iv_psych', { rows: 5 }) +
+                '</div>' +
+            '</details>' +
+            // 5
+            '<details class="cap-cs-section">' +
+                '<summary><span class="cap-cs-num">5</span>Evaluation</summary>' +
+                '<div class="cap-cs-body">' +
+                    '<p class="cap-hint">How would you evaluate the effectiveness of your interventions? What data would indicate improvement? What might require modification of the care plan?</p>' +
+                    field('Evaluation plan', 'evaluation', { rows: 4 }) +
+                '</div>' +
+            '</details>' +
+            // 6
+            '<details class="cap-cs-section">' +
+                '<summary><span class="cap-cs-num">6</span>Interdisciplinary Collaboration</summary>' +
+                '<div class="cap-cs-body">' +
+                    '<p class="cap-hint">Members of the healthcare team to involve and their roles (PT/OT, RD, SW, WOCN, MH, etc.).</p>' +
+                    field('Team members + roles', 'collaboration', { rows: 3 }) +
+                '</div>' +
+            '</details>' +
+            // 7
+            '<details class="cap-cs-section">' +
+                '<summary><span class="cap-cs-num">7</span>Patient and Family Education</summary>' +
+                '<div class="cap-cs-body">' +
+                    '<p class="cap-hint">Teaching points for the resident and family.</p>' +
+                    field('Pressure injury prevention / repositioning', 'edu_skin', { rows: 2 }) +
+                    field('Nutrition and hydration', 'edu_nutrition', { rows: 2 }) +
+                    field('Emotional health and social engagement', 'edu_psych', { rows: 2 }) +
+                    field('Medication management / chronic disease control', 'edu_meds', { rows: 2 }) +
+                '</div>' +
+            '</details>' +
+            // 8
+            '<details class="cap-cs-section">' +
+                '<summary><span class="cap-cs-num">8</span>Reflection</summary>' +
+                '<div class="cap-cs-body">' +
+                    '<p class="cap-hint">Reflect on the experience: what you learned, how psychosocial factors affect recovery, how to promote dignity, what risk factors are present, and how the team should collaborate.</p>' +
+                    field('Reflection', 'reflection', { rows: 6 }) +
+                '</div>' +
+            '</details>'
+        );
+        bindFields(rootEl, state, onChange);
+    };
 
     window.CAP_RENDERERS = R;
 })();
