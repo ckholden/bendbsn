@@ -218,6 +218,210 @@
             color: var(--clx-text-muted, #718096);
         }
 
+        /* ────────── Renderer-shared UI ────────── */
+        .cap-panel {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .cap-panel-head {
+            padding: 12px 16px;
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        .cap-panel-head h3 {
+            margin: 0; font-size: 15px; font-weight: 700;
+            color: var(--clx-text-primary, #1a3a5c);
+        }
+        .cap-panel-body { padding: 16px; }
+        .cap-hint {
+            font-size: 12px; color: var(--clx-text-muted, #718096);
+            margin: 0 0 12px;
+        }
+        .cap-fineprint {
+            font-size: 11px; color: var(--clx-text-muted, #718096);
+            margin: 6px 0 0;
+        }
+        .cap-subhead {
+            font-size: 14px; font-weight: 700;
+            color: var(--clx-accent, #0f7490);
+            margin: 18px 0 8px;
+        }
+        .cap-grid { display: grid; gap: 10px; margin-bottom: 10px; }
+        .cap-grid.g2 { grid-template-columns: repeat(2, 1fr); }
+        .cap-grid.g3 { grid-template-columns: repeat(3, 1fr); }
+        .cap-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+        .cap-grid.g5 { grid-template-columns: repeat(5, 1fr); }
+        @media (max-width: 800px) {
+            .cap-grid.g4, .cap-grid.g5 { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .cap-grid.g2, .cap-grid.g3, .cap-grid.g4, .cap-grid.g5 { grid-template-columns: 1fr; }
+        }
+        .cap-field { display: flex; flex-direction: column; }
+        .cap-label {
+            font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--clx-text-secondary, #4a5568);
+            margin-bottom: 4px;
+        }
+        .cap-tf {
+            width: 100%; box-sizing: border-box;
+            font: inherit; font-size: 13px;
+            padding: 7px 9px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 5px;
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary, #1a3a5c);
+            resize: vertical;
+        }
+        .cap-tf:focus {
+            outline: none; border-color: var(--clx-accent, #0f7490);
+            box-shadow: 0 0 0 2px rgba(15, 116, 144, 0.12);
+        }
+
+        /* Score block */
+        .cap-score-block {
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 14px 0 0;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .cap-score-num { font-size: 26px; font-weight: 800; color: var(--clx-accent, #0f7490); line-height: 1; }
+        .cap-score-label { font-size: 13px; color: var(--clx-text-secondary, #4a5568); font-weight: 600; }
+        .cap-score-risk { margin-left: auto; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,0.04); }
+        .cap-score-block.high .cap-score-risk { background: #fee2e2; color: #991b1b; }
+        .cap-score-block.moderate .cap-score-risk { background: #fef3c7; color: #854d0e; }
+        .cap-score-block.low .cap-score-risk { background: #dcfce7; color: #166534; }
+
+        /* OMEGA table */
+        .cap-omega-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .cap-omega-table td { padding: 8px; border: 1px solid var(--clx-border, #d1dce8); vertical-align: top; }
+        .cap-omega-key { width: 50px; text-align: center; background: var(--clx-bg-surface-2, #f7f9fc); }
+        .cap-omega-letter {
+            display: inline-block; width: 30px; height: 30px; line-height: 30px;
+            background: var(--clx-accent, #0f7490); color: #fff;
+            border-radius: 50%; font-weight: 800; font-size: 13px;
+        }
+        .cap-omega-label { width: 110px; font-weight: 600; color: var(--clx-text-primary, #1a3a5c); }
+        .cap-omega-table textarea { border: none; padding: 4px; resize: vertical; min-height: 32px; background: transparent; }
+
+        /* Medications table */
+        .cap-meds-wrap { overflow-x: auto; }
+        .cap-meds-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
+        .cap-meds-table th, .cap-meds-table td {
+            padding: 6px; border: 1px solid var(--clx-border, #d1dce8); vertical-align: top;
+        }
+        .cap-meds-table th {
+            background: var(--clx-bg-surface-2, #f7f9fc); font-weight: 700;
+            color: var(--clx-accent, #0f7490); font-size: 11.5px;
+            text-align: left;
+        }
+        .cap-meds-table th small { font-weight: 400; color: var(--clx-text-muted, #718096); display: block; margin-top: 2px; }
+        .cap-meds-table textarea { border: none; padding: 4px; resize: vertical; min-height: 36px; font-size: 12px; background: transparent; width: 100%; box-sizing: border-box; }
+        .cap-meds-del { width: 36px; text-align: center; }
+        .cap-row-del {
+            background: none; border: none; font-size: 18px; line-height: 1;
+            color: #b91c1c; cursor: pointer; padding: 4px 8px; border-radius: 4px;
+        }
+        .cap-row-del:hover { background: #fbebeb; }
+        .cap-add-row {
+            margin-top: 12px; padding: 7px 14px;
+            background: var(--clx-accent, #0f7490); color: #fff;
+            border: none; border-radius: 5px;
+            font-size: 12.5px; font-weight: 600; cursor: pointer;
+        }
+        .cap-add-row:hover { filter: brightness(1.1); }
+
+        /* Morse */
+        .cap-morse-var { margin-bottom: 14px; }
+        .cap-morse-var h4 { font-size: 13px; font-weight: 700; color: var(--clx-text-primary, #1a3a5c); margin: 0 0 6px; }
+        .cap-morse-opts { display: flex; flex-direction: column; gap: 4px; }
+        .cap-morse-opt {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 10px; border: 1px solid var(--clx-border, #d1dce8); border-radius: 5px;
+            cursor: pointer; font-size: 13px;
+            background: var(--clx-bg-surface, #fff);
+        }
+        .cap-morse-opt:hover { background: var(--clx-bg-hover, #f7fafd); }
+        .cap-morse-opt.selected {
+            border-color: var(--clx-accent, #0f7490);
+            background: rgba(15, 116, 144, 0.06);
+        }
+        .cap-morse-opt input { accent-color: var(--clx-accent, #0f7490); }
+        .cap-morse-opt span:nth-child(2) { flex: 1; }
+        .cap-morse-pts {
+            background: var(--clx-accent, #0f7490); color: #fff;
+            padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        }
+
+        /* Braden */
+        .cap-braden-factor { margin-bottom: 14px; padding: 12px; border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px; background: var(--clx-bg-surface-2, #f7f9fc); }
+        .cap-braden-factor h4 { font-size: 14px; color: var(--clx-accent, #0f7490); margin: 0 0 4px; }
+        .cap-braden-defn { font-size: 11.5px; color: var(--clx-text-muted, #718096); font-style: italic; margin: 0 0 10px; }
+        .cap-braden-opts { display: grid; gap: 8px; }
+        .cap-braden-opts.cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .cap-braden-opts.cols-4 { grid-template-columns: repeat(4, 1fr); }
+        @media (max-width: 800px) {
+            .cap-braden-opts.cols-3, .cap-braden-opts.cols-4 { grid-template-columns: 1fr; }
+        }
+        .cap-braden-opt {
+            display: flex; flex-direction: column;
+            padding: 8px 10px; border: 1px solid var(--clx-border, #d1dce8); border-radius: 5px;
+            cursor: pointer; background: var(--clx-bg-surface, #fff);
+            font-size: 11.5px; line-height: 1.4;
+        }
+        .cap-braden-opt:hover { border-color: var(--clx-accent, #0f7490); }
+        .cap-braden-opt.selected {
+            border: 2px solid var(--clx-accent, #0f7490);
+            background: rgba(15, 116, 144, 0.06);
+            padding: 7px 9px;
+        }
+        .cap-braden-opt input { display: none; }
+        .cap-braden-opt strong { color: var(--clx-accent, #0f7490); display: block; margin-bottom: 4px; font-size: 12px; }
+        .cap-braden-desc { color: var(--clx-text-secondary, #4a5568); }
+
+        /* Mini-Cog */
+        .cap-careplan-box {
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 12px;
+            background: var(--clx-bg-surface-2, #f7f9fc);
+        }
+        .cap-careplan-box h4 { margin: 0 0 4px; font-size: 14px; color: var(--clx-accent, #0f7490); }
+        .cap-careplan-box p { font-size: 13px; margin: 4px 0 0; color: var(--clx-text-secondary, #4a5568); }
+        .cap-clock-wrap { background: #fff; padding: 10px; border-radius: 6px; border: 1px solid var(--clx-border, #d1dce8); }
+        .cap-btn-sm {
+            padding: 5px 10px; font: inherit; font-size: 12px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 4px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary, #1a3a5c);
+            cursor: pointer;
+        }
+        .cap-btn-sm:hover { background: var(--clx-bg-hover, #e6edf5); }
+
+        /* SBAR */
+        .cap-sbar-block {
+            border-left: 4px solid var(--clx-accent, #0f7490);
+            padding: 10px 14px; margin-bottom: 12px;
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            border-radius: 0 5px 5px 0;
+        }
+        .cap-sbar-block h4 {
+            margin: 0 0 10px; font-size: 14px; font-weight: 700;
+            color: var(--clx-text-primary, #1a3a5c);
+            display: flex; align-items: center;
+        }
+        .cap-sbar-letter {
+            display: inline-block; width: 26px; height: 26px; line-height: 26px;
+            background: var(--clx-accent, #0f7490); color: #fff;
+            border-radius: 50%; font-weight: 700; font-size: 13px;
+            text-align: center; margin-right: 10px;
+        }
+
         @media (max-width: 600px) {
             .cap-tabs { top: calc(56px + 96px); }
             .cap-editor-head { padding: 8px 12px; }
@@ -225,7 +429,18 @@
 
         [data-theme="dark"] .cap-editor-head,
         [data-theme="dark"] .cap-tabs,
-        [data-theme="dark"] .cap-drawer { background: var(--clx-bg-surface, #1a202c); }
+        [data-theme="dark"] .cap-drawer,
+        [data-theme="dark"] .cap-panel { background: var(--clx-bg-surface, #1a202c); }
+        [data-theme="dark"] .cap-panel-head,
+        [data-theme="dark"] .cap-omega-key,
+        [data-theme="dark"] .cap-meds-table th,
+        [data-theme="dark"] .cap-braden-factor,
+        [data-theme="dark"] .cap-careplan-box,
+        [data-theme="dark"] .cap-sbar-block { background: rgba(255, 255, 255, 0.03); }
+        [data-theme="dark"] .cap-tf,
+        [data-theme="dark"] .cap-morse-opt,
+        [data-theme="dark"] .cap-braden-opt,
+        [data-theme="dark"] .cap-clock-wrap { background: rgba(255, 255, 255, 0.04); }
     </style>
 </head>
 <body>
@@ -265,6 +480,7 @@
     <script src="/shared/header.js"></script>
     <script src="/shared/toast.js"></script>
     <script src="/clinical/cap-modules.js"></script>
+    <script src="/clinical/cap-renderers.js"></script>
     <script>
         // ─── Theme init ───
         (function () {
@@ -424,32 +640,26 @@
             renderActiveTab();
         };
 
-        // ─── Module body renderer (commit #2 = placeholders) ───
-        // Each module gets an empty card with metadata. Real renderers land
-        // in commits #3-5. The placeholder still wires up an "input" event
-        // listener so autosave is verifiable end-to-end with a temporary
-        // sandbox textarea per module.
+        // ─── Module body renderer ───
+        // Looks up the renderer in CAP_RENDERERS and calls it with the module's
+        // state slice + an onChange callback that triggers autosave.
         function renderActiveTab() {
             const contentEl = document.getElementById('capContent');
             if (!activeTab) { contentEl.innerHTML = ''; return; }
             const m = CAP.MODULE_BY_ID[activeTab];
             if (!m) { contentEl.innerHTML = ''; return; }
-            const modState = (packet.state && packet.state[activeTab]) || {};
-            const sandboxText = (modState._sandboxText || '');
-            contentEl.innerHTML =
-                '<div class="cap-tab-empty">' +
-                    '<strong>' + esc(m.icon) + ' ' + esc(m.label) + '</strong>' +
-                    'Module renderer coming next commit. For now, this sandbox autosaves any text you type into the packet under <code style="background:var(--clx-bg-surface-2);padding:1px 5px;border-radius:3px;">state.' + esc(activeTab) + '._sandboxText</code> so you can verify autosave + offline backup end to end.' +
-                    '<textarea id="capSandboxTa" rows="6" style="width:100%;margin-top:14px;padding:10px;font-family:inherit;font-size:13px;border:1px solid var(--clx-border);border-radius:6px;background:var(--clx-bg-surface);color:var(--clx-text-primary);" placeholder="Type here to verify autosave…">' + esc(sandboxText) + '</textarea>' +
-                '</div>';
-            const ta = document.getElementById('capSandboxTa');
-            if (ta) {
-                ta.addEventListener('input', function () {
-                    if (!packet.state) packet.state = {};
-                    if (!packet.state[activeTab]) packet.state[activeTab] = {};
-                    packet.state[activeTab]._sandboxText = ta.value;
-                    queueAutosave();
-                });
+            if (!packet.state) packet.state = {};
+            if (!packet.state[activeTab]) packet.state[activeTab] = {};
+            const modState = packet.state[activeTab];
+            const renderer = window.CAP_RENDERERS && window.CAP_RENDERERS[activeTab];
+            if (renderer) {
+                renderer(contentEl, modState, queueAutosave);
+            } else {
+                contentEl.innerHTML =
+                    '<div class="cap-tab-empty">' +
+                        '<strong>' + esc(m.icon) + ' ' + esc(m.label) + '</strong>' +
+                        'No renderer registered for this module yet.' +
+                    '</div>';
             }
         }
 

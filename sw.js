@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v182';
+const CACHE_VERSION = 'v183';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -56,6 +56,7 @@ const OFFLINE_URLS = [
     '/community/',
     '/clinical/',
     '/clinical/cap-modules.js',
+    '/clinical/cap-renderers.js',
     '/clinical/packet/',
     '/clinical/standalone/',
     '/apa/',
