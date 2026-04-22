@@ -22,6 +22,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="/shared/smart-phrases.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -632,23 +633,89 @@
         }
 
         // ========== SMART PHRASES ==========
-        const PHRASES_KEY = 'bendbsn_custom_phrases';
+        // Sourced from /shared/smart-phrases.js. The shared module:
+        //   • Holds the 69 default built-ins + category catalog
+        //   • Seeds them into localStorage on first run
+        //   • Syncs to userProfiles/{uid}/smartPhrases in Firebase so
+        //     phrases follow the student across devices
+        const PHRASES_KEY = (window.SMART_PHRASES_STORAGE_KEY || 'bendbsn_custom_phrases');
 
+        // Render the My Phrases list grouped by category. Built-ins use
+        // their original category headings; user-added shortcuts go under
+        // "My Phrases" at the bottom.
         function loadMyPhrases() {
-            let phrases = {};
-            try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
+            // Seed defaults the first time + sync from Firebase if signed in
+            const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
+            if (window.syncSmartPhrasesFromFirebase) {
+                window.syncSmartPhrasesFromFirebase(db, currentUid, function () { renderPhraseList(); });
+            } else {
+                renderPhraseList();
+            }
+        }
+
+        function renderPhraseList() {
             const list = document.getElementById('myPhrasesList');
+            if (!list) return;
+            const phrases = (window.getAllSmartPhrases ? window.getAllSmartPhrases() : (function () {
+                try { return JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch (e) { return {}; }
+            })());
             const keys = Object.keys(phrases);
             if (!keys.length) {
-                list.innerHTML = '<div style="color:var(--clx-text-muted);font-size:13px;padding:6px 0;">No custom phrases yet. Add one below.</div>';
+                list.innerHTML = '<div style="color:var(--clx-text-muted);font-size:13px;padding:6px 0;">No phrases yet. Add one below.</div>';
                 return;
             }
-            list.innerHTML = keys.map(k => `
+
+            // Group by category — built-ins by their SEED_PHRASE_CATEGORIES
+            // bucket; user-added shortcuts (not in any category) → My Phrases.
+            const cats = (window.SEED_PHRASE_CATEGORIES || []);
+            const grouped = {};
+            cats.forEach(c => grouped[c.name] = []);
+            grouped['My Phrases'] = [];
+            keys.forEach(k => {
+                const cat = (window.smartPhraseCategoryOf && window.smartPhraseCategoryOf(k)) || 'My Phrases';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(k);
+            });
+
+            let html = '';
+            const renderRow = (k) => `
                 <div class="phrase-row">
                     <code class="phrase-shortcut">${escapeHtml(k)}</code>
-                    <span class="phrase-expansion">${escapeHtml(phrases[k])}</span>
+                    <span class="phrase-expansion" contenteditable="true" data-shortcut="${escapeHtml(k)}" oninput="onPhraseEditInline(this)">${escapeHtml(phrases[k])}</span>
                     <button class="prof-edit-btn" style="color:#dc2626;border-color:#fca5a5;flex-shrink:0;" onclick="deleteMyPhrase('${escapeHtml(k).replace(/'/g,"\\'")}')">Delete</button>
-                </div>`).join('');
+                </div>`;
+
+            cats.forEach(c => {
+                const keysInCat = grouped[c.name];
+                if (!keysInCat.length) return;
+                html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--clx-text-muted);margin-top:14px;margin-bottom:4px;">${c.name}</div>`;
+                html += keysInCat.map(renderRow).join('');
+            });
+            if (grouped['My Phrases'].length) {
+                html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--clx-text-muted);margin-top:14px;margin-bottom:4px;">My Phrases</div>`;
+                html += grouped['My Phrases'].map(renderRow).join('');
+            }
+
+            // Restore-defaults footer button
+            html += `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--clx-border);text-align:right;">
+                <button class="prof-edit-btn" onclick="restoreDefaultPhrases()" style="font-size:12px;">↺ Restore defaults</button>
+            </div>`;
+            list.innerHTML = html;
+        }
+
+        // Inline edit on the expansion text — debounced per-shortcut.
+        let _phraseEditTimer = null;
+        function onPhraseEditInline(el) {
+            const shortcut = el.getAttribute('data-shortcut');
+            const text = el.textContent.trim();
+            if (!shortcut || !text) return;
+            if (_phraseEditTimer) clearTimeout(_phraseEditTimer);
+            _phraseEditTimer = setTimeout(function () {
+                const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
+                if (window.writeSmartPhrase) {
+                    window.writeSmartPhrase(shortcut, text, db, currentUid);
+                }
+            }, 600);
         }
 
         function addMyPhrase() {
@@ -659,23 +726,49 @@
             if (!shortcut || !text) { showToast('Both shortcut and expansion are required.', 'warning'); return; }
             if (!shortcut.startsWith('.')) shortcut = '.' + shortcut;
             if (shortcut.length < 2) { showToast('Shortcut must be at least 2 characters (e.g. .vs)', 'warning'); return; }
-            let phrases = {};
-            try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
-            phrases[shortcut] = text;
-            localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
+            const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
+            if (window.writeSmartPhrase) {
+                window.writeSmartPhrase(shortcut, text, db, currentUid);
+            } else {
+                let phrases = {};
+                try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
+                phrases[shortcut] = text;
+                localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
+            }
             shortcutEl.value = '';
             textEl.value = '';
-            loadMyPhrases();
+            renderPhraseList();
             showToast('Phrase "' + shortcut + '" saved.', 'success');
         }
 
         function deleteMyPhrase(shortcut) {
-            let phrases = {};
-            try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
-            delete phrases[shortcut];
-            localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
-            loadMyPhrases();
+            const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
+            if (window.deleteSmartPhrase) {
+                window.deleteSmartPhrase(shortcut, db, currentUid);
+            } else {
+                let phrases = {};
+                try { phrases = JSON.parse(localStorage.getItem(PHRASES_KEY) || '{}'); } catch(e) {}
+                delete phrases[shortcut];
+                localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
+            }
+            renderPhraseList();
             showToast('Phrase deleted.', 'success');
+        }
+
+        function restoreDefaultPhrases() {
+            showConfirmModal(
+                'Restore default phrases',
+                'Add back any built-in phrases you have deleted? Your custom phrases stay untouched.',
+                function () {
+                    const added = window.restoreDefaultSmartPhrases ? window.restoreDefaultSmartPhrases() : 0;
+                    // Sync up to Firebase so other devices pick up the restore
+                    const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
+                    if (window.syncSmartPhrasesToFirebase) window.syncSmartPhrasesToFirebase(db, currentUid);
+                    showToast(added === 0 ? 'All defaults already present.' : 'Restored ' + added + ' default phrase' + (added === 1 ? '' : 's') + '.', 'success');
+                    renderPhraseList();
+                },
+                { confirmText: 'Restore' }
+            );
         }
 
         document.getElementById('profNameInput').addEventListener('keydown', function(e) {

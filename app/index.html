@@ -3085,6 +3085,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Shared smart-phrase catalog + seed/sync helpers -->
+    <script src="/shared/smart-phrases.js"></script>
 
     <script>
         // ========== FULLSCREEN MODE ==========
@@ -4365,108 +4367,22 @@
             }
         }
 
-        // 69 built-in smart phrases — the seed catalog. On first page-load
-        // for a given browser/profile, these get copied into localStorage as
-        // editable entries (loadCustomPhrases below), so students see them
-        // pre-loaded under their My Smart Phrases and can edit / delete /
-        // rename like any other. The "Restore defaults" button in the
-        // picker re-adds any of these the user has deleted.
-        const DEFAULT_SMART_PHRASES = {
-            // Vital Signs
-            '.vs': 'BP: __ | HR: __ | O2: __% | RR: __ | T: __ | Pain: __/10',
-            // Neuro
-            '.neuro': 'A&Ox4. PERRLA. GCS 15. MAE x4. ',
-            '.aox4': 'Alert and oriented x4 (person, place, time, situation). ',
-            '.aox3': 'Alert and oriented x3 (person, place, time). ',
-            '.perrla': 'PERRLA (Pupils Equal, Round, Reactive to Light and Accommodation). ',
-            '.mae': 'MAE x4 (Moving All Extremities). ',
-            '.gcs15': 'GCS 15 (E4V5M6). ',
-            // Respiratory
-            '.resp': 'CTA bilat. No adventitious sounds. Unlabored. O2: __% on __. ',
-            '.cta': 'CTA bilat (Clear to Auscultation bilaterally). ',
-            '.lungs': 'Lung sounds clear bilaterally, no wheezes, crackles, or rhonchi. ',
-            '.sob': 'Patient denies shortness of breath. Respirations unlabored. ',
-            // Cardiovascular
-            '.cv': 'S1S2 RRR. No murmurs. Pulses 2+ x4. Cap refill <3s. No edema. ',
-            '.rrr': 'S1S2 RRR (Regular Rate and Rhythm). No murmurs, rubs, or gallops. ',
-            '.pulses': 'Peripheral pulses 2+ bilaterally, cap refill <3 seconds. ',
-            '.noedema': 'No peripheral edema noted. ',
-            // GI
-            '.gi': 'BS active x4 quads. Abdomen soft, NT, ND. Last BM: __. ',
-            '.bsax4': 'BS active x4 quadrants. ',
-            '.ntnd': 'Non-tender, non-distended. ',
-            '.npo': 'Patient NPO. ',
-            '.tolerated': 'Diet tolerated without nausea or vomiting. ',
-            // GU
-            '.gu': 'Voiding without difficulty. Urine clear yellow. ',
-            '.fs': 'Foley catheter patent, draining clear yellow urine. Secured to thigh. ',
-            '.voidclear': 'Voiding clear yellow urine without difficulty. ',
-            // Skin
-            '.skin': 'Warm, dry, intact. No breakdown or pressure injuries. ',
-            '.wdi': 'Skin warm, dry, intact. ',
-            '.turgor': 'Skin turgor elastic, no tenting. ',
-            '.ivsite': 'IV site clean, dry, intact. No redness, swelling, or drainage. ',
-            // Pain
-            '.pain': 'Pain __/10 at __. Quality: __. Duration: __. Interventions: __. ',
-            '.pain0': 'Patient denies pain. Pain 0/10. ',
-            '.painmed': 'Pain medication administered as ordered. Will reassess in 30-60 min. ',
-            // Allergies
-            '.nkda': 'NKDA (No Known Drug Allergies). ',
-            '.nka': 'NKA (No Known Allergies). ',
-            // General Assessment
-            '.denies': 'Patient denies pain, nausea, SOB, dizziness, chest pain. ',
-            '.wdl': 'Within defined limits. ',
-            '.nad': 'No acute distress. ',
-            '.wdta': 'Will continue to monitor. Patient tolerated well. No adverse effects noted. ',
-            // Interventions
-            '.medadmin': 'Medication administered as ordered. Patient tolerated without adverse effects. ',
-            '.ivp': 'IV patent, no redness/swelling at site. Flushed with 10mL NS. ',
-            '.repos': 'Patient repositioned for comfort and pressure relief. ',
-            '.amb': 'Assisted patient with ambulation in hallway. Gait steady, tolerated well. ',
-            '.tcdb': 'Encouraged to turn, cough, and deep breathe. ',
-            '.is': 'Incentive spirometer use encouraged. Patient demonstrated proper technique. ',
-            '.scd': 'SCDs applied and functioning bilaterally. ',
-            // Safety
-            '.fall': 'Fall precautions in place. Bed in low position. Call light within reach. ',
-            '.safe': 'Side rails up x2. Bed alarm on. Call light in reach. Non-skid socks on. ',
-            '.idbands': 'ID bands verified x2. Patient confirmed identity. ',
-            '.safeenv': 'Safe environment maintained: bed low, locked, call light in reach, side rails x2. ',
-            // Communication
-            '.mdnotify': 'MD notified of findings. Awaiting orders. ',
-            '.neworders': 'New orders received from MD and implemented. ',
-            '.handoff': 'Bedside handoff report given to oncoming nurse. ',
-            // Education/Discharge
-            '.edu': 'Patient educated on __. Patient verbalized understanding. ',
-            '.dc': 'Discharge instructions reviewed with patient. Patient verbalized understanding. ',
-            '.teachback': 'Patient able to teach back key information. ',
-            '.dcteach': 'Discharge teaching completed. Patient/family verbalized understanding of medications, follow-up, and return precautions. '
-        };
+        // 69 built-in smart phrases + category map are defined in
+        // /shared/smart-phrases.js (loaded before this inline script) so
+        // /profile/ can share the exact same catalog + seed + Firebase-sync
+        // logic. Local aliases keep existing picker code working unchanged.
+        const DEFAULT_SMART_PHRASES = window.DEFAULT_SMART_PHRASES || {};
 
         // Runtime in-memory map of EVERY phrase available for typing-expansion.
-        // Populated by loadCustomPhrases() during init from localStorage. The
-        // 69 built-ins above are seeded on first page-load if the user has
-        // never seen them before.
+        // Populated by loadCustomPhrases() on init from localStorage (which is
+        // kept in sync with the user's Firebase profile so phrases follow them
+        // across devices).
         let smartPhrases = {};
 
         // ─── Smart-phrase picker (toolbar button + popover) ────────────────
-        // Categorization mirrors the source-comment grouping above. Hard-coded
-        // because the comments aren't machine-parseable. Order matches source.
-        const SEED_PHRASE_CATEGORIES = [
-            { name: 'Vital Signs',     keys: ['.vs'] },
-            { name: 'Neuro',           keys: ['.neuro', '.aox4', '.aox3', '.perrla', '.mae', '.gcs15'] },
-            { name: 'Respiratory',     keys: ['.resp', '.cta', '.lungs', '.sob'] },
-            { name: 'Cardiovascular',  keys: ['.cv', '.rrr', '.pulses', '.noedema'] },
-            { name: 'GI',              keys: ['.gi', '.bsax4', '.ntnd', '.npo', '.tolerated'] },
-            { name: 'GU',              keys: ['.gu', '.fs', '.voidclear'] },
-            { name: 'Skin',            keys: ['.skin', '.wdi', '.turgor', '.ivsite'] },
-            { name: 'Pain',            keys: ['.pain', '.pain0', '.painmed'] },
-            { name: 'Allergies',       keys: ['.nkda', '.nka'] },
-            { name: 'General',         keys: ['.denies', '.wdl', '.nad', '.wdta'] },
-            { name: 'Interventions',   keys: ['.medadmin', '.ivp', '.repos', '.amb', '.tcdb', '.is', '.scd'] },
-            { name: 'Safety',          keys: ['.fall', '.safe', '.idbands', '.safeenv'] },
-            { name: 'Communication',   keys: ['.mdnotify', '.neworders', '.handoff'] },
-            { name: 'Education / Discharge', keys: ['.edu', '.dc', '.teachback', '.dcteach'] }
-        ];
+        // Category list sourced from /shared/smart-phrases.js so /app/ and
+        // /profile/ render the identical grouping.
+        const SEED_PHRASE_CATEGORIES = window.SEED_PHRASE_CATEGORIES || [];
         // Set of all seed shortcuts — used to identify which phrases are
         // user-customizable (custom = not in this set).
         const SEED_SHORTCUT_SET = new Set(SEED_PHRASE_CATEGORIES.reduce(function (a, c) { return a.concat(c.keys); }, []));
@@ -4481,10 +4397,15 @@
             // Reject shortcuts with whitespace, punctuation other than letters/digits
             if (!/^\.[a-z0-9]+$/.test(shortcut)) return { ok: false, msg: 'Use letters/numbers only after the dot (e.g. .myphrase)' };
             smartPhrases[shortcut] = text;
-            const custom = localStorage.getItem('bendbsn_custom_phrases');
-            const customPhrases = custom ? JSON.parse(custom) : {};
-            customPhrases[shortcut] = text;
-            localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(customPhrases));
+            // Write via shared module — localStorage + Firebase profile sync.
+            if (window.writeSmartPhrase) {
+                window.writeSmartPhrase(shortcut, text, database, currentUid);
+            } else {
+                const custom = localStorage.getItem('bendbsn_custom_phrases');
+                const customPhrases = custom ? JSON.parse(custom) : {};
+                customPhrases[shortcut] = text;
+                localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(customPhrases));
+            }
             return { ok: true, shortcut: shortcut };
         }
         // Edit = delete old shortcut + add new (handles rename in one path).
@@ -6219,55 +6140,48 @@
 
         renderMedRecents();
 
-        // Load all phrases. On first page-load for this browser/profile,
-        // seed the 69 built-ins into localStorage as editable entries, so
-        // students see them pre-loaded in their My Smart Phrases section
-        // and can edit / rename / delete from a baseline.
+        // Load all phrases. Sources, in merge order (later wins on conflict):
+        //   1. DEFAULT_SMART_PHRASES (seeded into localStorage on first run)
+        //   2. User's own additions in localStorage (edits are kept)
+        //   3. User's Firebase profile (userProfiles/{uid}/smartPhrases) —
+        //      syncs edits across devices
+        //   4. Admin-managed globalPhrases (always available)
         function loadCustomPhrases() {
-            const SEED_FLAG = 'bendbsn_phrases_seeded_v1';
-
-            // ---- One-time seed of built-ins ----
-            // Strategy: if the seed flag isn't set, MERGE defaults into
-            // whatever's currently in localStorage (don't overwrite anything
-            // the user has personally added under the same shortcut).
-            if (!localStorage.getItem(SEED_FLAG)) {
-                let existing = {};
+            // Seed + sync via shared module — also pushes merged state to
+            // Firebase if the profile is empty.
+            if (window.syncSmartPhrasesFromFirebase) {
+                window.syncSmartPhrasesFromFirebase(database, currentUid, function () {
+                    // After Firebase reconciliation, rebuild in-memory map
+                    smartPhrases = window.getAllSmartPhrases ? window.getAllSmartPhrases() : {};
+                    layerInGlobalPhrases();
+                });
+            } else {
+                // Shared module didn't load — fall back to local-only mode
+                console.warn('[smart-phrases] shared module unavailable, local-only');
                 try {
                     const raw = localStorage.getItem('bendbsn_custom_phrases');
-                    if (raw) existing = JSON.parse(raw) || {};
-                } catch (e) { existing = {}; }
-                const merged = Object.assign({}, DEFAULT_SMART_PHRASES, existing);
-                try {
-                    localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(merged));
-                    localStorage.setItem(SEED_FLAG, '1');
-                } catch (e) {
-                    console.warn('[smart-phrases] seed failed', e);
+                    smartPhrases = raw ? (JSON.parse(raw) || {}) : {};
+                } catch (e) { smartPhrases = {}; }
+                if (Object.keys(smartPhrases).length === 0) {
+                    Object.assign(smartPhrases, DEFAULT_SMART_PHRASES);
                 }
+                layerInGlobalPhrases();
             }
+        }
 
-            // ---- Build runtime map from localStorage ----
-            // localStorage is the source of truth post-seed. Deletions are
-            // permanent because we never re-seed (flag is sticky).
-            smartPhrases = {};
+        // Layer in admin-managed global phrases (Firebase) — always available.
+        function layerInGlobalPhrases() {
             try {
-                const raw = localStorage.getItem('bendbsn_custom_phrases');
-                if (raw) Object.assign(smartPhrases, JSON.parse(raw) || {});
-            } catch (e) {
-                // localStorage corrupted — fall back to defaults so typing-expansion still works
-                console.warn('[smart-phrases] localStorage read failed, using defaults', e);
-                Object.assign(smartPhrases, DEFAULT_SMART_PHRASES);
-            }
-
-            // ---- Layer in admin-managed global phrases (Firebase) ----
-            const globalPhrasesRef = database.ref('globalPhrases');
-            globalPhrasesRef.once('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    snapshot.forEach((child) => {
-                        const phrase = child.val();
-                        smartPhrases[phrase.shortcut] = phrase.text;
-                    });
-                }
-            });
+                const globalPhrasesRef = database.ref('globalPhrases');
+                globalPhrasesRef.once('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        snapshot.forEach((child) => {
+                            const phrase = child.val();
+                            smartPhrases[phrase.shortcut] = phrase.text;
+                        });
+                    }
+                });
+            } catch (e) { /* no DB, fine */ }
         }
 
         // Save custom phrases to localStorage
@@ -6292,14 +6206,16 @@
                 shortcut = '.' + shortcut;
             }
 
-            // Add to smartPhrases
+            // Add to smartPhrases + persist via shared module (Firebase + localStorage)
             smartPhrases[shortcut] = text;
-
-            // Save to localStorage
-            const custom = localStorage.getItem('bendbsn_custom_phrases');
-            const customPhrases = custom ? JSON.parse(custom) : {};
-            customPhrases[shortcut] = text;
-            localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(customPhrases));
+            if (window.writeSmartPhrase) {
+                window.writeSmartPhrase(shortcut, text, database, currentUid);
+            } else {
+                const custom = localStorage.getItem('bendbsn_custom_phrases');
+                const customPhrases = custom ? JSON.parse(custom) : {};
+                customPhrases[shortcut] = text;
+                localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(customPhrases));
+            }
 
             // Clear inputs
             document.getElementById('newPhraseShortcut').value = '';
@@ -6313,14 +6229,16 @@
         // Delete a custom phrase
         function deleteCustomPhrase(shortcut) {
             delete smartPhrases[shortcut];
-
-            const custom = localStorage.getItem('bendbsn_custom_phrases');
-            if (custom) {
-                const customPhrases = JSON.parse(custom);
-                delete customPhrases[shortcut];
-                localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(customPhrases));
+            if (window.deleteSmartPhrase) {
+                window.deleteSmartPhrase(shortcut, database, currentUid);
+            } else {
+                const custom = localStorage.getItem('bendbsn_custom_phrases');
+                if (custom) {
+                    const customPhrases = JSON.parse(custom);
+                    delete customPhrases[shortcut];
+                    localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(customPhrases));
+                }
             }
-
             renderCustomPhrases();
         }
 
