@@ -649,9 +649,46 @@
         .cap-cs-section[open] summary::after { transform: rotate(180deg); }
         .cap-cs-body { padding: 14px; }
 
+        /* ────────── Mobile polish ────────── */
         @media (max-width: 600px) {
-            .cap-tabs { top: calc(56px + 96px); }
-            .cap-editor-head { padding: 8px 12px; }
+            .cap-editor-head { padding: 8px 10px; gap: 8px; }
+            .cap-back { font-size: 11.5px; padding: 4px 8px; }
+            .cap-title-input { min-width: 120px; font-size: 14px; }
+            .cap-modules-btn { padding: 5px 9px; font-size: 11.5px; }
+            .cap-tabs { padding: 0 10px; top: calc(56px + 92px); }
+            .cap-tab { padding: 9px 10px; font-size: 12px; }
+            .cap-content { padding: 14px 12px 60px; }
+            .cap-drawer { width: 88vw; }
+            .cap-modal.wide { max-width: 100%; }
+            .cap-pn-row { grid-template-columns: 1fr; }
+            .cap-pn-letter { padding: 4px 8px; flex-direction: row; gap: 6px; }
+            .cap-pn-letter small { display: inline; margin-top: 0; }
+            .cap-ncsbn-step { grid-template-columns: 36px 1fr; gap: 8px; padding: 10px; }
+            .cap-ncsbn-num { width: 30px; height: 30px; font-size: 13px; }
+            .cap-ref-row { grid-template-columns: 18px 1fr 28px; }
+            .cap-cm-head { flex-wrap: wrap; }
+        }
+
+        /* ────────── Print stylesheet ──────────
+           When printing from /clinical/packet/, hide all chrome and let
+           the editor body flow as plain content. The PRIMARY export path
+           is the PDF button — print is a back-up. */
+        @media print {
+            .site-header,
+            .cap-editor-head,
+            .cap-tabs,
+            .cap-drawer,
+            .cap-drawer-backdrop,
+            #toastContainer,
+            .bsn-offline-banner { display: none !important; }
+            body { background: #fff !important; }
+            .cap-content { max-width: none; padding: 0 !important; }
+            .cap-panel { box-shadow: none !important; border: 1px solid #888; page-break-inside: avoid; }
+            .cap-tf, .cap-tf:focus { box-shadow: none !important; border-color: #aaa; }
+            .cap-cs-section, .cap-behavior-event, .cap-pn-note,
+            .cap-cm-problem, .cap-h2t-row, .cap-cp-box {
+                page-break-inside: avoid;
+            }
         }
 
         [data-theme="dark"] .cap-editor-head,
@@ -675,12 +712,13 @@
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
     </header>
 
-    <!-- Editor head: back, title, save status, module toggle -->
+    <!-- Editor head: back, title, save status, module toggle, export -->
     <div class="cap-editor-head">
         <a href="/clinical/" class="cap-back">← My Packets</a>
         <input type="text" id="capTitle" class="cap-title-input" placeholder="Untitled packet" maxlength="80">
         <span class="cap-save-status" id="capSaveStatus">Saved</span>
         <button class="cap-modules-btn" onclick="openModuleDrawer()">⚙️ Modules</button>
+        <button class="cap-modules-btn" id="capExportPdfBtn" onclick="exportPacketPdf(this)" title="Export to PDF">📄 Export PDF</button>
     </div>
 
     <!-- Tab bar (rendered dynamically based on enabledModules) -->
@@ -708,6 +746,7 @@
     <script src="/shared/toast.js"></script>
     <script src="/clinical/cap-modules.js"></script>
     <script src="/clinical/cap-renderers.js"></script>
+    <script src="/clinical/cap-pdf.js"></script>
     <script>
         // ─── Theme init ───
         (function () {
@@ -1017,6 +1056,40 @@
                 cb_.checked = true;
             }
         }
+
+        // ─── PDF export ───
+        // jsPDF is lazy-loaded (large library, only fetched when student
+        // clicks Export). Once loaded, hand off to CAP_PDF.generate(packet).
+        let _jsPdfLoaded = false;
+        function loadJsPdf() {
+            if (_jsPdfLoaded) return Promise.resolve();
+            return new Promise(function (resolve, reject) {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                s.onload = function () { _jsPdfLoaded = true; resolve(); };
+                s.onerror = function () { reject(new Error('Failed to load jsPDF')); };
+                document.head.appendChild(s);
+            });
+        }
+        window.exportPacketPdf = function (btnEl) {
+            if (!packet) { showToast('Packet not loaded yet.', 'warning'); return; }
+            const orig = btnEl.textContent;
+            btnEl.disabled = true;
+            btnEl.textContent = '⏳ Generating…';
+            // Make sure any pending edits are flushed before exporting
+            if (saveTimer) { clearTimeout(saveTimer); commitSave(); }
+            loadJsPdf().then(function () {
+                if (!window.CAP_PDF) throw new Error('CAP_PDF module not loaded');
+                window.CAP_PDF.generate(packet);
+                showToast('PDF generated.', 'success');
+            }).catch(function (err) {
+                console.error('[CAP] PDF export failed:', err);
+                showToast('PDF export failed: ' + (err.message || err), 'error');
+            }).then(function () {
+                btnEl.disabled = false;
+                btnEl.textContent = orig;
+            });
+        };
     </script>
 </body>
 </html>
