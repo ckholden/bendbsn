@@ -79,14 +79,17 @@
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(2, 1fr);  /* default: 2-col for tablets/standard */
             gap: 18px;
             width: 100%;
             align-items: start;
         }
         .grid > * { width: 100%; }
         .resource-card.full-width { grid-column: 1 / -1; }
-        @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+        /* 3-col on wide screens so students see more at a glance */
+        @media (min-width: 1100px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+        /* Single column on phones — standard mobile-first default below 720px */
+        @media (max-width: 719px) { .grid { grid-template-columns: 1fr; gap: 12px; } }
         .resource-navigator {
             background: var(--clx-bg-surface-2, #f5f8fa);
             border: 1px solid var(--clx-border, #d1dce8);
@@ -891,6 +894,68 @@
             .container { padding: 0 !important; max-width: 100% !important; }
             .content { border-radius: 0 !important; padding: 12px !important; }
             .resource-card { border-radius: 0 !important; }
+            /* Hide "Pinned" badge text on narrow screens — star color is enough */
+            .resource-card.pinned::before { display: none; }
+            .resource-card.pinned .card-pin-btn { right: 48px; }  /* back to default position */
+        }
+
+        /* ---- Commit 5: Mobile polish (phones, <720px) ---- */
+        @media (max-width: 719px) {
+            /* Standard 44×44 tap targets per WCAG/iOS HIG */
+            .card-pin-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+                top: 6px;
+                right: 44px;
+            }
+            /* Demote hero treatment on phones — let it look like a normal card */
+            .resource-card.resource-card-hero .card-header {
+                padding: 14px 16px;
+                background: var(--clx-bg-surface);
+            }
+            .resource-card.resource-card-hero .card-header h2 {
+                font-size: var(--clx-type-base);
+            }
+            .resource-card.resource-card-hero {
+                border-top-width: 3px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            }
+            /* Navigator: keep visible but tighter */
+            .resource-navigator {
+                padding: 10px 12px;
+            }
+            .resource-filters {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 2px;
+            }
+            .resource-filters::-webkit-scrollbar { display: none; }
+            .resource-chip {
+                flex-shrink: 0;
+                padding: 8px 14px;
+                font-size: 13px;
+                min-height: 36px;
+            }
+            /* Tighter abbreviation glossary on phones */
+            .abbrev-glossary { padding: 12px; }
+            .abbrev-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+
+            /* Ensure card header has enough room for the pin button */
+            .resource-card .card-header { padding-right: 88px; }
+        }
+
+        /* ---- Sticky resource navigator on tablet+ ---- */
+        @media (min-width: 720px) {
+            .resource-navigator {
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                background: var(--clx-bg-surface-2, #f5f8fa);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            }
         }
 
         /* Mobile responsive padding */
