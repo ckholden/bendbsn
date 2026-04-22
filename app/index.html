@@ -179,6 +179,8 @@
             padding-bottom: 8px;
             border-bottom: 2px solid var(--accent);
         }
+        .section-title.qe-toggle:hover { background: var(--accent-hover, rgba(15,116,144,0.05)); }
+        .section-title.qe-toggle #qeToggleIcon { display: inline-block; }
         .quick-jump {
             display: flex;
             gap: 10px;
@@ -881,7 +883,7 @@
             <span class="clx-sidebar-label">SBAR Handoff</span>
         </a>
         <a href="/careplan/" class="clx-sidebar-item" data-page="careplan">
-            <span class="clx-sidebar-icon">&#128451;</span>
+            <span class="clx-sidebar-icon">&#129658;</span>
             <span class="clx-sidebar-label">Care Plans</span>
         </a>
         <a href="/rotationlog/" class="clx-sidebar-item" data-page="rotationlog">
@@ -1182,7 +1184,13 @@
             </div>
 
             <!-- Quick Entry Panels -->
-            <h2 class="section-title" id="section-quick-entry">Quick Entry Tools</h2>
+            <h2 class="section-title qe-toggle" id="section-quick-entry"
+                onclick="toggleQuickEntrySection()"
+                style="cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none;">
+                <span style="flex:1;">Quick Entry Tools</span>
+                <span id="qeToggleIcon" style="font-size:14px;color:var(--clx-text-muted);transition:transform 0.2s;">▼</span>
+            </h2>
+            <div id="quickEntrySection">
 
             <!-- Vitals Quick-Entry Panel -->
             <div class="vitals-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #4caf50; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
@@ -2396,6 +2404,8 @@
             </div>
             <div id="fullNarrativePreview" style="display:none; background: #e8eaf6; border: 1px solid #c5cae9; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; color: #1a237e; white-space: pre-wrap;"></div>
 
+            </div><!-- /quickEntrySection -->
+
             <h2 class="section-title" id="section-format">Documentation Format</h2>
             <div class="form-progress-bar-wrap" id="formProgressWrap" title="Note completion">
                 <div class="form-progress-bar" id="formProgressBar"></div>
@@ -2590,20 +2600,19 @@
                 </div>
             </div>
 
-            <h2 class="section-title" id="section-h2t">Head-to-Toe Assessment</h2>
-            <!-- Assessment Progress Bar (H2T only) -->
-            <div id="h2tProgressWrap" style="display:none;position:sticky;top:56px;z-index:90;background:var(--clx-bg-surface);border-bottom:1px solid var(--clx-border);padding:6px 14px;margin-bottom:2px;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:11px;font-weight:700;color:var(--clx-text-muted);white-space:nowrap;">Assessment:</span>
-                    <div style="flex:1;background:var(--clx-bg-surface-2);border-radius:4px;height:8px;overflow:hidden;">
-                        <div id="h2tProgressFill" style="height:100%;width:0%;border-radius:4px;background:#16a34a;transition:width 0.3s,background 0.3s;"></div>
-                    </div>
-                    <span id="h2tProgressLabel" style="font-size:11px;font-weight:700;color:var(--clx-text-muted);white-space:nowrap;">0 / 18</span>
-                </div>
-            </div>
-
-            <!-- Head-to-Toe Assessment -->
+            <!-- Head-to-Toe Assessment (heading + progress bar moved INSIDE
+                 the .note-fields wrapper so they stay hidden on DAR/SOAP/etc.) -->
             <div id="h2tFields" class="note-fields">
+                <h2 class="section-title" id="section-h2t" style="margin-top:0;">Head-to-Toe Assessment</h2>
+                <div id="h2tProgressWrap" style="position:sticky;top:56px;z-index:90;background:var(--clx-bg-surface);border-bottom:1px solid var(--clx-border);padding:6px 14px;margin-bottom:2px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:11px;font-weight:700;color:var(--clx-text-muted);white-space:nowrap;">Assessment:</span>
+                        <div style="flex:1;background:var(--clx-bg-surface-2);border-radius:4px;height:8px;overflow:hidden;">
+                            <div id="h2tProgressFill" style="height:100%;width:0%;border-radius:4px;background:#16a34a;transition:width 0.3s,background 0.3s;"></div>
+                        </div>
+                        <span id="h2tProgressLabel" style="font-size:11px;font-weight:700;color:var(--clx-text-muted);white-space:nowrap;">0 / 18</span>
+                    </div>
+                </div>
                 <p style="font-size:12px;color:#666;margin-bottom:15px;">Click quick-fill buttons to insert common findings, then edit as needed.</p>
                 <div class="h2t-grid">
                     <div class="h2t-section">
@@ -6680,6 +6689,32 @@
                 if (arrow) arrow.textContent = '▶';
             }
         }
+
+        // Top-level Quick Entry Tools accordion. Persists user preference
+        // in localStorage so the section stays in their preferred state.
+        const QE_COLLAPSED_KEY = 'bendbsn_qe_collapsed';
+        function toggleQuickEntrySection() {
+            const section = document.getElementById('quickEntrySection');
+            const icon = document.getElementById('qeToggleIcon');
+            if (!section) return;
+            const isCollapsed = section.style.display === 'none';
+            section.style.display = isCollapsed ? 'block' : 'none';
+            if (icon) icon.textContent = isCollapsed ? '▼' : '▶';
+            try { localStorage.setItem(QE_COLLAPSED_KEY, isCollapsed ? '0' : '1'); } catch (e) {}
+        }
+        // Restore saved preference on first paint (block until DOM is ready
+        // for the section element; cheap because the script runs after the
+        // markup parses).
+        (function () {
+            try {
+                if (localStorage.getItem(QE_COLLAPSED_KEY) === '1') {
+                    const section = document.getElementById('quickEntrySection');
+                    const icon = document.getElementById('qeToggleIcon');
+                    if (section) section.style.display = 'none';
+                    if (icon) icon.textContent = '▶';
+                }
+            } catch (e) {}
+        })();
 
         // Note sections for jump list (must be defined before setNoteType)
         const NOTE_SECTIONS = {
