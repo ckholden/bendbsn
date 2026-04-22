@@ -251,31 +251,46 @@
         /* ---- Previous reports list ---- */
         .report-list { margin-top: 16px; }
         .report-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-areas: "title del" "meta del" "date del";
+            row-gap: 4px;
+            column-gap: 10px;
+            padding: 12px 14px;
             border: 1px solid var(--clx-border);
             border-radius: 8px;
             margin-bottom: 8px;
             background: var(--clx-bg-surface);
             cursor: pointer;
-            transition: background 0.15s;
+            transition: background 0.15s, border-color 0.15s, transform 0.15s;
         }
-        .report-item:hover { background: var(--clx-accent-subtle); border-color: var(--clx-accent); }
-        .report-item-date { font-size: 11px; color: var(--clx-text-muted); white-space: nowrap; }
-        .report-item-title { flex: 1; font-size: 13px; font-weight: 500; }
+        .report-item:hover { background: var(--clx-accent-subtle); border-color: var(--clx-accent); transform: translateX(2px); }
+        .report-item-title { grid-area: title; font-size: 14px; font-weight: 600; color: var(--clx-text-primary); }
+        .report-item-meta { grid-area: meta; font-size: 12px; color: var(--clx-text-secondary); line-height: 1.4; }
+        .report-item-date { grid-area: date; font-size: 11px; color: var(--clx-text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .report-item-del {
+            grid-area: del;
+            align-self: start;
             background: none;
             border: none;
             cursor: pointer;
             color: var(--clx-text-muted);
             font-size: 16px;
-            padding: 4px;
+            padding: 6px 8px;
             border-radius: 4px;
             font-family: inherit;
         }
         .report-item-del:hover { color: #dc2626; background: #fee2e2; }
+        .report-edit-pill, .report-text-pill {
+            display: inline-block;
+            padding: 1px 7px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .report-edit-pill { background: var(--clx-success-bg, #dcfce7); color: var(--clx-success-text, #166534); border: 1px solid var(--clx-success, #22c55e); }
+        .report-text-pill { background: var(--clx-bg-surface-2); color: var(--clx-text-muted); border: 1px solid var(--clx-border); }
 
         /* ---- Page layout ---- */
         .sbar-page {
@@ -640,8 +655,8 @@
                     <button class="sbar-btn primary" onclick="generateSbarReport()">Regenerate</button>
                     <button class="sbar-btn" onclick="copySbarToClipboard()">Copy to Clipboard</button>
                     <button class="sbar-btn" onclick="exportSbarDocx()">Export to Word</button>
-                    <button class="sbar-btn" onclick="saveSbarToFirebase()">Save to Account</button>
-                    <button class="sbar-btn" onclick="clearSbarForm()">Clear Form</button>
+                    <button class="sbar-btn" onclick="saveSbarToFirebase()">💾 Save to Account</button>
+                    <button class="sbar-btn" onclick="startNewSbarReport()">+ New SBAR</button>
                 </div>
             </div>
         </div>
@@ -914,6 +929,39 @@
             } catch(e) { showToast('Export failed: ' + e.message, 'error'); }
         }
 
+        // Track which saved report we're currently editing (null = new). Used so
+        // hitting "Save" again updates the same record instead of forking a copy.
+        let currentSbarReportKey = null;
+
+        // Snapshot every input/select/textarea on the page (plus the chip checkboxes)
+        // into a plain object — so loaded reports can be re-edited, regenerated,
+        // and exported, not just viewed.
+        function captureSbarFormState() {
+            const fields = {};
+            document.querySelectorAll('.sbar-input, .sbar-select, .sbar-textarea, .vitals-input').forEach(el => {
+                if (el.id) fields[el.id] = el.value;
+            });
+            const chips = [];
+            document.querySelectorAll('.checkbox-chip input[type="checkbox"]:checked').forEach(cb => {
+                chips.push(cb.value);
+            });
+            return { fields: fields, chips: chips };
+        }
+
+        function applySbarFormState(state) {
+            if (!state || !state.fields) return;
+            Object.keys(state.fields).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = state.fields[id];
+            });
+            const chipSet = new Set(state.chips || []);
+            document.querySelectorAll('.checkbox-chip input[type="checkbox"]').forEach(cb => {
+                const on = chipSet.has(cb.value);
+                cb.checked = on;
+                cb.closest('.checkbox-chip').classList.toggle('checked', on);
+            });
+        }
+
         function saveSbarToFirebase() {
             if (!currentUid) { showToast('Sign in to save reports.', 'warning'); return; }
             const text = document.getElementById('sbarOutputText').textContent;
@@ -921,16 +969,39 @@
                 showToast('Generate a report first.', 'warning'); return;
             }
             const pName = document.getElementById('sPatientName').value.trim() || 'Unknown';
-            const key = Date.now();
+            const concern = document.getElementById('aPrimaryConcern').value.trim();
+            // Re-use the existing key on update; create a fresh one for a new save.
+            const key = currentSbarReportKey || Date.now();
             const ref = database.ref('sbarReports/' + currentUid + '/' + key);
+            const isUpdate = !!currentSbarReportKey;
             ref.set({
                 patientName: pName,
+                primaryConcern: concern,
                 reportText: text,
-                createdAt: key,
-                createdBy: displayName
+                formState: captureSbarFormState(),
+                createdAt: isUpdate ? key : key,
+                updatedAt: Date.now(),
+                createdBy: displayName,
+                schemaVersion: 2
             }).then(() => {
-                showToast('Report saved to account.', 'success');
+                currentSbarReportKey = key;
+                showToast(isUpdate ? 'Report updated.' : 'Saved — appears in Previous Reports.', 'success');
             }).catch(e => showToast('Save failed: ' + e.message, 'error'));
+        }
+
+        function startNewSbarReport() {
+            const hasContent = document.getElementById('sPatientName').value.trim() ||
+                               document.getElementById('aPrimaryConcern').value.trim();
+            const reset = () => {
+                document.querySelectorAll('.sbar-input, .sbar-select, .sbar-textarea, .vitals-input').forEach(el => el.value = '');
+                document.querySelectorAll('.checkbox-chip input').forEach(cb => { cb.checked = false; cb.closest('.checkbox-chip').classList.remove('checked'); });
+                document.getElementById('sbarOutputText').textContent = 'Click "Generate Report" from the Recommendation tab to build your SBAR.';
+                currentSbarReportKey = null;
+                showSbarTab('situation');
+                showToast('Started new SBAR. Previous one stays in your saved reports.', 'info');
+            };
+            if (!hasContent) { reset(); return; }
+            showConfirmModal('Start New SBAR', 'Clear the form and begin a new report? Anything saved to your account is preserved.', reset, { confirmText: 'New SBAR' });
         }
 
         function loadSbarHistory() {
@@ -942,17 +1013,31 @@
             listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Loading…</div>';
             database.ref('sbarReports/' + currentUid).orderByKey().limitToLast(50).once('value').then(snap => {
                 const val = snap.val();
-                if (!val) { listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">No saved reports yet.</div>'; return; }
+                if (!val) {
+                    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">' +
+                        'No saved reports yet.<br><span style="font-size:11px;">Build an SBAR, then click "Save to Account".</span></div>';
+                    return;
+                }
                 const items = Object.entries(val).reverse();
-                listEl.innerHTML = items.map(([key, data]) => {
-                    const date = new Date(parseInt(key)).toLocaleDateString();
-                    const time = new Date(parseInt(key)).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-                    return '<div class="report-item" onclick="loadSbarReport(\'' + key + '\')">' +
-                        '<div class="report-item-title">' + escapeHtml(data.patientName) + ' — SBAR</div>' +
-                        '<div class="report-item-date">' + date + ' ' + time + '</div>' +
-                        '<button class="report-item-del" onclick="event.stopPropagation();deleteSbarReport(\'' + key + '\')" title="Delete" aria-label="Delete report">&#128465;</button>' +
-                    '</div>';
-                }).join('');
+                listEl.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+                    '<div style="font-size:11px;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:.04em;">' + items.length + ' report' + (items.length === 1 ? '' : 's') + '</div>' +
+                    '<button class="sbar-btn primary" onclick="startNewSbarReport()" style="padding:6px 14px;font-size:12px;">+ New SBAR</button>' +
+                    '</div>' +
+                    items.map(([key, data]) => {
+                        const ts = parseInt(key);
+                        const date = new Date(ts).toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'});
+                        const time = new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                        const concernLine = data.primaryConcern
+                            ? '<div class="report-item-meta">' + escapeHtml(data.primaryConcern.slice(0, 100)) + (data.primaryConcern.length > 100 ? '…' : '') + '</div>'
+                            : '';
+                        const editable = data.formState ? '<span class="report-edit-pill" title="Editable on load">✎ Editable</span>' : '<span class="report-text-pill" title="Text-only — predates form-state save">📄 Text only</span>';
+                        return '<div class="report-item" onclick="loadSbarReport(\'' + key + '\')">' +
+                            '<div class="report-item-title">' + escapeHtml(data.patientName || 'Untitled') + '</div>' +
+                            concernLine +
+                            '<div class="report-item-date">' + date + ' · ' + time + ' ' + editable + '</div>' +
+                            '<button class="report-item-del" onclick="event.stopPropagation();deleteSbarReport(\'' + key + '\')" title="Delete" aria-label="Delete report">&#128465;</button>' +
+                        '</div>';
+                    }).join('');
             }).catch(e => {
                 listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Error loading reports.</div>';
             });
@@ -962,15 +1047,26 @@
             database.ref('sbarReports/' + currentUid + '/' + key).once('value').then(snap => {
                 const data = snap.val();
                 if (!data) return;
-                document.getElementById('sbarOutputText').textContent = data.reportText || '';
-                showSbarTab('output');
-                showToast('Report loaded.', 'success');
+                if (data.formState) {
+                    applySbarFormState(data.formState);
+                    document.getElementById('sbarOutputText').textContent = data.reportText || '';
+                    currentSbarReportKey = key;
+                    showSbarTab('situation');
+                    showToast('Loaded — edit any tab, then "Save to Account" updates this report.', 'success');
+                } else {
+                    // Legacy text-only record (schemaVersion 1)
+                    document.getElementById('sbarOutputText').textContent = data.reportText || '';
+                    currentSbarReportKey = null;
+                    showSbarTab('output');
+                    showToast('Loaded (text only — older save format).', 'info');
+                }
             });
         }
 
         function deleteSbarReport(key) {
             showConfirmModal('Delete Report', 'Delete this saved SBAR report?', function() {
                 database.ref('sbarReports/' + currentUid + '/' + key).remove().then(() => {
+                    if (currentSbarReportKey === key) currentSbarReportKey = null;
                     showToast('Report deleted.', 'success');
                     loadSbarHistory();
                 });
@@ -978,13 +1074,8 @@
         }
 
         function clearSbarForm() {
-            showConfirmModal('Clear Form', 'Clear all fields and start over?', function() {
-                document.querySelectorAll('.sbar-input, .sbar-select, .sbar-textarea').forEach(el => el.value = '');
-                document.querySelectorAll('.checkbox-chip input').forEach(cb => { cb.checked = false; cb.closest('.checkbox-chip').classList.remove('checked'); });
-                document.getElementById('sbarOutputText').textContent = 'Click "Generate Report" from the Recommendation tab to build your SBAR.';
-                showSbarTab('situation');
-                showToast('Form cleared.', 'success');
-            }, { confirmText: 'Clear', danger: true });
+            // Same effect as "+ New SBAR" — just keep the legacy clear name for compatibility
+            startNewSbarReport();
         }
     </script>
 </body>

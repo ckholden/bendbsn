@@ -185,7 +185,7 @@
     R.info = function (rootEl, state, onChange) {
         rootEl.innerHTML = panelHint(
             'Student & Resident Information',
-            'De-identify all resident data — initials only, no names. Saved to your Firebase account; never shared.',
+            'De-identify all resident data — initials only, no names.',
             '<div class="cap-grid g2">' +
                 field('Student Name', 'student_name', { tag: 'input' }) +
                 field('Date', 'date', { tag: 'input', type: 'date' }) +
