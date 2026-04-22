@@ -172,6 +172,57 @@
             font-size: 12px; color: var(--clx-text-muted, #718096);
             margin-top: 6px;
         }
+        /* Module picker (NEW packet modal) */
+        .cap-modal.wide { max-width: 600px; }
+        .cap-preset-pills {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin: 6px 0 10px;
+        }
+        .cap-preset-pill {
+            font: inherit; font-size: 11.5px; font-weight: 600;
+            padding: 4px 10px; border-radius: 999px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            color: var(--clx-text-secondary, #4a5568);
+            cursor: pointer;
+        }
+        .cap-preset-pill:hover { background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490); }
+        .cap-module-picker {
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+        .cap-pick-cat {
+            font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--clx-text-muted, #718096);
+            padding: 8px 12px 4px;
+        }
+        .cap-pick-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .cap-pick-row:hover { background: var(--clx-bg-hover, #e6edf5); }
+        .cap-pick-row input[type="checkbox"] {
+            width: 15px; height: 15px; accent-color: var(--clx-accent, #0f7490);
+            cursor: pointer;
+        }
+        .cap-pick-row.locked { opacity: 0.7; cursor: default; }
+        .cap-pick-row.locked input { cursor: not-allowed; }
+        .cap-pick-row .pick-icon { font-size: 14px; width: 20px; text-align: center; }
+        .cap-pick-row .pick-label { flex: 1; color: var(--clx-text-primary, #1a3a5c); }
+        .cap-pick-row .pick-lock {
+            font-size: 9.5px; text-transform: uppercase;
+            color: var(--clx-text-muted, #718096);
+        }
+        .cap-pick-counter {
+            font-size: 11px; color: var(--clx-text-muted, #718096);
+            margin-top: 4px;
+        }
 
         /* Footer */
         .cap-footer {
@@ -273,16 +324,16 @@
 
     <!-- New packet modal -->
     <div class="cap-modal-overlay" id="newPacketOverlay" role="dialog" aria-modal="true">
-        <div class="cap-modal">
+        <div class="cap-modal wide">
             <h2>New Clinical Packet</h2>
             <label for="np_title">Title <span style="font-weight:400;text-transform:none;color:var(--clx-text-muted);">(optional)</span></label>
-            <input type="text" id="np_title" placeholder='e.g., "Mr. Hayes — Tuesday AM"' maxlength="80">
+            <input type="text" id="np_title" maxlength="80">
             <p class="cap-modal-hint">If blank, falls back to {Initials} · {Date} · {Site}.</p>
 
             <div class="cap-modal-row">
                 <div>
                     <label for="np_initials">Resident Initials</label>
-                    <input type="text" id="np_initials" placeholder="e.g., DO" maxlength="5">
+                    <input type="text" id="np_initials" maxlength="5">
                 </div>
                 <div>
                     <label for="np_date">Date</label>
@@ -293,22 +344,19 @@
             <div class="cap-modal-row">
                 <div>
                     <label for="np_site">Clinical Site</label>
-                    <input type="text" id="np_site" placeholder="e.g., Countryside Living">
+                    <input type="text" id="np_site">
                 </div>
                 <div>
                     <label for="np_course">Course</label>
-                    <input type="text" id="np_course" placeholder="e.g., NUR218">
+                    <input type="text" id="np_course">
                 </div>
             </div>
 
-            <label for="np_template">Module Template</label>
-            <select id="np_template">
-                <option value="memory-care-default">Memory Care / Assisted Living (default)</option>
-                <option value="acute-care-default">Acute Care</option>
-                <option value="peds-default">Pediatrics</option>
-                <option value="custom">Custom (start with minimal modules)</option>
-            </select>
-            <p class="cap-modal-hint">Picks which sections start enabled. You can toggle modules on/off anytime inside the packet.</p>
+            <label>Modules to include</label>
+            <p class="cap-modal-hint" style="margin-bottom:0;">Build your packet from scratch — check whatever applies to your rotation. Quick start:</p>
+            <div class="cap-preset-pills" id="np_presetPills"></div>
+            <div class="cap-module-picker" id="np_modulePicker"></div>
+            <p class="cap-pick-counter" id="np_pickCounter">0 modules selected</p>
 
             <div class="cap-modal-actions">
                 <button class="cap-btn" onclick="closeNewPacketModal()">Cancel</button>
@@ -331,6 +379,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="/shared/header.js"></script>
     <script src="/shared/toast.js"></script>
+    <script src="/clinical/cap-modules.js"></script>
     <script>
         // ─── Theme + sidebar (matched to other BendBSN pages) ───
         function initTheme() {
@@ -370,27 +419,9 @@
         const auth = firebase.auth();
         const database = firebase.database();
 
-        // ─── Module template presets ───
-        // (Used by the editor in subsequent commits; defined here so "+ New Packet"
-        // can write the initial enabledModules list. Keep in sync with cap-modules.js
-        // when that lands.)
-        const MODULE_PRESETS = {
-            'memory-care-default': [
-                'info', 'omega', 'meds', 'morse', 'braden',
-                'minicog', 'behavior', 'ncsbn', 'sbar',
-                'progressNotes', 'notes', 'carePlan'
-            ],
-            'acute-care-default': [
-                'info', 'meds', 'morse', 'braden', 'headToToe',
-                'ncsbn', 'sbar', 'progressNotes', 'notes', 'carePlan'
-            ],
-            'peds-default': [
-                'info', 'meds', 'morse', 'headToToe',
-                'ncsbn', 'sbar', 'progressNotes', 'notes', 'carePlan'
-            ],
-            'custom': ['info', 'notes']
-        };
-        const SCHEMA_VERSION = 1;
+        // ─── Module template presets ─── (now sourced from /clinical/cap-modules.js)
+        const MODULE_PRESETS = (window.CAP_MODULES && window.CAP_MODULES.MODULE_PRESETS) || {};
+        const SCHEMA_VERSION = (window.CAP_MODULES && window.CAP_MODULES.SCHEMA_VERSION) || 1;
 
         // ─── State ───
         let allPackets = [];
@@ -517,9 +548,67 @@
             document.getElementById('np_date').value = new Date().toISOString().slice(0, 10);
             document.getElementById('np_site').value = '';
             document.getElementById('np_course').value = '';
-            document.getElementById('np_template').value = 'memory-care-default';
+            renderPresetPills();
+            renderModulePicker(['info', 'notes']); // start with just always-on
             document.getElementById('newPacketOverlay').classList.add('visible');
             setTimeout(function () { document.getElementById('np_title').focus(); }, 50);
+        }
+
+        function renderPresetPills() {
+            const pills = document.getElementById('np_presetPills');
+            const presets = [
+                { id: 'memory-care-default', label: 'Memory Care' },
+                { id: 'acute-care-default',  label: 'Acute Care' },
+                { id: 'peds-default',        label: 'Pediatrics' },
+                { id: 'custom',              label: 'Clear all' }
+            ];
+            pills.innerHTML = presets.map(function (p) {
+                return '<button type="button" class="cap-preset-pill" data-preset="' + p.id + '">' + p.label + '</button>';
+            }).join('');
+            pills.querySelectorAll('[data-preset]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const ids = (MODULE_PRESETS[btn.dataset.preset] || ['info', 'notes']).slice();
+                    renderModulePicker(ids);
+                });
+            });
+        }
+
+        function renderModulePicker(checkedIds) {
+            const picker = document.getElementById('np_modulePicker');
+            const checked = new Set(checkedIds || []);
+            // Always-on modules are forced checked
+            (window.CAP_MODULES.MODULE_CATALOG || []).forEach(function (m) {
+                if (m.alwaysOn) checked.add(m.id);
+            });
+            const grouped = window.CAP_MODULES.modulesByCategory();
+            let html = '';
+            window.CAP_MODULES.CATEGORY_ORDER.forEach(function (cat) {
+                const mods = grouped[cat];
+                if (!mods || !mods.length) return;
+                html += '<div class="cap-pick-cat">' + cat + '</div>';
+                mods.forEach(function (m) {
+                    const isOn = checked.has(m.id);
+                    const locked = !!m.alwaysOn;
+                    html += '<label class="cap-pick-row' + (locked ? ' locked' : '') + '">' +
+                        '<input type="checkbox" data-mod="' + m.id + '" ' +
+                            (isOn ? 'checked ' : '') + (locked ? 'disabled' : '') + '>' +
+                        '<span class="pick-icon">' + m.icon + '</span>' +
+                        '<span class="pick-label">' + m.label + '</span>' +
+                        (locked ? '<span class="pick-lock">always on</span>' : '') +
+                    '</label>';
+                });
+            });
+            picker.innerHTML = html;
+            picker.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                cb.addEventListener('change', updatePickCounter);
+            });
+            updatePickCounter();
+        }
+
+        function updatePickCounter() {
+            const picker = document.getElementById('np_modulePicker');
+            const n = picker.querySelectorAll('input[type="checkbox"]:checked').length;
+            document.getElementById('np_pickCounter').textContent = n + (n === 1 ? ' module selected' : ' modules selected');
         }
         function closeNewPacketModal() {
             document.getElementById('newPacketOverlay').classList.remove('visible');
@@ -543,8 +632,16 @@
             const date = document.getElementById('np_date').value || new Date().toISOString().slice(0, 10);
             const site = document.getElementById('np_site').value.trim();
             const course = document.getElementById('np_course').value.trim();
-            const templateId = document.getElementById('np_template').value;
-            const enabledModules = (MODULE_PRESETS[templateId] || MODULE_PRESETS['memory-care-default']).slice();
+            // Read enabled modules from the picker checkboxes (always-on are
+            // disabled+checked so they're guaranteed in the list).
+            const enabledModules = Array.from(
+                document.querySelectorAll('#np_modulePicker input[type="checkbox"]:checked')
+            ).map(function (cb) { return cb.dataset.mod; }).filter(Boolean);
+            if (!enabledModules.length) {
+                showToast('Pick at least one module before creating.', 'warning');
+                return;
+            }
+            const templateId = null; // user picked modules manually — no preset to record
 
             const now = Date.now();
             const newRef = packetsRef.push();

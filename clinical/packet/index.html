@@ -24,70 +24,208 @@
             background: var(--clx-bg-canvas, #f0f4f8);
             color: var(--clx-text-primary, #1a3a5c);
         }
-        .editor-stub {
-            max-width: 720px; margin: 40px auto; padding: 32px;
+
+        /* Sticky editor head — packet title + status + module toggle */
+        .cap-editor-head {
+            position: sticky;
+            top: 56px;             /* below site-header */
+            z-index: 50;
             background: var(--clx-bg-surface, #fff);
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            padding: 10px 20px;
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .cap-back {
+            font-size: 12.5px;
+            color: var(--clx-text-secondary, #4a5568);
+            text-decoration: none;
+            padding: 4px 10px;
+            border-radius: 5px;
             border: 1px solid var(--clx-border, #d1dce8);
-            border-radius: 10px;
-        }
-        .editor-stub h1 { font-size: 22px; margin: 0 0 6px; }
-        .editor-stub .meta {
-            font-size: 13px; color: var(--clx-text-muted, #718096);
-            margin-bottom: 22px;
-        }
-        .editor-stub .info-grid {
-            display: grid; grid-template-columns: 130px 1fr; row-gap: 8px; column-gap: 12px;
-            font-size: 13px; padding: 14px 16px;
             background: var(--clx-bg-surface-2, #f7f9fc);
+        }
+        .cap-back:hover { background: var(--clx-bg-hover, #e6edf5); }
+
+        .cap-title-input {
+            flex: 1; min-width: 200px;
+            font: inherit; font-size: 16px; font-weight: 700;
+            color: var(--clx-text-primary, #1a3a5c);
+            background: transparent;
+            border: 1px solid transparent;
             border-radius: 6px;
-            border: 1px solid var(--clx-border, #d1dce8);
+            padding: 4px 8px;
         }
-        .editor-stub .info-grid label {
-            font-weight: 600; color: var(--clx-text-secondary, #4a5568);
+        .cap-title-input:hover { border-color: var(--clx-border, #d1dce8); }
+        .cap-title-input:focus {
+            outline: none;
+            border-color: var(--clx-accent, #0f7490);
+            box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.12);
+            background: var(--clx-bg-surface, #fff);
         }
-        .editor-stub .info-grid span { color: var(--clx-text-primary, #1a3a5c); }
-        .editor-stub .stub-banner {
-            margin-top: 20px; padding: 14px;
-            background: #fef3c7; border: 1px solid #fcd34d;
+
+        .cap-save-status {
+            font-size: 12px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: #dcfce7; color: #166534;
+            border: 1px solid #bbf7d0;
+            white-space: nowrap;
+        }
+        .cap-save-status.saving { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
+        .cap-save-status.unsaved { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .cap-save-status.offline { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+
+        .cap-modules-btn {
+            padding: 6px 12px;
             border-radius: 6px;
-            font-size: 13px; color: #854d0e;
-        }
-        .editor-stub .actions {
-            margin-top: 22px; display: flex; gap: 8px;
-        }
-        .stub-btn {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 8px 14px; border-radius: 6px;
-            font-family: inherit; font-size: 13px; font-weight: 600;
+            font-family: inherit; font-size: 12.5px; font-weight: 600;
             border: 1px solid var(--clx-border, #d1dce8);
             background: var(--clx-bg-surface, #fff);
             color: var(--clx-text-primary, #1a3a5c);
-            cursor: pointer; text-decoration: none;
+            cursor: pointer;
         }
-        .stub-btn:hover { background: var(--clx-bg-hover, #e6edf5); }
-        .stub-btn.primary {
-            background: var(--clx-accent, #0f7490);
-            color: #fff; border-color: var(--clx-accent, #0f7490);
+        .cap-modules-btn:hover { background: var(--clx-bg-hover, #e6edf5); }
+
+        /* Tab bar */
+        .cap-tabs {
+            background: var(--clx-bg-surface, #fff);
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            padding: 0 20px;
+            display: flex; gap: 2px;
+            overflow-x: auto;
+            white-space: nowrap;
+            position: sticky;
+            top: calc(56px + 56px); /* below site-header + editor head */
+            z-index: 49;
         }
-        .modules-list {
-            margin-top: 16px; font-size: 12.5px; color: var(--clx-text-muted, #718096);
-        }
-        .modules-list strong {
-            display: block; font-size: 11px; text-transform: uppercase;
-            letter-spacing: 0.04em; color: var(--clx-text-secondary, #4a5568);
-            margin-bottom: 6px;
-        }
-        .module-chip {
-            display: inline-block;
-            font-size: 11px;
-            padding: 2px 7px;
-            background: var(--clx-bg-surface-2, #f7f9fc);
-            border: 1px solid var(--clx-border, #d1dce8);
-            border-radius: 999px;
-            margin: 2px;
+        .cap-tab {
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 10px 14px;
+            font: inherit; font-size: 13px; font-weight: 500;
             color: var(--clx-text-secondary, #4a5568);
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 6px;
+            white-space: nowrap;
         }
-        [data-theme="dark"] .editor-stub { background: var(--clx-bg-surface, #1a202c); }
+        .cap-tab:hover { color: var(--clx-text-primary, #1a3a5c); }
+        .cap-tab.active {
+            color: var(--clx-accent, #0f7490);
+            border-bottom-color: var(--clx-accent, #0f7490);
+            font-weight: 600;
+        }
+        .cap-tab-icon { font-size: 14px; }
+
+        /* Tab content */
+        .cap-content {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 22px 20px 80px;
+            width: 100%;
+            flex: 1;
+        }
+        .cap-tab-empty {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px dashed var(--clx-border, #d1dce8);
+            border-radius: 8px;
+            padding: 36px 22px;
+            text-align: center;
+            color: var(--clx-text-muted, #718096);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .cap-tab-empty strong { color: var(--clx-text-primary, #1a3a5c); display: block; margin-bottom: 6px; font-size: 14px; }
+
+        /* Module toggle drawer (slide-over from right) */
+        .cap-drawer-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.32);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .cap-drawer-backdrop.visible { opacity: 1; pointer-events: auto; }
+        .cap-drawer {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: min(380px, 90vw);
+            background: var(--clx-bg-surface, #fff);
+            box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+            z-index: 101;
+            transform: translateX(100%);
+            transition: transform 0.2s;
+            display: flex; flex-direction: column;
+        }
+        .cap-drawer.visible { transform: translateX(0); }
+        .cap-drawer-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .cap-drawer-head h3 {
+            font-size: 15px; font-weight: 700;
+            color: var(--clx-text-primary, #1a3a5c);
+            margin: 0;
+            flex: 1;
+        }
+        .cap-drawer-close {
+            background: none; border: none;
+            font-size: 22px; line-height: 1;
+            color: var(--clx-text-muted, #718096);
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .cap-drawer-close:hover { background: rgba(0,0,0,0.05); color: var(--clx-text-primary, #1a3a5c); }
+        .cap-drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .cap-drawer-cat {
+            font-size: 10.5px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--clx-text-muted, #718096);
+            padding: 12px 18px 4px;
+        }
+        .cap-drawer-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 18px;
+            cursor: pointer;
+        }
+        .cap-drawer-row:hover { background: var(--clx-bg-hover, #f7fafd); }
+        .cap-drawer-row input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: var(--clx-accent, #0f7490);
+            cursor: pointer;
+        }
+        .cap-drawer-row.locked { opacity: 0.7; }
+        .cap-drawer-row.locked input { cursor: not-allowed; }
+        .cap-drawer-row .icon { font-size: 16px; width: 22px; text-align: center; }
+        .cap-drawer-row .label { flex: 1; font-size: 13px; color: var(--clx-text-primary, #1a3a5c); }
+        .cap-drawer-row .lock-tag {
+            font-size: 9.5px; text-transform: uppercase;
+            color: var(--clx-text-muted, #718096);
+            border: 1px solid var(--clx-border, #d1dce8);
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+        .cap-drawer-foot {
+            border-top: 1px solid var(--clx-border, #d1dce8);
+            padding: 10px 18px;
+            font-size: 11.5px;
+            color: var(--clx-text-muted, #718096);
+        }
+
+        @media (max-width: 600px) {
+            .cap-tabs { top: calc(56px + 96px); }
+            .cap-editor-head { padding: 8px 12px; }
+        }
+
+        [data-theme="dark"] .cap-editor-head,
+        [data-theme="dark"] .cap-tabs,
+        [data-theme="dark"] .cap-drawer { background: var(--clx-bg-surface, #1a202c); }
     </style>
 </head>
 <body>
@@ -95,60 +233,58 @@
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
     </header>
 
-    <main role="main">
-        <div class="editor-stub">
-            <h1 id="stubTitle">Loading packet…</h1>
-            <p class="meta" id="stubMeta">&nbsp;</p>
+    <!-- Editor head: back, title, save status, module toggle -->
+    <div class="cap-editor-head">
+        <a href="/clinical/" class="cap-back">← My Packets</a>
+        <input type="text" id="capTitle" class="cap-title-input" placeholder="Untitled packet" maxlength="80">
+        <span class="cap-save-status" id="capSaveStatus">Saved</span>
+        <button class="cap-modules-btn" onclick="openModuleDrawer()">⚙️ Modules</button>
+    </div>
 
-            <div class="info-grid" id="infoGrid" style="display:none;">
-                <label>Resident</label><span id="info_initials">—</span>
-                <label>Date</label><span id="info_date">—</span>
-                <label>Site</label><span id="info_site">—</span>
-                <label>Course</label><span id="info_course">—</span>
-                <label>Template</label><span id="info_template">—</span>
-                <label>Created</label><span id="info_created">—</span>
-            </div>
+    <!-- Tab bar (rendered dynamically based on enabledModules) -->
+    <nav class="cap-tabs" id="capTabs" role="tablist"></nav>
 
-            <div class="modules-list" id="modulesList" style="display:none;"></div>
+    <main class="cap-content" id="capContent" role="main"></main>
 
-            <div class="stub-banner">
-                <strong>📋 Editor under construction.</strong>
-                The packet record exists in your account and is ready for editing —
-                the full module editor is the next commit. Your data is safe; this
-                page just confirms the foundation works.
-            </div>
-
-            <div class="actions">
-                <a href="/clinical/" class="stub-btn">← Back to My Packets</a>
-                <button class="stub-btn danger" onclick="deleteThisPacket()">🗑 Delete this packet</button>
-            </div>
+    <!-- Module toggle drawer -->
+    <div class="cap-drawer-backdrop" id="capDrawerBackdrop" onclick="closeModuleDrawer()"></div>
+    <aside class="cap-drawer" id="capDrawer" role="dialog" aria-label="Module toggles">
+        <div class="cap-drawer-head">
+            <h3>⚙️ Modules</h3>
+            <button class="cap-drawer-close" onclick="closeModuleDrawer()" aria-label="Close">&times;</button>
         </div>
-    </main>
+        <div class="cap-drawer-body" id="capDrawerBody"></div>
+        <div class="cap-drawer-foot">
+            Toggling a module OFF wipes its data after a confirmation. Toggle back ON gives you a clean section.
+        </div>
+    </aside>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="/shared/header.js"></script>
     <script src="/shared/toast.js"></script>
+    <script src="/clinical/cap-modules.js"></script>
     <script>
-        // Theme init
+        // ─── Theme init ───
         (function () {
             const t = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', t);
         })();
 
-        // Read packet ID from URL
+        // ─── Read packet ID ───
         function getPacketId() {
             const p = new URLSearchParams(window.location.search);
             return p.get('id') || '';
         }
-        const packetId = getPacketId();
-        if (!packetId) {
-            document.getElementById('stubTitle').textContent = 'No packet selected.';
-            document.getElementById('stubMeta').innerHTML = '<a href="/clinical/">← Back to My Packets</a>';
+        const PACKET_ID = getPacketId();
+        if (!PACKET_ID) {
+            document.getElementById('capContent').innerHTML =
+                '<div class="cap-tab-empty"><strong>No packet selected.</strong>' +
+                '<a href="/clinical/" style="color:var(--clx-accent);">← Back to My Packets</a></div>';
         }
 
-        // Firebase
+        // ─── Firebase init ───
         const firebaseConfig = {
             apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
             authDomain: "bendbsn-17377.firebaseapp.com",
@@ -162,84 +298,288 @@
         const auth = firebase.auth();
         const database = firebase.database();
 
+        const CAP = window.CAP_MODULES;
+        const LS_BACKUP_KEY = 'bendbsn_cap_local_' + PACKET_ID;
+
+        // ─── State ───
         let currentUid = null;
         let packetRef = null;
+        // Authoritative packet — { meta: {...}, state: {...} }. Mutated by user edits + drawer.
+        let packet = null;
+        // Currently active tab id (one of enabledModules)
+        let activeTab = null;
+        // Autosave debounce timer
+        let saveTimer = null;
+        let lastSaveErrorAt = 0;
+        let pendingSave = false;
+
+        function setSaveStatus(state) {
+            const el = document.getElementById('capSaveStatus');
+            el.className = 'cap-save-status ' + (state.cls || 'saved');
+            el.textContent = state.text;
+        }
 
         function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-        function fmtDate(iso) {
-            if (!iso) return '—';
-            const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (!m) return iso;
-            return m[2] + '/' + m[3] + '/' + m[1].slice(2);
-        }
-        function fmtDateTime(ts) {
-            if (!ts) return '—';
-            return new Date(ts).toLocaleString();
-        }
 
+        // ─── Auth + load ───
         auth.onAuthStateChanged(function (user) {
             if (!user) {
                 showToast('Please sign in.', 'warning');
                 setTimeout(function () { window.location.href = '/'; }, 1500);
                 return;
             }
-            if (!packetId) return;
+            if (!PACKET_ID) return;
             currentUid = user.uid;
-            packetRef = database.ref('emr-clinical/packets/' + currentUid + '/' + packetId);
+            packetRef = database.ref('emr-clinical/packets/' + currentUid + '/' + PACKET_ID);
+            loadPacket();
+        });
+
+        function loadPacket() {
+            setSaveStatus({ cls: 'saving', text: 'Loading…' });
             packetRef.once('value').then(function (snap) {
                 const val = snap.val();
                 if (!val) {
-                    document.getElementById('stubTitle').textContent = 'Packet not found.';
-                    document.getElementById('stubMeta').innerHTML = '<a href="/clinical/">← Back to My Packets</a>';
+                    document.getElementById('capContent').innerHTML =
+                        '<div class="cap-tab-empty"><strong>Packet not found.</strong>' +
+                        '<a href="/clinical/" style="color:var(--clx-accent);">← Back to My Packets</a></div>';
                     return;
                 }
-                const meta = val.meta || {};
-                const titleParts = [];
-                if (meta.title) titleParts.push(meta.title);
-                else {
-                    if (meta.residentInitials) titleParts.push(meta.residentInitials);
-                    if (meta.date) titleParts.push(fmtDate(meta.date));
-                    if (meta.site) titleParts.push(meta.site);
-                }
-                document.getElementById('stubTitle').textContent = titleParts.join(' · ') || 'Untitled packet';
-                document.getElementById('stubMeta').textContent = 'Packet ID: ' + packetId;
-
-                document.getElementById('info_initials').textContent = meta.residentInitials || '—';
-                document.getElementById('info_date').textContent = fmtDate(meta.date);
-                document.getElementById('info_site').textContent = meta.site || '—';
-                document.getElementById('info_course').textContent = meta.course || '—';
-                document.getElementById('info_template').textContent = meta.templateId || '—';
-                document.getElementById('info_created').textContent = fmtDateTime(meta.createdAt);
-                document.getElementById('infoGrid').style.display = 'grid';
-
-                const enabled = meta.enabledModules || [];
-                if (enabled.length) {
-                    const chips = enabled.map(function (m) { return '<span class="module-chip">' + esc(m) + '</span>'; }).join('');
-                    document.getElementById('modulesList').innerHTML =
-                        '<strong>Enabled modules (' + enabled.length + ')</strong>' + chips;
-                    document.getElementById('modulesList').style.display = 'block';
-                }
+                packet = {
+                    meta: val.meta || {},
+                    state: val.state || {}
+                };
+                if (!Array.isArray(packet.meta.enabledModules)) packet.meta.enabledModules = ['info', 'notes'];
+                writeLocalBackup();
+                renderEditor();
+                setSaveStatus({ cls: 'saved', text: 'Saved' });
             }).catch(function (err) {
-                console.error('[CAP] packet read failed:', err);
-                document.getElementById('stubTitle').textContent = 'Could not load packet.';
-                document.getElementById('stubMeta').textContent = err.message || String(err);
+                console.error('[CAP editor] load failed:', err);
+                // Try local backup
+                try {
+                    const raw = localStorage.getItem(LS_BACKUP_KEY);
+                    if (raw) {
+                        packet = JSON.parse(raw);
+                        if (!Array.isArray(packet.meta.enabledModules)) packet.meta.enabledModules = ['info', 'notes'];
+                        renderEditor();
+                        setSaveStatus({ cls: 'offline', text: 'Offline — local backup' });
+                        showToast('Could not reach Firebase. Loaded local backup.', 'warning');
+                        return;
+                    }
+                } catch (e) {}
+                document.getElementById('capContent').innerHTML =
+                    '<div class="cap-tab-empty"><strong>Could not load packet.</strong>' + esc(err.message || String(err)) + '</div>';
             });
+        }
+
+        function writeLocalBackup() {
+            try { localStorage.setItem(LS_BACKUP_KEY, JSON.stringify(packet)); } catch (e) {}
+        }
+
+        // ─── Render: title, tabs, body ───
+        function renderEditor() {
+            // Title
+            const titleEl = document.getElementById('capTitle');
+            titleEl.value = packet.meta.title || '';
+            titleEl.placeholder = packetFallbackTitle();
+            // Tabs
+            renderTabs();
+            // Initial active tab — from URL hash, or first enabled
+            const fromHash = (location.hash || '').replace(/^#/, '');
+            if (fromHash && packet.meta.enabledModules.indexOf(fromHash) !== -1) {
+                activeTab = fromHash;
+            } else {
+                activeTab = packet.meta.enabledModules[0] || 'info';
+            }
+            renderActiveTab();
+        }
+
+        function packetFallbackTitle() {
+            const parts = [];
+            if (packet.meta.residentInitials) parts.push(packet.meta.residentInitials);
+            if (packet.meta.date) parts.push(packet.meta.date);
+            if (packet.meta.site) parts.push(packet.meta.site);
+            return parts.join(' · ') || 'Untitled packet';
+        }
+
+        function renderTabs() {
+            const tabsEl = document.getElementById('capTabs');
+            const html = packet.meta.enabledModules.map(function (id) {
+                const m = CAP.MODULE_BY_ID[id];
+                if (!m) return '';
+                const isActive = id === activeTab ? ' active' : '';
+                return '<button class="cap-tab' + isActive + '" data-mod="' + esc(id) + '" onclick="switchTab(\'' + esc(id) + '\')">' +
+                    '<span class="cap-tab-icon">' + m.icon + '</span>' + esc(m.label) +
+                '</button>';
+            }).join('');
+            tabsEl.innerHTML = html || '<div style="padding:14px;color:var(--clx-text-muted);font-size:13px;font-style:italic;">No modules enabled. Click ⚙️ Modules to add some.</div>';
+        }
+
+        window.switchTab = function (id) {
+            activeTab = id;
+            history.replaceState(null, '', '?id=' + encodeURIComponent(PACKET_ID) + '#' + id);
+            // Refresh tab active state without re-rendering bodies
+            document.querySelectorAll('.cap-tab').forEach(function (b) {
+                b.classList.toggle('active', b.dataset.mod === id);
+            });
+            renderActiveTab();
+        };
+
+        // ─── Module body renderer (commit #2 = placeholders) ───
+        // Each module gets an empty card with metadata. Real renderers land
+        // in commits #3-5. The placeholder still wires up an "input" event
+        // listener so autosave is verifiable end-to-end with a temporary
+        // sandbox textarea per module.
+        function renderActiveTab() {
+            const contentEl = document.getElementById('capContent');
+            if (!activeTab) { contentEl.innerHTML = ''; return; }
+            const m = CAP.MODULE_BY_ID[activeTab];
+            if (!m) { contentEl.innerHTML = ''; return; }
+            const modState = (packet.state && packet.state[activeTab]) || {};
+            const sandboxText = (modState._sandboxText || '');
+            contentEl.innerHTML =
+                '<div class="cap-tab-empty">' +
+                    '<strong>' + esc(m.icon) + ' ' + esc(m.label) + '</strong>' +
+                    'Module renderer coming next commit. For now, this sandbox autosaves any text you type into the packet under <code style="background:var(--clx-bg-surface-2);padding:1px 5px;border-radius:3px;">state.' + esc(activeTab) + '._sandboxText</code> so you can verify autosave + offline backup end to end.' +
+                    '<textarea id="capSandboxTa" rows="6" style="width:100%;margin-top:14px;padding:10px;font-family:inherit;font-size:13px;border:1px solid var(--clx-border);border-radius:6px;background:var(--clx-bg-surface);color:var(--clx-text-primary);" placeholder="Type here to verify autosave…">' + esc(sandboxText) + '</textarea>' +
+                '</div>';
+            const ta = document.getElementById('capSandboxTa');
+            if (ta) {
+                ta.addEventListener('input', function () {
+                    if (!packet.state) packet.state = {};
+                    if (!packet.state[activeTab]) packet.state[activeTab] = {};
+                    packet.state[activeTab]._sandboxText = ta.value;
+                    queueAutosave();
+                });
+            }
+        }
+
+        // ─── Title editing ───
+        document.getElementById('capTitle').addEventListener('input', function (e) {
+            packet.meta.title = e.target.value;
+            queueAutosave();
         });
 
-        window.deleteThisPacket = function () {
-            if (!packetRef) return;
-            const cb = function () {
-                packetRef.remove().then(function () {
-                    showToast('Packet deleted.', 'success');
-                    setTimeout(function () { window.location.href = '/clinical/'; }, 600);
-                }).catch(function (err) {
-                    showToast('Delete failed: ' + (err.message || err), 'error');
-                });
-            };
-            if (window.showConfirmModal) {
-                showConfirmModal('Delete packet?', 'This can\'t be undone.', cb, { danger: true, confirmText: 'Delete' });
-            } else if (confirm('Delete this packet?')) cb();
+        // ─── Autosave ───
+        function queueAutosave() {
+            setSaveStatus({ cls: 'saving', text: 'Saving…' });
+            writeLocalBackup();
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(commitSave, 400);
+        }
+        function commitSave() {
+            if (!packetRef || !packet) return;
+            packet.meta.updatedAt = Date.now();
+            pendingSave = true;
+            packetRef.set(packet).then(function () {
+                pendingSave = false;
+                setSaveStatus({ cls: 'saved', text: 'Saved' });
+            }).catch(function (err) {
+                console.warn('[CAP editor] save failed:', err);
+                pendingSave = false;
+                setSaveStatus({ cls: 'offline', text: 'Offline — backed up locally' });
+                lastSaveErrorAt = Date.now();
+                // Retry once after 5s
+                setTimeout(function () {
+                    if (Date.now() - lastSaveErrorAt < 4500) return; // user typed again
+                    commitSave();
+                }, 5000);
+            });
+        }
+        // Save on tab close / blur as a safety net
+        window.addEventListener('beforeunload', function () {
+            if (pendingSave || saveTimer) {
+                clearTimeout(saveTimer);
+                commitSave();
+            }
+        });
+
+        // ─── Module toggle drawer ───
+        window.openModuleDrawer = function () {
+            renderDrawer();
+            document.getElementById('capDrawer').classList.add('visible');
+            document.getElementById('capDrawerBackdrop').classList.add('visible');
         };
+        window.closeModuleDrawer = function () {
+            document.getElementById('capDrawer').classList.remove('visible');
+            document.getElementById('capDrawerBackdrop').classList.remove('visible');
+        };
+        document.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape' && document.getElementById('capDrawer').classList.contains('visible')) {
+                closeModuleDrawer();
+            }
+        });
+
+        function renderDrawer() {
+            const body = document.getElementById('capDrawerBody');
+            const enabled = new Set(packet.meta.enabledModules || []);
+            const grouped = CAP.modulesByCategory();
+            let html = '';
+            CAP.CATEGORY_ORDER.forEach(function (cat) {
+                const mods = grouped[cat];
+                if (!mods || !mods.length) return;
+                html += '<div class="cap-drawer-cat">' + esc(cat) + '</div>';
+                mods.forEach(function (m) {
+                    const isOn = enabled.has(m.id);
+                    const locked = !!m.alwaysOn;
+                    html += '<label class="cap-drawer-row' + (locked ? ' locked' : '') + '">' +
+                        '<input type="checkbox" data-mod="' + esc(m.id) + '" ' +
+                            (isOn ? 'checked ' : '') + (locked ? 'disabled' : '') + '>' +
+                        '<span class="icon">' + m.icon + '</span>' +
+                        '<span class="label">' + esc(m.label) + '</span>' +
+                        (locked ? '<span class="lock-tag">always on</span>' : '') +
+                    '</label>';
+                });
+            });
+            body.innerHTML = html;
+            // Wire toggles
+            body.querySelectorAll('input[type="checkbox"][data-mod]').forEach(function (cb) {
+                cb.addEventListener('change', function () { handleModuleToggle(cb); });
+            });
+        }
+
+        function handleModuleToggle(cb) {
+            const modId = cb.dataset.mod;
+            const m = CAP.MODULE_BY_ID[modId];
+            if (!m) return;
+            const enabled = new Set(packet.meta.enabledModules || []);
+            const turningOn = cb.checked;
+            if (turningOn) {
+                enabled.add(modId);
+                packet.meta.enabledModules = Array.from(enabled);
+                if (activeTab === null || !packet.meta.enabledModules.includes(activeTab)) activeTab = modId;
+                renderTabs();
+                renderActiveTab();
+                queueAutosave();
+                return;
+            }
+            // Turning OFF — confirm + wipe (per user decision: wipe with confirm).
+            const hasData = packet.state && packet.state[modId] && Object.keys(packet.state[modId]).length > 0;
+            const proceed = function () {
+                enabled.delete(modId);
+                packet.meta.enabledModules = Array.from(enabled);
+                if (packet.state) delete packet.state[modId];
+                if (activeTab === modId) activeTab = packet.meta.enabledModules[0] || null;
+                renderDrawer();
+                renderTabs();
+                renderActiveTab();
+                queueAutosave();
+            };
+            if (!hasData) { proceed(); return; }
+            const cb_ = cb; // capture for re-check on cancel
+            if (window.showConfirmModal) {
+                showConfirmModal('Hide ' + m.label + '?',
+                    'This will delete the data you\'ve entered in this module. Continue?',
+                    proceed,
+                    {
+                        danger: true, confirmText: 'Delete + hide',
+                        onCancel: function () { cb_.checked = true; }
+                    });
+            } else if (confirm('Delete data in ' + m.label + '?')) {
+                proceed();
+            } else {
+                cb_.checked = true;
+            }
+        }
     </script>
 </body>
 </html>
