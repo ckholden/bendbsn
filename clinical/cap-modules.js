@@ -20,6 +20,7 @@
         'Always-on',
         'Default',
         'Scales',
+        'Screenings',
         'Memory care / AL',
         'Acute care',
         'Academic'
@@ -39,6 +40,13 @@
         { id: 'braden',        label: 'Braden Scale',                 category: 'Scales',                           icon: '🛌' },
         { id: 'hendrich',      label: 'Hendrich II Fall Model',       category: 'Scales',                           icon: '🚶' },
 
+        // ---- Validated screening tools (from RN Notes / app) ----
+        { id: 'phq9',          label: 'PHQ-9 (Depression)',           category: 'Screenings',                       icon: '💭' },
+        { id: 'gad7',          label: 'GAD-7 (Anxiety)',              category: 'Screenings',                       icon: '😰' },
+        { id: 'cssrs',         label: 'C-SSRS (Suicide Risk)',        category: 'Screenings',                       icon: '🚨' },
+        { id: 'cage',          label: 'CAGE (Alcohol)',               category: 'Screenings',                       icon: '🍷' },
+        { id: 'cam',           label: 'CAM (Confusion / Delirium)',   category: 'Screenings',                       icon: '🌀' },
+
         { id: 'omega',         label: 'OMEGA-7',                      category: 'Memory care / AL',                 icon: 'Ω' },
         { id: 'minicog',       label: 'Mini-Cog',                     category: 'Memory care / AL',                 icon: '🧠' },
         { id: 'behavior',      label: 'Behavior (ABC)',               category: 'Memory care / AL',                 icon: '🎭' },
@@ -55,15 +63,20 @@
     const MODULE_PRESETS = {
         'memory-care-default': [
             'info', 'omega', 'meds', 'morse', 'braden',
-            'minicog', 'behavior', 'ncsbn', 'sbar',
+            'minicog', 'behavior', 'cam', 'ncsbn', 'sbar',
             'progressNotes', 'notes', 'carePlan'
         ],
         'acute-care-default': [
             'info', 'meds', 'morse', 'braden', 'headToToe',
-            'ncsbn', 'sbar', 'progressNotes', 'notes', 'carePlan'
+            'phq9', 'cam', 'ncsbn', 'sbar',
+            'progressNotes', 'notes', 'carePlan'
         ],
         'peds-default': [
             'info', 'meds', 'morse', 'headToToe',
+            'ncsbn', 'sbar', 'progressNotes', 'notes', 'carePlan'
+        ],
+        'mental-health-default': [
+            'info', 'phq9', 'gad7', 'cssrs', 'cage',
             'ncsbn', 'sbar', 'progressNotes', 'notes', 'carePlan'
         ],
         'custom': ['info', 'notes']
@@ -88,6 +101,6 @@
         MODULE_PRESETS: MODULE_PRESETS,
         MODULE_BY_ID: MODULE_BY_ID,
         modulesByCategory: modulesByCategory,
-        SCHEMA_VERSION: 1
+        SCHEMA_VERSION: 2  // bumped for screening modules
     };
 })();

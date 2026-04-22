@@ -162,6 +162,101 @@
           ] }
     ];
 
+    // ---- Screening tools ported from /app/ (RN Notes) ----
+    // PHQ-9 — depression. 9 items, scored 0-3 each (0-27 total).
+    const PHQ9_QUESTIONS = [
+        'Little interest or pleasure in doing things',
+        'Feeling down, depressed, or hopeless',
+        'Trouble falling or staying asleep, or sleeping too much',
+        'Feeling tired or having little energy',
+        'Poor appetite or overeating',
+        'Feeling bad about yourself — or that you are a failure or have let yourself or your family down',
+        'Trouble concentrating on things, such as reading the newspaper or watching television',
+        'Moving or speaking so slowly that other people could have noticed; or the opposite — being so fidgety or restless that you have been moving around a lot more than usual',
+        'Thoughts that you would be better off dead, or of hurting yourself in some way'
+    ];
+    const PHQ9_OPTS = [
+        { val: 0, label: 'Not at all' },
+        { val: 1, label: 'Several days' },
+        { val: 2, label: 'More than half the days' },
+        { val: 3, label: 'Nearly every day' }
+    ];
+    function phq9Severity(s) {
+        if (s == null) return { label: 'Not scored', cls: '' };
+        if (s >= 20) return { label: 'Severe (20–27)', cls: 'high' };
+        if (s >= 15) return { label: 'Moderately Severe (15–19)', cls: 'high' };
+        if (s >= 10) return { label: 'Moderate (10–14)', cls: 'moderate' };
+        if (s >= 5)  return { label: 'Mild (5–9)', cls: 'moderate' };
+        return { label: 'None–Minimal (0–4)', cls: 'low' };
+    }
+
+    // GAD-7 — anxiety. 7 items, 0-3 each (0-21 total).
+    const GAD7_QUESTIONS = [
+        'Feeling nervous, anxious, or on edge',
+        'Not being able to stop or control worrying',
+        'Worrying too much about different things',
+        'Trouble relaxing',
+        'Being so restless that it is hard to sit still',
+        'Becoming easily annoyed or irritable',
+        'Feeling afraid as if something awful might happen'
+    ];
+    function gad7Severity(s) {
+        if (s == null) return { label: 'Not scored', cls: '' };
+        if (s >= 15) return { label: 'Severe (15–21)', cls: 'high' };
+        if (s >= 10) return { label: 'Moderate (10–14)', cls: 'moderate' };
+        if (s >= 5)  return { label: 'Mild (5–9)', cls: 'moderate' };
+        return { label: 'Minimal (0–4)', cls: 'low' };
+    }
+
+    // C-SSRS — Columbia Suicide Severity Rating Scale (yes/no triage).
+    const CSSRS_QUESTIONS = [
+        { id: 'q1', text: 'Have you wished you were dead or wished you could go to sleep and not wake up?' },
+        { id: 'q2', text: 'Have you actually had any thoughts of killing yourself?' },
+        { id: 'q3', text: 'Have you been thinking about how you might do this?' },
+        { id: 'q4', text: 'Have you had these thoughts and had some intention of acting on them?' },
+        { id: 'q5', text: 'Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?' },
+        { id: 'q6', text: 'Have you ever done anything, started to do anything, or prepared to do anything to end your life?' }
+    ];
+    function cssrsTriage(answers) {
+        const a = answers || {};
+        if (a.q6 === 'yes') return { label: 'BEHAVIORAL — escalate immediately, do not leave alone', cls: 'high' };
+        if (a.q4 === 'yes' || a.q5 === 'yes') return { label: 'HIGH RISK — notify provider, safety plan', cls: 'high' };
+        if (a.q3 === 'yes') return { label: 'MODERATE RISK — notify provider, monitor', cls: 'moderate' };
+        if (a.q2 === 'yes') return { label: 'LOW RISK — assess support, document', cls: 'moderate' };
+        if (a.q1 === 'yes') return { label: 'POSITIVE IDEATION — ongoing assessment', cls: 'low' };
+        if (Object.keys(a).length) return { label: 'Negative screen', cls: 'low' };
+        return { label: 'Not scored', cls: '' };
+    }
+
+    // CAGE — alcohol screen. 4 yes/no items, ≥2 = significant.
+    const CAGE_QUESTIONS = [
+        { id: 'C', letter: 'C', text: 'Have you ever felt you should CUT DOWN on your drinking?' },
+        { id: 'A', letter: 'A', text: 'Have people ANNOYED you by criticizing your drinking?' },
+        { id: 'G', letter: 'G', text: 'Have you ever felt bad or GUILTY about your drinking?' },
+        { id: 'E', letter: 'E', text: 'Have you ever had a drink first thing in the morning to steady your nerves or get rid of a hangover (EYE-OPENER)?' }
+    ];
+    function cageSeverity(score) {
+        if (score == null) return { label: 'Not scored', cls: '' };
+        if (score >= 2) return { label: 'Clinically significant (≥2) — further assessment indicated', cls: 'high' };
+        if (score === 1) return { label: 'Possible concern — repeat / probe further', cls: 'moderate' };
+        return { label: 'Negative screen', cls: 'low' };
+    }
+
+    // CAM — Confusion Assessment Method. 4 features; positive if F1 + F2 + (F3 OR F4).
+    const CAM_FEATURES = [
+        { id: 'F1', name: 'Acute Onset & Fluctuating Course', defn: 'Is there evidence of an acute change in mental status from baseline? Did the (abnormal) behavior fluctuate during the day?' },
+        { id: 'F2', name: 'Inattention', defn: 'Did the patient have difficulty focusing attention — easily distracted, trouble keeping track of what was being said?' },
+        { id: 'F3', name: 'Disorganized Thinking', defn: 'Was the patient\'s thinking disorganized or incoherent — rambling/irrelevant conversation, unclear or illogical flow of ideas, unpredictable switching from subject to subject?' },
+        { id: 'F4', name: 'Altered Level of Consciousness', defn: 'Overall, how would you rate the patient\'s LOC? Anything other than alert (vigilant, lethargic, stuporous, comatose) is positive.' }
+    ];
+    function camResult(features) {
+        const f = features || {};
+        const f1 = f.F1 === 'yes', f2 = f.F2 === 'yes', f3 = f.F3 === 'yes', f4 = f.F4 === 'yes';
+        if (f1 && f2 && (f3 || f4)) return { label: 'POSITIVE — delirium likely. Notify provider, look for cause.', cls: 'high' };
+        if (Object.keys(f).length === 0) return { label: 'Not scored', cls: '' };
+        return { label: 'Negative — delirium unlikely', cls: 'low' };
+    }
+
     function morseRiskLabel(score) {
         if (score >= 45) return { label: 'High Risk (45+)', cls: 'high' };
         if (score >= 25) return { label: 'Moderate Risk (25–44)', cls: 'moderate' };
@@ -1142,6 +1237,220 @@
             '</details>'
         );
         bindFields(rootEl, state, onChange);
+    };
+
+    // ============================================================
+    // SCREENING TOOL RENDERERS (PHQ-9, GAD-7, C-SSRS, CAGE, CAM)
+    // Mirror the renderer pattern used by Morse/Braden — radios per row,
+    // auto-tally, risk box, optional date + signature.
+    // ============================================================
+    function renderScored04(rootEl, state, onChange, opts) {
+        // opts: { id, title, hint, questions:[strings], optsList:[{val,label}], severityFn, footnoteHtml }
+        if (!state.choices) state.choices = {};
+        function render() {
+            let total = 0;
+            const rowsHtml = opts.questions.map(function (q, idx) {
+                const optsHtml = opts.optsList.map(function (o) {
+                    const isOn = state.choices[idx] === o.val;
+                    if (isOn) total += o.val;
+                    return '<label class="cap-morse-opt' + (isOn ? ' selected' : '') + '">' +
+                        '<input type="radio" name="' + opts.id + '_q' + idx + '" value="' + o.val + '" data-screen-q="' + idx + '"' + (isOn ? ' checked' : '') + '>' +
+                        '<span>' + esc(o.label) + '</span>' +
+                        '<span class="cap-morse-pts">+' + o.val + '</span>' +
+                    '</label>';
+                }).join('');
+                return '<div class="cap-morse-var">' +
+                    '<h4>' + (idx + 1) + '. ' + esc(q) + '</h4>' +
+                    '<div class="cap-morse-opts">' + optsHtml + '</div>' +
+                '</div>';
+            }).join('');
+            const answered = Object.keys(state.choices).length;
+            const sev = answered ? opts.severityFn(total) : { label: 'Not scored', cls: '' };
+            rootEl.innerHTML = panelHint(
+                opts.title,
+                opts.hint,
+                rowsHtml +
+                scoreBlock(answered ? total : '—', 'Total ' + opts.title.split(' ')[0] + ' Score', sev.label, sev.cls) +
+                (opts.footnoteHtml || '') +
+                '<div class="cap-grid g2" style="margin-top:14px;">' +
+                    field('Date', 'date', { tag: 'input', type: 'date' }) +
+                    field('Notes', 'notes', { tag: 'textarea', rows: 2, placeholder: 'Clinical context, plan, follow-up…' }) +
+                '</div>'
+            );
+            rootEl.querySelectorAll('input[type="radio"][data-screen-q]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    state.choices[parseInt(r.dataset.screenQ, 10)] = parseInt(r.value, 10);
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            bindFields(rootEl, state, onChange);
+        }
+        render();
+    }
+
+    R.phq9 = function (rootEl, state, onChange) {
+        renderScored04(rootEl, state, onChange, {
+            id: 'phq9',
+            title: 'PHQ-9 — Depression Screening',
+            hint: 'Over the last 2 weeks, how often has the resident been bothered by the following? 0–4 None · 5–9 Mild · 10–14 Moderate · 15–19 Mod-Severe · 20+ Severe.',
+            questions: PHQ9_QUESTIONS,
+            optsList: PHQ9_OPTS,
+            severityFn: phq9Severity,
+            footnoteHtml: '<p class="cap-fineprint" style="color:var(--clx-danger,#c62828);font-weight:600;">⚠ Question 9 (suicidal ideation): if scored ≥1, perform an immediate safety assessment and notify provider.</p>'
+        });
+    };
+
+    R.gad7 = function (rootEl, state, onChange) {
+        renderScored04(rootEl, state, onChange, {
+            id: 'gad7',
+            title: 'GAD-7 — Anxiety Screening',
+            hint: 'Over the last 2 weeks, how often has the resident been bothered by the following? 0–4 Minimal · 5–9 Mild · 10–14 Moderate · 15+ Severe.',
+            questions: GAD7_QUESTIONS,
+            optsList: PHQ9_OPTS,  // same 0-3 scale
+            severityFn: gad7Severity
+        });
+    };
+
+    R.cssrs = function (rootEl, state, onChange) {
+        if (!state.answers) state.answers = {};
+        function render() {
+            const rowsHtml = CSSRS_QUESTIONS.map(function (q, idx) {
+                const a = state.answers[q.id];
+                const yesOn = a === 'yes', noOn = a === 'no';
+                return '<div class="cap-morse-var">' +
+                    '<h4>' + (idx + 1) + '. ' + esc(q.text) + '</h4>' +
+                    '<div class="cap-morse-opts">' +
+                        '<label class="cap-morse-opt' + (yesOn ? ' selected' : '') + '">' +
+                            '<input type="radio" name="cssrs_' + q.id + '" value="yes" data-cssrs="' + q.id + '"' + (yesOn ? ' checked' : '') + '>' +
+                            '<span>Yes</span>' +
+                        '</label>' +
+                        '<label class="cap-morse-opt' + (noOn ? ' selected' : '') + '">' +
+                            '<input type="radio" name="cssrs_' + q.id + '" value="no" data-cssrs="' + q.id + '"' + (noOn ? ' checked' : '') + '>' +
+                            '<span>No</span>' +
+                        '</label>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            const tri = cssrsTriage(state.answers);
+            rootEl.innerHTML = panelHint(
+                'C-SSRS — Suicide Severity Rating',
+                'Six yes/no questions asked of the resident. Use the most-severe positive answer to drive the triage level. Document immediately if any escalating answer is positive.',
+                rowsHtml +
+                '<div class="cap-score-block ' + tri.cls + '" style="margin-top:14px;">' +
+                    '<span class="cap-score-num">⚠</span>' +
+                    '<span class="cap-score-label">Triage Level</span>' +
+                    '<span class="cap-score-risk">' + esc(tri.label) + '</span>' +
+                '</div>' +
+                '<div class="cap-grid g2" style="margin-top:14px;">' +
+                    field('Date', 'date', { tag: 'input', type: 'date' }) +
+                    field('Action / Notification', 'action', { tag: 'textarea', rows: 2, placeholder: 'Provider notified, safety plan, monitoring level…' }) +
+                '</div>'
+            );
+            rootEl.querySelectorAll('input[type="radio"][data-cssrs]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    state.answers[r.dataset.cssrs] = r.value;
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            bindFields(rootEl, state, onChange);
+        }
+        render();
+    };
+
+    R.cage = function (rootEl, state, onChange) {
+        if (!state.answers) state.answers = {};
+        function render() {
+            let yesCount = 0;
+            const rowsHtml = CAGE_QUESTIONS.map(function (q) {
+                const a = state.answers[q.id];
+                const yesOn = a === 'yes', noOn = a === 'no';
+                if (yesOn) yesCount += 1;
+                return '<div class="cap-morse-var">' +
+                    '<h4><strong>' + q.letter + '</strong> — ' + esc(q.text) + '</h4>' +
+                    '<div class="cap-morse-opts">' +
+                        '<label class="cap-morse-opt' + (yesOn ? ' selected' : '') + '">' +
+                            '<input type="radio" name="cage_' + q.id + '" value="yes" data-cage="' + q.id + '"' + (yesOn ? ' checked' : '') + '>' +
+                            '<span>Yes</span><span class="cap-morse-pts">+1</span>' +
+                        '</label>' +
+                        '<label class="cap-morse-opt' + (noOn ? ' selected' : '') + '">' +
+                            '<input type="radio" name="cage_' + q.id + '" value="no" data-cage="' + q.id + '"' + (noOn ? ' checked' : '') + '>' +
+                            '<span>No</span>' +
+                        '</label>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            const answered = Object.keys(state.answers).length;
+            const sev = answered ? cageSeverity(yesCount) : { label: 'Not scored', cls: '' };
+            rootEl.innerHTML = panelHint(
+                'CAGE — Alcohol Screening',
+                'Four yes/no questions. ≥2 "yes" answers = clinically significant; consider AUDIT or further assessment.',
+                rowsHtml +
+                scoreBlock(answered ? yesCount : '—', 'Total CAGE Score (0–4)', sev.label, sev.cls) +
+                '<div class="cap-grid g2" style="margin-top:14px;">' +
+                    field('Date', 'date', { tag: 'input', type: 'date' }) +
+                    field('Notes', 'notes', { tag: 'textarea', rows: 2, placeholder: 'Drinking history, frequency, last drink, plan…' }) +
+                '</div>'
+            );
+            rootEl.querySelectorAll('input[type="radio"][data-cage]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    state.answers[r.dataset.cage] = r.value;
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            bindFields(rootEl, state, onChange);
+        }
+        render();
+    };
+
+    R.cam = function (rootEl, state, onChange) {
+        if (!state.features) state.features = {};
+        function render() {
+            const rowsHtml = CAM_FEATURES.map(function (f) {
+                const a = state.features[f.id];
+                const yesOn = a === 'yes', noOn = a === 'no';
+                return '<div class="cap-braden-factor">' +
+                    '<h4>' + esc(f.id) + ' — ' + esc(f.name) + '</h4>' +
+                    '<p class="cap-braden-defn">' + esc(f.defn) + '</p>' +
+                    '<div class="cap-morse-opts" style="margin-top:8px;">' +
+                        '<label class="cap-morse-opt' + (yesOn ? ' selected' : '') + '">' +
+                            '<input type="radio" name="cam_' + f.id + '" value="yes" data-cam="' + f.id + '"' + (yesOn ? ' checked' : '') + '>' +
+                            '<span>Present</span>' +
+                        '</label>' +
+                        '<label class="cap-morse-opt' + (noOn ? ' selected' : '') + '">' +
+                            '<input type="radio" name="cam_' + f.id + '" value="no" data-cam="' + f.id + '"' + (noOn ? ' checked' : '') + '>' +
+                            '<span>Absent</span>' +
+                        '</label>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            const result = camResult(state.features);
+            rootEl.innerHTML = panelHint(
+                'CAM — Confusion Assessment Method',
+                'Diagnostic algorithm for delirium. POSITIVE if Feature 1 AND Feature 2 are present, AND either Feature 3 OR Feature 4 is present. Rule out reversible causes immediately.',
+                rowsHtml +
+                '<div class="cap-score-block ' + result.cls + '" style="margin-top:14px;">' +
+                    '<span class="cap-score-num">' + (result.cls === 'high' ? '⚠' : '✓') + '</span>' +
+                    '<span class="cap-score-label">Algorithm Result</span>' +
+                    '<span class="cap-score-risk">' + esc(result.label) + '</span>' +
+                '</div>' +
+                '<div class="cap-grid g2" style="margin-top:14px;">' +
+                    field('Date / Time', 'date', { tag: 'input', type: 'datetime-local' }) +
+                    field('Suspected Cause(s)', 'cause', { tag: 'textarea', rows: 2, placeholder: 'Infection, dehydration, meds (anticholinergics, opioids), pain, sleep deprivation…' }) +
+                '</div>'
+            );
+            rootEl.querySelectorAll('input[type="radio"][data-cam]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    state.features[r.dataset.cam] = r.value;
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            bindFields(rootEl, state, onChange);
+        }
+        render();
     };
 
     window.CAP_RENDERERS = R;

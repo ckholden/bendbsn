@@ -663,6 +663,170 @@
     };
 
     // ------------------------------------------------------------------
+    // Validated screening tools (PHQ-9, GAD-7, C-SSRS, CAGE, CAM)
+    // ------------------------------------------------------------------
+    const PHQ9_Q_PDF = [
+        'Little interest or pleasure in doing things',
+        'Feeling down, depressed, or hopeless',
+        'Trouble falling or staying asleep, or sleeping too much',
+        'Feeling tired or having little energy',
+        'Poor appetite or overeating',
+        'Feeling bad about yourself or that you are a failure',
+        'Trouble concentrating on things',
+        'Moving / speaking slowly OR fidgety / restless',
+        'Thoughts that you would be better off dead, or hurting yourself'
+    ];
+    const PHQ9_OPT_LABELS = ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'];
+
+    const GAD7_Q_PDF = [
+        'Feeling nervous, anxious, or on edge',
+        'Not being able to stop or control worrying',
+        'Worrying too much about different things',
+        'Trouble relaxing',
+        'Being so restless that it is hard to sit still',
+        'Becoming easily annoyed or irritable',
+        'Feeling afraid as if something awful might happen'
+    ];
+
+    function pdfScored04(L, s, opts) {
+        // opts: { title, subtitle, questions, severityFn, footnote }
+        L.h1(opts.title);
+        if (opts.subtitle) L.para(opts.subtitle);
+        const choices = s.choices || {};
+        let total = 0;
+        let answered = 0;
+        opts.questions.forEach(function (q, idx) {
+            const v = choices[idx];
+            if (v != null) { total += v; answered += 1; }
+            L.inlineKv((idx + 1) + '. ' + q, v != null ? (v + ' — ' + PHQ9_OPT_LABELS[v]) : '—');
+        });
+        L.spacer(2);
+        L.scoreBox(answered ? total : '—', 'Total ' + opts.title.split(' ')[0] + ' Score', answered ? opts.severityFn(total).label : 'Not scored');
+        if (opts.footnote) {
+            L.spacer(2);
+            L.setText([180, 30, 30], 8, 'bold');
+            L.doc.text(opts.footnote, L.m, L.y);
+            L.y += 5;
+        }
+        if (s.date)  L.inlineKv('Date', s.date);
+        if (s.notes) { L.spacer(1); L.fieldBlock('Notes', s.notes); }
+    }
+
+    function phq9SevPdf(s) {
+        if (s >= 20) return { label: 'Severe (20–27)' };
+        if (s >= 15) return { label: 'Moderately Severe (15–19)' };
+        if (s >= 10) return { label: 'Moderate (10–14)' };
+        if (s >= 5)  return { label: 'Mild (5–9)' };
+        return { label: 'None–Minimal (0–4)' };
+    }
+    function gad7SevPdf(s) {
+        if (s >= 15) return { label: 'Severe (15–21)' };
+        if (s >= 10) return { label: 'Moderate (10–14)' };
+        if (s >= 5)  return { label: 'Mild (5–9)' };
+        return { label: 'Minimal (0–4)' };
+    }
+
+    R_PDF.phq9 = function (L, s) {
+        pdfScored04(L, s, {
+            title: 'PHQ-9 — Depression Screening',
+            subtitle: 'Over the last 2 weeks, how often bothered by:',
+            questions: PHQ9_Q_PDF,
+            severityFn: phq9SevPdf,
+            footnote: '⚠ Item 9 (suicidal ideation): if scored ≥1, immediate safety assessment + provider notification.'
+        });
+    };
+
+    R_PDF.gad7 = function (L, s) {
+        pdfScored04(L, s, {
+            title: 'GAD-7 — Anxiety Screening',
+            subtitle: 'Over the last 2 weeks, how often bothered by:',
+            questions: GAD7_Q_PDF,
+            severityFn: gad7SevPdf
+        });
+    };
+
+    R_PDF.cssrs = function (L, s) {
+        L.h1('C-SSRS — Suicide Severity Rating');
+        const ans = s.answers || {};
+        const Q = [
+            ['q1', 'Wished you were dead / would not wake up?'],
+            ['q2', 'Actually had thoughts of killing yourself?'],
+            ['q3', 'Been thinking about how you might do this?'],
+            ['q4', 'Had thoughts and some intention of acting on them?'],
+            ['q5', 'Worked out details? Intend to carry out plan?'],
+            ['q6', 'Ever done / started / prepared anything to end your life?']
+        ];
+        Q.forEach(function (q, idx) {
+            const v = ans[q[0]];
+            L.inlineKv((idx + 1) + '. ' + q[1], v ? v.toUpperCase() : '—');
+        });
+        let triage = 'Not scored';
+        if (ans.q6 === 'yes') triage = 'BEHAVIORAL — escalate immediately';
+        else if (ans.q4 === 'yes' || ans.q5 === 'yes') triage = 'HIGH RISK — provider + safety plan';
+        else if (ans.q3 === 'yes') triage = 'MODERATE RISK — provider + monitor';
+        else if (ans.q2 === 'yes') triage = 'LOW RISK — assess support';
+        else if (ans.q1 === 'yes') triage = 'POSITIVE IDEATION — ongoing assessment';
+        else if (Object.keys(ans).length) triage = 'Negative screen';
+        L.spacer(2);
+        L.scoreBox('⚠', 'Triage Level', triage);
+        if (s.date)   L.inlineKv('Date', s.date);
+        if (s.action) { L.spacer(1); L.fieldBlock('Action / Notification', s.action); }
+    };
+
+    R_PDF.cage = function (L, s) {
+        L.h1('CAGE — Alcohol Screening');
+        const ans = s.answers || {};
+        const Q = [
+            ['C', 'CUT DOWN — felt should cut down on drinking?'],
+            ['A', 'ANNOYED — people criticized your drinking?'],
+            ['G', 'GUILTY — felt bad / guilty about drinking?'],
+            ['E', 'EYE-OPENER — drink first thing in morning?']
+        ];
+        let yes = 0;
+        let answered = 0;
+        Q.forEach(function (q) {
+            const v = ans[q[0]];
+            if (v === 'yes') yes += 1;
+            if (v) answered += 1;
+            L.inlineKv(q[0] + ' — ' + q[1], v ? v.toUpperCase() : '—');
+        });
+        let sev = 'Not scored';
+        if (answered) {
+            if (yes >= 2) sev = 'Clinically significant (≥2) — further assessment indicated';
+            else if (yes === 1) sev = 'Possible concern — repeat / probe further';
+            else sev = 'Negative screen';
+        }
+        L.spacer(2);
+        L.scoreBox(answered ? yes : '—', 'CAGE Score (0–4)', sev);
+        if (s.date)  L.inlineKv('Date', s.date);
+        if (s.notes) { L.spacer(1); L.fieldBlock('Notes', s.notes); }
+    };
+
+    R_PDF.cam = function (L, s) {
+        L.h1('CAM — Confusion Assessment Method');
+        L.para('Algorithm: POSITIVE if (F1 + F2) AND (F3 OR F4) are present.');
+        const f = s.features || {};
+        const FEATS = [
+            ['F1', 'Acute Onset & Fluctuating Course'],
+            ['F2', 'Inattention'],
+            ['F3', 'Disorganized Thinking'],
+            ['F4', 'Altered Level of Consciousness']
+        ];
+        FEATS.forEach(function (ft) {
+            const v = f[ft[0]];
+            L.inlineKv(ft[0] + ' — ' + ft[1], v ? (v === 'yes' ? 'PRESENT' : 'Absent') : '—');
+        });
+        const f1 = f.F1 === 'yes', f2 = f.F2 === 'yes', f3 = f.F3 === 'yes', f4 = f.F4 === 'yes';
+        let result = 'Not scored';
+        if (f1 && f2 && (f3 || f4)) result = 'POSITIVE — delirium likely. Notify provider.';
+        else if (Object.keys(f).length) result = 'Negative — delirium unlikely';
+        L.spacer(2);
+        L.scoreBox(result.startsWith('POSITIVE') ? '⚠' : '✓', 'Algorithm Result', result);
+        if (s.date)  L.inlineKv('Date / Time', s.date);
+        if (s.cause) { L.spacer(1); L.fieldBlock('Suspected Cause(s)', s.cause); }
+    };
+
+    // ------------------------------------------------------------------
     // Main generate()
     // ------------------------------------------------------------------
     function generate(packet) {
