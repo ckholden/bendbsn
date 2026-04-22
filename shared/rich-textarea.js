@@ -38,16 +38,91 @@
     // --- Sanitizer -------------------------------------------------------
     const ALLOWED_TAGS = new Set([
         'STRONG', 'B', 'EM', 'I', 'S', 'DEL', 'STRIKE',
-        'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'BR', 'P', 'DIV', 'SPAN'
+        'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'BR', 'P', 'DIV', 'SPAN', 'FONT'
     ]);
     // Some browsers emit <b> / <i> / <strike> via execCommand — normalize to the modern tags
     const TAG_NORMALIZE = { B: 'STRONG', I: 'EM', STRIKE: 'S', DEL: 'S' };
+
+    // Named colors we accept from inline styles (kept short on purpose — students
+    // get color via the swatch picker, this is just a tolerance for paste-from-Word).
+    const NAMED_COLORS = {
+        red: '#dc2626', orange: '#f97316', yellow: '#eab308',
+        green: '#16a34a', blue: '#2563eb', cyan: '#06b6d4',
+        pink: '#ec4899', purple: '#9333ea', black: '#111827',
+        white: '#ffffff', gray: '#6b7280', grey: '#6b7280'
+    };
+
+    // Validate and normalize a color value to lowercase #RRGGBB. Accepts:
+    //   #RRGGBB   #RGB   rgb(R, G, B)   <named>
+    // Returns null for anything else (including url(), expression(), JS, escapes).
+    function normalizeColor(raw) {
+        if (!raw) return null;
+        const v = String(raw).trim().toLowerCase();
+        // Hex 6
+        const h6 = v.match(/^#([0-9a-f]{6})$/);
+        if (h6) return '#' + h6[1];
+        // Hex 3 → expand
+        const h3 = v.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/);
+        if (h3) return '#' + h3[1] + h3[1] + h3[2] + h3[2] + h3[3] + h3[3];
+        // rgb(r, g, b) — allow optional spaces, integer 0-255 each
+        const rgb = v.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/);
+        if (rgb) {
+            const r = parseInt(rgb[1], 10), g = parseInt(rgb[2], 10), b = parseInt(rgb[3], 10);
+            if (r > 255 || g > 255 || b > 255) return null;
+            return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+        }
+        // Named
+        if (NAMED_COLORS[v]) return NAMED_COLORS[v];
+        return null;
+    }
+
+    // Parse a `style` attribute string into a sanitized version containing ONLY
+    // `color` and `background-color` declarations whose values are valid colors.
+    // Real micro-parser: split on `;`, then on `:`, trim, validate per property.
+    // Returns either a re-serialized style string (e.g. "color:#dc2626;background-color:#fef08a")
+    // or empty string if nothing valid remains.
+    function sanitizeStyle(raw) {
+        if (!raw) return '';
+        const decls = String(raw).split(';');
+        const out = [];
+        for (let i = 0; i < decls.length; i++) {
+            const colon = decls[i].indexOf(':');
+            if (colon === -1) continue;
+            const prop = decls[i].slice(0, colon).trim().toLowerCase();
+            const val = decls[i].slice(colon + 1).trim();
+            if (prop !== 'color' && prop !== 'background-color') continue;
+            const norm = normalizeColor(val);
+            if (norm) out.push(prop + ':' + norm);
+        }
+        return out.join(';');
+    }
 
     function renameEl(el, newTag) {
         const replacement = document.createElement(newTag);
         while (el.firstChild) replacement.appendChild(el.firstChild);
         el.parentNode.replaceChild(replacement, el);
         return replacement;
+    }
+
+    // Convert legacy <font color="..."> / <font style="..."> emitted by some
+    // browsers into <span style="color:..."> so we have one normalized form.
+    function normalizeFont(el) {
+        const span = document.createElement('span');
+        const styles = [];
+        const colorAttr = el.getAttribute('color');
+        if (colorAttr) {
+            const c = normalizeColor(colorAttr);
+            if (c) styles.push('color:' + c);
+        }
+        const inlineStyle = el.getAttribute('style');
+        if (inlineStyle) {
+            const s = sanitizeStyle(inlineStyle);
+            if (s) styles.push(s);
+        }
+        if (styles.length) span.setAttribute('style', styles.join(';'));
+        while (el.firstChild) span.appendChild(el.firstChild);
+        el.parentNode.replaceChild(span, el);
+        return span;
     }
 
     function walkClean(node) {
@@ -59,6 +134,10 @@
                     c = renameEl(c, TAG_NORMALIZE[tag]);
                     tag = c.tagName;
                 }
+                if (tag === 'FONT') {
+                    c = normalizeFont(c);
+                    tag = c.tagName; // SPAN now
+                }
                 if (!ALLOWED_TAGS.has(tag)) {
                     // Unwrap: replace element with its children
                     const frag = document.createDocumentFragment();
@@ -66,10 +145,21 @@
                     c.parentNode.replaceChild(frag, c);
                     continue;
                 }
-                // Strip ALL attributes (no classes, no inline styles, no data-*)
+                // Strip all attributes EXCEPT a sanitized `style` on <span>
+                // for color / background-color (that's the only carrier we
+                // permit for inline coloring).
+                let kept = null;
+                if (tag === 'SPAN') {
+                    const styleAttr = c.getAttribute('style');
+                    if (styleAttr) {
+                        const safe = sanitizeStyle(styleAttr);
+                        if (safe) kept = safe;
+                    }
+                }
                 while (c.attributes && c.attributes.length) {
                     c.removeAttribute(c.attributes[0].name);
                 }
+                if (kept) c.setAttribute('style', kept);
                 walkClean(c);
             } else if (c.nodeType !== 3) {
                 // Strip comments, processing instructions, etc.
@@ -191,7 +281,99 @@
         editor.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    function buildToolbar(editor, ta) {
+    // --- Popover helper --------------------------------------------------
+    // Creates a small floating panel anchored below `anchorEl`. Auto-flips to
+    // above if there's no room below. Closes on click-outside, Escape, or
+    // explicit .close() call. Used by core (color/highlight palettes) and by
+    // extension buttons (smart-phrase picker etc.).
+    let _activePopover = null;
+    function createPopover(anchorEl, contentEl, opts) {
+        opts = opts || {};
+        // Close any other open popover first
+        if (_activePopover) _activePopover.close();
+        const pop = document.createElement('div');
+        pop.className = 'rt-popover' + (opts.className ? ' ' + opts.className : '');
+        pop.appendChild(contentEl);
+        document.body.appendChild(pop);
+        // Position
+        const rect = anchorEl.getBoundingClientRect();
+        const popH = pop.offsetHeight;
+        const popW = pop.offsetWidth;
+        const vh = window.innerHeight;
+        const vw = window.innerWidth;
+        let top = rect.bottom + window.scrollY + 4;
+        if (rect.bottom + popH + 8 > vh && rect.top - popH - 4 > 0) {
+            top = rect.top + window.scrollY - popH - 4;
+        }
+        let left = rect.left + window.scrollX;
+        if (left + popW > vw - 8) left = vw - popW - 8;
+        if (left < 8) left = 8;
+        pop.style.top = top + 'px';
+        pop.style.left = left + 'px';
+
+        function close() {
+            if (!pop.parentNode) return;
+            document.removeEventListener('mousedown', onOutside, true);
+            document.removeEventListener('keydown', onKey, true);
+            pop.parentNode.removeChild(pop);
+            if (_activePopover === api) _activePopover = null;
+            if (opts.onClose) try { opts.onClose(); } catch (e) {}
+        }
+        function onOutside(ev) {
+            if (pop.contains(ev.target) || anchorEl.contains(ev.target)) return;
+            close();
+        }
+        function onKey(ev) {
+            if (ev.key === 'Escape') { ev.preventDefault(); close(); }
+        }
+        // Defer attaching listeners until next tick so the click that opened the
+        // popover doesn't immediately trigger onOutside.
+        setTimeout(function () {
+            document.addEventListener('mousedown', onOutside, true);
+            document.addEventListener('keydown', onKey, true);
+        }, 0);
+        const api = { close: close, el: pop };
+        _activePopover = api;
+        return api;
+    }
+
+    // --- Color palettes (core) -------------------------------------------
+    const TEXT_COLOR_SWATCHES = [
+        { hex: '#dc2626', label: 'Red',    hint: 'Critical / abnormal' },
+        { hex: '#f97316', label: 'Orange', hint: 'Caution' },
+        { hex: '#16a34a', label: 'Green',  hint: 'Normal / WDL' },
+        { hex: '#2563eb', label: 'Blue',   hint: 'Info' },
+        { hex: '#111827', label: 'Black',  hint: 'Default (reset)' }
+    ];
+    const HIGHLIGHT_SWATCHES = [
+        { hex: '#fef08a', label: 'Yellow' },
+        { hex: '#a5f3fc', label: 'Cyan' },
+        { hex: '#fbcfe8', label: 'Pink' },
+        { hex: '#bbf7d0', label: 'Green' },
+        { hex: 'transparent', label: 'Clear', clear: true }
+    ];
+
+    function buildSwatchPalette(swatches, onPick) {
+        const grid = document.createElement('div');
+        grid.className = 'rt-swatch-grid';
+        swatches.forEach(function (s) {
+            const sw = document.createElement('button');
+            sw.type = 'button';
+            sw.className = 'rt-swatch' + (s.clear ? ' rt-swatch-clear' : '');
+            sw.title = s.label + (s.hint ? ' — ' + s.hint : '');
+            sw.setAttribute('aria-label', s.label);
+            sw.style.background = s.hex;
+            sw.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+            sw.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                onPick(s);
+            });
+            grid.appendChild(sw);
+        });
+        return grid;
+    }
+
+    function buildToolbar(editor, ta, opts) {
         const bar = document.createElement('div');
         bar.className = 'rt-toolbar';
         bar.setAttribute('role', 'toolbar');
@@ -206,12 +388,45 @@
 
         const d1 = document.createElement('div'); d1.className = 'rt-divider'; bar.appendChild(d1);
 
+        // Text color button + popover
+        const colorBtn = mkBtn('rt-btn-color', 'Text color', '<span class="rt-color-glyph">A</span>',
+            function () {
+                const palette = buildSwatchPalette(TEXT_COLOR_SWATCHES, function (s) {
+                    exec(editor, 'foreColor', s.hex);
+                    pop.close();
+                });
+                const pop = createPopover(colorBtn, palette, { className: 'rt-popover-palette' });
+            });
+        bar.appendChild(colorBtn);
+
+        // Highlight button + popover
+        const hlBtn = mkBtn('rt-btn-highlight', 'Highlight', '<span class="rt-color-glyph rt-color-glyph-hl">A</span>',
+            function () {
+                const palette = buildSwatchPalette(HIGHLIGHT_SWATCHES, function (s) {
+                    if (s.clear) {
+                        // execCommand 'hiliteColor' with 'transparent' / no value
+                        // doesn't work on all browsers. Fall back to removeFormat
+                        // for the highlight specifically by setting bg to white,
+                        // then we strip white later. Cleanest is to set a no-op
+                        // and rely on user toggle. For now: setBg to inherit-ish.
+                        exec(editor, 'hiliteColor', '#ffffff');
+                    } else {
+                        exec(editor, 'hiliteColor', s.hex);
+                    }
+                    pop.close();
+                });
+                const pop = createPopover(hlBtn, palette, { className: 'rt-popover-palette' });
+            });
+        bar.appendChild(hlBtn);
+
+        const d2 = document.createElement('div'); d2.className = 'rt-divider'; bar.appendChild(d2);
+
         bar.appendChild(mkBtn('rt-btn-ul', 'Bulleted list', '•',
             function () { exec(editor, 'insertUnorderedList'); }));
         bar.appendChild(mkBtn('rt-btn-ol', 'Numbered list', '1.',
             function () { exec(editor, 'insertOrderedList'); }));
 
-        const d2 = document.createElement('div'); d2.className = 'rt-divider'; bar.appendChild(d2);
+        const d3 = document.createElement('div'); d3.className = 'rt-divider'; bar.appendChild(d3);
 
         bar.appendChild(mkBtn('rt-btn-h1', 'Heading 1', 'H1',
             function () { exec(editor, 'formatBlock', 'H1'); }));
@@ -220,10 +435,28 @@
         bar.appendChild(mkBtn('rt-btn-p', 'Normal text', '¶',
             function () { exec(editor, 'formatBlock', 'P'); }));
 
-        const d3 = document.createElement('div'); d3.className = 'rt-divider'; bar.appendChild(d3);
+        const d4 = document.createElement('div'); d4.className = 'rt-divider'; bar.appendChild(d4);
 
         bar.appendChild(mkBtn('rt-btn-clear', 'Clear formatting', '⌫',
             function () { exec(editor, 'removeFormat'); }));
+
+        // --- Extension buttons (consumer-provided) ---
+        // Each entry: { label, title, className, dividerBefore, onClick(editor, ta, buttonEl) }
+        // The shared module stays ignorant of what these do — consumer wires up
+        // popovers, modals, custom logic, etc.
+        const extras = (opts && opts.extraButtons) || [];
+        if (extras.length) {
+            const sep = document.createElement('div'); sep.className = 'rt-divider'; bar.appendChild(sep);
+        }
+        extras.forEach(function (b) {
+            if (b.dividerBefore) {
+                const d = document.createElement('div'); d.className = 'rt-divider'; bar.appendChild(d);
+            }
+            const btn = mkBtn(b.className || 'rt-btn-extra', b.title || b.label, b.label, function () {
+                if (typeof b.onClick === 'function') b.onClick(editor, ta, btn);
+            });
+            bar.appendChild(btn);
+        });
 
         return bar;
     }
@@ -239,10 +472,11 @@
     }
 
     // --- Attach ----------------------------------------------------------
-    function attach(ta) {
+    function attach(ta, opts) {
         if (!ta || ta.tagName !== 'TEXTAREA') return null;
         if (ta.dataset.rtAttached === '1') return ta.parentNode;
         ta.dataset.rtAttached = '1';
+        opts = opts || {};
 
         // Build wrapper
         const wrap = document.createElement('div');
@@ -266,7 +500,7 @@
             }
         } catch (e) { editor.style.minHeight = '4.5em'; }
 
-        const toolbar = buildToolbar(editor, ta);
+        const toolbar = buildToolbar(editor, ta, opts);
 
         // Hide original textarea (keep it in the DOM for form-value access)
         ta.style.display = 'none';
@@ -317,7 +551,7 @@
         return wrap;
     }
 
-    function attachAll(selectorOrList) {
+    function attachAll(selectorOrList, opts) {
         let list = [];
         if (typeof selectorOrList === 'string') {
             list = document.querySelectorAll(selectorOrList);
@@ -326,7 +560,7 @@
         }
         const wraps = [];
         for (let i = 0; i < list.length; i++) {
-            const w = attach(list[i]);
+            const w = attach(list[i], opts);
             if (w) wraps.push(w);
         }
         return wraps;
@@ -402,7 +636,7 @@
         root.childNodes.forEach(function (c) {
             if (c.nodeType === 3) {
                 if (!loose) loose = [];
-                loose.push({ text: c.nodeValue, bold: false, italic: false, strike: false });
+                loose.push(makeRun(c.nodeValue, EMPTY_STYLE));
                 return;
             }
             if (c.nodeType !== 1) return;
@@ -427,7 +661,7 @@
             if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
                 flushLoose();
                 const runs = [];
-                collectRuns(c, runs, { bold: false, italic: false, strike: false });
+                collectRuns(c, runs, EMPTY_STYLE);
                 blocks.push({ type: 'heading', level: parseInt(tag[1], 10), runs: runs });
                 return;
             }
@@ -440,7 +674,7 @@
                         // user presses Shift+Enter inside a list item, or when
                         // bullets are applied to multi-line text). Split into
                         // sub-items so each line gets its own bullet.
-                        splitByBr(li, { bold: false, italic: false, strike: false }).forEach(function (runs) {
+                        splitByBr(li, EMPTY_STYLE).forEach(function (runs) {
                             if (runs.length) items.push(runs);
                         });
                     }
@@ -452,14 +686,59 @@
             // Seed the style from this element's own tag so <strong>/<em>/<s>
             // at the root level still register correctly.
             if (!loose) loose = [];
-            const startStyle = {
-                bold: tag === 'STRONG' || tag === 'B',
-                italic: tag === 'EM' || tag === 'I',
-                strike: tag === 'S' || tag === 'DEL' || tag === 'STRIKE'
-            };
-            collectRuns(c, loose, startStyle);
+            collectRuns(c, loose, styleFromTag(c, EMPTY_STYLE));
         });
         flushLoose();
+    }
+
+    // Empty starting style (immutable shared instance — never mutate)
+    const EMPTY_STYLE = { bold: false, italic: false, strike: false, color: null, highlight: null };
+
+    // Read inline-style color/background-color off an element (sanitizer has
+    // already validated these — they're guaranteed safe hex). Returns
+    // { color, highlight } object with null for missing.
+    function readSpanStyle(el) {
+        const out = { color: null, highlight: null };
+        if (!el || el.nodeType !== 1) return out;
+        const styleAttr = el.getAttribute && el.getAttribute('style');
+        if (!styleAttr) return out;
+        const decls = styleAttr.split(';');
+        for (let i = 0; i < decls.length; i++) {
+            const colon = decls[i].indexOf(':');
+            if (colon === -1) continue;
+            const prop = decls[i].slice(0, colon).trim().toLowerCase();
+            const val = decls[i].slice(colon + 1).trim();
+            if (prop === 'color') out.color = val;
+            else if (prop === 'background-color') out.highlight = val;
+        }
+        return out;
+    }
+
+    // Compute the inherited style state given a parent style and the child element.
+    // Bold/italic/strike accumulate (any ancestor sets them on); color/highlight
+    // shadow (the deepest <span style="color:..."> wins).
+    function styleFromTag(el, parentStyle) {
+        const tag = el.tagName;
+        const span = readSpanStyle(el);
+        return {
+            bold: parentStyle.bold || (tag === 'STRONG' || tag === 'B'),
+            italic: parentStyle.italic || (tag === 'EM' || tag === 'I'),
+            strike: parentStyle.strike || (tag === 'S' || tag === 'DEL' || tag === 'STRIKE'),
+            color: span.color || parentStyle.color,
+            highlight: span.highlight || parentStyle.highlight
+        };
+    }
+
+    function makeRun(text, style) {
+        const r = {
+            text: text,
+            bold: !!style.bold,
+            italic: !!style.italic,
+            strike: !!style.strike
+        };
+        if (style.color) r.color = style.color;
+        if (style.highlight) r.highlight = style.highlight;
+        return r;
     }
 
     // Walk a container's children, collecting runs; every <br> starts a new
@@ -472,28 +751,16 @@
         function walk(node, style) {
             node.childNodes.forEach(function (c) {
                 if (c.nodeType === 3) {
-                    if (c.nodeValue) {
-                        current.push({
-                            text: c.nodeValue,
-                            bold: !!style.bold,
-                            italic: !!style.italic,
-                            strike: !!style.strike
-                        });
-                    }
+                    if (c.nodeValue) current.push(makeRun(c.nodeValue, style));
                     return;
                 }
                 if (c.nodeType !== 1) return;
                 const tag = c.tagName;
                 if (tag === 'BR') { flush(); return; }
-                const next = {
-                    bold: style.bold || (tag === 'STRONG' || tag === 'B'),
-                    italic: style.italic || (tag === 'EM' || tag === 'I'),
-                    strike: style.strike || (tag === 'S' || tag === 'DEL' || tag === 'STRIKE')
-                };
-                walk(c, next);
+                walk(c, styleFromTag(c, style));
             });
         }
-        walk(container, startStyle || { bold: false, italic: false, strike: false });
+        walk(container, startStyle || EMPTY_STYLE);
         flush();
         return segments;
     }
@@ -501,28 +768,16 @@
     function collectRuns(node, runs, style) {
         node.childNodes.forEach(function (c) {
             if (c.nodeType === 3) {
-                if (c.nodeValue) {
-                    runs.push({
-                        text: c.nodeValue,
-                        bold: !!style.bold,
-                        italic: !!style.italic,
-                        strike: !!style.strike
-                    });
-                }
+                if (c.nodeValue) runs.push(makeRun(c.nodeValue, style));
                 return;
             }
             if (c.nodeType !== 1) return;
             const tag = c.tagName;
             if (tag === 'BR') {
-                runs.push({ text: '\n', bold: !!style.bold, italic: !!style.italic, strike: !!style.strike });
+                runs.push(makeRun('\n', style));
                 return;
             }
-            const next = {
-                bold: style.bold || (tag === 'STRONG' || tag === 'B'),
-                italic: style.italic || (tag === 'EM' || tag === 'I'),
-                strike: style.strike || (tag === 'S' || tag === 'DEL' || tag === 'STRIKE')
-            };
-            collectRuns(c, runs, next);
+            collectRuns(c, runs, styleFromTag(c, style));
         });
     }
 
@@ -539,6 +794,10 @@
         renderHtml: sanitizeHtml,
         stripToPlain: stripToPlain,
         parseForExport: parseForExport,
-        runsToText: runsToText
+        runsToText: runsToText,
+        // Exposed so consumers (e.g., /app/'s smart-phrase picker) can build
+        // their own popovers anchored to extension-button DOM nodes without
+        // duplicating the position / dismiss-on-outside-click logic.
+        createPopover: createPopover
     };
 })();

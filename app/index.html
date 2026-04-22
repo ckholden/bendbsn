@@ -4428,6 +4428,223 @@
             '.dcteach': 'Discharge teaching completed. Patient/family verbalized understanding of medications, follow-up, and return precautions. '
         };
 
+        // ─── Smart-phrase picker (toolbar button + popover) ────────────────
+        // Categorization mirrors the source-comment grouping above. Hard-coded
+        // because the comments aren't machine-parseable. Order matches source.
+        const SEED_PHRASE_CATEGORIES = [
+            { name: 'Vital Signs',     keys: ['.vs'] },
+            { name: 'Neuro',           keys: ['.neuro', '.aox4', '.aox3', '.perrla', '.mae', '.gcs15'] },
+            { name: 'Respiratory',     keys: ['.resp', '.cta', '.lungs', '.sob'] },
+            { name: 'Cardiovascular',  keys: ['.cv', '.rrr', '.pulses', '.noedema'] },
+            { name: 'GI',              keys: ['.gi', '.bsax4', '.ntnd', '.npo', '.tolerated'] },
+            { name: 'GU',              keys: ['.gu', '.fs', '.voidclear'] },
+            { name: 'Skin',            keys: ['.skin', '.wdi', '.turgor', '.ivsite'] },
+            { name: 'Pain',            keys: ['.pain', '.pain0', '.painmed'] },
+            { name: 'Allergies',       keys: ['.nkda', '.nka'] },
+            { name: 'General',         keys: ['.denies', '.wdl', '.nad', '.wdta'] },
+            { name: 'Interventions',   keys: ['.medadmin', '.ivp', '.repos', '.amb', '.tcdb', '.is', '.scd'] },
+            { name: 'Safety',          keys: ['.fall', '.safe', '.idbands', '.safeenv'] },
+            { name: 'Communication',   keys: ['.mdnotify', '.neworders', '.handoff'] },
+            { name: 'Education / Discharge', keys: ['.edu', '.dc', '.teachback', '.dcteach'] }
+        ];
+        // Set of all seed shortcuts — used to identify which phrases are
+        // user-customizable (custom = not in this set).
+        const SEED_SHORTCUT_SET = new Set(SEED_PHRASE_CATEGORIES.reduce(function (a, c) { return a.concat(c.keys); }, []));
+
+        // Add a custom phrase programmatically (NO DOM dependency, unlike the
+        // existing addCustomPhrase which reads from #newPhraseShortcut etc.).
+        function addCustomPhraseProgrammatic(rawShortcut, text) {
+            let shortcut = String(rawShortcut || '').trim().toLowerCase();
+            text = String(text || '').trim();
+            if (!shortcut || !text) return { ok: false, msg: 'Both fields required' };
+            if (!shortcut.startsWith('.')) shortcut = '.' + shortcut;
+            // Reject shortcuts with whitespace, punctuation other than letters/digits
+            if (!/^\.[a-z0-9]+$/.test(shortcut)) return { ok: false, msg: 'Use letters/numbers only after the dot (e.g. .myphrase)' };
+            smartPhrases[shortcut] = text;
+            const custom = localStorage.getItem('bendbsn_custom_phrases');
+            const customPhrases = custom ? JSON.parse(custom) : {};
+            customPhrases[shortcut] = text;
+            localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(customPhrases));
+            return { ok: true, shortcut: shortcut };
+        }
+        // Edit = delete old shortcut + add new (handles rename in one path).
+        function editCustomPhraseProgrammatic(oldShortcut, newShortcut, newText) {
+            // Remove old first so re-adding under the same key is clean
+            if (oldShortcut) deleteCustomPhrase(oldShortcut);
+            return addCustomPhraseProgrammatic(newShortcut, newText);
+        }
+        // Read just the custom phrases from localStorage
+        function getCustomPhrases() {
+            try {
+                const custom = localStorage.getItem('bendbsn_custom_phrases');
+                return custom ? JSON.parse(custom) : {};
+            } catch (e) { return {}; }
+        }
+
+        // Open the smart-phrase picker popover anchored to the toolbar button.
+        // editor: the .rt-editor that owns the cursor we'll insert into.
+        // ta: the hidden textarea (for richTextarea.insertAtCursor compat).
+        // btnEl: the toolbar button to anchor the popover to.
+        function openSmartPhrasePicker(editor, ta, btnEl) {
+            if (!window.richTextarea || !window.richTextarea.createPopover) return;
+            // Snapshot the editor selection BEFORE the popover opens — clicking
+            // inside the popover would otherwise blur the editor and lose it.
+            const sel = window.getSelection && window.getSelection();
+            let savedRange = null;
+            if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+                savedRange = sel.getRangeAt(0).cloneRange();
+            }
+
+            const content = document.createElement('div');
+            content.className = 'rt-popover-phrases';
+            content.innerHTML = ''
+                + '<div class="rt-pp-header">'
+                +   '<strong>✨ Smart Phrases</strong>'
+                +   '<input type="text" class="rt-pp-search" placeholder="Search…" autocomplete="off">'
+                + '</div>'
+                + '<div class="rt-pp-list"></div>'
+                + '<div class="rt-pp-footer">'
+                +   '<span style="font-size:11px;color:var(--clx-text-muted,#718096);">Click to insert at cursor</span>'
+                +   '<button type="button" class="rt-pp-add">➕ Add new</button>'
+                + '</div>';
+
+            const listEl = content.querySelector('.rt-pp-list');
+            const searchEl = content.querySelector('.rt-pp-search');
+            const addBtn = content.querySelector('.rt-pp-add');
+
+            function shortcutRow(shortcut, text, isCustom) {
+                const safeText = String(text || '').replace(/\s+/g, ' ');
+                const preview = safeText.length > 70 ? safeText.slice(0, 67) + '…' : safeText;
+                const escapedSc = shortcut.replace(/"/g, '&quot;');
+                let actions = '';
+                if (isCustom) {
+                    actions = ''
+                        + '<div class="rt-pp-actions">'
+                        +   '<button type="button" class="rt-pp-action" data-edit="' + escapedSc + '" title="Edit">✎</button>'
+                        +   '<button type="button" class="rt-pp-action" data-del="' + escapedSc + '" title="Delete">✕</button>'
+                        + '</div>';
+                }
+                return ''
+                    + '<div class="rt-pp-row" data-shortcut="' + escapedSc + '">'
+                    +   '<span class="rt-pp-shortcut">' + shortcut + '</span>'
+                    +   '<span class="rt-pp-text">' + escapeHtmlText(preview) + '</span>'
+                    +   actions
+                    + '</div>';
+            }
+            function escapeHtmlText(s) {
+                return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            function renderList(filter) {
+                const f = (filter || '').trim().toLowerCase();
+                let html = '';
+                let any = false;
+                SEED_PHRASE_CATEGORIES.forEach(function (cat) {
+                    const rows = cat.keys
+                        .filter(function (sc) { return smartPhrases[sc] != null; })
+                        .filter(function (sc) {
+                            if (!f) return true;
+                            return sc.includes(f) || (smartPhrases[sc] || '').toLowerCase().includes(f);
+                        });
+                    if (!rows.length) return;
+                    any = true;
+                    html += '<div class="rt-pp-cat">' + cat.name + '</div>';
+                    rows.forEach(function (sc) { html += shortcutRow(sc, smartPhrases[sc], false); });
+                });
+                const customMap = getCustomPhrases();
+                const customKeys = Object.keys(customMap).filter(function (sc) {
+                    if (!f) return true;
+                    return sc.includes(f) || (customMap[sc] || '').toLowerCase().includes(f);
+                });
+                if (customKeys.length) {
+                    any = true;
+                    html += '<div class="rt-pp-cat">My Phrases</div>';
+                    customKeys.forEach(function (sc) { html += shortcutRow(sc, customMap[sc], true); });
+                }
+                if (!any) html = '<div class="rt-pp-empty">No phrases match.</div>';
+                listEl.innerHTML = html;
+            }
+
+            function showAddForm(presetShortcut, presetText) {
+                listEl.innerHTML = ''
+                    + '<form class="rt-pp-form" onsubmit="return false;">'
+                    +   '<label>Shortcut <span style="color:var(--clx-text-muted);font-weight:400;">(starts with .)</span></label>'
+                    +   '<input type="text" name="sc" placeholder=".myphrase" value="' + (presetShortcut || '').replace(/"/g, '&quot;') + '" autocomplete="off">'
+                    +   '<label>Expansion text</label>'
+                    +   '<textarea name="tx" rows="4" placeholder="The expansion that .myphrase types out…">' + escapeHtmlText(presetText || '') + '</textarea>'
+                    +   '<div class="rt-pp-form-btns">'
+                    +     '<button type="button" data-cancel>Cancel</button>'
+                    +     '<button type="button" class="primary" data-save>Save</button>'
+                    +   '</div>'
+                    + '</form>';
+                const form = listEl.querySelector('form');
+                const scInput = form.querySelector('input[name="sc"]');
+                const txInput = form.querySelector('textarea[name="tx"]');
+                form.querySelector('[data-cancel]').addEventListener('click', function () { renderList(searchEl.value); });
+                form.querySelector('[data-save]').addEventListener('click', function () {
+                    const result = presetShortcut
+                        ? editCustomPhraseProgrammatic(presetShortcut, scInput.value, txInput.value)
+                        : addCustomPhraseProgrammatic(scInput.value, txInput.value);
+                    if (!result.ok) { showToast(result.msg || 'Could not save phrase.', 'warning'); return; }
+                    showToast('Saved ' + result.shortcut, 'success');
+                    renderList(searchEl.value);
+                });
+                setTimeout(function () { scInput.focus(); }, 0);
+            }
+
+            // Click delegation on the list
+            listEl.addEventListener('click', function (ev) {
+                const editBtn = ev.target.closest('[data-edit]');
+                if (editBtn) {
+                    ev.stopPropagation();
+                    const sc = editBtn.getAttribute('data-edit');
+                    const customMap = getCustomPhrases();
+                    showAddForm(sc, customMap[sc] || '');
+                    return;
+                }
+                const delBtn = ev.target.closest('[data-del]');
+                if (delBtn) {
+                    ev.stopPropagation();
+                    const sc = delBtn.getAttribute('data-del');
+                    showConfirmModal('Delete phrase', 'Delete ' + sc + '?', function () {
+                        deleteCustomPhrase(sc);
+                        renderList(searchEl.value);
+                    }, { danger: true, confirmText: 'Delete' });
+                    return;
+                }
+                const row = ev.target.closest('.rt-pp-row');
+                if (!row) return;
+                const sc = row.getAttribute('data-shortcut');
+                const expansion = smartPhrases[sc];
+                if (expansion == null) return;
+                // Restore the snapshot selection so insertAtCursor lands at the
+                // correct caret position (the popover may have stolen focus).
+                if (savedRange) {
+                    const s = window.getSelection();
+                    s.removeAllRanges();
+                    s.addRange(savedRange);
+                }
+                window.richTextarea.insertAtCursor(ta, expansion);
+                pop.close();
+            });
+
+            searchEl.addEventListener('input', function () { renderList(searchEl.value); });
+            addBtn.addEventListener('click', function () { showAddForm('', ''); });
+
+            // Don't let mousedowns inside the popover blur the editor — that
+            // would lose the saved selection. The createPopover helper handles
+            // the click-outside-to-close logic so this is safe.
+            content.addEventListener('mousedown', function (ev) {
+                // Allow form inputs to receive focus, but prevent default for everything else
+                const tgt = ev.target;
+                const isInput = tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'BUTTON');
+                if (!isInput) ev.preventDefault();
+            });
+
+            renderList('');
+            const pop = window.richTextarea.createPopover(btnEl, content, { className: 'rt-popover-phrases-wrap' });
+        }
+
         // Smart phrase expansion function — WYSIWYG aware.
         // Called on every input event on a contenteditable rich-editor. We
         // look at the text node immediately before the caret; if it ends with
@@ -7513,93 +7730,152 @@
             }
 
             // Content — section bodies are now rich HTML; render with structure.
-            // Helpers (scoped to this export):
+            // PER-RUN renderer: 2-pass approach (layout + paint) lets us preserve
+            // mixed inline formatting (red word in middle of a black paragraph,
+            // bold one word, highlighted phrase, etc.) — the previous
+            // "majority wins" approach lost color entirely. Helpers scoped here.
             const lineH = 4.5;
+            const PAGE_BOTTOM = 280;
             function pageBreakIfNeeded() {
-                if (y > 280) { doc.addPage(); y = 15; }
+                if (y > PAGE_BOTTOM) { doc.addPage(); y = 15; }
             }
-            function runsStyle(runs) {
-                // If ANY run is bold/italic, the whole wrapped paragraph gets that style.
-                // jsPDF doesn't support mid-line font changes without manual measurement,
-                // so we fall back to "majority wins" — simple but predictable.
-                let anyBold = false, anyItalic = false;
-                runs.forEach(r => { if (r.bold) anyBold = true; if (r.italic) anyItalic = true; });
-                if (anyBold && anyItalic) return 'bolditalic';
-                if (anyBold) return 'bold';
-                if (anyItalic) return 'italic';
+            // Convert "#RRGGBB" → [r,g,b] for jsPDF setTextColor / setFillColor.
+            function hexToRgb(hex) {
+                if (!hex || typeof hex !== 'string') return null;
+                const m = hex.match(/^#?([0-9a-f]{6})$/i);
+                if (!m) return null;
+                const n = parseInt(m[1], 16);
+                return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+            }
+            function fontStyleFor(run) {
+                if (run.bold && run.italic) return 'bolditalic';
+                if (run.bold) return 'bold';
+                if (run.italic) return 'italic';
                 return 'normal';
             }
-            function runsText(runs) { return runs.map(r => r.text).join(''); }
-            function runsHaveStrike(runs) { return runs.some(r => r.strike); }
-            // jsPDF has no native strikethrough — manually draw a line through
-            // rendered text. doc.text() puts the TEXT BASELINE at y (in mm),
-            // so the middle of the x-height is roughly 1/3 of the font size
-            // above baseline. We use 0.35 in mm to land right through the
-            // middle of most glyphs at common sizes (9-12pt).
-            function drawStrikeLine(text, x, baselineY, fontSize, color) {
-                if (!text) return;
-                const w = doc.getTextWidth(text);
-                if (!w) return;
+            // jsPDF strike — no native support, we draw a line through the text.
+            function drawStrike(x, baselineY, width, fontSize) {
                 doc.setLineWidth(0.35);
-                doc.setDrawColor(color || 50);
-                const strikeY = baselineY - (fontSize * 0.35 * 0.3528);
-                doc.line(x, strikeY, x + w, strikeY);
-                // Diagnostic: helps confirm the new code is actually running.
-                // If you don't see this log when exporting, your browser has
-                // an old cached version of /app/ — hard refresh with Ctrl+Shift+R.
-                if (window._rtStrikeDebug !== false) console.log('[PDF strike] "' + text + '" @ y=' + strikeY.toFixed(1));
+                doc.setDrawColor(60);
+                const sy = baselineY - (fontSize * 0.35 * 0.3528);
+                doc.line(x, sy, x + width, sy);
+            }
+            // Layout pass: convert a flat run list + horizontal bounds into a
+            // list of laid-out atoms { x, y, text, fontStyle, fontSize, color,
+            // highlight, strike, width }. Word-wraps within `width`. Newline
+            // characters in run text trigger a forced line break.
+            // After layout, the caller advances `y` by the number of lines used.
+            function layoutRuns(runs, x0, x, width, fontSize) {
+                const atoms = [];
+                let curX = x;
+                let curY = y;
+                let lineHasContent = false;
+                function newline() {
+                    curY += lineH;
+                    curX = x;
+                    lineHasContent = false;
+                }
+                runs.forEach(function (run) {
+                    if (!run.text) return;
+                    const fs = fontStyleFor(run);
+                    doc.setFont('helvetica', fs);
+                    doc.setFontSize(fontSize);
+                    // Split on explicit newlines (each segment becomes its own wrap-pass)
+                    const segs = String(run.text).split('\n');
+                    segs.forEach(function (seg, segIdx) {
+                        if (segIdx > 0) newline();
+                        if (!seg) return;
+                        // Tokenize on whitespace boundaries — keep spaces as their own tokens
+                        // so we can drop trailing spaces at wrap points cleanly.
+                        const tokens = seg.match(/\S+|\s+/g) || [];
+                        tokens.forEach(function (tok) {
+                            const tw = doc.getTextWidth(tok);
+                            // Skip leading whitespace at the start of a wrapped line
+                            if (/^\s+$/.test(tok) && !lineHasContent) return;
+                            // Wrap if this token would overflow the current line
+                            if (curX + tw > x + width && lineHasContent) {
+                                newline();
+                                if (/^\s+$/.test(tok)) return; // drop the wrap-space
+                            }
+                            atoms.push({
+                                x: curX, y: curY, text: tok,
+                                fontStyle: fs, fontSize: fontSize,
+                                color: run.color || null,
+                                highlight: run.highlight || null,
+                                strike: !!run.strike,
+                                width: tw
+                            });
+                            curX += tw;
+                            lineHasContent = true;
+                        });
+                    });
+                });
+                // Update outer y to one line past the last rendered line
+                y = curY + lineH;
+                return atoms;
+            }
+            // Paint pass: emit highlight rect (if any), set color/font, draw text,
+            // optionally draw a strike line.
+            function paintAtoms(atoms, fontSize) {
+                atoms.forEach(function (a) {
+                    if (a.y > PAGE_BOTTOM) {
+                        doc.addPage();
+                        // Reposition this atom & all subsequent atoms — but since
+                        // the layout pass already chose the y, just keep going;
+                        // we don't try to re-layout post-page-break here.
+                    }
+                    if (a.highlight && a.highlight !== '#ffffff') {
+                        const rgb = hexToRgb(a.highlight);
+                        if (rgb) {
+                            doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+                            // Rect under the text — height ≈ font height in mm
+                            const hh = a.fontSize * 0.42; // approximate cap-to-descent in mm
+                            doc.rect(a.x, a.y - hh + 0.5, a.width, hh, 'F');
+                        }
+                    }
+                    doc.setFont('helvetica', a.fontStyle);
+                    doc.setFontSize(a.fontSize);
+                    if (a.color) {
+                        const rgb = hexToRgb(a.color);
+                        if (rgb) doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+                        else doc.setTextColor(50);
+                    } else {
+                        doc.setTextColor(50);
+                    }
+                    doc.text(a.text, a.x, a.y);
+                    if (a.strike) drawStrike(a.x, a.y, a.width, a.fontSize);
+                });
+                // Reset draw/text color so subsequent unrelated drawing isn't tinted
+                doc.setTextColor(50);
+                doc.setDrawColor(60);
             }
             function renderParagraph(runs, x, width, fontSize) {
-                doc.setFont('helvetica', runsStyle(runs));
-                doc.setFontSize(fontSize);
-                doc.setTextColor(50);
-                const text = runsText(runs).replace(/\n/g, ' ');
-                if (!text.trim()) return;
-                const hasStrike = runsHaveStrike(runs);
-                const lines = doc.splitTextToSize(text, width);
-                lines.forEach(line => {
-                    pageBreakIfNeeded();
-                    doc.text(line, x, y);
-                    if (hasStrike) drawStrikeLine(line, x, y, fontSize, 80);
-                    y += lineH;
-                });
+                if (!runs || !runs.length) return;
+                const atoms = layoutRuns(runs, x, x, width, fontSize);
+                paintAtoms(atoms, fontSize);
+                y += 1; // small inter-paragraph gap
             }
             function renderHeading(runs, level) {
                 const size = level === 1 ? 12 : level === 2 ? 11 : 10;
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(size);
-                doc.setTextColor(31, 78, 121);
-                const text = runsText(runs).replace(/\n/g, ' ');
-                const hasStrike = runsHaveStrike(runs);
-                const lines = doc.splitTextToSize(text, cw - 4);
-                lines.forEach(line => {
-                    pageBreakIfNeeded();
-                    doc.text(line, m + 2, y);
-                    if (hasStrike) drawStrikeLine(line, m + 2, y, size, 80);
-                    y += size * 0.55;
-                });
+                // Force bold on heading runs
+                const headingRuns = runs.map(function (r) { return Object.assign({}, r, { bold: true }); });
+                const atoms = layoutRuns(headingRuns, m + 2, m + 2, cw - 4, size);
+                // Headings render in accent color unless they have an explicit color
+                atoms.forEach(function (a) { if (!a.color) a.color = '#1f4e79'; });
+                paintAtoms(atoms, size);
                 y += 1;
             }
             function renderList(items, ordered) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                doc.setTextColor(50);
-                items.forEach((runs, i) => {
+                items.forEach(function (runs, i) {
                     pageBreakIfNeeded();
                     const prefix = ordered ? (i + 1) + '. ' : '• ';
                     doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.setTextColor(50);
                     doc.text(prefix, m + 4, y);
                     const indent = m + 4 + doc.getTextWidth(ordered ? '99. ' : '• ');
-                    doc.setFont('helvetica', runsStyle(runs));
-                    const text = runsText(runs).replace(/\n/g, ' ');
-                    const hasStrike = runsHaveStrike(runs);
-                    const lines = doc.splitTextToSize(text, cw - (indent - m) - 4);
-                    lines.forEach((line, li) => {
-                        if (li > 0) pageBreakIfNeeded();
-                        doc.text(line, indent, y);
-                        if (hasStrike) drawStrikeLine(line, indent, y, 9, 80);
-                        y += lineH;
-                    });
+                    const atoms = layoutRuns(runs, indent, indent, cw - (indent - m) - 4, 9);
+                    paintAtoms(atoms, 9);
                 });
                 y += 1;
             }
@@ -7687,14 +7963,41 @@
 
                 const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
 
-                // Helpers: convert our rich-textarea blocks into docx Paragraphs
-                function runsToTextRuns(runs) {
-                    return (runs || []).map(r => new TextRun({
+                // Helpers: convert our rich-textarea blocks into docx Paragraphs.
+                // Word's `highlight` property is restricted to ~16 named colors
+                // (NOT arbitrary hex), so we map our hex highlights → Word names.
+                // Closest match per swatch.
+                const WORD_HIGHLIGHT_MAP = {
+                    '#fef08a': 'yellow',
+                    '#a5f3fc': 'cyan',
+                    '#fbcfe8': 'magenta',  // pink → magenta is the closest Word offers
+                    '#bbf7d0': 'green',
+                    '#ffffff': null         // "clear" — no highlight
+                };
+                function runToTextRun(r, opts) {
+                    opts = opts || {};
+                    const props = {
                         text: r.text,
-                        bold: !!r.bold,
+                        bold: !!r.bold || !!opts.forceBold,
                         italics: !!r.italic,
                         strike: !!r.strike
-                    }));
+                    };
+                    if (opts.size) props.size = opts.size;
+                    // Color: docx wants hex without the leading '#', uppercase or lowercase OK
+                    if (r.color && /^#[0-9a-f]{6}$/i.test(r.color)) {
+                        props.color = r.color.slice(1);
+                    } else if (opts.defaultColor) {
+                        props.color = opts.defaultColor;
+                    }
+                    // Highlight: map our hex to Word's named-color allowlist
+                    if (r.highlight) {
+                        const hl = WORD_HIGHLIGHT_MAP[r.highlight.toLowerCase()];
+                        if (hl) props.highlight = hl;
+                    }
+                    return new TextRun(props);
+                }
+                function runsToTextRuns(runs, opts) {
+                    return (runs || []).map(function (r) { return runToTextRun(r, opts); });
                 }
                 function blocksToParagraphs(blocks) {
                     const out = [];
@@ -7707,9 +8010,7 @@
                         } else if (b.type === 'heading') {
                             const size = b.level === 1 ? 26 : b.level === 2 ? 24 : 22;
                             out.push(new Paragraph({
-                                children: (b.runs || []).map(r => new TextRun({
-                                    text: r.text, bold: true, italics: !!r.italic, strike: !!r.strike, size: size
-                                })),
+                                children: runsToTextRuns(b.runs, { forceBold: true, size: size, defaultColor: '1f4e79' }),
                                 spacing: { before: 120, after: 80 }
                             }));
                         } else if (b.type === 'list') {
@@ -8485,7 +8786,20 @@
                     '#sbarSituation, #sbarBackground, #sbarAssessment, #sbarRecommendation, ' +
                     '#pieProblem, #pieIntervention, #pieEvaluation, ' +
                     '#narrativeText, ' +
-                    'textarea[id^="h2t"]'
+                    'textarea[id^="h2t"]',
+                    {
+                        extraButtons: [
+                            {
+                                label: '✨',
+                                title: 'Smart phrases — browse, search, add custom',
+                                className: 'rt-btn-phrases',
+                                dividerBefore: false,
+                                onClick: function (editor, ta, btnEl) {
+                                    openSmartPhrasePicker(editor, ta, btnEl);
+                                }
+                            }
+                        ]
+                    }
                 );
             }
             if (document.readyState === 'loading') {

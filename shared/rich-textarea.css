@@ -124,9 +124,235 @@
 [data-theme="dark"] .rt-divider { background: var(--clx-border, #2d3748); }
 [data-theme="dark"] .rt-wrap:focus-within { box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.35); }
 
+/* Color / highlight buttons — small "A" with a color bar underneath. */
+.rt-btn-color, .rt-btn-highlight {
+    position: relative;
+    flex-direction: column;
+    padding: 0 6px;
+    gap: 0;
+}
+.rt-color-glyph {
+    font-weight: 800;
+    font-size: 13px;
+    line-height: 1;
+}
+.rt-color-glyph-hl {
+    background: #fef08a;
+    padding: 0 3px;
+    border-radius: 2px;
+    color: #111827;
+}
+[data-theme="dark"] .rt-color-glyph-hl { color: #111827; }
+
+/* Popover (used for color palettes, smart-phrase picker, etc.) */
+.rt-popover {
+    position: absolute;
+    z-index: 10010;
+    background: var(--clx-bg-surface, #fff);
+    border: 1px solid var(--clx-border, #d1dce8);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--clx-text-primary, #1a202c);
+    min-width: 160px;
+    max-width: 380px;
+}
+[data-theme="dark"] .rt-popover {
+    background: var(--clx-bg-surface, #1a202c);
+    border-color: var(--clx-border, #2d3748);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
+}
+
+/* Swatch grid for color palettes */
+.rt-popover-palette { padding: 6px; }
+.rt-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 28px);
+    gap: 6px;
+}
+.rt-swatch {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--clx-border, #d1dce8);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+.rt-swatch:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.rt-swatch-clear {
+    background: linear-gradient(135deg, transparent 45%, #dc2626 47%, #dc2626 53%, transparent 55%) !important;
+    background-color: #fff !important;
+}
+[data-theme="dark"] .rt-swatch { border-color: var(--clx-border, #2d3748); }
+
+/* Smart-phrase picker — slightly wider, scrollable list */
+.rt-popover-phrases {
+    width: 360px;
+    max-width: 92vw;
+    max-height: 460px;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+.rt-pp-header {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--clx-border, #d1dce8);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rt-pp-header strong { font-size: 13px; }
+.rt-pp-search {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--clx-border, #d1dce8);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    background: var(--clx-bg-surface, #fff);
+    color: var(--clx-text-primary, #1a202c);
+}
+[data-theme="dark"] .rt-pp-search {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--clx-border, #2d3748);
+}
+.rt-pp-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 6px 0;
+}
+.rt-pp-cat {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--clx-text-muted, #718096);
+    padding: 8px 12px 4px;
+    font-weight: 700;
+}
+.rt-pp-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.rt-pp-row:hover { background: var(--clx-bg-hover, #e6edf5); }
+.rt-pp-shortcut {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--clx-accent, #0f7490);
+    font-weight: 600;
+    background: rgba(15, 116, 144, 0.08);
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.rt-pp-text {
+    flex: 1;
+    color: var(--clx-text-secondary, #4a5568);
+    font-size: 12px;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.rt-pp-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+.rt-pp-row:hover .rt-pp-actions { opacity: 1; }
+.rt-pp-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: var(--clx-text-muted, #718096);
+    font-size: 12px;
+    border-radius: 3px;
+}
+.rt-pp-action:hover { background: rgba(0,0,0,0.06); color: var(--clx-text-primary, #1a202c); }
+[data-theme="dark"] .rt-pp-action:hover { background: rgba(255,255,255,0.08); }
+.rt-pp-footer {
+    padding: 8px 10px;
+    border-top: 1px solid var(--clx-border, #d1dce8);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.rt-pp-add {
+    background: var(--clx-accent, #0f7490);
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.rt-pp-add:hover { filter: brightness(1.1); }
+.rt-pp-empty {
+    padding: 18px 12px;
+    text-align: center;
+    color: var(--clx-text-muted, #718096);
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Add/Edit phrase form */
+.rt-pp-form { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.rt-pp-form label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--clx-text-secondary, #4a5568);
+}
+.rt-pp-form input,
+.rt-pp-form textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--clx-border, #d1dce8);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    background: var(--clx-bg-surface, #fff);
+    color: var(--clx-text-primary, #1a202c);
+    box-sizing: border-box;
+    resize: vertical;
+}
+[data-theme="dark"] .rt-pp-form input,
+[data-theme="dark"] .rt-pp-form textarea {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--clx-border, #2d3748);
+}
+.rt-pp-form-btns { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+.rt-pp-form-btns button {
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--clx-border, #d1dce8);
+    background: var(--clx-bg-surface-2, #f7f9fc);
+    color: var(--clx-text-primary, #1a202c);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.rt-pp-form-btns button.primary {
+    background: var(--clx-accent, #0f7490);
+    color: #fff;
+    border-color: var(--clx-accent, #0f7490);
+}
+
 /* Print — hide the toolbar, keep the editor content */
 @media print {
     .rt-toolbar { display: none !important; }
     .rt-wrap { border: none !important; }
     .rt-editor { padding: 0 !important; min-height: 0 !important; }
+    .rt-popover { display: none !important; }
 }
