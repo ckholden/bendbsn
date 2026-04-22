@@ -4356,8 +4356,13 @@
             }
         }
 
-        // Smart Phrases - type shortcut and it auto-expands
-        let smartPhrases = {
+        // 69 built-in smart phrases — the seed catalog. On first page-load
+        // for a given browser/profile, these get copied into localStorage as
+        // editable entries (loadCustomPhrases below), so students see them
+        // pre-loaded under their My Smart Phrases and can edit / delete /
+        // rename like any other. The "Restore defaults" button in the
+        // picker re-adds any of these the user has deleted.
+        const DEFAULT_SMART_PHRASES = {
             // Vital Signs
             '.vs': 'BP: __ | HR: __ | O2: __% | RR: __ | T: __ | Pain: __/10',
             // Neuro
@@ -4427,6 +4432,12 @@
             '.teachback': 'Patient able to teach back key information. ',
             '.dcteach': 'Discharge teaching completed. Patient/family verbalized understanding of medications, follow-up, and return precautions. '
         };
+
+        // Runtime in-memory map of EVERY phrase available for typing-expansion.
+        // Populated by loadCustomPhrases() during init from localStorage. The
+        // 69 built-ins above are seeded on first page-load if the user has
+        // never seen them before.
+        let smartPhrases = {};
 
         // ─── Smart-phrase picker (toolbar button + popover) ────────────────
         // Categorization mirrors the source-comment grouping above. Hard-coded
@@ -4504,13 +4515,14 @@
                 + '</div>'
                 + '<div class="rt-pp-list"></div>'
                 + '<div class="rt-pp-footer">'
-                +   '<span style="font-size:11px;color:var(--clx-text-muted,#718096);">Click to insert at cursor</span>'
+                +   '<button type="button" class="rt-pp-restore" title="Add back any built-in phrases you deleted">↺ Restore defaults</button>'
                 +   '<button type="button" class="rt-pp-add">➕ Add new</button>'
                 + '</div>';
 
             const listEl = content.querySelector('.rt-pp-list');
             const searchEl = content.querySelector('.rt-pp-search');
             const addBtn = content.querySelector('.rt-pp-add');
+            const restoreBtn = content.querySelector('.rt-pp-restore');
 
             function shortcutRow(shortcut, text, isCustom) {
                 const safeText = String(text || '').replace(/\s+/g, ' ');
@@ -4537,29 +4549,46 @@
 
             function renderList(filter) {
                 const f = (filter || '').trim().toLowerCase();
+                // Single source of truth: smartPhrases (which post-seed contains
+                // the 69 built-ins + any user additions, all editable). Group
+                // each shortcut by its built-in category; user-added shortcuts
+                // (not in any category's keys) fall under "My Phrases".
+                const shortcutToCategory = {};
+                SEED_PHRASE_CATEGORIES.forEach(function (cat) {
+                    cat.keys.forEach(function (sc) { shortcutToCategory[sc] = cat.name; });
+                });
+                const grouped = {};
+                SEED_PHRASE_CATEGORIES.forEach(function (cat) { grouped[cat.name] = []; });
+                grouped['My Phrases'] = [];
+
+                Object.keys(smartPhrases).forEach(function (sc) {
+                    const text = smartPhrases[sc];
+                    if (text == null) return;
+                    if (f && sc.indexOf(f) === -1 && String(text).toLowerCase().indexOf(f) === -1) return;
+                    const cat = shortcutToCategory[sc] || 'My Phrases';
+                    grouped[cat].push(sc);
+                });
+
                 let html = '';
                 let any = false;
+                // Built-in categories first (in source order)
                 SEED_PHRASE_CATEGORIES.forEach(function (cat) {
-                    const rows = cat.keys
-                        .filter(function (sc) { return smartPhrases[sc] != null; })
-                        .filter(function (sc) {
-                            if (!f) return true;
-                            return sc.includes(f) || (smartPhrases[sc] || '').toLowerCase().includes(f);
-                        });
+                    const rows = grouped[cat.name];
                     if (!rows.length) return;
                     any = true;
                     html += '<div class="rt-pp-cat">' + cat.name + '</div>';
-                    rows.forEach(function (sc) { html += shortcutRow(sc, smartPhrases[sc], false); });
+                    rows.forEach(function (sc) {
+                        // EVERY row is editable — the user owns them all now
+                        html += shortcutRow(sc, smartPhrases[sc], true);
+                    });
                 });
-                const customMap = getCustomPhrases();
-                const customKeys = Object.keys(customMap).filter(function (sc) {
-                    if (!f) return true;
-                    return sc.includes(f) || (customMap[sc] || '').toLowerCase().includes(f);
-                });
-                if (customKeys.length) {
+                // User-added phrases at the bottom under "My Phrases"
+                if (grouped['My Phrases'].length) {
                     any = true;
                     html += '<div class="rt-pp-cat">My Phrases</div>';
-                    customKeys.forEach(function (sc) { html += shortcutRow(sc, customMap[sc], true); });
+                    grouped['My Phrases'].forEach(function (sc) {
+                        html += shortcutRow(sc, smartPhrases[sc], true);
+                    });
                 }
                 if (!any) html = '<div class="rt-pp-empty">No phrases match.</div>';
                 listEl.innerHTML = html;
@@ -4630,6 +4659,35 @@
 
             searchEl.addEventListener('input', function () { renderList(searchEl.value); });
             addBtn.addEventListener('click', function () { showAddForm('', ''); });
+
+            // "Restore defaults" — adds back any built-in phrases the user has
+            // deleted. Never overwrites anything they currently have under the
+            // same shortcut, so a renamed/edited built-in is preserved.
+            if (restoreBtn) {
+                restoreBtn.addEventListener('click', function () {
+                    showConfirmModal(
+                        'Restore default phrases',
+                        'This adds back any built-in phrases you previously deleted. Your custom additions and edits stay untouched.',
+                        function () {
+                            let added = 0;
+                            let raw = localStorage.getItem('bendbsn_custom_phrases');
+                            let existing = {};
+                            try { existing = raw ? (JSON.parse(raw) || {}) : {}; } catch (e) {}
+                            Object.keys(DEFAULT_SMART_PHRASES).forEach(function (sc) {
+                                if (existing[sc] == null) {
+                                    existing[sc] = DEFAULT_SMART_PHRASES[sc];
+                                    smartPhrases[sc] = DEFAULT_SMART_PHRASES[sc];
+                                    added += 1;
+                                }
+                            });
+                            try { localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(existing)); } catch (e) {}
+                            showToast(added === 0 ? 'All default phrases already present.' : 'Restored ' + added + ' default phrase' + (added === 1 ? '' : 's') + '.', 'success');
+                            renderList(searchEl.value);
+                        },
+                        { confirmText: 'Restore' }
+                    );
+                });
+            }
 
             // Don't let mousedowns inside the popover blur the editor — that
             // would lose the saved selection. The createPopover helper handles
@@ -6152,16 +6210,46 @@
 
         renderMedRecents();
 
-        // Load custom phrases from localStorage and global phrases from Firebase
+        // Load all phrases. On first page-load for this browser/profile,
+        // seed the 69 built-ins into localStorage as editable entries, so
+        // students see them pre-loaded in their My Smart Phrases section
+        // and can edit / rename / delete from a baseline.
         function loadCustomPhrases() {
-            // Load local custom phrases
-            const custom = localStorage.getItem('bendbsn_custom_phrases');
-            if (custom) {
-                const customPhrases = JSON.parse(custom);
-                Object.assign(smartPhrases, customPhrases);
+            const SEED_FLAG = 'bendbsn_phrases_seeded_v1';
+
+            // ---- One-time seed of built-ins ----
+            // Strategy: if the seed flag isn't set, MERGE defaults into
+            // whatever's currently in localStorage (don't overwrite anything
+            // the user has personally added under the same shortcut).
+            if (!localStorage.getItem(SEED_FLAG)) {
+                let existing = {};
+                try {
+                    const raw = localStorage.getItem('bendbsn_custom_phrases');
+                    if (raw) existing = JSON.parse(raw) || {};
+                } catch (e) { existing = {}; }
+                const merged = Object.assign({}, DEFAULT_SMART_PHRASES, existing);
+                try {
+                    localStorage.setItem('bendbsn_custom_phrases', JSON.stringify(merged));
+                    localStorage.setItem(SEED_FLAG, '1');
+                } catch (e) {
+                    console.warn('[smart-phrases] seed failed', e);
+                }
             }
 
-            // Load global phrases from Firebase (admin-managed)
+            // ---- Build runtime map from localStorage ----
+            // localStorage is the source of truth post-seed. Deletions are
+            // permanent because we never re-seed (flag is sticky).
+            smartPhrases = {};
+            try {
+                const raw = localStorage.getItem('bendbsn_custom_phrases');
+                if (raw) Object.assign(smartPhrases, JSON.parse(raw) || {});
+            } catch (e) {
+                // localStorage corrupted — fall back to defaults so typing-expansion still works
+                console.warn('[smart-phrases] localStorage read failed, using defaults', e);
+                Object.assign(smartPhrases, DEFAULT_SMART_PHRASES);
+            }
+
+            // ---- Layer in admin-managed global phrases (Firebase) ----
             const globalPhrasesRef = database.ref('globalPhrases');
             globalPhrasesRef.once('value', (snapshot) => {
                 if (snapshot.exists()) {
