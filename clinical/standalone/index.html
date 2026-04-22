@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical Assessment Packet — AL / Memory Care</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --panel: #ffffff;
+    --ink: #1a2332;
+    --ink-muted: #5a6578;
+    --line: #d8dde4;
+    --line-strong: #a8b0bc;
+    --accent: #2c5282;
+    --accent-soft: #ebf2fb;
+    --warn: #a94442;
+    --ok: #2f7a3a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink);
+    background: var(--bg);
+  }
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+  .top-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 0.2px;
+  }
+  .brand small {
+    display: block;
+    font-weight: 400;
+    color: var(--ink-muted);
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+  .save-status {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-left: auto;
+  }
+  .save-status.saved { color: var(--ok); }
+  .save-status.unsaved { color: var(--warn); }
+  .top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.btn {
+    font: inherit;
+    padding: 6px 12px;
+    border: 1px solid var(--line-strong);
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  button.btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+  button.btn.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  button.btn.primary:hover { background: #1d3d63; }
+  button.btn.danger { color: var(--warn); }
+  button.btn.danger:hover { background: #fbebeb; border-color: var(--warn); }
+
+  nav.tabs {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 18px;
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  nav.tabs button {
+    font: inherit;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  nav.tabs button:hover { color: var(--ink); }
+  nav.tabs button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 20px 18px 60px; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .panel h2 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .panel > p.hint {
+    margin: 0 0 16px 0;
+    color: var(--ink-muted);
+    font-size: 12.5px;
+  }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  label { display: block; font-size: 12px; color: var(--ink-muted); margin-bottom: 3px; font-weight: 500; }
+  input[type="text"], input[type="date"], input[type="time"], input[type="number"],
+  select, textarea {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    font: inherit;
+    color: var(--ink);
+    background: white;
+  }
+  textarea { resize: vertical; min-height: 70px; font-family: inherit; }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .g5 { grid-template-columns: repeat(5, 1fr); }
+  @media (max-width: 800px) {
+    .g2, .g3, .g4, .g5 { grid-template-columns: 1fr; }
+  }
+
+  /* OMEGA table */
+  table.form-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+  }
+  table.form-table th, table.form-table td {
+    border: 1px solid var(--line);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.form-table th {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+  table.form-table td.key {
+    background: #f0f3f7;
+    font-weight: 600;
+    width: 140px;
+    white-space: nowrap;
+  }
+  table.form-table td.key .letter {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    background: var(--accent);
+    color: white;
+    border-radius: 3px;
+    margin-right: 8px;
+    font-size: 12px;
+  }
+  table.form-table input, table.form-table textarea {
+    border: none;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  table.form-table input:focus, table.form-table textarea:focus {
+    outline: 1px dashed var(--accent);
+    background: var(--accent-soft);
+  }
+
+  /* Medication table */
+  .med-table-wrap { overflow-x: auto; }
+  table.med-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+  }
+  table.med-table th, table.med-table td {
+    border: 1px solid var(--line);
+    padding: 6px;
+    vertical-align: top;
+    font-size: 13px;
+  }
+  table.med-table th {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  table.med-table textarea {
+    border: none;
+    padding: 3px 4px;
+    min-height: 40px;
+    background: transparent;
+    font-size: 12.5px;
+  }
+  table.med-table textarea:focus {
+    outline: 1px dashed var(--accent);
+    background: var(--accent-soft);
+  }
+  td.del-col { width: 34px; text-align: center; }
+  .row-del {
+    background: none;
+    border: none;
+    color: var(--warn);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px;
+  }
+  .row-del:hover { color: #7a2525; }
+
+  /* Risk scoring boxes */
+  .score-block {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .score-num {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 48px;
+  }
+  .score-label {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .risk-level {
+    margin-left: auto;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .risk-minimal { background: #d4edda; color: #155724; }
+  .risk-moderate { background: #fff3cd; color: #856404; }
+  .risk-high { background: #f8d7da; color: #721c24; }
+
+  /* Fall profile checkbox grid */
+  .fall-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-top: 10px;
+  }
+  @media (max-width: 800px) { .fall-grid { grid-template-columns: 1fr; } }
+  .fall-group {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 10px 12px;
+    background: #fafbfc;
+  }
+  .fall-group h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .risk-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .risk-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .risk-row .pts {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .risk-row label {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    flex: 1;
+  }
+
+  /* Braden Scale */
+  .braden-factor {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 14px;
+    margin-bottom: 12px;
+    background: #fafbfc;
+  }
+  .braden-factor h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: var(--accent);
+  }
+  .braden-factor > p.defn {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+  .braden-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  @media (max-width: 800px) {
+    .braden-options { grid-template-columns: 1fr; }
+  }
+  .braden-option {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px;
+    cursor: pointer;
+    background: white;
+    font-size: 12px;
+    display: block;
+    transition: all 0.1s;
+  }
+  .braden-option:hover { border-color: var(--accent); }
+  .braden-option input { margin-right: 6px; }
+  .braden-option.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    border-width: 2px;
+    padding: 9px;
+  }
+  .braden-option strong {
+    display: block;
+    font-size: 12.5px;
+    margin-bottom: 4px;
+    color: var(--accent);
+  }
+
+  /* SBAR */
+  .sbar-section {
+    border-left: 4px solid var(--accent);
+    padding: 10px 16px;
+    margin-bottom: 14px;
+    background: #fafbfc;
+    border-radius: 0 4px 4px 0;
+  }
+  .sbar-letter {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    margin-right: 10px;
+    font-size: 14px;
+  }
+  .sbar-section h3 { margin: 0 0 10px 0; font-size: 15px; display: flex; align-items: center; }
+  .sbar-score-inline {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .sbar-score-inline input {
+    width: 42px;
+    display: inline-block;
+    text-align: center;
+    padding: 2px 4px;
+  }
+
+  .vitals-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin: 10px 0;
+  }
+  @media (max-width: 700px) { .vitals-row { grid-template-columns: repeat(2, 1fr); } }
+
+  /* FOCUS notes */
+  .focus-note {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 14px;
+    margin-bottom: 14px;
+    background: white;
+  }
+  .focus-note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .focus-note-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: var(--accent);
+  }
+  .focus-darp-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+  .focus-darp-row .letter-box {
+    background: var(--accent);
+    color: white;
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 11px;
+    text-align: center;
+  }
+  .focus-darp-row .letter-box small {
+    display: block;
+    font-weight: 400;
+    font-size: 9px;
+    margin-top: 1px;
+    opacity: 0.9;
+  }
+
+  /* Care plan */
+  .careplan-box {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 14px;
+    margin-bottom: 14px;
+    background: #fafbfc;
+  }
+  .careplan-box h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: var(--accent);
+  }
+  .careplan-box p.hint {
+    margin: 0 0 8px 0;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+  .intervention-block {
+    margin-top: 12px;
+    padding: 10px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  .intervention-block h5 {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .intervention-block h5 span.tag {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .add-row-btn {
+    margin-top: 8px;
+    padding: 6px 12px;
+    border: 1px dashed var(--accent);
+    background: transparent;
+    color: var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+  }
+  .add-row-btn:hover { background: var(--accent-soft); }
+
+  footer.doc-footer {
+    max-width: 1180px;
+    margin: 30px auto;
+    padding: 0 18px;
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-align: center;
+  }
+
+  /* ================= PRINT STYLES ================= */
+  @media print {
+    @page {
+      size: letter;
+      margin: 0.55in 0.5in 0.65in;
+    }
+
+    /* Force browsers to actually print our colors/backgrounds */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      background: white;
+      font-size: 10.5px;
+      color: #1a2332;
+    }
+
+    header.top, nav.tabs, .top-actions, .save-status,
+    .add-row-btn, .row-del, button.btn, footer.doc-footer {
+      display: none !important;
+    }
+
+    main { max-width: 100%; padding: 0; margin: 0; }
+
+    .section {
+      display: block !important;
+      page-break-after: always;
+    }
+    .section:last-child { page-break-after: auto; }
+
+    /* Panels: a clean accent-blue top border instead of a full box */
+    .panel {
+      box-shadow: none;
+      border: none;
+      border-top: 2px solid #2c5282;
+      border-radius: 0;
+      background: transparent;
+      padding: 8px 0 12px 0;
+      margin: 0 0 12px 0;
+      page-break-inside: avoid;
+    }
+    .panel h2 {
+      font-size: 12.5px;
+      color: #2c5282;
+      margin: 0 0 3px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+    }
+    .panel > p.hint {
+      font-size: 9px;
+      margin: 0 0 10px 0;
+      color: #5a6578;
+    }
+
+    /* Print header */
+    .print-only { display: block !important; }
+    .print-header {
+      display: block !important;
+      border-bottom: 2px solid #2c5282;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+    .print-header h1 {
+      margin: 0;
+      font-size: 14.5px;
+      color: #2c5282;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .print-header p {
+      margin: 3px 0 0 0;
+      font-size: 9.5px;
+      color: #5a6578;
+    }
+
+    /* Form fields */
+    input[type="text"], input[type="date"], input[type="time"],
+    input[type="number"], select {
+      border: none;
+      border-bottom: 1px solid #444;
+      border-radius: 0;
+      background: transparent;
+      padding: 1px 2px;
+      font-size: 10.5px;
+      color: #1a2332;
+    }
+    textarea {
+      border: 1px solid #bbb;
+      border-radius: 2px;
+      background: transparent;
+      padding: 4px 6px;
+      min-height: 34px;
+      font-size: 10.5px;
+      color: #1a2332;
+    }
+
+    /* Tables */
+    table.form-table, table.med-table { border-collapse: collapse; }
+    table.form-table td, table.form-table th,
+    table.med-table td, table.med-table th {
+      padding: 4px 6px;
+      font-size: 9.5px;
+      border: 1px solid #888;
+    }
+    table.form-table th, table.med-table th {
+      background: #ebf2fb;
+      color: #2c5282;
+      font-weight: 700;
+    }
+    table.form-table td.key { background: #f3f6fa; }
+    table.form-table td.key .letter {
+      background: #2c5282;
+      color: white;
+    }
+
+    /* Braden / Morse options */
+    .fall-grid, .braden-options, .fall-group {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .braden-option {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      font-size: 9.5px;
+    }
+    .braden-option.selected {
+      background: #dbe8f5;
+      border: 2px solid #2c5282;
+      padding: 5px 7px;
+    }
+    .braden-option strong { color: #2c5282; }
+
+    /* Score blocks — summary cards */
+    .score-block {
+      background: #ebf2fb;
+      border: 1px solid #2c5282;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin: 10px 0;
+    }
+    .score-num {
+      color: #2c5282;
+      font-size: 18px;
+    }
+    .risk-minimal, .risk-moderate, .risk-high {
+      border: 1px solid #666;
+    }
+
+    /* Fall profile groups & rows */
+    .fall-group {
+      background: transparent;
+      border: 1px solid #bbb;
+      padding: 8px 10px;
+    }
+    .fall-group h4 { color: #2c5282; }
+    .risk-row { font-size: 9.5px; padding: 2px 0; }
+    .risk-row .pts {
+      background: #2c5282;
+      color: white;
+      font-size: 8.5px;
+    }
+
+    /* SBAR */
+    .sbar-letter {
+      background: #2c5282;
+      color: white;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      font-size: 12px;
+    }
+    .sbar-section {
+      border-left: 3px solid #2c5282;
+      background: transparent;
+      padding: 6px 12px;
+      margin-bottom: 10px;
+    }
+
+    /* FOCUS notes */
+    .focus-note {
+      border: 1px solid #bbb;
+      page-break-inside: avoid;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .focus-note-header { border-bottom: 1px solid #ccc; }
+    .focus-note-header h4 { color: #2c5282; }
+    .focus-darp-row .letter-box {
+      background: #2c5282;
+      color: white;
+    }
+
+    /* Care plan */
+    .careplan-box {
+      background: transparent;
+      border: 1px solid #bbb;
+      padding: 10px;
+      page-break-inside: avoid;
+      margin-bottom: 10px;
+    }
+    .careplan-box h4 { color: #2c5282; }
+    .intervention-block {
+      background: transparent;
+      border: 1px solid #ddd;
+    }
+    .intervention-block h5 span.tag {
+      background: #2c5282;
+      color: white;
+    }
+
+    /* Clock canvas */
+    #clockCanvas {
+      border: 1px solid #333 !important;
+    }
+  }
+  .print-only { display: none; }
+  .print-header { display: none; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">Clinical Assessment Packet<small>Assisted Living &amp; Memory Care</small></div>
+    <div class="save-status saved" id="saveStatus">Saved</div>
+    <div class="top-actions">
+      <button class="btn" onclick="exportJSON()">Export JSON</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">Import JSON</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+      <button class="btn primary" onclick="window.print()">Print / Save PDF</button>
+      <button class="btn danger" onclick="clearAll()">Clear All</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="active" data-tab="info">Info</button>
+    <button data-tab="omega">OMEGA 1234567</button>
+    <button data-tab="meds">Medications</button>
+    <button data-tab="morse">Morse Fall Scale</button>
+    <button data-tab="braden">Braden Scale</button>
+    <button data-tab="cognition">Mini-Cog</button>
+    <button data-tab="behavior">Behavior</button>
+    <button data-tab="ncsbn">Clinical Judgment</button>
+    <button data-tab="sbar">SBAR Report</button>
+    <button data-tab="focus">FOCUS Notes</button>
+    <button data-tab="notes">Notes</button>
+    <button data-tab="careplan">Care Plan</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- Print-only header -->
+  <div class="print-header print-only">
+    <h1>Clinical Assessment Packet — Assisted Living &amp; Memory Care</h1>
+    <p id="printHeaderInfo"></p>
+  </div>
+
+  <!-- ============= INFO ============= -->
+  <section class="section active" data-section="info">
+    <div class="panel">
+      <h2>Student &amp; Resident Information</h2>
+      <p class="hint">De-identify all resident data (initials only). This file saves automatically to your browser — nothing leaves your device.</p>
+      <div class="grid g2">
+        <div>
+          <label>Student Name</label>
+          <input type="text" data-field="student_name">
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" data-field="date">
+        </div>
+        <div>
+          <label>Course</label>
+          <input type="text" data-field="course" placeholder="e.g., NUR217">
+        </div>
+        <div>
+          <label>Instructor</label>
+          <input type="text" data-field="instructor">
+        </div>
+        <div>
+          <label>Clinical Site</label>
+          <input type="text" data-field="site">
+        </div>
+        <div>
+          <label>Shift</label>
+          <select data-field="shift">
+            <option value="">—</option>
+            <option>AM (0700-1500)</option>
+            <option>PM (1500-2300)</option>
+            <option>NOC (2300-0700)</option>
+            <option>8-hour</option>
+            <option>12-hour</option>
+          </select>
+        </div>
+      </div>
+      <h3 style="margin-top:22px; font-size:15px; color:var(--accent);">Resident</h3>
+      <div class="grid g4">
+        <div>
+          <label>Resident Initials</label>
+          <input type="text" data-field="res_initials" maxlength="5">
+        </div>
+        <div>
+          <label>Age</label>
+          <input type="number" data-field="res_age" min="0" max="120">
+        </div>
+        <div>
+          <label>DOB</label>
+          <input type="date" data-field="res_dob">
+        </div>
+        <div>
+          <label>Apartment / Room</label>
+          <input type="text" data-field="res_room">
+        </div>
+        <div style="grid-column: span 2;">
+          <label>Attending Physician</label>
+          <input type="text" data-field="res_physician">
+        </div>
+        <div style="grid-column: span 2;">
+          <label>Primary Diagnosis / Reason for Admission</label>
+          <input type="text" data-field="res_dx">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= OMEGA ============= -->
+  <section class="section" data-section="omega">
+    <div class="panel">
+      <h2>OMEGA 1234567 Assessment</h2>
+      <p class="hint">Systematic assessment framework. Enter findings for each domain.</p>
+      <table class="form-table">
+        <tbody id="omegaBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============= MEDS ============= -->
+  <section class="section" data-section="meds">
+    <div class="panel">
+      <h2>Medications</h2>
+      <p class="hint">Current medications the resident is on. One row per med.</p>
+      <div class="med-table-wrap">
+        <table class="med-table">
+          <thead>
+            <tr>
+              <th style="width:18%">Physician's Order<br><small style="font-weight:400">(Trade &amp; Generic)</small></th>
+              <th style="width:10%">Time Admin</th>
+              <th style="width:16%">Drug Class<br><small style="font-weight:400">(Therapeutic &amp; Pharm.)</small></th>
+              <th style="width:16%">Indication<br><small style="font-weight:400">(Pt Problem / Reason)</small></th>
+              <th style="width:16%">Major Side Effects</th>
+              <th style="width:20%">Nursing Implications<br><small style="font-weight:400">(Parameters, labs, etc.)</small></th>
+              <th class="del-col">×</th>
+            </tr>
+          </thead>
+          <tbody id="medBody"></tbody>
+        </table>
+      </div>
+      <button class="add-row-btn" onclick="addMedRow()">+ Add medication row</button>
+    </div>
+  </section>
+
+  <!-- ============= MORSE / HENDRICH ============= -->
+  <section class="section" data-section="morse">
+    <div class="panel">
+      <h2>Morse Fall Scale</h2>
+      <p class="hint">Select one option per variable. Complete on admission, change of condition, transfer, or after a fall.</p>
+      <div id="morseBody"></div>
+
+      <div class="score-block">
+        <span class="score-num" id="morseScore">0</span>
+        <span class="score-label">Total Morse Score</span>
+        <span class="risk-level" id="morseRiskLevel">Low Risk (0–24)</span>
+      </div>
+      <p style="font-size:12px; color:var(--ink-muted); margin-top:4px;">
+        0–24 Low Risk · 25–44 Moderate Risk · 45+ High Risk
+      </p>
+
+      <div class="grid g3" style="margin-top:14px;">
+        <div><label>Admission Date</label><input type="date" data-field="morse_admit_date"></div>
+        <div><label>Review Date</label><input type="date" data-field="morse_review1"></div>
+        <div><label>Review Date</label><input type="date" data-field="morse_review2"></div>
+      </div>
+      <div style="margin-top:10px;">
+        <label>Signature &amp; Status</label>
+        <input type="text" data-field="morse_signature">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= BRADEN ============= -->
+  <section class="section" data-section="braden">
+    <div class="panel">
+      <h2>Braden Scale — Pressure Sore Risk</h2>
+      <p class="hint">Select one option per factor. Total auto-calculates. ≤12 = HIGH RISK.</p>
+      <div id="bradenBody"></div>
+
+      <div class="score-block">
+        <span class="score-num" id="bradenScore">0</span>
+        <span class="score-label">Total Braden Score</span>
+        <span class="risk-level" id="bradenRiskLevel">Not scored</span>
+      </div>
+      <p style="font-size:12px; color:var(--ink-muted); margin-top:4px;">
+        9 Severe · 10–12 High · 13–14 Moderate · 15–18 Mild · 19+ No significant risk
+      </p>
+
+      <div class="grid g3" style="margin-top:16px;">
+        <div>
+          <label>Assessment Date</label>
+          <input type="date" data-field="braden_date">
+        </div>
+        <div style="grid-column: span 2;">
+          <label>Evaluator Signature / Title</label>
+          <input type="text" data-field="braden_evaluator">
+        </div>
+      </div>
+      <p style="font-size:10.5px; color:var(--ink-muted); margin-top:16px; font-style:italic;">
+        Source: Barbara Braden &amp; Nancy Bergstrom. Copyright 1988. Reprinted with permission. www.bradenscale.com
+      </p>
+    </div>
+  </section>
+
+  <!-- ============= MINI-COG ============= -->
+  <section class="section" data-section="cognition">
+    <div class="panel">
+      <h2>Mini-Cog — Patient Cognitive Assessment</h2>
+      <p class="hint">Rapid dementia screen (~3 minutes). Three steps: register three words, draw a clock, recall the words.</p>
+
+      <div class="careplan-box">
+        <h4>Step 1 — 3-Word Registration</h4>
+        <p style="font-size:13px; margin:4px 0 0 0;">
+          Ask the resident to listen carefully, remember, and repeat back:
+          <strong style="font-size:15px; letter-spacing:0.5px;">Ocean · Desk · Tractor</strong>
+        </p>
+      </div>
+
+      <div class="careplan-box">
+        <h4>Step 2 — Clock Drawing Test</h4>
+        <p style="font-size:12.5px; color:var(--ink-muted); margin:0 0 8px 0;">
+          Instruct the resident to draw the face of a clock, including the <strong>numbers</strong>, with hands pointing to <strong>8:20</strong>. Instructions may be repeated, but no additional help should be given. Move on after 3 minutes if incomplete.
+        </p>
+        <div style="background:white; border:1px solid var(--line); border-radius:6px; padding:10px;">
+          <canvas id="clockCanvas" width="400" height="400" style="border:1px solid var(--line); border-radius:4px; touch-action:none; display:block; margin:0 auto; max-width:100%; cursor:crosshair;"></canvas>
+          <div style="display:flex; gap:8px; justify-content:center; margin-top:8px; flex-wrap:wrap;">
+            <button class="btn" type="button" onclick="clearClockCanvas()">Clear</button>
+            <span style="font-size:11.5px; color:var(--ink-muted); align-self:center;">Sketch what the resident drew (optional)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="careplan-box">
+        <h4>Step 3 — Word Recall</h4>
+        <p style="font-size:12.5px; color:var(--ink-muted); margin:0 0 8px 0;">
+          Ask the resident to repeat the 3 previously presented words (Ocean, Desk, Tractor).
+        </p>
+        <div class="grid g2">
+          <div>
+            <label>Word Recall Score (0–3) — 1 pt per word</label>
+            <select data-field="minicog_recall">
+              <option value="">—</option>
+              <option value="0">0 — none recalled</option>
+              <option value="1">1 word recalled</option>
+              <option value="2">2 words recalled</option>
+              <option value="3">3 words recalled</option>
+            </select>
+          </div>
+          <div>
+            <label>Clock Drawing Score</label>
+            <select data-field="minicog_clock">
+              <option value="">—</option>
+              <option value="0">0 — Abnormal</option>
+              <option value="2">2 — Normal</option>
+            </select>
+            <p style="font-size:11px; color:var(--ink-muted); margin-top:4px;">
+              Normal = all numbers depicted once each, in correct sequence and position, hands readably displaying the requested time.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-block">
+        <span class="score-num" id="minicogScore">—</span>
+        <span class="score-label">Mini-Cog Total (0–5)</span>
+        <span class="risk-level" id="minicogRisk">Not scored</span>
+      </div>
+      <p style="font-size:12px; color:var(--ink-muted); margin-top:4px;">
+        0–2 = Positive screen for dementia · 3–5 = Negative screen
+      </p>
+
+      <div style="margin-top:14px;">
+        <label>Additional observations / notes</label>
+        <textarea data-field="minicog_notes" rows="3"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= BEHAVIOR ============= -->
+  <section class="section" data-section="behavior">
+    <div class="panel">
+      <h2>Behavioral Assessment Form (ABC)</h2>
+      <p class="hint">Complete one entry per behavioral event. ABC = Antecedents → Behavior → Consequences.</p>
+      <ol style="font-size:12.5px; color:var(--ink-muted); padding-left:20px;">
+        <li><strong>Behavior</strong> — fill out the middle column first; clearly describe what happened.</li>
+        <li><strong>Antecedents</strong> — describe what was happening before the behavior.</li>
+        <li><strong>Consequences</strong> — describe what happened immediately after, before staff intervened.</li>
+      </ol>
+      <div id="behaviorBody"></div>
+      <button class="add-row-btn" onclick="addBehaviorEvent()">+ Add behavioral event</button>
+    </div>
+  </section>
+
+  <!-- ============= NCSBN ============= -->
+  <section class="section" data-section="ncsbn">
+    <div class="panel">
+      <h2>Six Steps of the NCSBN Clinical Judgment Model</h2>
+      <p class="hint">Work through the six steps for this resident.</p>
+      <div id="ncsbnBody"></div>
+    </div>
+  </section>
+
+  <!-- ============= SBAR ============= -->
+  <section class="section" data-section="sbar">
+    <div class="panel">
+      <h2>SBAR Report Sheet</h2>
+      <p class="hint">Scored out of 100 total. Enter your self- or instructor-assessed points per section.</p>
+
+      <div class="sbar-section">
+        <h3><span class="sbar-letter">S</span>Situation</h3>
+        <label>Situation of concern (brief overview, clear and succinct)</label>
+        <textarea data-field="sbar_situation" rows="3"></textarea>
+      </div>
+
+      <div class="sbar-section">
+        <h3><span class="sbar-letter">B</span>Background</h3>
+        <label>Brief Hx (reason for admission, diagnoses, etc.)</label>
+        <textarea data-field="sbar_background" rows="3"></textarea>
+        <div class="grid g2" style="margin-top:10px;">
+          <div>
+            <label>Allergies</label>
+            <input type="text" data-field="sbar_allergies">
+          </div>
+          <div>
+            <label>Code status</label>
+            <input type="text" data-field="sbar_code" placeholder="Full Code / DNR / etc.">
+          </div>
+        </div>
+      </div>
+
+      <div class="sbar-section">
+        <h3><span class="sbar-letter">A</span>Assessment</h3>
+        <label style="margin-top:4px;">Vital Signs</label>
+        <div class="vitals-row">
+          <div><label>BP</label><input type="text" data-field="sbar_bp" placeholder="120/80"></div>
+          <div><label>HR</label><input type="text" data-field="sbar_hr"></div>
+          <div><label>RR</label><input type="text" data-field="sbar_rr"></div>
+          <div><label>Temp</label><input type="text" data-field="sbar_temp"></div>
+          <div><label>SpO₂</label><input type="text" data-field="sbar_spo2"></div>
+        </div>
+        <div class="grid g2" style="margin-top:10px;">
+          <div>
+            <label>O₂ Requirements</label>
+            <input type="text" data-field="sbar_o2" placeholder="Room air / 2L NC / etc.">
+          </div>
+          <div>
+            <label>Nausea</label>
+            <input type="text" data-field="sbar_nausea">
+          </div>
+        </div>
+        <label style="margin-top:10px;">Pain</label>
+        <div class="grid g3">
+          <div>
+            <label style="font-weight:400">How much? (0–10)</label>
+            <input type="number" min="0" max="10" data-field="sbar_pain_level">
+          </div>
+          <div>
+            <label style="font-weight:400">Where?</label>
+            <input type="text" data-field="sbar_pain_location">
+          </div>
+          <div>
+            <label style="font-weight:400">Resident description</label>
+            <input type="text" data-field="sbar_pain_description">
+          </div>
+        </div>
+        <div class="grid g2" style="margin-top:10px;">
+          <div>
+            <label>IV access</label>
+            <input type="text" data-field="sbar_iv" placeholder="Site / gauge / patency">
+          </div>
+          <div>
+            <label>Fluids running / rate</label>
+            <input type="text" data-field="sbar_fluids">
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label>Procedures / scans done</label>
+          <textarea data-field="sbar_procedures" rows="2"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+          <label>Labs drawn &amp; significant results</label>
+          <textarea data-field="sbar_labs" rows="2"></textarea>
+        </div>
+        <div class="grid g3" style="margin-top:10px;">
+          <div>
+            <label>Ambulatory status</label>
+            <select data-field="sbar_ambulatory">
+              <option value="">—</option>
+              <option>Independent</option>
+              <option>Cane</option>
+              <option>Walker</option>
+              <option>Crutches</option>
+              <option>Wheelchair</option>
+              <option>Bedbound</option>
+            </select>
+          </div>
+          <div>
+            <label>Fall risk</label>
+            <select data-field="sbar_fall_risk">
+              <option value="">—</option>
+              <option>No</option>
+              <option>Yes</option>
+            </select>
+          </div>
+          <div>
+            <label>LOC</label>
+            <input type="text" data-field="sbar_loc" placeholder="Alert &amp; oriented x?">
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label>Wounds / dressings / ostomies / drains (location, dressing type, exudate)</label>
+          <textarea data-field="sbar_wounds" rows="2"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+          <label>Other assessments</label>
+          <textarea data-field="sbar_other" rows="2"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+          <label>Care plan interventions implemented</label>
+          <textarea data-field="sbar_interventions" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="sbar-section">
+        <h3><span class="sbar-letter">R</span>Recommendations</h3>
+        <div>
+          <label>Recommended action (What would you like the physician to do?)</label>
+          <textarea data-field="sbar_recommendation" rows="3"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+          <label>Other thoughts / comments · Orders received (and repeated back)</label>
+          <textarea data-field="sbar_orders" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= FOCUS NOTES ============= -->
+  <section class="section" data-section="focus">
+    <div class="panel">
+      <h2>Nurses Progress Notes</h2>
+      <p class="hint">Required per shift: 2 notes for 8-hour, 3 notes for 12-hour shifts. Choose a format per note (DAR, DARP, Narrative, SOAP, PIE, SOAPIE).</p>
+      <div id="focusBody"></div>
+      <button class="add-row-btn" onclick="addFocusNote()">+ Add progress note</button>
+
+      <details style="margin-top:18px; font-size:12.5px;">
+        <summary style="cursor:pointer; color:var(--accent); font-weight:600;">Format quick reference</summary>
+        <div style="padding:10px; background:#fafbfc; border-radius:4px; margin-top:8px; line-height:1.6;">
+          <p style="margin:4px 0;"><strong>DAR</strong> — Data · Action · Response</p>
+          <p style="margin:4px 0;"><strong>DARP</strong> — Data · Action · Response · Plan</p>
+          <p style="margin:4px 0;"><strong>Narrative</strong> — Chronological free-text note</p>
+          <p style="margin:4px 0;"><strong>SOAP</strong> — Subjective · Objective · Assessment · Plan</p>
+          <p style="margin:4px 0;"><strong>PIE</strong> — Problem · Intervention · Evaluation</p>
+          <p style="margin:4px 0;"><strong>SOAPIE</strong> — Subjective · Objective · Assessment · Plan · Intervention · Evaluation</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============= NOTES ============= -->
+  <section class="section" data-section="notes">
+    <div class="panel">
+      <h2>General Notes</h2>
+      <p class="hint">Free-form space for shift observations, preceptor feedback, questions to ask your instructor, anything else.</p>
+      <textarea data-field="notes_general" rows="28" style="font-family: 'Courier New', Georgia, serif; font-size:13px; line-height:1.7;"></textarea>
+    </div>
+  </section>
+
+  <!-- ============= CARE PLAN ============= -->
+  <section class="section" data-section="careplan">
+    <div class="panel">
+      <h2>Nursing Care Plan</h2>
+      <p class="hint">NANDA diagnostic structure with SMART goals and Assess/Do/Teach interventions.</p>
+
+      <div class="careplan-box">
+        <h4>Omega 7 / Assessment Finding</h4>
+        <p class="hint">Identified issue that can be modified to help resident outcome.<br>
+          <em>Example: Air — Resident is on 2L O₂, normally on room air at home.</em></p>
+        <textarea data-field="cp_finding" rows="2"></textarea>
+      </div>
+
+      <div class="careplan-box">
+        <h4>Nursing Diagnostic Statement</h4>
+        <p class="hint">NANDA Dx r/t problem [secondary to medical Dx] aeb signs/symptoms.<br>
+          <em>Example: Impaired gas exchange r/t airway obstruction secondary to COPD aeb wheezing, fatigue after 10 ft walking, SpO₂ &lt;88% with exertion.</em></p>
+        <textarea data-field="cp_dx" rows="2"></textarea>
+      </div>
+
+      <div class="careplan-box">
+        <h4>Short-Term Goal</h4>
+        <p class="hint">End of shift or within a week. Begin with the resident. SMART: Specific, Measurable, Achievable, Relevant, Timebound.</p>
+        <textarea data-field="cp_st_goal" rows="2"></textarea>
+
+        <div class="intervention-block">
+          <h5><span class="tag">Assess</span>Assess Intervention</h5>
+          <p style="font-size:11.5px; color:var(--ink-muted); margin:0 0 6px 0;">Start with Assess/Measure/Evaluate. Include frequency.</p>
+          <textarea data-field="cp_st_assess" rows="2" placeholder="Intervention"></textarea>
+          <label style="margin-top:6px;">Rationale</label>
+          <textarea data-field="cp_st_assess_rat" rows="2"></textarea>
+        </div>
+
+        <div class="intervention-block">
+          <h5><span class="tag">Do</span>Do Intervention</h5>
+          <p style="font-size:11.5px; color:var(--ink-muted); margin:0 0 6px 0;">Start with Perform/Encourage/Give. Include frequency.</p>
+          <textarea data-field="cp_st_do" rows="2" placeholder="Intervention"></textarea>
+          <label style="margin-top:6px;">Rationale</label>
+          <textarea data-field="cp_st_do_rat" rows="2"></textarea>
+        </div>
+
+        <div class="intervention-block">
+          <h5><span class="tag">Teach</span>Teach Intervention</h5>
+          <p style="font-size:11.5px; color:var(--ink-muted); margin:0 0 6px 0;">Start with Teach/Educate/Demonstrate. Include frequency.</p>
+          <textarea data-field="cp_st_teach" rows="2" placeholder="Intervention"></textarea>
+          <label style="margin-top:6px;">Rationale</label>
+          <textarea data-field="cp_st_teach_rat" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="careplan-box">
+        <h4>Long-Term Goal</h4>
+        <p class="hint">Weeks to months. Begin with the resident. SMART.</p>
+        <textarea data-field="cp_lt_goal" rows="2"></textarea>
+
+        <div class="intervention-block">
+          <h5><span class="tag">Assess</span>Assess Intervention</h5>
+          <textarea data-field="cp_lt_assess" rows="2" placeholder="Intervention"></textarea>
+          <label style="margin-top:6px;">Rationale</label>
+          <textarea data-field="cp_lt_assess_rat" rows="2"></textarea>
+        </div>
+
+        <div class="intervention-block">
+          <h5><span class="tag">Do</span>Do Intervention</h5>
+          <textarea data-field="cp_lt_do" rows="2" placeholder="Intervention"></textarea>
+          <label style="margin-top:6px;">Rationale</label>
+          <textarea data-field="cp_lt_do_rat" rows="2"></textarea>
+        </div>
+
+        <div class="intervention-block">
+          <h5><span class="tag">Teach</span>Teach Intervention</h5>
+          <textarea data-field="cp_lt_teach" rows="2" placeholder="Intervention"></textarea>
+          <label style="margin-top:6px;">Rationale</label>
+          <textarea data-field="cp_lt_teach_rat" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="careplan-box">
+        <h4>Summary of Care</h4>
+        <p class="hint">Current interventions/treatments moving resident toward discharge, focused on primary dx.</p>
+        <textarea data-field="cp_summary" rows="4"></textarea>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="doc-footer">
+  Saved locally in this browser · No data leaves your device · Use Print / Save PDF to submit
+</footer>
+
+<script>
+// =================================================================
+// STATE + STORAGE
+// =================================================================
+const STORAGE_KEY = 'clinical_assessment_packet_v1';
+let state;            // initialized below, after data constants are declared
+let saveTimer = null;
+
+function defaultState() {
+  return {
+    fields: {},
+    omega: OMEGA_ROWS.reduce((acc, r) => { acc[r.key] = ''; return acc; }, {}),
+    meds: [emptyMed()],
+    fall: {},
+    morse: {},
+    hendrich: {},
+    ncsbn: NCSBN_STEPS.reduce((acc, s, i) => { acc[i] = ''; return acc; }, {}),
+    braden: {},
+    focus: [emptyFocus()],
+    behavior: [emptyBehavior()]
+  };
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setSaveStatus('saved');
+  } catch(e) {
+    setSaveStatus('unsaved');
+  }
+}
+
+function setSaveStatus(status) {
+  const el = document.getElementById('saveStatus');
+  el.className = 'save-status ' + status;
+  el.textContent = status === 'saved' ? 'Saved' : (status === 'saving' ? 'Saving…' : 'Unsaved');
+}
+
+function queueSave() {
+  setSaveStatus('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 400);
+}
+
+function emptyMed() {
+  return { order:'', time:'', class:'', indication:'', sideEffects:'', implications:'' };
+}
+function emptyFocus() {
+  return {
+    format: 'DARP',   // default format
+    focus: '', date: '', time: '',
+    // DAR / DARP fields
+    d: '', a: '', r: '', p: '',
+    // Narrative
+    narrative: '',
+    // SOAP / SOAPIE fields (S, O, A, P reused; I, E new)
+    s: '', o: '', i: '', e: ''
+    // PIE uses p, i, e (reused)
+  };
+}
+function emptyBehavior() {
+  return {
+    date:'', time:'', location:'',
+    ant_going_on:'', ant_what_else:'',
+    behavior:'', duration:'',
+    cons_interaction:'', cons_what_else:'',
+    interventions:'', effect:''
+  };
+}
+
+// =================================================================
+// DATA DEFINITIONS
+// =================================================================
+const OMEGA_ROWS = [
+  { key:'O', letter:'O', label:'Orientation' },
+  { key:'M', letter:'M', label:'Medication' },
+  { key:'E', letter:'E', label:'Emergency' },
+  { key:'G', letter:'G', label:'Gait' },
+  { key:'A', letter:'A', label:'Allergies' },
+  { key:'1', letter:'1', label:'Air' },
+  { key:'2', letter:'2', label:'Food' },
+  { key:'3', letter:'3', label:'Water' },
+  { key:'4', letter:'4', label:'Safety' },
+  { key:'5', letter:'5', label:'Hygiene' },
+  { key:'6', letter:'6', label:'Pain' },
+  { key:'7', letter:'7', label:'Sleep' },
+];
+
+const FALL_GROUPS = [
+  { name:'History of Falls', items:[
+    { id:'hx_2plus', label:'2 or more in past month', pts:6 },
+    { id:'hx_1to2', label:'1 to 2 in past month', pts:2 }
+  ]},
+  { name:'Incontinence', items:[
+    { id:'inc_bowel', label:'Bowel', pts:2 },
+    { id:'inc_bladder', label:'Bladder', pts:2 }
+  ]},
+  { name:'Postural Hypotension', items:[
+    { id:'postural', label:'Postural Hypotension', pts:1 }
+  ]},
+  { name:'Surgery', items:[
+    { id:'surg_recent', label:'Recent Surgery', pts:1 },
+    { id:'surg_anes', label:'Recent Anesthesia', pts:1 },
+    { id:'surg_rehab', label:'Recent Rehab', pts:1 }
+  ]},
+  { name:'Syncope / Dizziness', items:[
+    { id:'syn_vision', label:'Decreased Vision', pts:1 },
+    { id:'syn_hearing', label:'Decreased Hearing', pts:1 },
+    { id:'syn_aphasia', label:'Aphasia', pts:1 }
+  ]},
+  { name:'Cardiovascular Disease', items:[
+    { id:'cv_arr', label:'Arrhythmia', pts:1 },
+    { id:'cv_chf', label:'Congestive Heart Disease', pts:1 },
+    { id:'cv_fib', label:'Fibrillation', pts:1 }
+  ]},
+  { name:'Gait / Mobility', items:[
+    { id:'gait_unsteady', label:'Unsteady Gait', pts:2 },
+    { id:'gait_transfer', label:'Transfer Difficulties', pts:2 },
+    { id:'gait_device', label:'Assistive Ambulatory Devices', pts:2 }
+  ]},
+  { name:'Neurological Disease', items:[
+    { id:'neuro_cva', label:'CVA', pts:1 },
+    { id:'neuro_park', label:'Parkinson\'s', pts:1 },
+    { id:'neuro_alz', label:'Alzheimer\'s', pts:1 },
+    { id:'neuro_sz', label:'Seizure Disorder', pts:1 }
+  ]},
+  { name:'Cognition / Behavior', items:[
+    { id:'cog_dem', label:'Confusion / Dementia', pts:2 },
+    { id:'cog_agit', label:'Agitation / Increased Anxiety', pts:2 }
+  ]},
+  { name:'Orthopedic Disease', items:[
+    { id:'ortho_cast', label:'Cast / Splint / Sling', pts:1 },
+    { id:'ortho_pros', label:'Prosthetics', pts:1 },
+    { id:'ortho_arth', label:'Severe Arthritis', pts:1 },
+    { id:'ortho_osteo', label:'Osteoporosis', pts:2 }
+  ]},
+  { name:'High-Risk Medications', items:[
+    { id:'med_cardiac', label:'Cardiac Meds', pts:1 },
+    { id:'med_diur', label:'Diuretics', pts:1 },
+    { id:'med_antipsy', label:'Antipsychotics', pts:1 },
+    { id:'med_hypn', label:'Hypnotics', pts:1 },
+    { id:'med_anx', label:'Anti-Anxiety Meds', pts:1 },
+    { id:'med_lax', label:'Laxatives', pts:1 }
+  ]},
+];
+
+const BRADEN_FACTORS = [
+  { id:'sensory', name:'Sensory Perception', defn:'Ability to respond meaningfully to pressure-related discomfort',
+    opts:[
+      { val:1, title:'Completely Limited', desc:'Unresponsive (does not moan, flinch, or grasp) to painful stimuli, due to diminished LOC or sedation, OR limited ability to feel pain over most of body surface.' },
+      { val:2, title:'Very Limited', desc:'Responds only to painful stimuli. Cannot communicate discomfort except by moaning/restlessness, OR sensory impairment limiting ability to feel pain over ½ of body.' },
+      { val:3, title:'Slightly Limited', desc:'Responds to verbal commands but cannot always communicate discomfort or need to be turned, OR some sensory impairment in 1–2 extremities.' },
+      { val:4, title:'No Impairment', desc:'Responds to verbal commands. No sensory deficit that would limit ability to feel or voice pain.' }
+    ]},
+  { id:'moisture', name:'Moisture', defn:'Degree to which skin is exposed to moisture',
+    opts:[
+      { val:1, title:'Constantly Moist', desc:'Skin kept moist almost constantly by perspiration, urine, etc. Dampness detected every time resident is moved or turned.' },
+      { val:2, title:'Often Moist', desc:'Skin often but not always moist. Linen must be changed at least once a shift.' },
+      { val:3, title:'Occasionally Moist', desc:'Skin occasionally moist, requiring an extra linen change approximately once a day.' },
+      { val:4, title:'Rarely Moist', desc:'Skin usually dry; linen only requires changing at routine intervals.' }
+    ]},
+  { id:'activity', name:'Activity', defn:'Degree of physical activity',
+    opts:[
+      { val:1, title:'Bedfast', desc:'Confined to bed.' },
+      { val:2, title:'Chairfast', desc:'Ability to walk severely limited or nonexistent. Cannot bear own weight and/or must be assisted into chair or wheelchair.' },
+      { val:3, title:'Walks Occasionally', desc:'Walks occasionally during day but very short distances, with or without assistance. Majority of shift in bed or chair.' },
+      { val:4, title:'Walks Frequently', desc:'Walks outside the room ≥2x/day and inside room at least once every 2 hours during waking hours.' }
+    ]},
+  { id:'mobility', name:'Mobility', defn:'Ability to change and control body position',
+    opts:[
+      { val:1, title:'Completely Immobile', desc:'Does not make even slight changes in body or extremity position without assistance.' },
+      { val:2, title:'Very Limited', desc:'Makes occasional slight changes in body or extremity position but unable to make frequent or significant changes independently.' },
+      { val:3, title:'Slightly Limited', desc:'Makes frequent though slight changes in body or extremity position independently.' },
+      { val:4, title:'No Limitations', desc:'Makes major and frequent changes in position without assistance.' }
+    ]},
+  { id:'nutrition', name:'Nutrition', defn:'Usual food intake pattern',
+    opts:[
+      { val:1, title:'Very Poor', desc:'Never eats a complete meal. Rarely eats more than ⅓ of any food offered. ≤2 servings protein/day. Takes fluids poorly. No liquid supplement, OR NPO/clear liquids/IV >5 days.' },
+      { val:2, title:'Probably Inadequate', desc:'Rarely eats complete meal; ½ of food offered. 3 servings protein/day. Occasional supplement OR less than optimum liquid diet/tube feeding.' },
+      { val:3, title:'Adequate', desc:'Eats over half of most meals. 4 servings protein/day. Occasionally refuses a meal but will usually take supplement, OR tube feeding/TPN meeting most needs.' },
+      { val:4, title:'Excellent', desc:'Eats most of every meal. Never refuses. Usually ≥4 servings meat/dairy. Occasionally eats between meals. No supplementation required.' }
+    ]},
+  { id:'friction', name:'Friction and Shear', defn:'Movement and positioning',
+    opts:[
+      { val:1, title:'Problem', desc:'Requires moderate to maximum assistance moving. Complete lifting without sliding impossible. Frequently slides down in bed/chair. Spasticity/contractures/agitation → near-constant friction.' },
+      { val:2, title:'Potential Problem', desc:'Moves feebly or requires minimum assistance. Skin probably slides to some extent against sheets/chair/restraints. Maintains relatively good position most of the time, occasionally slides down.' },
+      { val:3, title:'No Apparent Problem', desc:'Moves in bed and chair independently with sufficient muscle strength to lift up completely during move. Maintains good position at all times.' },
+      { val:4, title:'—', desc:'(Not used — this factor scores 1–3 only.)', disabled:true }
+    ]}
+];
+
+const NCSBN_STEPS = [
+  { step:'Step 1: Recognize Cues', prompt:'What data are RELEVANT and must be interpreted as clinically significant?' },
+  { step:'Step 2: Analyze Cues', prompt:'Interpret relevant clinical data and identify the most likely problem(s). Is additional data needed?' },
+  { step:'Step 3: Prioritize Hypotheses', prompt:'Rank the most likely problems by urgency. Which problem is most likely present? Most concerning? Why?' },
+  { step:'Step 4: Generate Solutions', prompt:'Based on the most pressing problem, what are the priority actions?' },
+  { step:'Step 5: Take Action', prompt:'What actions did you take?' },
+  { step:'Step 6: Evaluate Outcomes', prompt:'Evaluate the resident\'s response. Has status improved, declined, or remained unchanged? If not improved, what else may be present and what interventions should be considered?' }
+];
+
+const MORSE_VARS = [
+  { id:'history', name:'History of Falling', opts:[
+    { val:0,  label:'No' },
+    { val:25, label:'Yes' }
+  ]},
+  { id:'secondary_dx', name:'Secondary Diagnosis', opts:[
+    { val:0,  label:'No' },
+    { val:15, label:'Yes' }
+  ]},
+  { id:'ambulatory', name:'Ambulatory Aid', opts:[
+    { val:0,  label:'None / bedrest / nurse assist' },
+    { val:15, label:'Crutches / cane / walker' },
+    { val:30, label:'Furniture' }
+  ]},
+  { id:'iv', name:'IV or IV Access', opts:[
+    { val:0,  label:'No' },
+    { val:20, label:'Yes' }
+  ]},
+  { id:'gait', name:'Gait', opts:[
+    { val:0,  label:'Normal / bedrest / wheelchair' },
+    { val:10, label:'Weak' },
+    { val:20, label:'Impaired' }
+  ]},
+  { id:'mental', name:'Mental Status', opts:[
+    { val:0,  label:'Knows own limits' },
+    { val:15, label:'Overestimates or forgets limits' }
+  ]}
+];
+
+const HENDRICH_FACTORS = [
+  { id:'confusion',      label:'Confusion / Disorientation / Impulsivity', pts:4 },
+  { id:'depression',     label:'Symptomatic Depression',                   pts:2 },
+  { id:'elimination',    label:'Altered Elimination',                      pts:1 },
+  { id:'dizziness',      label:'Dizziness / Vertigo',                      pts:1 },
+  { id:'male',           label:'Male Gender',                              pts:1 },
+  { id:'antiepileptics', label:'Any Administered Antiepileptics',          pts:2 },
+  { id:'benzos',         label:'Any Administered Benzodiazepines',         pts:1 }
+];
+
+const GET_UP_GO_OPTS = [
+  { val:0, label:'Able to rise in a single movement — no loss of balance with steps' },
+  { val:1, label:'Pushes up, successful in one attempt' },
+  { val:3, label:'Multiple attempts, but successful' },
+  { val:4, label:'Unable to rise without assistance during test' }
+];
+
+// Progress note formats. Each field: key matches emptyFocus(), letter = display badge, name = full label, hint = optional prompt
+const NOTE_FORMATS = {
+  DAR: {
+    label: 'DAR',
+    showFocus: true,
+    fields: [
+      { key:'d', letter:'D', name:'Data',     hint:'Subjective / objective data, quotes' },
+      { key:'a', letter:'A', name:'Action',   hint:'Interventions performed' },
+      { key:'r', letter:'R', name:'Response', hint:'Resident\'s reaction to interventions' }
+    ]
+  },
+  DARP: {
+    label: 'DARP',
+    showFocus: true,
+    fields: [
+      { key:'d', letter:'D', name:'Data',     hint:'Subjective / quotes' },
+      { key:'a', letter:'A', name:'Action',   hint:'Findings / interventions' },
+      { key:'r', letter:'R', name:'Response', hint:'Reaction / change' },
+      { key:'p', letter:'P', name:'Plan',     hint:'Follow-up / education' }
+    ]
+  },
+  Narrative: {
+    label: 'Narrative',
+    showFocus: false,
+    fields: [
+      { key:'narrative', letter:'N', name:'Narrative', hint:'Chronological free-text note', rows:8 }
+    ]
+  },
+  SOAP: {
+    label: 'SOAP',
+    showFocus: false,
+    fields: [
+      { key:'s', letter:'S', name:'Subjective', hint:'What the resident tells you' },
+      { key:'o', letter:'O', name:'Objective',  hint:'Measurable findings, VS, observations' },
+      { key:'a', letter:'A', name:'Assessment', hint:'Clinical interpretation' },
+      { key:'p', letter:'P', name:'Plan',       hint:'Next steps, orders, education' }
+    ]
+  },
+  PIE: {
+    label: 'PIE',
+    showFocus: false,
+    fields: [
+      { key:'p', letter:'P', name:'Problem',      hint:'Identified nursing problem / dx' },
+      { key:'i', letter:'I', name:'Intervention', hint:'Actions taken' },
+      { key:'e', letter:'E', name:'Evaluation',   hint:'Outcome / response' }
+    ]
+  },
+  SOAPIE: {
+    label: 'SOAPIE',
+    showFocus: false,
+    fields: [
+      { key:'s', letter:'S', name:'Subjective',   hint:'Resident statements' },
+      { key:'o', letter:'O', name:'Objective',    hint:'Measurable findings' },
+      { key:'a', letter:'A', name:'Assessment',   hint:'Clinical interpretation' },
+      { key:'p', letter:'P', name:'Plan',         hint:'Intended actions' },
+      { key:'i', letter:'I', name:'Intervention', hint:'Actions taken' },
+      { key:'e', letter:'E', name:'Evaluation',   hint:'Outcome / response' }
+    ]
+  }
+};
+
+// =================================================================
+// RENDERING
+// =================================================================
+
+// Tabs
+document.querySelectorAll('nav.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.section[data-section="${btn.dataset.tab}"]`).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+// Regular fields
+function bindFields() {
+  document.querySelectorAll('[data-field]').forEach(el => {
+    const key = el.dataset.field;
+    if (state.fields[key] !== undefined) {
+      if (el.type === 'checkbox') el.checked = !!state.fields[key];
+      else el.value = state.fields[key];
+    }
+    el.addEventListener('input', () => {
+      state.fields[key] = el.type === 'checkbox' ? el.checked : el.value;
+      updatePrintHeader();
+      updateSbarTotal();
+      updateMinicogScore();
+      queueSave();
+    });
+    el.addEventListener('change', () => {
+      state.fields[key] = el.type === 'checkbox' ? el.checked : el.value;
+      queueSave();
+    });
+  });
+}
+
+function updatePrintHeader() {
+  const name = state.fields.student_name || '';
+  const date = state.fields.date || '';
+  const res = state.fields.res_initials || '';
+  const course = state.fields.course || '';
+  document.getElementById('printHeaderInfo').textContent =
+    `Student: ${name} · Course: ${course} · Date: ${date} · Resident: ${res}`;
+}
+
+// OMEGA
+function renderOmega() {
+  const body = document.getElementById('omegaBody');
+  body.innerHTML = '';
+  OMEGA_ROWS.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="key"><span class="letter">${row.letter}</span>${row.label}</td>
+      <td><textarea rows="2" data-omega="${row.key}">${escapeHtml(state.omega[row.key] || '')}</textarea></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('[data-omega]').forEach(el => {
+    el.addEventListener('input', () => {
+      state.omega[el.dataset.omega] = el.value;
+      queueSave();
+    });
+  });
+}
+
+// Medications
+function renderMeds() {
+  const body = document.getElementById('medBody');
+  body.innerHTML = '';
+  state.meds.forEach((med, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><textarea data-med-field="order" data-med-idx="${idx}">${escapeHtml(med.order)}</textarea></td>
+      <td><textarea data-med-field="time" data-med-idx="${idx}">${escapeHtml(med.time)}</textarea></td>
+      <td><textarea data-med-field="class" data-med-idx="${idx}">${escapeHtml(med.class)}</textarea></td>
+      <td><textarea data-med-field="indication" data-med-idx="${idx}">${escapeHtml(med.indication)}</textarea></td>
+      <td><textarea data-med-field="sideEffects" data-med-idx="${idx}">${escapeHtml(med.sideEffects)}</textarea></td>
+      <td><textarea data-med-field="implications" data-med-idx="${idx}">${escapeHtml(med.implications)}</textarea></td>
+      <td class="del-col"><button class="row-del" title="Delete row" onclick="deleteMedRow(${idx})">✕</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('[data-med-field]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.medIdx);
+      state.meds[idx][el.dataset.medField] = el.value;
+      queueSave();
+    });
+  });
+}
+function addMedRow() {
+  state.meds.push(emptyMed());
+  renderMeds();
+  queueSave();
+}
+function deleteMedRow(idx) {
+  if (state.meds.length === 1) { state.meds[0] = emptyMed(); }
+  else { state.meds.splice(idx, 1); }
+  renderMeds();
+  queueSave();
+}
+
+// Fall profile
+function renderFall() {
+  const grid = document.getElementById('fallGrid');
+  grid.innerHTML = '';
+  FALL_GROUPS.forEach(group => {
+    const box = document.createElement('div');
+    box.className = 'fall-group';
+    box.innerHTML = `<h4>${escapeHtml(group.name)}</h4>` +
+      group.items.map(item => `
+        <div class="risk-row">
+          <input type="checkbox" id="fall_${item.id}" data-fall-id="${item.id}" data-fall-pts="${item.pts}" ${state.fall[item.id] ? 'checked' : ''}>
+          <label for="fall_${item.id}">${escapeHtml(item.label)}</label>
+          <span class="pts">+${item.pts}</span>
+        </div>
+      `).join('');
+    grid.appendChild(box);
+  });
+  grid.querySelectorAll('[data-fall-id]').forEach(el => {
+    el.addEventListener('change', () => {
+      state.fall[el.dataset.fallId] = el.checked;
+      updateFallScore();
+      queueSave();
+    });
+  });
+  updateFallScore();
+}
+function updateFallScore() {
+  let total = 0;
+  FALL_GROUPS.forEach(g => g.items.forEach(i => {
+    if (state.fall[i.id]) total += i.pts;
+  }));
+  document.getElementById('fallScore').textContent = total;
+  const rl = document.getElementById('fallRiskLevel');
+  if (total <= 3) { rl.className = 'risk-level risk-minimal'; rl.textContent = 'Minimal Risk (0–3)'; }
+  else if (total <= 8) { rl.className = 'risk-level risk-moderate'; rl.textContent = 'Moderate Risk (4–8)'; }
+  else { rl.className = 'risk-level risk-high'; rl.textContent = 'High Risk (9+)'; }
+}
+
+// Braden
+function renderBraden() {
+  const body = document.getElementById('bradenBody');
+  body.innerHTML = '';
+  BRADEN_FACTORS.forEach(factor => {
+    const div = document.createElement('div');
+    div.className = 'braden-factor';
+    div.innerHTML = `
+      <h4>${escapeHtml(factor.name)}</h4>
+      <p class="defn">${escapeHtml(factor.defn)}</p>
+      <div class="braden-options">
+        ${factor.opts.map(opt => opt.disabled ? '' : `
+          <label class="braden-option ${state.braden[factor.id] == opt.val ? 'selected' : ''}">
+            <input type="radio" name="braden_${factor.id}" value="${opt.val}" data-braden-id="${factor.id}" ${state.braden[factor.id] == opt.val ? 'checked' : ''}>
+            <strong>${opt.val}. ${escapeHtml(opt.title)}</strong>
+            ${escapeHtml(opt.desc)}
+          </label>
+        `).join('')}
+      </div>
+    `;
+    body.appendChild(div);
+  });
+  body.querySelectorAll('[data-braden-id]').forEach(el => {
+    el.addEventListener('change', () => {
+      state.braden[el.dataset.bradenId] = parseInt(el.value);
+      // re-render to update .selected class
+      renderBraden();
+      updateBradenScore();
+      queueSave();
+    });
+  });
+  updateBradenScore();
+}
+function updateBradenScore() {
+  let total = 0; let scored = 0;
+  BRADEN_FACTORS.forEach(f => {
+    if (state.braden[f.id]) { total += state.braden[f.id]; scored++; }
+  });
+  document.getElementById('bradenScore').textContent = total;
+  const rl = document.getElementById('bradenRiskLevel');
+  if (scored === 0) { rl.className = 'risk-level'; rl.textContent = 'Not scored'; }
+  else if (total <= 9) { rl.className = 'risk-level risk-high'; rl.textContent = 'Severe Risk (≤9)'; }
+  else if (total <= 12) { rl.className = 'risk-level risk-high'; rl.textContent = 'High Risk (10–12)'; }
+  else if (total <= 14) { rl.className = 'risk-level risk-moderate'; rl.textContent = 'Moderate Risk (13–14)'; }
+  else if (total <= 18) { rl.className = 'risk-level risk-moderate'; rl.textContent = 'Mild Risk (15–18)'; }
+  else { rl.className = 'risk-level risk-minimal'; rl.textContent = 'No Significant Risk (19+)'; }
+}
+
+// NCSBN
+function renderNcsbn() {
+  const body = document.getElementById('ncsbnBody');
+  body.innerHTML = '';
+  NCSBN_STEPS.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'careplan-box';
+    div.innerHTML = `
+      <h4>${escapeHtml(s.step)}</h4>
+      <p class="hint">${escapeHtml(s.prompt)}</p>
+      <textarea rows="3" data-ncsbn-idx="${i}">${escapeHtml(state.ncsbn[i] || '')}</textarea>
+    `;
+    body.appendChild(div);
+  });
+  body.querySelectorAll('[data-ncsbn-idx]').forEach(el => {
+    el.addEventListener('input', () => {
+      state.ncsbn[el.dataset.ncsbnIdx] = el.value;
+      queueSave();
+    });
+  });
+}
+
+// SBAR total (no-op retained for back-compat; scoring removed)
+function updateSbarTotal() {
+  const el = document.getElementById('sbarTotal');
+  if (!el) return;
+}
+
+// FOCUS notes
+function renderFocus() {
+  const body = document.getElementById('focusBody');
+  body.innerHTML = '';
+  state.focus.forEach((note, idx) => {
+    // Back-compat: if older JSON imports without a format, default to DARP
+    if (!note.format) note.format = 'DARP';
+    const fmt = NOTE_FORMATS[note.format] || NOTE_FORMATS.DARP;
+
+    const div = document.createElement('div');
+    div.className = 'focus-note';
+    div.innerHTML = `
+      <div class="focus-note-header">
+        <h4>Progress Note #${idx + 1}</h4>
+        <button class="row-del" onclick="deleteFocusNote(${idx})" title="Delete note">✕</button>
+      </div>
+      <div class="grid g4" style="margin-bottom:10px;">
+        <div>
+          <label>Format</label>
+          <select data-focus-field="format" data-focus-idx="${idx}">
+            ${Object.keys(NOTE_FORMATS).map(f => `
+              <option value="${f}" ${note.format === f ? 'selected' : ''}>${NOTE_FORMATS[f].label}</option>
+            `).join('')}
+          </select>
+        </div>
+        ${fmt.showFocus ? `
+          <div style="grid-column:span 2;">
+            <label>FOCUS (topic)</label>
+            <input type="text" data-focus-field="focus" data-focus-idx="${idx}" value="${escapeHtml(note.focus)}" placeholder="e.g., Post-op pain management">
+          </div>
+        ` : `<div style="grid-column:span 2;"></div>`}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div>
+            <label>Date</label>
+            <input type="date" data-focus-field="date" data-focus-idx="${idx}" value="${escapeHtml(note.date)}">
+          </div>
+          <div>
+            <label>Time</label>
+            <input type="time" data-focus-field="time" data-focus-idx="${idx}" value="${escapeHtml(note.time)}">
+          </div>
+        </div>
+      </div>
+      ${fmt.fields.map(f => `
+        <div class="focus-darp-row">
+          <div class="letter-box">${f.letter}<small>${escapeHtml(f.name)}</small></div>
+          <div>
+            ${f.hint ? `<p style="font-size:11px; color:var(--ink-muted); margin:0 0 3px 0; font-style:italic;">${escapeHtml(f.hint)}</p>` : ''}
+            <textarea data-focus-field="${f.key}" data-focus-idx="${idx}" rows="${f.rows || 2}">${escapeHtml(note[f.key] || '')}</textarea>
+          </div>
+        </div>
+      `).join('')}
+    `;
+    body.appendChild(div);
+  });
+  body.querySelectorAll('[data-focus-field]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.focusIdx);
+      const field = el.dataset.focusField;
+      state.focus[idx][field] = el.value;
+      if (field === 'format') {
+        renderFocus();  // re-render to swap the field layout
+      }
+      queueSave();
+    });
+    // Also handle 'change' for the select so it triggers even if user clicks options
+    if (el.tagName === 'SELECT') {
+      el.addEventListener('change', () => {
+        const idx = parseInt(el.dataset.focusIdx);
+        state.focus[idx][el.dataset.focusField] = el.value;
+        renderFocus();
+        queueSave();
+      });
+    }
+  });
+}
+function addFocusNote() {
+  state.focus.push(emptyFocus());
+  renderFocus();
+  queueSave();
+}
+function deleteFocusNote(idx) {
+  if (state.focus.length === 1) { state.focus[0] = emptyFocus(); }
+  else { state.focus.splice(idx, 1); }
+  renderFocus();
+  queueSave();
+}
+
+// =================================================================
+// IMPORT / EXPORT / CLEAR
+// =================================================================
+function exportJSON() {
+  const name = (state.fields.res_initials || 'packet').replace(/[^a-zA-Z0-9]/g, '');
+  const date = state.fields.date || new Date().toISOString().slice(0,10);
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `assessment_${name}_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!imported.fields) throw new Error('Not a valid packet file');
+      state = imported;
+      save();
+      renderAll();
+      alert('Imported successfully.');
+    } catch (err) {
+      alert('Import failed: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function clearAll() {
+  if (!confirm('Clear ALL data in this packet? This cannot be undone.')) return;
+  state = defaultState();
+  save();
+  renderAll();
+}
+
+// =================================================================
+// UTILITIES
+// =================================================================
+function escapeHtml(s) {
+  if (s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Morse Fall Scale
+function renderMorse() {
+  const body = document.getElementById('morseBody');
+  if (!body) return;
+  body.innerHTML = '';
+  MORSE_VARS.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'braden-factor';
+    div.innerHTML = `
+      <h4>${escapeHtml(v.name)}</h4>
+      <div class="braden-options" style="grid-template-columns:repeat(${v.opts.length},1fr);">
+        ${v.opts.map(opt => `
+          <label class="braden-option ${state.morse[v.id] == opt.val ? 'selected' : ''}">
+            <input type="radio" name="morse_${v.id}" value="${opt.val}" data-morse-id="${v.id}" ${state.morse[v.id] == opt.val ? 'checked' : ''}>
+            <strong>${opt.val}</strong>
+            ${escapeHtml(opt.label)}
+          </label>
+        `).join('')}
+      </div>
+    `;
+    body.appendChild(div);
+  });
+  body.querySelectorAll('[data-morse-id]').forEach(el => {
+    el.addEventListener('change', () => {
+      state.morse[el.dataset.morseId] = parseInt(el.value);
+      renderMorse();
+      updateMorseScore();
+      queueSave();
+    });
+  });
+  updateMorseScore();
+}
+function updateMorseScore() {
+  let total = 0;
+  MORSE_VARS.forEach(v => {
+    if (state.morse[v.id] !== undefined) total += parseInt(state.morse[v.id]) || 0;
+  });
+  const el = document.getElementById('morseScore');
+  if (!el) return;
+  el.textContent = total;
+  const rl = document.getElementById('morseRiskLevel');
+  if (total <= 24) { rl.className = 'risk-level risk-minimal'; rl.textContent = 'Low Risk (0–24)'; }
+  else if (total <= 44) { rl.className = 'risk-level risk-moderate'; rl.textContent = 'Moderate Risk (25–44)'; }
+  else { rl.className = 'risk-level risk-high'; rl.textContent = 'High Risk (45+)'; }
+}
+
+// Hendrich II
+function renderHendrich() {
+  const body = document.getElementById('hendrichBody');
+  if (!body) return;
+  body.innerHTML = '';
+  HENDRICH_FACTORS.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'risk-row';
+    div.style.padding = '8px 12px';
+    div.style.border = '1px solid var(--line)';
+    div.style.borderRadius = '4px';
+    div.style.marginBottom = '6px';
+    div.style.background = 'white';
+    div.innerHTML = `
+      <input type="checkbox" id="hen_${f.id}" data-hendrich-id="${f.id}" data-hendrich-pts="${f.pts}" ${state.hendrich[f.id] ? 'checked' : ''}>
+      <label for="hen_${f.id}">${escapeHtml(f.label)}</label>
+      <span class="pts">+${f.pts}</span>
+    `;
+    body.appendChild(div);
+  });
+  body.querySelectorAll('[data-hendrich-id]').forEach(el => {
+    el.addEventListener('change', () => {
+      state.hendrich[el.dataset.hendrichId] = el.checked;
+      updateHendrichScore();
+      queueSave();
+    });
+  });
+  updateHendrichScore();
+}
+function renderGetUpGo() {
+  const body = document.getElementById('getUpGoBody');
+  if (!body) return;
+  body.innerHTML = '';
+  const wrapper = document.createElement('div');
+  wrapper.className = 'braden-options';
+  wrapper.style.gridTemplateColumns = '1fr';
+  GET_UP_GO_OPTS.forEach(opt => {
+    wrapper.innerHTML += `
+      <label class="braden-option ${state.hendrich.get_up_go == opt.val ? 'selected' : ''}">
+        <input type="radio" name="get_up_go" value="${opt.val}" data-get-up-go ${state.hendrich.get_up_go == opt.val ? 'checked' : ''}>
+        <strong>${opt.val} pt${opt.val === 1 ? '' : 's'}</strong>
+        ${escapeHtml(opt.label)}
+      </label>
+    `;
+  });
+  body.appendChild(wrapper);
+  body.querySelectorAll('[data-get-up-go]').forEach(el => {
+    el.addEventListener('change', () => {
+      state.hendrich.get_up_go = parseInt(el.value);
+      renderGetUpGo();
+      updateHendrichScore();
+      queueSave();
+    });
+  });
+}
+function updateHendrichScore() {
+  let total = 0;
+  HENDRICH_FACTORS.forEach(f => { if (state.hendrich[f.id]) total += f.pts; });
+  if (state.hendrich.get_up_go !== undefined && state.hendrich.get_up_go !== '') {
+    total += parseInt(state.hendrich.get_up_go) || 0;
+  }
+  const el = document.getElementById('hendrichScore');
+  if (!el) return;
+  el.textContent = total;
+  const rl = document.getElementById('hendrichRiskLevel');
+  if (total >= 5) { rl.className = 'risk-level risk-high'; rl.textContent = 'High Risk (5+)'; }
+  else { rl.className = 'risk-level risk-minimal'; rl.textContent = 'Low Risk (<5)'; }
+}
+
+// Mini-Cog scoring (bound via bindFields; this just updates the display)
+function updateMinicogScore() {
+  const recall = parseInt(state.fields.minicog_recall);
+  const clock = parseInt(state.fields.minicog_clock);
+  const el = document.getElementById('minicogScore');
+  const rl = document.getElementById('minicogRisk');
+  if (!el || !rl) return;
+  if (isNaN(recall) || isNaN(clock)) {
+    el.textContent = '—';
+    rl.className = 'risk-level';
+    rl.textContent = 'Not scored';
+    return;
+  }
+  const total = recall + clock;
+  el.textContent = total;
+  if (total <= 2) { rl.className = 'risk-level risk-high'; rl.textContent = 'Positive screen for dementia'; }
+  else { rl.className = 'risk-level risk-minimal'; rl.textContent = 'Negative screen'; }
+}
+
+// Clock drawing canvas
+let clockCtx = null;
+let clockDrawing = false;
+let clockLastX = 0, clockLastY = 0;
+
+function initClockCanvas() {
+  const canvas = document.getElementById('clockCanvas');
+  if (!canvas) return;
+  clockCtx = canvas.getContext('2d');
+  clockCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Restore any saved drawing
+  if (state.fields.minicog_clock_drawing) {
+    const img = new Image();
+    img.onload = () => clockCtx.drawImage(img, 0, 0);
+    img.src = state.fields.minicog_clock_drawing;
+  }
+
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (cx - rect.left) * scaleX, y: (cy - rect.top) * scaleY };
+  };
+  const start = (e) => {
+    e.preventDefault();
+    clockDrawing = true;
+    const p = getPos(e);
+    clockLastX = p.x; clockLastY = p.y;
+  };
+  const move = (e) => {
+    if (!clockDrawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    clockCtx.beginPath();
+    clockCtx.moveTo(clockLastX, clockLastY);
+    clockCtx.lineTo(p.x, p.y);
+    clockCtx.strokeStyle = '#1a2332';
+    clockCtx.lineWidth = 2.5;
+    clockCtx.lineCap = 'round';
+    clockCtx.lineJoin = 'round';
+    clockCtx.stroke();
+    clockLastX = p.x; clockLastY = p.y;
+  };
+  const end = () => {
+    if (!clockDrawing) return;
+    clockDrawing = false;
+    state.fields.minicog_clock_drawing = canvas.toDataURL('image/png');
+    queueSave();
+  };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+}
+function clearClockCanvas() {
+  if (!clockCtx) return;
+  clockCtx.clearRect(0, 0, 400, 400);
+  delete state.fields.minicog_clock_drawing;
+  queueSave();
+}
+
+// Behavioral events
+function renderBehavior() {
+  const body = document.getElementById('behaviorBody');
+  if (!body) return;
+  body.innerHTML = '';
+  state.behavior.forEach((ev, idx) => {
+    const div = document.createElement('div');
+    div.className = 'focus-note';
+    div.innerHTML = `
+      <div class="focus-note-header">
+        <h4>Behavioral Event #${idx + 1}</h4>
+        <button class="row-del" onclick="deleteBehaviorEvent(${idx})" title="Delete event">✕</button>
+      </div>
+      <div class="grid g3" style="margin-bottom:10px;">
+        <div>
+          <label>Date</label>
+          <input type="date" data-bx-field="date" data-bx-idx="${idx}" value="${escapeHtml(ev.date)}">
+        </div>
+        <div>
+          <label>Time</label>
+          <input type="time" data-bx-field="time" data-bx-idx="${idx}" value="${escapeHtml(ev.time)}">
+        </div>
+        <div>
+          <label>Where did it take place?</label>
+          <input type="text" data-bx-field="location" data-bx-idx="${idx}" value="${escapeHtml(ev.location)}">
+        </div>
+      </div>
+      <div class="grid g3" style="margin-bottom:10px;">
+        <div>
+          <label style="color:var(--accent); font-weight:600;">Antecedent — What was happening before?</label>
+          <textarea data-bx-field="ant_going_on" data-bx-idx="${idx}" rows="3" placeholder="What was going on?">${escapeHtml(ev.ant_going_on)}</textarea>
+          <label style="margin-top:6px;">What else was happening (noise, activity, etc.)</label>
+          <textarea data-bx-field="ant_what_else" data-bx-idx="${idx}" rows="2">${escapeHtml(ev.ant_what_else)}</textarea>
+        </div>
+        <div>
+          <label style="color:var(--accent); font-weight:600;">Behavior — Describe the event</label>
+          <textarea data-bx-field="behavior" data-bx-idx="${idx}" rows="3" placeholder="Observed behavior">${escapeHtml(ev.behavior)}</textarea>
+          <label style="margin-top:6px;">How long did it last?</label>
+          <input type="text" data-bx-field="duration" data-bx-idx="${idx}" value="${escapeHtml(ev.duration)}" placeholder="e.g., ~5 min">
+        </div>
+        <div>
+          <label style="color:var(--accent); font-weight:600;">Consequence — What happened immediately after?</label>
+          <textarea data-bx-field="cons_interaction" data-bx-idx="${idx}" rows="3" placeholder="Interactions that took place">${escapeHtml(ev.cons_interaction)}</textarea>
+          <label style="margin-top:6px;">What else happened?</label>
+          <textarea data-bx-field="cons_what_else" data-bx-idx="${idx}" rows="2">${escapeHtml(ev.cons_what_else)}</textarea>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div>
+          <label>Intervention(s) — your or others' actions</label>
+          <textarea data-bx-field="interventions" data-bx-idx="${idx}" rows="3">${escapeHtml(ev.interventions)}</textarea>
+        </div>
+        <div>
+          <label>Effect on the resident's behavior</label>
+          <textarea data-bx-field="effect" data-bx-idx="${idx}" rows="3">${escapeHtml(ev.effect)}</textarea>
+        </div>
+      </div>
+    `;
+    body.appendChild(div);
+  });
+  body.querySelectorAll('[data-bx-field]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.bxIdx);
+      state.behavior[idx][el.dataset.bxField] = el.value;
+      queueSave();
+    });
+  });
+}
+function addBehaviorEvent() {
+  state.behavior.push(emptyBehavior());
+  renderBehavior();
+  queueSave();
+}
+function deleteBehaviorEvent(idx) {
+  if (state.behavior.length === 1) { state.behavior[0] = emptyBehavior(); }
+  else { state.behavior.splice(idx, 1); }
+  renderBehavior();
+  queueSave();
+}
+
+function renderAll() {
+  bindFields();
+  renderOmega();
+  renderMeds();
+  renderMorse();
+  renderBraden();
+  renderNcsbn();
+  renderFocus();
+  renderBehavior();
+  initClockCanvas();
+  updatePrintHeader();
+  updateSbarTotal();
+  updateMinicogScore();
+}
+
+// Initialize state now that all data constants are declared
+state = load() || defaultState();
+renderAll();
+</script>
+</body>
+</html>

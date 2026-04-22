@@ -15,27 +15,202 @@
     <link rel="icon" href="/favicon.ico">
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/toast.css">
+    <link rel="stylesheet" href="/shared/clinical-ui.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
-    <title>Clinical Assessment — BendBSN</title>
+    <title>Clinical Assessment Packets — BendBSN</title>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--clx-bg-canvas, #f0f4f8); }
-        .coming-soon-wrap {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 50vh; text-align: center; padding: 40px 20px;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh; min-height: 100dvh;
+            display: flex; flex-direction: column;
+            background: var(--clx-bg-canvas, #f0f4f8);
+            color: var(--clx-text-primary, #1a3a5c);
         }
-        .coming-soon-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.8; }
-        .coming-soon-title { font-size: 28px; font-weight: 700; color: var(--clx-text-primary, #1a3a5c); margin-bottom: 12px; }
-        .coming-soon-subtitle { font-size: 16px; color: var(--clx-text-secondary, #5a6f7d); max-width: 480px; line-height: 1.5; margin-bottom: 24px; }
-        .coming-soon-features {
-            text-align: left; max-width: 400px; margin: 0 auto 32px; padding: 20px;
-            background: var(--clx-bg-surface, #fff); border-radius: 12px; border: 1px solid var(--clx-border, #d1d5db);
+        .cap-page { max-width: 1080px; margin: 0 auto; padding: 24px 20px 80px; width: 100%; }
+
+        /* Header strip */
+        .cap-page-head {
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+            margin-bottom: 8px;
         }
-        .coming-soon-features h4 { font-size: 13px; font-weight: 700; color: var(--clx-text-secondary, #5a6f7d); text-transform: uppercase; margin-bottom: 10px; }
-        .coming-soon-features li { font-size: 14px; color: var(--clx-text-primary, #1a3a5c); margin-bottom: 6px; list-style: none; padding-left: 20px; position: relative; }
-        .coming-soon-features li::before { content: '\2022'; position: absolute; left: 4px; color: var(--clx-accent, #0f7490); }
-        .back-btn { display: inline-block; padding: 12px 24px; background: var(--clx-accent, #0f7490); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
-        .back-btn:hover { opacity: 0.9; }
+        .cap-page-head h1 {
+            font-size: 22px; font-weight: 700;
+            color: var(--clx-text-primary, #1a3a5c);
+            margin: 0;
+        }
+        .cap-page-head .cap-count {
+            font-size: 12px; color: var(--clx-text-muted, #718096);
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 999px;
+            padding: 2px 10px;
+        }
+        .cap-page-head .cap-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+        .cap-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; border-radius: 6px;
+            font-family: inherit; font-size: 13px; font-weight: 600;
+            border: 1px solid var(--clx-border, #d1dce8);
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary, #1a3a5c);
+            cursor: pointer; transition: background 0.1s;
+        }
+        .cap-btn:hover { background: var(--clx-bg-hover, #e6edf5); }
+        .cap-btn.primary {
+            background: var(--clx-accent, #0f7490);
+            color: #fff; border-color: var(--clx-accent, #0f7490);
+        }
+        .cap-btn.primary:hover { filter: brightness(1.08); }
+        .cap-btn.danger { color: #b91c1c; }
+        .cap-btn.danger:hover { background: #fbebeb; border-color: #b91c1c; }
+
+        .cap-subtitle {
+            font-size: 13px; color: var(--clx-text-muted, #718096);
+            margin: 0 0 22px;
+        }
+
+        /* List */
+        .cap-list {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .cap-row {
+            display: grid;
+            grid-template-columns: 1fr 100px 130px 100px 130px;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            cursor: pointer;
+            transition: background 0.08s;
+        }
+        .cap-row:last-child { border-bottom: none; }
+        .cap-row:hover { background: var(--clx-bg-hover, #f7fafd); }
+        .cap-row-head {
+            cursor: default; background: var(--clx-bg-surface-2, #f7f9fc);
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--clx-text-muted, #718096);
+        }
+        .cap-row-head:hover { background: var(--clx-bg-surface-2, #f7f9fc); }
+        .cap-row-title { display: flex; flex-direction: column; min-width: 0; }
+        .cap-row-title strong {
+            font-size: 14px; color: var(--clx-text-primary, #1a3a5c);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .cap-row-title small {
+            font-size: 11px; color: var(--clx-text-muted, #718096);
+            margin-top: 2px;
+        }
+        .cap-row-cell { font-size: 12.5px; color: var(--clx-text-secondary, #4a5568); }
+        .cap-row-actions {
+            display: flex; gap: 6px; justify-content: flex-end;
+        }
+        .cap-icon-btn {
+            background: none; border: none;
+            font-size: 14px; padding: 4px 6px;
+            cursor: pointer; border-radius: 4px;
+            color: var(--clx-text-muted, #718096);
+        }
+        .cap-icon-btn:hover { background: rgba(0,0,0,0.06); color: var(--clx-text-primary, #1a3a5c); }
+        .cap-icon-btn.danger:hover { color: #b91c1c; background: #fbebeb; }
+
+        /* Empty state */
+        .cap-empty {
+            text-align: center; padding: 48px 24px;
+            color: var(--clx-text-muted, #718096);
+        }
+        .cap-empty-icon { font-size: 48px; opacity: 0.5; margin-bottom: 12px; }
+        .cap-empty h3 {
+            font-size: 16px; font-weight: 600;
+            color: var(--clx-text-primary, #1a3a5c);
+            margin: 0 0 6px;
+        }
+        .cap-empty p { font-size: 13px; margin: 0 0 16px; max-width: 420px; margin-left: auto; margin-right: auto; }
+
+        /* New-packet modal */
+        .cap-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none; align-items: center; justify-content: center;
+            z-index: 10010; padding: 20px;
+        }
+        .cap-modal-overlay.visible { display: flex; }
+        .cap-modal {
+            background: var(--clx-bg-surface, #fff);
+            border-radius: 12px; padding: 22px;
+            width: 100%; max-width: 460px;
+            box-shadow: 0 10px 32px rgba(0,0,0,0.2);
+            color: var(--clx-text-primary, #1a3a5c);
+        }
+        .cap-modal h2 {
+            font-size: 17px; font-weight: 700; margin: 0 0 14px;
+            color: var(--clx-text-primary, #1a3a5c);
+        }
+        .cap-modal label {
+            display: block; font-size: 11.5px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--clx-text-secondary, #4a5568);
+            margin: 12px 0 4px;
+        }
+        .cap-modal input,
+        .cap-modal select {
+            width: 100%; font: inherit; font-size: 14px;
+            padding: 8px 10px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary, #1a3a5c);
+        }
+        .cap-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .cap-modal-actions {
+            display: flex; justify-content: flex-end; gap: 8px;
+            margin-top: 18px;
+        }
+        .cap-modal-hint {
+            font-size: 12px; color: var(--clx-text-muted, #718096);
+            margin-top: 6px;
+        }
+
+        /* Footer */
+        .cap-footer {
+            margin-top: 30px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--clx-border, #d1dce8);
+            font-size: 12px;
+            color: var(--clx-text-muted, #718096);
+            text-align: center;
+        }
+        .cap-footer a {
+            color: var(--clx-accent, #0f7490);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .cap-footer a:hover { text-decoration: underline; }
+
+        /* Mobile responsiveness */
+        @media (max-width: 700px) {
+            .cap-row {
+                grid-template-columns: 1fr 100px;
+                grid-template-areas:
+                    "title actions"
+                    "meta meta";
+                row-gap: 6px;
+            }
+            .cap-row-title { grid-area: title; }
+            .cap-row-actions { grid-area: actions; }
+            .cap-row-cell { grid-area: meta; font-size: 11.5px; opacity: 0.85; }
+            .cap-row-cell:nth-child(3),
+            .cap-row-cell:nth-child(4) { display: none; } /* hide site/date columns on mobile, shown via title meta */
+            .cap-row-head { display: none; }
+            .cap-modal-row { grid-template-columns: 1fr; }
+        }
+
+        [data-theme="dark"] .cap-list { background: var(--clx-bg-surface, #1a202c); }
+        [data-theme="dark"] .cap-row:hover { background: rgba(255,255,255,0.04); }
+        [data-theme="dark"] .cap-row-head { background: rgba(255,255,255,0.02); }
+        [data-theme="dark"] .cap-modal { background: var(--clx-bg-surface, #1a202c); }
     </style>
 </head>
 <body>
@@ -66,34 +241,81 @@
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
         <button class="clx-sidebar-item" onclick="toggleDarkMode()"><span class="clx-sidebar-icon" id="sidebarThemeIcon">🌙</span><span class="clx-sidebar-label">Theme</span></button>
         <button class="clx-sidebar-item" onclick="lockScreen()"><span class="clx-sidebar-icon">🔒</span><span class="clx-sidebar-label">Lock</span></button>
-        <button class="clx-sidebar-item" onclick="openTicketModal()"><span class="clx-sidebar-icon">🎫</span><span class="clx-sidebar-label">Feedback</span></button>
         <button class="clx-sidebar-item" onclick="logout()"><span class="clx-sidebar-icon">🚪</span><span class="clx-sidebar-label">Logout</span></button>
         <button class="clx-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><span class="clx-sidebar-icon">&#9658;</span><span class="clx-sidebar-toggle-label">Expand</span></button>
     </aside>
     <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
     <main class="clx-main" role="main">
-        <div class="coming-soon-wrap">
-            <div class="coming-soon-icon">&#128203;</div>
-            <h1 class="coming-soon-title">Clinical Assessment Packet</h1>
-            <p class="coming-soon-subtitle">
-                This feature is being redesigned with improved workflows and better documentation tools. Check back soon!
-            </p>
-            <div class="coming-soon-features">
-                <h4>Coming Features</h4>
-                <ul>
-                    <li>Multi-tab clinical assessment builder</li>
-                    <li>Patient info, assessments, labs &amp; meds</li>
-                    <li>Nursing diagnoses &amp; care plans</li>
-                    <li>SBAR communication templates</li>
-                    <li>Discharge planning documentation</li>
-                    <li>PDF and Word export</li>
-                </ul>
+        <div class="cap-page">
+            <div class="cap-page-head">
+                <h1>Clinical Assessment Packets</h1>
+                <span class="cap-count" id="capCount">—</span>
+                <div class="cap-actions">
+                    <button class="cap-btn primary" onclick="openNewPacketModal()">+ New Packet</button>
+                </div>
             </div>
-            <a href="/home/" class="back-btn">Back to Dashboard</a>
+            <p class="cap-subtitle">Documentation for clinical rotations. Tap a packet to open it. Packets are private — only you can read or edit them.</p>
+
+            <div id="capListContainer">
+                <div class="cap-empty">
+                    <div class="cap-empty-icon">⏳</div>
+                    <h3>Loading…</h3>
+                </div>
+            </div>
+
+            <p class="cap-footer">
+                Want a fully offline (no-login) version? Use the <a href="/clinical/standalone/" target="_blank">local-only standalone packet</a>.
+            </p>
         </div>
     </main>
     </div><!-- /clx-shell -->
+
+    <!-- New packet modal -->
+    <div class="cap-modal-overlay" id="newPacketOverlay" role="dialog" aria-modal="true">
+        <div class="cap-modal">
+            <h2>New Clinical Packet</h2>
+            <label for="np_title">Title <span style="font-weight:400;text-transform:none;color:var(--clx-text-muted);">(optional)</span></label>
+            <input type="text" id="np_title" placeholder='e.g., "Mr. Hayes — Tuesday AM"' maxlength="80">
+            <p class="cap-modal-hint">If blank, falls back to {Initials} · {Date} · {Site}.</p>
+
+            <div class="cap-modal-row">
+                <div>
+                    <label for="np_initials">Resident Initials</label>
+                    <input type="text" id="np_initials" placeholder="e.g., DO" maxlength="5">
+                </div>
+                <div>
+                    <label for="np_date">Date</label>
+                    <input type="date" id="np_date">
+                </div>
+            </div>
+
+            <div class="cap-modal-row">
+                <div>
+                    <label for="np_site">Clinical Site</label>
+                    <input type="text" id="np_site" placeholder="e.g., Countryside Living">
+                </div>
+                <div>
+                    <label for="np_course">Course</label>
+                    <input type="text" id="np_course" placeholder="e.g., NUR218">
+                </div>
+            </div>
+
+            <label for="np_template">Module Template</label>
+            <select id="np_template">
+                <option value="memory-care-default">Memory Care / Assisted Living (default)</option>
+                <option value="acute-care-default">Acute Care</option>
+                <option value="peds-default">Pediatrics</option>
+                <option value="custom">Custom (start with minimal modules)</option>
+            </select>
+            <p class="cap-modal-hint">Picks which sections start enabled. You can toggle modules on/off anytime inside the packet.</p>
+
+            <div class="cap-modal-actions">
+                <button class="cap-btn" onclick="closeNewPacketModal()">Cancel</button>
+                <button class="cap-btn primary" onclick="createPacket()">Create</button>
+            </div>
+        </div>
+    </div>
 
     <nav class="clx-mobile-nav" aria-label="Mobile navigation">
         <a href="/home/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">🏠</span><span>Home</span></a>
@@ -103,23 +325,23 @@
         <a href="/profile/" class="clx-mobile-nav-item"><span class="clx-mobile-nav-icon">👤</span><span>Profile</span></a>
     </nav>
 
+    <!-- Firebase SDK (must load synchronously before inline scripts use it) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="/shared/header.js"></script>
     <script src="/shared/toast.js"></script>
     <script>
+        // ─── Theme + sidebar (matched to other BendBSN pages) ───
         function initTheme() {
             const t = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', t);
         }
         function toggleDarkMode() {
-            if (window.setTheme) {
-                const current = window.getTheme ? window.getTheme() : (document.documentElement.getAttribute('data-theme') || 'light');
-                window.setTheme(current === 'dark' ? 'light' : 'dark');
-            } else {
-                const current = document.documentElement.getAttribute('data-theme') || 'light';
-                const next = current === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', next);
-                localStorage.setItem('bendbsn_theme', next);
-            }
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('bendbsn_theme', next);
         }
         let sidebarOpen = false;
         function toggleSidebar() {
@@ -133,6 +355,261 @@
             window.location.href = '/';
         }
         initTheme();
+
+        // ─── Firebase init (mirrors other BendBSN pages) ───
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.appspot.com",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // ─── Module template presets ───
+        // (Used by the editor in subsequent commits; defined here so "+ New Packet"
+        // can write the initial enabledModules list. Keep in sync with cap-modules.js
+        // when that lands.)
+        const MODULE_PRESETS = {
+            'memory-care-default': [
+                'info', 'omega', 'meds', 'morse', 'braden',
+                'minicog', 'behavior', 'ncsbn', 'sbar',
+                'progressNotes', 'notes', 'carePlan'
+            ],
+            'acute-care-default': [
+                'info', 'meds', 'morse', 'braden', 'headToToe',
+                'ncsbn', 'sbar', 'progressNotes', 'notes', 'carePlan'
+            ],
+            'peds-default': [
+                'info', 'meds', 'morse', 'headToToe',
+                'ncsbn', 'sbar', 'progressNotes', 'notes', 'carePlan'
+            ],
+            'custom': ['info', 'notes']
+        };
+        const SCHEMA_VERSION = 1;
+
+        // ─── State ───
+        let allPackets = [];
+        let currentUid = null;
+        let packetsRef = null;
+
+        // ─── Auth state → load packets ───
+        auth.onAuthStateChanged(function (user) {
+            if (!user) {
+                // Not signed into Firebase Auth — but the localStorage gate
+                // already redirected us if not authed at the BendBSN level.
+                // If we land here without Firebase Auth, prompt re-login.
+                showToast('Please sign in again to load your packets.', 'warning');
+                setTimeout(function () { window.location.href = '/'; }, 2000);
+                return;
+            }
+            currentUid = user.uid;
+            packetsRef = database.ref('emr-clinical/packets/' + currentUid);
+            // Real-time listener — keep list in sync if user opens packets in another tab
+            packetsRef.on('value', function (snap) {
+                const val = snap.val() || {};
+                allPackets = Object.keys(val).map(function (k) {
+                    const p = val[k] || {};
+                    const meta = p.meta || {};
+                    return {
+                        id: k,
+                        title: meta.title || '',
+                        residentInitials: meta.residentInitials || '',
+                        date: meta.date || '',
+                        site: meta.site || '',
+                        course: meta.course || '',
+                        templateId: meta.templateId || null,
+                        enabledModules: meta.enabledModules || [],
+                        createdAt: meta.createdAt || 0,
+                        updatedAt: meta.updatedAt || 0
+                    };
+                });
+                allPackets.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+                renderList();
+            }, function (err) {
+                console.error('[CAP] packets read failed:', err);
+                showToast('Could not load packets: ' + (err.message || err), 'error');
+            });
+        });
+
+        // ─── Render the My Packets list ───
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function fmtDate(iso) {
+            if (!iso) return '—';
+            const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return iso;
+            return m[2] + '/' + m[3] + '/' + m[1].slice(2);
+        }
+        function fmtRelative(ts) {
+            if (!ts) return '—';
+            const diff = Date.now() - ts;
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return mins + ' min ago';
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return hours + 'h ago';
+            const days = Math.floor(hours / 24);
+            if (days < 30) return days + 'd ago';
+            return new Date(ts).toLocaleDateString();
+        }
+        function packetDisplayTitle(p) {
+            if (p.title) return p.title;
+            const parts = [];
+            if (p.residentInitials) parts.push(p.residentInitials);
+            if (p.date) parts.push(fmtDate(p.date));
+            if (p.site) parts.push(p.site);
+            return parts.join(' · ') || 'Untitled packet';
+        }
+
+        function renderList() {
+            const container = document.getElementById('capListContainer');
+            const countEl = document.getElementById('capCount');
+            countEl.textContent = allPackets.length === 1 ? '1 packet' : (allPackets.length + ' packets');
+
+            if (allPackets.length === 0) {
+                container.innerHTML =
+                    '<div class="cap-empty">' +
+                        '<div class="cap-empty-icon">📋</div>' +
+                        '<h3>No packets yet</h3>' +
+                        '<p>Create your first clinical assessment packet to get started. Each packet is private to you and autosaves as you work.</p>' +
+                        '<button class="cap-btn primary" onclick="openNewPacketModal()">+ Create your first packet</button>' +
+                    '</div>';
+                return;
+            }
+
+            const rowsHtml = allPackets.map(function (p) {
+                return '<div class="cap-row" onclick="openPacket(\'' + p.id + '\')">' +
+                    '<div class="cap-row-title">' +
+                        '<strong>' + esc(packetDisplayTitle(p)) + '</strong>' +
+                        '<small>' + esc(p.course || '') + (p.course && p.site ? ' · ' : '') + esc(p.site || '') + '</small>' +
+                    '</div>' +
+                    '<div class="cap-row-cell">' + esc(fmtDate(p.date)) + '</div>' +
+                    '<div class="cap-row-cell">' + esc(p.site || '—') + '</div>' +
+                    '<div class="cap-row-cell">' + esc(fmtRelative(p.updatedAt)) + '</div>' +
+                    '<div class="cap-row-actions">' +
+                        '<button class="cap-icon-btn" title="Duplicate" onclick="event.stopPropagation(); duplicatePacket(\'' + p.id + '\')">📋</button>' +
+                        '<button class="cap-icon-btn danger" title="Delete" onclick="event.stopPropagation(); deletePacket(\'' + p.id + '\')">🗑</button>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+
+            container.innerHTML =
+                '<div class="cap-list">' +
+                    '<div class="cap-row cap-row-head">' +
+                        '<div>Title</div>' +
+                        '<div>Date</div>' +
+                        '<div>Site</div>' +
+                        '<div>Updated</div>' +
+                        '<div></div>' +
+                    '</div>' +
+                    rowsHtml +
+                '</div>';
+        }
+
+        // ─── New packet modal ───
+        function openNewPacketModal() {
+            document.getElementById('np_title').value = '';
+            document.getElementById('np_initials').value = '';
+            document.getElementById('np_date').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('np_site').value = '';
+            document.getElementById('np_course').value = '';
+            document.getElementById('np_template').value = 'memory-care-default';
+            document.getElementById('newPacketOverlay').classList.add('visible');
+            setTimeout(function () { document.getElementById('np_title').focus(); }, 50);
+        }
+        function closeNewPacketModal() {
+            document.getElementById('newPacketOverlay').classList.remove('visible');
+        }
+        document.getElementById('newPacketOverlay').addEventListener('click', function (ev) {
+            if (ev.target.id === 'newPacketOverlay') closeNewPacketModal();
+        });
+        document.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape' && document.getElementById('newPacketOverlay').classList.contains('visible')) {
+                closeNewPacketModal();
+            }
+        });
+
+        function createPacket() {
+            if (!currentUid || !packetsRef) {
+                showToast('Not signed in. Please reload.', 'error');
+                return;
+            }
+            const title = document.getElementById('np_title').value.trim();
+            const initials = document.getElementById('np_initials').value.trim().toUpperCase();
+            const date = document.getElementById('np_date').value || new Date().toISOString().slice(0, 10);
+            const site = document.getElementById('np_site').value.trim();
+            const course = document.getElementById('np_course').value.trim();
+            const templateId = document.getElementById('np_template').value;
+            const enabledModules = (MODULE_PRESETS[templateId] || MODULE_PRESETS['memory-care-default']).slice();
+
+            const now = Date.now();
+            const newRef = packetsRef.push();
+            const packetId = newRef.key;
+            const meta = {
+                title: title,
+                residentInitials: initials,
+                date: date,
+                site: site,
+                course: course,
+                templateId: templateId,
+                enabledModules: enabledModules,
+                schemaVersion: SCHEMA_VERSION,
+                createdAt: now,
+                updatedAt: now
+            };
+            newRef.set({ meta: meta, state: {} }).then(function () {
+                closeNewPacketModal();
+                window.location.href = '/clinical/packet/?id=' + encodeURIComponent(packetId);
+            }).catch(function (err) {
+                console.error('[CAP] create failed:', err);
+                showToast('Could not create packet: ' + (err.message || err), 'error');
+            });
+        }
+
+        // ─── Row actions ───
+        window.openPacket = function (packetId) {
+            window.location.href = '/clinical/packet/?id=' + encodeURIComponent(packetId);
+        };
+
+        window.duplicatePacket = function (packetId) {
+            const src = allPackets.find(function (p) { return p.id === packetId; });
+            if (!src) return;
+            packetsRef.child(packetId).once('value').then(function (snap) {
+                const data = snap.val() || {};
+                const meta = Object.assign({}, data.meta || {});
+                const now = Date.now();
+                meta.title = (meta.title || packetDisplayTitle(src)) + ' (copy)';
+                meta.createdAt = now;
+                meta.updatedAt = now;
+                meta.date = new Date().toISOString().slice(0, 10);
+                const newRef = packetsRef.push();
+                return newRef.set({ meta: meta, state: data.state || {} }).then(function () {
+                    showToast('Packet duplicated.', 'success');
+                });
+            }).catch(function (err) {
+                console.error('[CAP] duplicate failed:', err);
+                showToast('Could not duplicate: ' + (err.message || err), 'error');
+            });
+        };
+
+        window.deletePacket = function (packetId) {
+            const p = allPackets.find(function (x) { return x.id === packetId; });
+            const label = p ? packetDisplayTitle(p) : 'this packet';
+            if (window.showConfirmModal) {
+                showConfirmModal('Delete packet?', 'Delete "' + label + '"? This can\'t be undone.',
+                    function () {
+                        packetsRef.child(packetId).remove().then(function () {
+                            showToast('Packet deleted.', 'success');
+                        }).catch(function (err) { showToast('Delete failed: ' + (err.message || err), 'error'); });
+                    }, { danger: true, confirmText: 'Delete' });
+            } else if (confirm('Delete "' + label + '"?')) {
+                packetsRef.child(packetId).remove();
+            }
+        };
     </script>
 </body>
 </html>

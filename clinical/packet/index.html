@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
+    <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0f7490">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/shared/header.css">
+    <link rel="stylesheet" href="/shared/toast.css">
+    <link rel="stylesheet" href="/shared/clinical-ui.css">
+    <link rel="stylesheet" href="/shared/app-shell.css">
+    <title>Clinical Packet — BendBSN</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh; min-height: 100dvh;
+            display: flex; flex-direction: column;
+            background: var(--clx-bg-canvas, #f0f4f8);
+            color: var(--clx-text-primary, #1a3a5c);
+        }
+        .editor-stub {
+            max-width: 720px; margin: 40px auto; padding: 32px;
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 10px;
+        }
+        .editor-stub h1 { font-size: 22px; margin: 0 0 6px; }
+        .editor-stub .meta {
+            font-size: 13px; color: var(--clx-text-muted, #718096);
+            margin-bottom: 22px;
+        }
+        .editor-stub .info-grid {
+            display: grid; grid-template-columns: 130px 1fr; row-gap: 8px; column-gap: 12px;
+            font-size: 13px; padding: 14px 16px;
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            border-radius: 6px;
+            border: 1px solid var(--clx-border, #d1dce8);
+        }
+        .editor-stub .info-grid label {
+            font-weight: 600; color: var(--clx-text-secondary, #4a5568);
+        }
+        .editor-stub .info-grid span { color: var(--clx-text-primary, #1a3a5c); }
+        .editor-stub .stub-banner {
+            margin-top: 20px; padding: 14px;
+            background: #fef3c7; border: 1px solid #fcd34d;
+            border-radius: 6px;
+            font-size: 13px; color: #854d0e;
+        }
+        .editor-stub .actions {
+            margin-top: 22px; display: flex; gap: 8px;
+        }
+        .stub-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; border-radius: 6px;
+            font-family: inherit; font-size: 13px; font-weight: 600;
+            border: 1px solid var(--clx-border, #d1dce8);
+            background: var(--clx-bg-surface, #fff);
+            color: var(--clx-text-primary, #1a3a5c);
+            cursor: pointer; text-decoration: none;
+        }
+        .stub-btn:hover { background: var(--clx-bg-hover, #e6edf5); }
+        .stub-btn.primary {
+            background: var(--clx-accent, #0f7490);
+            color: #fff; border-color: var(--clx-accent, #0f7490);
+        }
+        .modules-list {
+            margin-top: 16px; font-size: 12.5px; color: var(--clx-text-muted, #718096);
+        }
+        .modules-list strong {
+            display: block; font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--clx-text-secondary, #4a5568);
+            margin-bottom: 6px;
+        }
+        .module-chip {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 7px;
+            background: var(--clx-bg-surface-2, #f7f9fc);
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 999px;
+            margin: 2px;
+            color: var(--clx-text-secondary, #4a5568);
+        }
+        [data-theme="dark"] .editor-stub { background: var(--clx-bg-surface, #1a202c); }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
+    </header>
+
+    <main role="main">
+        <div class="editor-stub">
+            <h1 id="stubTitle">Loading packet…</h1>
+            <p class="meta" id="stubMeta">&nbsp;</p>
+
+            <div class="info-grid" id="infoGrid" style="display:none;">
+                <label>Resident</label><span id="info_initials">—</span>
+                <label>Date</label><span id="info_date">—</span>
+                <label>Site</label><span id="info_site">—</span>
+                <label>Course</label><span id="info_course">—</span>
+                <label>Template</label><span id="info_template">—</span>
+                <label>Created</label><span id="info_created">—</span>
+            </div>
+
+            <div class="modules-list" id="modulesList" style="display:none;"></div>
+
+            <div class="stub-banner">
+                <strong>📋 Editor under construction.</strong>
+                The packet record exists in your account and is ready for editing —
+                the full module editor is the next commit. Your data is safe; this
+                page just confirms the foundation works.
+            </div>
+
+            <div class="actions">
+                <a href="/clinical/" class="stub-btn">← Back to My Packets</a>
+                <button class="stub-btn danger" onclick="deleteThisPacket()">🗑 Delete this packet</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="/shared/header.js"></script>
+    <script src="/shared/toast.js"></script>
+    <script>
+        // Theme init
+        (function () {
+            const t = localStorage.getItem('bendbsn_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+
+        // Read packet ID from URL
+        function getPacketId() {
+            const p = new URLSearchParams(window.location.search);
+            return p.get('id') || '';
+        }
+        const packetId = getPacketId();
+        if (!packetId) {
+            document.getElementById('stubTitle').textContent = 'No packet selected.';
+            document.getElementById('stubMeta').innerHTML = '<a href="/clinical/">← Back to My Packets</a>';
+        }
+
+        // Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaH4lozarByia837FNRV_-A1fDYiTQHHQ",
+            authDomain: "bendbsn-17377.firebaseapp.com",
+            databaseURL: "https://bendbsn-17377-default-rtdb.firebaseio.com",
+            projectId: "bendbsn-17377",
+            storageBucket: "bendbsn-17377.appspot.com",
+            messagingSenderId: "762882187702",
+            appId: "1:762882187702:web:81c97c9eae005666796117"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        let currentUid = null;
+        let packetRef = null;
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function fmtDate(iso) {
+            if (!iso) return '—';
+            const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return iso;
+            return m[2] + '/' + m[3] + '/' + m[1].slice(2);
+        }
+        function fmtDateTime(ts) {
+            if (!ts) return '—';
+            return new Date(ts).toLocaleString();
+        }
+
+        auth.onAuthStateChanged(function (user) {
+            if (!user) {
+                showToast('Please sign in.', 'warning');
+                setTimeout(function () { window.location.href = '/'; }, 1500);
+                return;
+            }
+            if (!packetId) return;
+            currentUid = user.uid;
+            packetRef = database.ref('emr-clinical/packets/' + currentUid + '/' + packetId);
+            packetRef.once('value').then(function (snap) {
+                const val = snap.val();
+                if (!val) {
+                    document.getElementById('stubTitle').textContent = 'Packet not found.';
+                    document.getElementById('stubMeta').innerHTML = '<a href="/clinical/">← Back to My Packets</a>';
+                    return;
+                }
+                const meta = val.meta || {};
+                const titleParts = [];
+                if (meta.title) titleParts.push(meta.title);
+                else {
+                    if (meta.residentInitials) titleParts.push(meta.residentInitials);
+                    if (meta.date) titleParts.push(fmtDate(meta.date));
+                    if (meta.site) titleParts.push(meta.site);
+                }
+                document.getElementById('stubTitle').textContent = titleParts.join(' · ') || 'Untitled packet';
+                document.getElementById('stubMeta').textContent = 'Packet ID: ' + packetId;
+
+                document.getElementById('info_initials').textContent = meta.residentInitials || '—';
+                document.getElementById('info_date').textContent = fmtDate(meta.date);
+                document.getElementById('info_site').textContent = meta.site || '—';
+                document.getElementById('info_course').textContent = meta.course || '—';
+                document.getElementById('info_template').textContent = meta.templateId || '—';
+                document.getElementById('info_created').textContent = fmtDateTime(meta.createdAt);
+                document.getElementById('infoGrid').style.display = 'grid';
+
+                const enabled = meta.enabledModules || [];
+                if (enabled.length) {
+                    const chips = enabled.map(function (m) { return '<span class="module-chip">' + esc(m) + '</span>'; }).join('');
+                    document.getElementById('modulesList').innerHTML =
+                        '<strong>Enabled modules (' + enabled.length + ')</strong>' + chips;
+                    document.getElementById('modulesList').style.display = 'block';
+                }
+            }).catch(function (err) {
+                console.error('[CAP] packet read failed:', err);
+                document.getElementById('stubTitle').textContent = 'Could not load packet.';
+                document.getElementById('stubMeta').textContent = err.message || String(err);
+            });
+        });
+
+        window.deleteThisPacket = function () {
+            if (!packetRef) return;
+            const cb = function () {
+                packetRef.remove().then(function () {
+                    showToast('Packet deleted.', 'success');
+                    setTimeout(function () { window.location.href = '/clinical/'; }, 600);
+                }).catch(function (err) {
+                    showToast('Delete failed: ' + (err.message || err), 'error');
+                });
+            };
+            if (window.showConfirmModal) {
+                showConfirmModal('Delete packet?', 'This can\'t be undone.', cb, { danger: true, confirmText: 'Delete' });
+            } else if (confirm('Delete this packet?')) cb();
+        };
+    </script>
+</body>
+</html>
