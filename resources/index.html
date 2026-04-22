@@ -245,14 +245,20 @@
             padding: 0 18px;
             background: var(--clx-bg-surface, #ffffff);
             border-top: 1px solid var(--clx-border, #d1dce8);
-            transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+            transition: max-height 0.35s ease, padding 0.3s ease, opacity 0.2s ease;
             opacity: 0;
             line-height: 1.6;
         }
+        /* When fully expanded, max-height: none lets content grow as much as
+           it needs (some cards have 4000+ px of references / drug cards / etc).
+           Previously a hardcoded 2000px cap silently clipped content. The
+           transition uses an inline max-height in JS for smoothness. */
         .resource-card.collapsible.expanded .card-content {
-            max-height: 2000px;
             padding: 18px 20px;
             opacity: 1;
+        }
+        .resource-card.collapsible.expanded.fully-open .card-content {
+            max-height: none;
         }
         /* Dark mode styles — inherited from --clx-* tokens automatically */
         [data-theme="dark"] .resource-navigator {
@@ -813,7 +819,9 @@
             padding: 24px;
             font-size: 13px;
         }
-        #labValuesCard.expanded .card-content { max-height: 5000px; }
+        /* (Was a labValues-specific 5000px override — no longer needed; the
+           generic .fully-open rule now lets every card expand to its own
+           scrollHeight without clipping.) */
         [data-theme="dark"] .lab-ref-search input {
             background: var(--clx-bg-surface-2);
             color: var(--clx-text-primary);
@@ -2983,13 +2991,43 @@
             content.classList.toggle('hidden');
         }
 
-        // Toggle collapsible resource cards
+        // Toggle collapsible resource cards.
+        // Sets max-height inline from scrollHeight for a smooth animation,
+        // then drops to max-height: none after the transition so the card's
+        // content can keep growing (search filters, dynamic drug cards, etc.)
+        // without re-clipping. Fixes the silent-clip-at-2000px bug that hid
+        // tall cards (Drug Reference, Lab Values, ECG Reference, etc.).
         function toggleResourceCard(header) {
             const card = header.closest('.collapsible');
             if (!card) return;
+            const content = card.querySelector('.card-content');
             const expanding = card.classList.contains('collapsed');
-            card.classList.toggle('expanded', expanding);
-            card.classList.toggle('collapsed', !expanding);
+
+            if (expanding) {
+                card.classList.remove('collapsed', 'fully-open');
+                card.classList.add('expanded');
+                if (content) {
+                    // Force max-height to current scrollHeight for the transition
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                    // After transition, switch to 'none' so future content fits
+                    setTimeout(function () {
+                        if (card.classList.contains('expanded')) {
+                            card.classList.add('fully-open');
+                            content.style.maxHeight = '';   // CSS .fully-open takes over
+                        }
+                    }, 380);
+                }
+            } else {
+                if (content) {
+                    // Step down from current scrollHeight → 0 for animation
+                    card.classList.remove('fully-open');
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                    void content.offsetHeight; // force reflow
+                    content.style.maxHeight = '0px';
+                }
+                card.classList.remove('expanded');
+                card.classList.add('collapsed');
+            }
             header.setAttribute('aria-expanded', expanding ? 'true' : 'false');
         }
 

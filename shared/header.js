@@ -523,41 +523,68 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     window.setTheme(window.getTheme());
 })();
 
-// ── Chat Unread Badge (sidebar, all non-chat pages) ───────────────────────
-(function initChatUnreadBadge() {
-    // Don't show badge when the user is already on the chat page
+// ── Chat Unread Badge (sidebar + hamburger + mobile-nav) ──────────────────
+// Three placements for the same chat-unread count, each scoped to its
+// viewport via CSS:
+//   • Sidebar Chat icon — visible >=900px (desktop sidebar always shown)
+//   • Hamburger button   — visible 481-899px (sidebar collapsed to drawer)
+//   • Mobile-nav Chat    — visible <=480px (bottom-nav phone layout)
+// All three read the same localStorage key (bendbsn_chat_unread) and update
+// in real time via the storage event when the chat tab updates the count.
+(function initChatUnreadBadges() {
+    // Don't show any badge when the user is already on the chat page
     if (location.pathname.startsWith('/chat')) return;
 
+    var badges = []; // collected (badgeEl, anchorEl) pairs we'll keep in sync
+
+    // 1. Sidebar Chat icon (desktop)
     var chatLink = document.querySelector('a[data-page="chat"]');
-    if (!chatLink) return;
-
-    // Make the icon wrapper relative so we can position the badge dot
-    var iconEl = chatLink.querySelector('.clx-sidebar-icon');
-    if (!iconEl) return;
-    iconEl.style.position = 'relative';
-
-    // Create badge element
-    var badge = document.createElement('span');
-    badge.id = 'bsnChatSidebarBadge';
-    badge.className = 'bsn-chat-sidebar-badge';
-    iconEl.appendChild(badge);
-
-    function updateBadge() {
-        var val = parseInt(localStorage.getItem('bendbsn_chat_unread') || '0', 10);
-        if (val > 0) {
-            badge.textContent = val > 99 ? '99+' : String(val);
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
+    if (chatLink) {
+        var sidebarIcon = chatLink.querySelector('.clx-sidebar-icon');
+        if (sidebarIcon) {
+            sidebarIcon.style.position = 'relative';
+            var sb = makeBadge('bsnChatSidebarBadge', 'bsn-chat-sidebar-badge');
+            sidebarIcon.appendChild(sb);
+            badges.push(sb);
         }
     }
 
-    // Initial state
-    updateBadge();
+    // 2. Hamburger button (tablet) — appended to the button itself
+    var hamburger = document.getElementById('hamburgerBtn') || document.querySelector('.clx-hamburger');
+    if (hamburger) {
+        var hb = makeBadge('bsnChatHamburgerBadge', 'bsn-chat-hamburger-badge');
+        hamburger.appendChild(hb);
+        badges.push(hb);
+    }
 
-    // Real-time cross-tab updates
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'bendbsn_chat_unread') updateBadge();
+    // 3. Mobile-nav Chat link (phone) — appended to the bottom-nav anchor
+    var mobChat = document.querySelector('.clx-mobile-nav a[href^="/chat"], .clx-mobile-nav-item[href^="/chat"]');
+    if (mobChat) {
+        var mb = makeBadge('bsnChatMobnavBadge', 'bsn-chat-mobnav-badge');
+        mobChat.appendChild(mb);
+        badges.push(mb);
+    }
+
+    function makeBadge(id, cls) {
+        var b = document.createElement('span');
+        b.id = id;
+        b.className = cls;
+        return b;
+    }
+
+    function updateAll() {
+        var val = parseInt(localStorage.getItem('bendbsn_chat_unread') || '0', 10);
+        var text = val > 99 ? '99+' : String(val);
+        for (var i = 0; i < badges.length; i++) {
+            badges[i].textContent = text;
+            badges[i].style.display = val > 0 ? 'flex' : 'none';
+        }
+    }
+
+    updateAll();
+    // Real-time cross-tab updates from /chat/ writing to the same key
+    window.addEventListener('storage', function (e) {
+        if (e.key === 'bendbsn_chat_unread') updateAll();
     });
 })();
 
