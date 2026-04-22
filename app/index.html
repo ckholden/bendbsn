@@ -1007,8 +1007,8 @@
                 </button>
                 <div id="helpBody" class="help-body" style="display:none;">
                     Enter patient info → Select note format → Document → Export PDF/Word.<br>
-                    Use <strong>Smart Phrases</strong> (📝 button) for shortcuts.
-                    Chat with classmates (💬) or ask the <strong>AI Nursing Companion</strong> (🩺) for drug info, care plans, NCLEX help.
+                    Use <strong>Smart Phrases</strong> (✨ button) for shortcuts.
+                    Chat with classmates (💬) or ask the <strong>AI Nursing Companion</strong> (🤖) for drug info, care plans, NCLEX help.
                 </div>
             </div>
             <!-- C9: Right-aligned draft status -->
@@ -2407,9 +2407,6 @@
             </div><!-- /quickEntrySection -->
 
             <h2 class="section-title" id="section-format">Documentation Format</h2>
-            <div class="form-progress-bar-wrap" id="formProgressWrap" title="Note completion">
-                <div class="form-progress-bar" id="formProgressBar"></div>
-            </div>
             <div class="first-note-wizard" id="firstNoteWizard">
                 <h4>Welcome — let's write your first note</h4>
                 <ol>
@@ -4399,7 +4396,7 @@
             smartPhrases[shortcut] = text;
             // Write via shared module — localStorage + Firebase profile sync.
             if (window.writeSmartPhrase) {
-                window.writeSmartPhrase(shortcut, text, database, currentUid);
+                window.writeSmartPhrase(shortcut, text, database, currentUserUid);
             } else {
                 const custom = localStorage.getItem('bendbsn_custom_phrases');
                 const customPhrases = custom ? JSON.parse(custom) : {};
@@ -6150,7 +6147,7 @@
             // Seed + sync via shared module — also pushes merged state to
             // Firebase if the profile is empty.
             if (window.syncSmartPhrasesFromFirebase) {
-                window.syncSmartPhrasesFromFirebase(database, currentUid, function () {
+                window.syncSmartPhrasesFromFirebase(database, currentUserUid, function () {
                     // After Firebase reconciliation, rebuild in-memory map
                     smartPhrases = window.getAllSmartPhrases ? window.getAllSmartPhrases() : {};
                     layerInGlobalPhrases();
@@ -6209,7 +6206,7 @@
             // Add to smartPhrases + persist via shared module (Firebase + localStorage)
             smartPhrases[shortcut] = text;
             if (window.writeSmartPhrase) {
-                window.writeSmartPhrase(shortcut, text, database, currentUid);
+                window.writeSmartPhrase(shortcut, text, database, currentUserUid);
             } else {
                 const custom = localStorage.getItem('bendbsn_custom_phrases');
                 const customPhrases = custom ? JSON.parse(custom) : {};
@@ -6230,7 +6227,7 @@
         function deleteCustomPhrase(shortcut) {
             delete smartPhrases[shortcut];
             if (window.deleteSmartPhrase) {
-                window.deleteSmartPhrase(shortcut, database, currentUid);
+                window.deleteSmartPhrase(shortcut, database, currentUserUid);
             } else {
                 const custom = localStorage.getItem('bendbsn_custom_phrases');
                 if (custom) {

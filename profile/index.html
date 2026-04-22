@@ -151,20 +151,54 @@
         .toggle-switch input:checked + .toggle-track { background: var(--clx-accent); }
         .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); }
 
-        .phrase-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 7px 10px; border: 1px solid var(--clx-border);
-            border-radius: 7px; background: var(--clx-bg-surface-2);
+        /* My Phrases — compact 2-col grid on desktop, single col on phones */
+        .phrase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 4px;
         }
+        .phrase-cat {
+            grid-column: 1 / -1;
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--clx-text-muted);
+            margin-top: 10px; padding-bottom: 2px;
+            border-bottom: 1px solid var(--clx-border);
+        }
+        .phrase-cat:first-child { margin-top: 0; }
+        .phrase-row {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 6px; border-radius: 5px;
+            background: transparent;
+            transition: background 0.1s;
+        }
+        .phrase-row:hover { background: var(--clx-bg-surface-2); }
         .phrase-shortcut {
-            font-family: monospace; font-size: 12px; font-weight: 700;
+            font-family: monospace; font-size: 11px; font-weight: 700;
             color: var(--clx-accent); background: var(--clx-accent-subtle);
-            padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+            padding: 1px 6px; border-radius: 3px; flex-shrink: 0;
+            min-width: 64px; text-align: left;
         }
         .phrase-expansion {
-            flex: 1; font-size: 13px; color: var(--clx-text-secondary);
+            flex: 1; min-width: 0;
+            font-size: 12px; color: var(--clx-text-secondary);
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            padding: 1px 4px; border-radius: 3px;
+            outline: 1px solid transparent;
+            transition: outline-color 0.15s, background 0.15s;
         }
+        .phrase-expansion:focus {
+            white-space: normal;
+            outline-color: var(--clx-accent);
+            background: var(--clx-bg-surface);
+        }
+        .phrase-row .prof-edit-btn {
+            opacity: 0; padding: 2px 8px !important; font-size: 10px !important;
+            height: auto !important; min-width: 0;
+            transition: opacity 0.1s;
+        }
+        .phrase-row:hover .prof-edit-btn,
+        .phrase-row:focus-within .prof-edit-btn { opacity: 1; }
 
         @media (max-width: 500px) {
             .prof-hero { flex-direction: column; text-align: center; }
@@ -677,28 +711,31 @@
                 grouped[cat].push(k);
             });
 
-            let html = '';
             const renderRow = (k) => `
                 <div class="phrase-row">
                     <code class="phrase-shortcut">${escapeHtml(k)}</code>
-                    <span class="phrase-expansion" contenteditable="true" data-shortcut="${escapeHtml(k)}" oninput="onPhraseEditInline(this)">${escapeHtml(phrases[k])}</span>
-                    <button class="prof-edit-btn" style="color:#dc2626;border-color:#fca5a5;flex-shrink:0;" onclick="deleteMyPhrase('${escapeHtml(k).replace(/'/g,"\\'")}')">Delete</button>
+                    <span class="phrase-expansion" contenteditable="true" spellcheck="false" data-shortcut="${escapeHtml(k)}" oninput="onPhraseEditInline(this)" title="${escapeHtml(phrases[k])}">${escapeHtml(phrases[k])}</span>
+                    <button class="prof-edit-btn" style="color:#dc2626;border-color:#fca5a5;" onclick="deleteMyPhrase('${escapeHtml(k).replace(/'/g,"\\'")}')" title="Delete phrase">\u00d7</button>
                 </div>`;
 
+            // Compact 2-col grid; categories span full width as chip-style headers.
+            let html = '<div class="phrase-grid">';
             cats.forEach(c => {
                 const keysInCat = grouped[c.name];
                 if (!keysInCat.length) return;
-                html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--clx-text-muted);margin-top:14px;margin-bottom:4px;">${c.name}</div>`;
+                html += `<div class="phrase-cat">${c.name} <span style="opacity:0.5;font-weight:500;">(${keysInCat.length})</span></div>`;
                 html += keysInCat.map(renderRow).join('');
             });
             if (grouped['My Phrases'].length) {
-                html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--clx-text-muted);margin-top:14px;margin-bottom:4px;">My Phrases</div>`;
+                html += `<div class="phrase-cat">My Phrases <span style="opacity:0.5;font-weight:500;">(${grouped['My Phrases'].length})</span></div>`;
                 html += grouped['My Phrases'].map(renderRow).join('');
             }
+            html += '</div>';
 
-            // Restore-defaults footer button
-            html += `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--clx-border);text-align:right;">
-                <button class="prof-edit-btn" onclick="restoreDefaultPhrases()" style="font-size:12px;">↺ Restore defaults</button>
+            // Restore-defaults footer
+            html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--clx-border);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:var(--clx-text-muted);">${keys.length} phrase${keys.length === 1 ? '' : 's'} \u00b7 hover any row to edit or delete</span>
+                <button class="prof-edit-btn" onclick="restoreDefaultPhrases()" style="font-size:11px;">\u21ba Restore defaults</button>
             </div>`;
             list.innerHTML = html;
         }
