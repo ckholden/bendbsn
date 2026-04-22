@@ -39,7 +39,7 @@
         { id: 'braden',        label: 'Braden Scale',                 category: 'Scales',                           icon: '🛌' },
         { id: 'hendrich',      label: 'Hendrich II Fall Model',       category: 'Scales',                           icon: '🚶' },
 
-        { id: 'omega',         label: 'OMEGA 1234567',                category: 'Memory care / AL',                 icon: 'Ω' },
+        { id: 'omega',         label: 'OMEGA-7',                      category: 'Memory care / AL',                 icon: 'Ω' },
         { id: 'minicog',       label: 'Mini-Cog',                     category: 'Memory care / AL',                 icon: '🧠' },
         { id: 'behavior',      label: 'Behavior (ABC)',               category: 'Memory care / AL',                 icon: '🎭' },
 

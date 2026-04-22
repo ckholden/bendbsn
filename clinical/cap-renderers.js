@@ -226,7 +226,7 @@
             '</tr>';
         }).join('');
         rootEl.innerHTML = panelHint(
-            'OMEGA 1234567 Assessment',
+            'OMEGA-7 Assessment',
             'Systematic assessment framework. One row per domain.',
             '<table class="cap-omega-table"><tbody>' + rows + '</tbody></table>'
         );
@@ -585,10 +585,272 @@
         );
         bindFields(rootEl, state, onChange);
     };
-    R.behavior      = placeholder('Behavior (ABC)');
-    R.ncsbn         = placeholder('Clinical Judgment (NCSBN)');
-    R.progressNotes = placeholder('Progress Notes');
-    R.carePlan      = placeholder('Care Plan');
+    // ---------- BEHAVIOR (ABC) ----------
+    R.behavior = function (rootEl, state, onChange) {
+        if (!Array.isArray(state.events)) state.events = [emptyBehavior()];
+        function emptyBehavior() {
+            return {
+                date:'', time:'', location:'',
+                ant_going_on:'', ant_what_else:'',
+                behavior:'', duration:'',
+                cons_interaction:'', cons_what_else:'',
+                interventions:'', effect:''
+            };
+        }
+        function render() {
+            const eventsHtml = state.events.map(function (ev, i) {
+                return '<div class="cap-behavior-event">' +
+                    '<div class="cap-behavior-head">' +
+                        '<span class="cap-behavior-num">Event ' + (i + 1) + '</span>' +
+                        '<button class="cap-row-del" data-del="' + i + '" title="Delete event">&times;</button>' +
+                    '</div>' +
+                    '<div class="cap-grid g3">' +
+                        ev_field('Date', i, 'date', { tag: 'input', type: 'date' }) +
+                        ev_field('Time', i, 'time', { tag: 'input', type: 'time' }) +
+                        ev_field('Location', i, 'location', { tag: 'input' }) +
+                    '</div>' +
+                    '<h5 class="cap-behavior-section">B — Behavior (fill out first)</h5>' +
+                    '<div class="cap-grid g2">' +
+                        ev_field('Behavior — what happened?', i, 'behavior', { rows: 2 }) +
+                        ev_field('Duration', i, 'duration', { tag: 'input' }) +
+                    '</div>' +
+                    '<h5 class="cap-behavior-section">A — Antecedents (what was happening before)</h5>' +
+                    '<div class="cap-grid g2">' +
+                        ev_field('What was going on?', i, 'ant_going_on', { rows: 2 }) +
+                        ev_field('What else?', i, 'ant_what_else', { rows: 2 }) +
+                    '</div>' +
+                    '<h5 class="cap-behavior-section">C — Consequences (what happened immediately after)</h5>' +
+                    '<div class="cap-grid g2">' +
+                        ev_field('Interaction with staff/peers', i, 'cons_interaction', { rows: 2 }) +
+                        ev_field('What else?', i, 'cons_what_else', { rows: 2 }) +
+                    '</div>' +
+                    '<div class="cap-grid g2">' +
+                        ev_field('Interventions tried', i, 'interventions', { rows: 2 }) +
+                        ev_field('Effect of interventions', i, 'effect', { rows: 2 }) +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            rootEl.innerHTML = panelHint(
+                'Behavioral Assessment Form (ABC)',
+                'One entry per event. <strong>B</strong> first (clearly describe), then <strong>A</strong> (what was happening before), then <strong>C</strong> (what happened after, before intervention).',
+                eventsHtml +
+                '<button class="cap-add-row" id="cap-behavior-add">+ Add behavioral event</button>'
+            );
+            rootEl.querySelectorAll('textarea[data-ev], input[data-ev]').forEach(function (el) {
+                el.addEventListener('input', function () {
+                    const i = parseInt(el.dataset.ev, 10);
+                    const col = el.dataset.col;
+                    if (state.events[i]) {
+                        state.events[i][col] = el.value;
+                        if (typeof onChange === 'function') onChange();
+                    }
+                });
+            });
+            rootEl.querySelectorAll('[data-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const i = parseInt(btn.dataset.del, 10);
+                    state.events.splice(i, 1);
+                    if (!state.events.length) state.events.push(emptyBehavior());
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            const addBtn = rootEl.querySelector('#cap-behavior-add');
+            if (addBtn) addBtn.addEventListener('click', function () {
+                state.events.push(emptyBehavior());
+                if (typeof onChange === 'function') onChange();
+                render();
+            });
+        }
+        function ev_field(label, i, col, opts) {
+            opts = opts || {};
+            const tag = opts.tag || 'textarea';
+            const rows = opts.rows || 2;
+            const type = opts.type ? ' type="' + opts.type + '"' : '';
+            const v = (state.events[i] && state.events[i][col]) || '';
+            const ctl = tag === 'textarea'
+                ? '<textarea data-ev="' + i + '" data-col="' + col + '" rows="' + rows + '" class="cap-tf">' + esc(v) + '</textarea>'
+                : '<input data-ev="' + i + '" data-col="' + col + '"' + type + ' value="' + esc(v) + '" class="cap-tf">';
+            return '<div class="cap-field"><label class="cap-label">' + esc(label) + '</label>' + ctl + '</div>';
+        }
+        render();
+    };
+
+    // ---------- NCSBN CLINICAL JUDGMENT MODEL ----------
+    const NCSBN_STEPS = [
+        { step:'Step 1: Recognize Cues',         prompt:'What data are RELEVANT and must be interpreted as clinically significant?' },
+        { step:'Step 2: Analyze Cues',           prompt:'Interpret relevant clinical data and identify the most likely problem(s). Is additional data needed?' },
+        { step:'Step 3: Prioritize Hypotheses',  prompt:'Rank the most likely problems by urgency. Which problem is most likely present? Most concerning? Why?' },
+        { step:'Step 4: Generate Solutions',     prompt:'Based on the most pressing problem, what are the priority actions?' },
+        { step:'Step 5: Take Action',            prompt:'What actions did you take?' },
+        { step:'Step 6: Evaluate Outcomes',      prompt:'Evaluate the resident\'s response. Has status improved, declined, or remained unchanged? If not improved, what else may be present and what interventions should be considered?' }
+    ];
+    R.ncsbn = function (rootEl, state, onChange) {
+        if (!state.steps) state.steps = {};
+        const stepsHtml = NCSBN_STEPS.map(function (s, i) {
+            return '<div class="cap-ncsbn-step">' +
+                '<div class="cap-ncsbn-num">' + (i + 1) + '</div>' +
+                '<div class="cap-ncsbn-body">' +
+                    '<h4>' + esc(s.step) + '</h4>' +
+                    '<p class="cap-hint" style="margin-bottom:6px;">' + esc(s.prompt) + '</p>' +
+                    '<textarea data-cap-field="step_' + i + '" rows="3" class="cap-tf"></textarea>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+        rootEl.innerHTML = panelHint(
+            'Six Steps of the NCSBN Clinical Judgment Model',
+            'Work through the six steps for this resident.',
+            stepsHtml
+        );
+        // Map step_0..step_5 fields to state.steps[0..5]
+        rootEl.querySelectorAll('[data-cap-field]').forEach(function (el) {
+            const k = el.getAttribute('data-cap-field'); // step_N
+            const idx = k.replace('step_', '');
+            if (state.steps[idx] != null) el.value = state.steps[idx];
+            el.addEventListener('input', function () {
+                state.steps[idx] = el.value;
+                if (typeof onChange === 'function') onChange();
+            });
+        });
+    };
+
+    // ---------- PROGRESS NOTES (multi-format) ----------
+    const NOTE_FORMATS = {
+        DAR:       { fields: [ {k:'d',label:'Data'},{k:'a',label:'Action'},{k:'r',label:'Response'} ] },
+        DARP:      { fields: [ {k:'d',label:'Data'},{k:'a',label:'Action'},{k:'r',label:'Response'},{k:'p',label:'Plan'} ] },
+        Narrative: { fields: [ {k:'narrative',label:'Narrative',rows:6} ] },
+        SOAP:      { fields: [ {k:'s',label:'Subjective'},{k:'o',label:'Objective'},{k:'a',label:'Assessment'},{k:'p',label:'Plan'} ] },
+        PIE:       { fields: [ {k:'p',label:'Problem'},{k:'i',label:'Intervention'},{k:'e',label:'Evaluation'} ] },
+        SOAPIE:    { fields: [ {k:'s',label:'Subjective'},{k:'o',label:'Objective'},{k:'a',label:'Assessment'},{k:'p',label:'Plan'},{k:'i',label:'Intervention'},{k:'e',label:'Evaluation'} ] }
+    };
+    R.progressNotes = function (rootEl, state, onChange) {
+        if (!Array.isArray(state.notes)) state.notes = [emptyNote()];
+        function emptyNote() {
+            return { format:'DARP', focus:'', date:'', time:'',
+                d:'', a:'', r:'', p:'', narrative:'', s:'', o:'', i:'', e:'' };
+        }
+        function render() {
+            const notesHtml = state.notes.map(function (n, i) {
+                const fmt = NOTE_FORMATS[n.format] || NOTE_FORMATS.DARP;
+                const showFocus = n.format === 'DAR' || n.format === 'DARP';
+                const fieldsHtml = fmt.fields.map(function (f) {
+                    return '<div class="cap-pn-row">' +
+                        '<div class="cap-pn-letter">' + (f.label[0] || '') + '<small>' + esc(f.label) + '</small></div>' +
+                        '<textarea data-note="' + i + '" data-col="' + f.k + '" rows="' + (f.rows || 2) + '" class="cap-tf">' + esc(n[f.k] || '') + '</textarea>' +
+                    '</div>';
+                }).join('');
+                return '<div class="cap-pn-note">' +
+                    '<div class="cap-pn-head">' +
+                        '<span class="cap-pn-num">Note ' + (i + 1) + '</span>' +
+                        '<select data-note="' + i + '" data-col="format" class="cap-tf cap-pn-format">' +
+                            Object.keys(NOTE_FORMATS).map(function (k) {
+                                return '<option' + (k === n.format ? ' selected' : '') + '>' + k + '</option>';
+                            }).join('') +
+                        '</select>' +
+                        '<button class="cap-row-del" data-del="' + i + '" title="Delete note">&times;</button>' +
+                    '</div>' +
+                    '<div class="cap-grid g3">' +
+                        '<div class="cap-field"><label class="cap-label">Date</label><input type="date" data-note="' + i + '" data-col="date" class="cap-tf" value="' + esc(n.date) + '"></div>' +
+                        '<div class="cap-field"><label class="cap-label">Time</label><input type="time" data-note="' + i + '" data-col="time" class="cap-tf" value="' + esc(n.time) + '"></div>' +
+                        (showFocus
+                            ? '<div class="cap-field"><label class="cap-label">Focus</label><input type="text" data-note="' + i + '" data-col="focus" class="cap-tf" value="' + esc(n.focus) + '"></div>'
+                            : '<div></div>') +
+                    '</div>' +
+                    fieldsHtml +
+                '</div>';
+            }).join('');
+            rootEl.innerHTML = panelHint(
+                'Nurses Progress Notes',
+                'Required per shift: 2 notes for 8-hour, 3 notes for 12-hour shifts. Pick a format per note. Format reference at the bottom.',
+                notesHtml +
+                '<button class="cap-add-row" id="cap-pn-add">+ Add progress note</button>' +
+                '<details class="cap-pn-help"><summary>Format reference</summary>' +
+                    '<p><strong>DAR</strong> — Data · Action · Response</p>' +
+                    '<p><strong>DARP</strong> — Data · Action · Response · Plan</p>' +
+                    '<p><strong>Narrative</strong> — Chronological free-text note</p>' +
+                    '<p><strong>SOAP</strong> — Subjective · Objective · Assessment · Plan</p>' +
+                    '<p><strong>PIE</strong> — Problem · Intervention · Evaluation</p>' +
+                    '<p><strong>SOAPIE</strong> — SOAP + Intervention · Evaluation</p>' +
+                '</details>'
+            );
+            // Wire field inputs
+            rootEl.querySelectorAll('[data-note]').forEach(function (el) {
+                const i = parseInt(el.dataset.note, 10);
+                const col = el.dataset.col;
+                const evt = (el.tagName === 'SELECT' || el.type === 'date' || el.type === 'time') ? 'change' : 'input';
+                el.addEventListener(evt, function () {
+                    if (!state.notes[i]) return;
+                    state.notes[i][col] = el.value;
+                    if (typeof onChange === 'function') onChange();
+                    if (col === 'format') render(); // re-render to swap fields
+                });
+            });
+            // Wire delete
+            rootEl.querySelectorAll('[data-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const i = parseInt(btn.dataset.del, 10);
+                    state.notes.splice(i, 1);
+                    if (!state.notes.length) state.notes.push(emptyNote());
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            // Wire add
+            const addBtn = rootEl.querySelector('#cap-pn-add');
+            if (addBtn) addBtn.addEventListener('click', function () {
+                state.notes.push(emptyNote());
+                if (typeof onChange === 'function') onChange();
+                render();
+            });
+        }
+        render();
+    };
+
+    // ---------- CARE PLAN (NANDA, single-plan) ----------
+    R.carePlan = function (rootEl, state, onChange) {
+        function box(title, hint, inner) {
+            return '<div class="cap-cp-box">' +
+                '<h4>' + esc(title) + '</h4>' +
+                (hint ? '<p class="cap-hint">' + hint + '</p>' : '') +
+                inner +
+            '</div>';
+        }
+        function intervention(tag, prefix) {
+            return '<div class="cap-cp-iv">' +
+                '<h5><span class="cap-cp-iv-tag">' + tag + '</span>' + tag + ' Intervention</h5>' +
+                field('Intervention', prefix + '_intervention', { rows: 2 }) +
+                field('Rationale',    prefix + '_rationale',    { rows: 2 }) +
+            '</div>';
+        }
+        rootEl.innerHTML = panelHint(
+            'Nursing Care Plan',
+            'NANDA diagnostic structure with SMART goals and Assess / Do / Teach interventions.',
+            box('OMEGA-7 / Assessment Finding',
+                'Identified issue that can be modified to help resident outcome.<br><em>Example: Air — Resident is on 2L O₂, normally on room air at home.</em>',
+                field('', 'finding', { rows: 2 })) +
+            box('Nursing Diagnostic Statement',
+                'NANDA Dx r/t problem [secondary to medical Dx] aeb signs/symptoms.<br><em>Example: Impaired gas exchange r/t airway obstruction secondary to COPD aeb wheezing, fatigue after 10 ft walking, SpO₂ &lt;88% with exertion.</em>',
+                field('', 'dx', { rows: 2 })) +
+            box('Short-Term Goal',
+                'End of shift or within a week. Begin with the resident. SMART: Specific, Measurable, Achievable, Relevant, Timebound.',
+                field('Goal', 'st_goal', { rows: 2 }) +
+                intervention('Assess', 'st_assess') +
+                intervention('Do',     'st_do') +
+                intervention('Teach',  'st_teach')) +
+            box('Long-Term Goal',
+                'Weeks to months. Begin with the resident. SMART.',
+                field('Goal', 'lt_goal', { rows: 2 }) +
+                intervention('Assess', 'lt_assess') +
+                intervention('Do',     'lt_do') +
+                intervention('Teach',  'lt_teach')) +
+            box('Summary of Care',
+                'Current interventions/treatments moving resident toward discharge, focused on primary dx.',
+                field('', 'summary', { rows: 4 }))
+        );
+        bindFields(rootEl, state, onChange);
+    };
+
+    // ---------- Placeholders for not-yet-implemented modules ----------
     R.caseStudy     = placeholder('Case Study');
     R.headToToe     = placeholder('Head-to-Toe Assessment');
     R.conceptMap    = placeholder('Concept Map');
