@@ -1,0 +1,233 @@
+/* ============================================================
+   BendBSN — Reusable component classes
+   Used across /resources/, /clinical/, and any tool page that
+   needs consistent cards, tables, inputs, and chips.
+   All declarations use --clx-* tokens from clinical-ui.css.
+   No hardcoded hex colors. No raw px (uses spacing tokens).
+   Load AFTER clinical-ui.css.
+   ============================================================ */
+
+/* ---------- Card ----------
+   .clx-card already exists in clinical-ui.css with bg/border/radius/shadow.
+   This file adds:
+     • .clx-card-body, .clx-card-chip   — sub-elements
+     • .clx-card-featured               — full-width hero variant
+     • .clx-card-compact                — tighter padding for grid density
+   The existing .clx-card-header stays as-is. */
+.clx-card-body {
+    padding: var(--clx-space-4);
+    color: var(--clx-text-primary);
+    line-height: 1.5;
+}
+.clx-card-compact .clx-card-body { padding: var(--clx-space-3); }
+.clx-card-featured {
+    grid-column: 1 / -1;
+    border-color: var(--clx-accent);
+    border-width: 1px;
+}
+.clx-card-featured .clx-card-header {
+    padding: var(--clx-space-4) var(--clx-space-5);
+    background: linear-gradient(180deg, var(--clx-accent-subtle), var(--clx-bg-surface));
+}
+
+/* Category / status / count chip used inside card headers and as filter pills */
+.clx-card-chip,
+.clx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--clx-space-1);
+    font-size: var(--clx-type-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px var(--clx-space-2);
+    border-radius: 999px;
+    border: 1px solid var(--clx-border);
+    background: var(--clx-bg-surface-2);
+    color: var(--clx-text-secondary);
+    line-height: 1.6;
+    white-space: nowrap;
+}
+.clx-chip-accent {
+    background: var(--clx-accent-subtle);
+    color: var(--clx-accent);
+    border-color: var(--clx-accent);
+}
+.clx-chip-normal {
+    background: var(--clx-success-bg);
+    color: var(--clx-success-text);
+    border-color: var(--clx-success);
+}
+.clx-chip-caution {
+    background: var(--clx-warning-bg);
+    color: var(--clx-warning-text);
+    border-color: var(--clx-warning);
+}
+.clx-chip-critical {
+    background: var(--clx-danger-bg);
+    color: var(--clx-danger-text);
+    border-color: var(--clx-danger);
+}
+.clx-chip-ghost {
+    background: transparent;
+    color: var(--clx-text-muted);
+    border-color: var(--clx-border);
+}
+
+/* ---------- Table ----------
+   Striped rows, sticky header, mobile horizontal-scroll wrapper.
+   Replaces ad-hoc <table style="border:1px solid #ddd"> patterns. */
+.clx-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--clx-border);
+    border-radius: var(--clx-radius-md);
+    background: var(--clx-bg-surface);
+}
+.clx-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--clx-type-sm);
+    color: var(--clx-text-primary);
+    line-height: 1.45;
+}
+.clx-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--clx-bg-surface-2);
+    color: var(--clx-text-secondary);
+    text-align: left;
+    font-weight: 700;
+    font-size: var(--clx-type-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: var(--clx-space-2) var(--clx-space-3);
+    border-bottom: 1px solid var(--clx-border);
+    z-index: 1;
+}
+.clx-table tbody td {
+    padding: var(--clx-space-2) var(--clx-space-3);
+    border-bottom: 1px solid var(--clx-border);
+    vertical-align: top;
+}
+.clx-table tbody tr:nth-child(even) td { background: var(--clx-bg-surface-2); }
+.clx-table tbody tr:last-child td { border-bottom: none; }
+.clx-table tbody tr:hover td { background: var(--clx-accent-subtle); }
+.clx-table th[scope="row"] {
+    font-weight: 600;
+    color: var(--clx-text-primary);
+    white-space: nowrap;
+}
+
+/* ---------- Form controls ----------
+   Single-source-of-truth for inputs / selects across resources & elsewhere.
+   Drop-in: <input class="clx-input">, <select class="clx-select">. */
+.clx-input,
+.clx-select,
+.clx-textarea {
+    font-family: inherit;
+    font-size: var(--clx-type-base);
+    color: var(--clx-text-primary);
+    background: var(--clx-bg-surface);
+    border: 1px solid var(--clx-border);
+    border-radius: var(--clx-radius-sm);
+    padding: var(--clx-space-2) var(--clx-space-3);
+    line-height: 1.4;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color var(--clx-transition-fast), box-shadow var(--clx-transition-fast);
+}
+.clx-input:focus,
+.clx-select:focus,
+.clx-textarea:focus {
+    outline: none;
+    border-color: var(--clx-accent);
+    box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.18);
+}
+.clx-input::placeholder,
+.clx-textarea::placeholder { color: var(--clx-text-muted); }
+.clx-input-sm,
+.clx-select-sm {
+    font-size: var(--clx-type-sm);
+    padding: var(--clx-space-1) var(--clx-space-2);
+}
+
+/* Field row (label above input, with optional hint below) */
+.clx-field { display: flex; flex-direction: column; gap: var(--clx-space-1); margin-bottom: var(--clx-space-3); }
+.clx-field-label {
+    font-size: var(--clx-type-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--clx-text-secondary);
+}
+.clx-field-hint {
+    font-size: var(--clx-type-sm);
+    color: var(--clx-text-muted);
+}
+
+/* ---------- Stat ----------
+   Label / Value / Unit for vital ranges, lab normals, calculator outputs.
+   Color-codes via --clx-status-* tokens.
+   <div class="clx-stat clx-stat-critical">
+       <div class="clx-stat-label">Lactate</div>
+       <div class="clx-stat-value">4.2 <span class="clx-stat-unit">mmol/L</span></div>
+   </div> */
+.clx-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--clx-space-2) var(--clx-space-3);
+    border: 1px solid var(--clx-border);
+    border-left-width: 4px;
+    border-left-color: var(--clx-text-muted);
+    border-radius: var(--clx-radius-sm);
+    background: var(--clx-bg-surface);
+}
+.clx-stat-label {
+    font-size: var(--clx-type-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--clx-text-muted);
+}
+.clx-stat-value {
+    font-size: var(--clx-type-lg);
+    font-weight: 700;
+    color: var(--clx-text-primary);
+    line-height: 1.2;
+}
+.clx-stat-unit {
+    font-size: var(--clx-type-sm);
+    font-weight: 500;
+    color: var(--clx-text-muted);
+    margin-left: 2px;
+}
+.clx-stat-normal   { border-left-color: var(--clx-status-normal); }
+.clx-stat-caution  { border-left-color: var(--clx-status-caution); }
+.clx-stat-critical { border-left-color: var(--clx-status-critical); }
+.clx-stat-info     { border-left-color: var(--clx-status-info); }
+
+/* ---------- Dark mode overrides ----------
+   Most components inherit via --clx-* tokens. Per-element tweaks here. */
+[data-theme="dark"] .clx-table thead th { background: rgba(255, 255, 255, 0.04); }
+[data-theme="dark"] .clx-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
+[data-theme="dark"] .clx-table tbody tr:hover td { background: rgba(15, 116, 144, 0.15); }
+[data-theme="dark"] .clx-card-featured .clx-card-header {
+    background: linear-gradient(180deg, rgba(15, 116, 144, 0.18), var(--clx-bg-surface));
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 480px) {
+    .clx-card-body { padding: var(--clx-space-3); }
+    .clx-table thead th,
+    .clx-table tbody td { padding: var(--clx-space-1) var(--clx-space-2); font-size: var(--clx-type-xs); }
+    .clx-stat-value { font-size: var(--clx-type-base); }
+}
+
+/* ---------- Print ---------- */
+@media print {
+    .clx-card { box-shadow: none !important; border-color: #888 !important; page-break-inside: avoid; }
+    .clx-table thead th { position: static !important; background: #eee !important; color: #000 !important; }
+}
