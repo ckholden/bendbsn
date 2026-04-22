@@ -13,7 +13,7 @@
    No real NDC codes, NPIs, MRNs, or provider identities.
    ========================================================= */
 
-const SEED_VERSION = 5;
+const SEED_VERSION = 6;
 
 // ---- Allergy → med-name substring triggers (case-insensitive) ----
 // Phase 3A.5b: kept for back-compat but also used as one of several matchers.
@@ -1561,6 +1561,452 @@ const UNADMITTED_PRIOR_CHART = {
 };
 
 // =========================================================
+// PHASE 3C — LAB PANELS + IMAGING
+// =========================================================
+//
+// Panel metadata used by index.html to group labs in the Labs tab.
+// Order here = render order in the tab.
+//
+const LAB_PANELS = [
+    { id: 'cbc',      label: 'CBC w/ diff',     icon: 'CBC' },
+    { id: 'bmp',      label: 'BMP / Chemistry', icon: 'BMP' },
+    { id: 'lfts',     label: 'LFTs',            icon: 'LFT' },
+    { id: 'coags',    label: 'Coags',           icon: 'COAG' },
+    { id: 'cardiac',  label: 'Cardiac markers', icon: 'CARD' },
+    { id: 'abg',      label: 'ABG',             icon: 'ABG' },
+    { id: 'ua',       label: 'UA / Urine',      icon: 'UA' },
+    { id: 'cultures', label: 'Cultures',        icon: 'CX' },
+    { id: 'misc',     label: 'Other / Misc',    icon: 'MISC' }
+];
+
+// =========================================================
+// SEED_LABS — keyed by patientId.
+// Each entry is an array of lab rows that get written to:
+//     emr/labs/{patientId}/{labId}
+// during migration with collectedAt = baseTs + collectedH * 3600000
+// (collectedH and resultedH are negative offsets in hours from now).
+//
+// Schema per row:
+//   panelId      - one of LAB_PANELS ids
+//   testName     - display name (WBC, Hgb, Na, etc.)
+//   value        - numeric or string (cultures = pending/positive/etc.)
+//   unit         - display unit (K/uL, mg/dL, %, mmol/L, ...)
+//   refLow,refHigh - numeric reference range (omit if N/A - e.g., cultures)
+//   flag         - '' | 'L' | 'H' | 'LL' | 'HH' (LL/HH = critical)
+//   collectedH   - hours-from-now when specimen drawn (negative)
+//   resultedH    - hours-from-now when result back (negative; > collectedH)
+//   collectedBy  - who drew (defaults to "Lab (seeded)")
+//   resultedBy   - who resulted (defaults to "Lab (seeded)")
+//   notes        - optional clinical context
+//
+// Doses + ranges based on standard adult reference ranges.
+// All FICTIONAL test results, attached to fictional patients.
+// =========================================================
+const SEED_LABS = {
+    // -----------------------------------------------------
+    // Priya Kapoor - sepsis (urosepsis from indwelling foley)
+    // -----------------------------------------------------
+    p_priya_kapoor: [
+        // CBC w/ diff - leukocytosis with bandemia
+        { panelId: 'cbc', testName: 'WBC',         value: 19.3, unit: 'K/uL',  refLow: 4.0,  refHigh: 11.0, flag: 'H',  collectedH: -3.5, resultedH: -3 },
+        { panelId: 'cbc', testName: 'Bands',       value: 22,   unit: '%',     refLow: 0,    refHigh: 5,    flag: 'H',  collectedH: -3.5, resultedH: -3, notes: 'Left shift c/w bacterial infxn' },
+        { panelId: 'cbc', testName: 'Hgb',         value: 11.4, unit: 'g/dL',  refLow: 12.0, refHigh: 16.0, flag: 'L',  collectedH: -3.5, resultedH: -3 },
+        { panelId: 'cbc', testName: 'Hct',         value: 34,   unit: '%',     refLow: 36,   refHigh: 47,   flag: 'L',  collectedH: -3.5, resultedH: -3 },
+        { panelId: 'cbc', testName: 'Plt',         value: 142,  unit: 'K/uL',  refLow: 150,  refHigh: 400,  flag: 'L',  collectedH: -3.5, resultedH: -3 },
+        // BMP - AKI + hyperglycemia (stress)
+        { panelId: 'bmp', testName: 'Na',          value: 134,  unit: 'mmol/L',refLow: 135,  refHigh: 145,  flag: 'L',  collectedH: -3.5, resultedH: -3 },
+        { panelId: 'bmp', testName: 'K',           value: 4.4,  unit: 'mmol/L',refLow: 3.5,  refHigh: 5.0,  flag: '',   collectedH: -3.5, resultedH: -3 },
+        { panelId: 'bmp', testName: 'Cl',          value: 99,   unit: 'mmol/L',refLow: 96,   refHigh: 106,  flag: '',   collectedH: -3.5, resultedH: -3 },
+        { panelId: 'bmp', testName: 'CO2',         value: 19,   unit: 'mmol/L',refLow: 22,   refHigh: 30,   flag: 'L',  collectedH: -3.5, resultedH: -3 },
+        { panelId: 'bmp', testName: 'BUN',         value: 38,   unit: 'mg/dL', refLow: 7,    refHigh: 20,   flag: 'H',  collectedH: -3.5, resultedH: -3 },
+        { panelId: 'bmp', testName: 'Creatinine',  value: 1.6,  unit: 'mg/dL', refLow: 0.6,  refHigh: 1.2,  flag: 'H',  collectedH: -3.5, resultedH: -3, notes: 'Baseline 0.9 - AKI' },
+        { panelId: 'bmp', testName: 'Glucose',     value: 168,  unit: 'mg/dL', refLow: 70,   refHigh: 110,  flag: 'H',  collectedH: -3.5, resultedH: -3, notes: 'Stress hyperglycemia' },
+        // Sepsis-specific
+        { panelId: 'misc',testName: 'Lactate',     value: 4.2,  unit: 'mmol/L',refLow: 0.5,  refHigh: 2.0,  flag: 'HH', collectedH: -3.5, resultedH: -3, notes: 'Critical - septic shock' },
+        { panelId: 'misc',testName: 'Lactate',     value: 2.8,  unit: 'mmol/L',refLow: 0.5,  refHigh: 2.0,  flag: 'H',  collectedH: -1,   resultedH: -0.5, notes: 'Repeat after fluid resuscitation' },
+        { panelId: 'misc',testName: 'Procalcitonin',value: 4.5, unit: 'ng/mL', refLow: 0,    refHigh: 0.5,  flag: 'HH', collectedH: -3.5, resultedH: -2.5, notes: 'Strongly suggestive of bacterial sepsis' },
+        // UA + cultures
+        { panelId: 'ua', testName: 'Leukocyte esterase', value: 'Large +',  unit: '', flag: 'H', collectedH: -3.5, resultedH: -3 },
+        { panelId: 'ua', testName: 'Nitrites',      value: 'Positive',     unit: '', flag: 'H', collectedH: -3.5, resultedH: -3 },
+        { panelId: 'ua', testName: 'WBC (urine)',   value: '50-100/hpf',   unit: '', flag: 'H', collectedH: -3.5, resultedH: -3 },
+        { panelId: 'ua', testName: 'Bacteria',      value: 'Many',         unit: '', flag: 'H', collectedH: -3.5, resultedH: -3 },
+        { panelId: 'cultures', testName: 'Blood culture x 2', value: 'Pending - preliminary no growth at 24h', unit: '', flag: '', collectedH: -3.5, resultedH: -0.5 },
+        { panelId: 'cultures', testName: 'Urine culture',     value: 'Preliminary: GNR, ID/sensitivities pending', unit: '', flag: 'H', collectedH: -3.5, resultedH: -1, notes: 'Likely E. coli pending speciation' }
+    ],
+
+    // -----------------------------------------------------
+    // Miguel Torres - STEMI s/p PCI
+    // -----------------------------------------------------
+    p_miguel_torres: [
+        // Cardiac biomarkers - peaked then trending
+        { panelId: 'cardiac', testName: 'Troponin I', value: 0.08, unit: 'ng/mL', refLow: 0,   refHigh: 0.04, flag: 'H',  collectedH: -6, resultedH: -5.5, notes: 'Initial ED draw' },
+        { panelId: 'cardiac', testName: 'Troponin I', value: 8.4,  unit: 'ng/mL', refLow: 0,   refHigh: 0.04, flag: 'HH', collectedH: -3, resultedH: -2.5, notes: 'Peak post-PCI - critical-H expected for STEMI' },
+        { panelId: 'cardiac', testName: 'Troponin I', value: 6.1,  unit: 'ng/mL', refLow: 0,   refHigh: 0.04, flag: 'H',  collectedH: -1, resultedH: -0.5, notes: 'Down-trending' },
+        { panelId: 'cardiac', testName: 'CK-MB',      value: 78,   unit: 'ng/mL', refLow: 0,   refHigh: 6.3,  flag: 'H',  collectedH: -3, resultedH: -2.5 },
+        { panelId: 'cardiac', testName: 'BNP',        value: 412,  unit: 'pg/mL', refLow: 0,   refHigh: 100,  flag: 'H',  collectedH: -3, resultedH: -2.5, notes: 'Mild HF strain post-MI' },
+        // BMP - note hypokalemia + hypomag (cardiac arrhythmia risk)
+        { panelId: 'bmp', testName: 'Na',         value: 138,  unit: 'mmol/L',refLow: 135, refHigh: 145, flag: '',   collectedH: -3, resultedH: -2.5 },
+        { panelId: 'bmp', testName: 'K',          value: 3.4,  unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: 'L',  collectedH: -3, resultedH: -2.5, notes: 'Replete - risk for arrhythmia post-MI' },
+        { panelId: 'bmp', testName: 'Cl',         value: 102,  unit: 'mmol/L',refLow: 96,  refHigh: 106, flag: '',   collectedH: -3, resultedH: -2.5 },
+        { panelId: 'bmp', testName: 'CO2',        value: 24,   unit: 'mmol/L',refLow: 22,  refHigh: 30,  flag: '',   collectedH: -3, resultedH: -2.5 },
+        { panelId: 'bmp', testName: 'BUN',        value: 18,   unit: 'mg/dL', refLow: 7,   refHigh: 20,  flag: '',   collectedH: -3, resultedH: -2.5 },
+        { panelId: 'bmp', testName: 'Creatinine', value: 1.1,  unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '',   collectedH: -3, resultedH: -2.5 },
+        { panelId: 'bmp', testName: 'Glucose',    value: 132,  unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'H',  collectedH: -3, resultedH: -2.5 },
+        { panelId: 'bmp', testName: 'Mg',         value: 1.7,  unit: 'mg/dL', refLow: 1.8, refHigh: 2.4, flag: 'L',  collectedH: -3, resultedH: -2.5, notes: 'Replete - protects against torsades post-MI' },
+        // CBC normal
+        { panelId: 'cbc', testName: 'WBC', value: 9.8,  unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: '', collectedH: -3, resultedH: -2.5 },
+        { panelId: 'cbc', testName: 'Hgb', value: 14.1, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: '', collectedH: -3, resultedH: -2.5 },
+        { panelId: 'cbc', testName: 'Plt', value: 232,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '', collectedH: -3, resultedH: -2.5 },
+        // Coags - on heparin protocol
+        { panelId: 'coags', testName: 'aPTT', value: 78, unit: 'sec', refLow: 60, refHigh: 80, flag: '', collectedH: -1, resultedH: -0.5, notes: 'Therapeutic on heparin gtt (target 60-80)' }
+    ],
+
+    // -----------------------------------------------------
+    // Dorothy Nguyen - COPD exacerbation, hypercapnic respiratory failure on BiPAP
+    // -----------------------------------------------------
+    p_dorothy_nguyen: [
+        // ABG - ACUTE respiratory acidosis with chronic compensation
+        { panelId: 'abg', testName: 'pH',     value: 7.22, unit: '',     refLow: 7.35, refHigh: 7.45, flag: 'LL', collectedH: -4, resultedH: -3.7, notes: 'Acute on chronic respiratory acidosis' },
+        { panelId: 'abg', testName: 'PaCO2',  value: 78,   unit: 'mmHg', refLow: 35,   refHigh: 45,   flag: 'HH', collectedH: -4, resultedH: -3.7 },
+        { panelId: 'abg', testName: 'PaO2',   value: 54,   unit: 'mmHg', refLow: 80,   refHigh: 100,  flag: 'LL', collectedH: -4, resultedH: -3.7 },
+        { panelId: 'abg', testName: 'HCO3',   value: 32,   unit: 'mmol/L',refLow: 22,  refHigh: 26,   flag: 'H',  collectedH: -4, resultedH: -3.7, notes: 'Chronic compensation (renal)' },
+        { panelId: 'abg', testName: 'SaO2',   value: 86,   unit: '%',    refLow: 95,   refHigh: 100,  flag: 'L',  collectedH: -4, resultedH: -3.7 },
+        // Repeat ABG after BiPAP - improving
+        { panelId: 'abg', testName: 'pH',     value: 7.31, unit: '',     refLow: 7.35, refHigh: 7.45, flag: 'L',  collectedH: -1, resultedH: -0.5, notes: 'Improving on BiPAP' },
+        { panelId: 'abg', testName: 'PaCO2',  value: 62,   unit: 'mmHg', refLow: 35,   refHigh: 45,   flag: 'H',  collectedH: -1, resultedH: -0.5 },
+        { panelId: 'abg', testName: 'PaO2',   value: 78,   unit: 'mmHg', refLow: 80,   refHigh: 100,  flag: 'L',  collectedH: -1, resultedH: -0.5 },
+        { panelId: 'abg', testName: 'HCO3',   value: 30,   unit: 'mmol/L',refLow: 22,  refHigh: 26,   flag: 'H',  collectedH: -1, resultedH: -0.5 },
+        { panelId: 'abg', testName: 'SaO2',   value: 93,   unit: '%',    refLow: 95,   refHigh: 100,  flag: 'L',  collectedH: -1, resultedH: -0.5 },
+        // CBC unremarkable
+        { panelId: 'cbc', testName: 'WBC', value: 10.2, unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: '', collectedH: -4, resultedH: -3.5 },
+        { panelId: 'cbc', testName: 'Hgb', value: 14.8, unit: 'g/dL', refLow: 12.0, refHigh: 16.0, flag: '', collectedH: -4, resultedH: -3.5, notes: 'No polycythemia despite chronic hypoxia' },
+        { panelId: 'cbc', testName: 'Plt', value: 268,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '', collectedH: -4, resultedH: -3.5 },
+        // BMP
+        { panelId: 'bmp', testName: 'Na',         value: 140, unit: 'mmol/L',refLow: 135, refHigh: 145, flag: '', collectedH: -4, resultedH: -3.5 },
+        { panelId: 'bmp', testName: 'K',          value: 4.0, unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '', collectedH: -4, resultedH: -3.5 },
+        { panelId: 'bmp', testName: 'CO2',        value: 32,  unit: 'mmol/L',refLow: 22,  refHigh: 30,  flag: 'H',collectedH: -4, resultedH: -3.5, notes: 'Reflects chronic CO2 retention' },
+        { panelId: 'bmp', testName: 'Creatinine', value: 1.0, unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '', collectedH: -4, resultedH: -3.5 }
+    ],
+
+    // -----------------------------------------------------
+    // Angela Freeman - DKA
+    // -----------------------------------------------------
+    p_angela_freeman: [
+        // BMP - anion gap metabolic acidosis
+        { panelId: 'bmp', testName: 'Na',         value: 131, unit: 'mmol/L',refLow: 135, refHigh: 145, flag: 'L', collectedH: -18, resultedH: -17.5, notes: 'Pseudohyponatremia from hyperglycemia; corrected ~136' },
+        { panelId: 'bmp', testName: 'K',          value: 5.6, unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: 'H', collectedH: -18, resultedH: -17.5, notes: 'Total body K depleted - will drop fast on insulin. Replete carefully.' },
+        { panelId: 'bmp', testName: 'Cl',         value: 98,  unit: 'mmol/L',refLow: 96,  refHigh: 106, flag: '',  collectedH: -18, resultedH: -17.5 },
+        { panelId: 'bmp', testName: 'CO2',        value: 9,   unit: 'mmol/L',refLow: 22,  refHigh: 30,  flag: 'LL',collectedH: -18, resultedH: -17.5, notes: 'Critical - severe metabolic acidosis' },
+        { panelId: 'bmp', testName: 'Anion gap',  value: 24,  unit: '',      refLow: 8,   refHigh: 12,  flag: 'H', collectedH: -18, resultedH: -17.5, notes: 'High anion gap acidosis' },
+        { panelId: 'bmp', testName: 'BUN',        value: 32,  unit: 'mg/dL', refLow: 7,   refHigh: 20,  flag: 'H', collectedH: -18, resultedH: -17.5, notes: 'Pre-renal from osmotic diuresis' },
+        { panelId: 'bmp', testName: 'Creatinine', value: 1.4, unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: 'H', collectedH: -18, resultedH: -17.5 },
+        { panelId: 'bmp', testName: 'Glucose',    value: 487, unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'HH',collectedH: -18, resultedH: -17.5, notes: 'Critical hyperglycemia - DKA' },
+        // Serial glucose post-insulin gtt
+        { panelId: 'bmp', testName: 'Glucose',    value: 312, unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'H', collectedH: -10, resultedH: -10, notes: 'On insulin gtt - coming down' },
+        { panelId: 'bmp', testName: 'Glucose',    value: 198, unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'H', collectedH: -2,  resultedH: -2,  notes: 'Add D5 - approaching 200 threshold per protocol' },
+        // Repeat K (now low after insulin shifted intracellularly)
+        { panelId: 'bmp', testName: 'K',          value: 3.3, unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: 'L', collectedH: -2,  resultedH: -1.5, notes: 'Replete K - classic DKA pattern' },
+        // Ketones
+        { panelId: 'misc',testName: 'Beta-hydroxybutyrate', value: 5.8, unit: 'mmol/L', refLow: 0, refHigh: 0.4, flag: 'HH', collectedH: -18, resultedH: -17.5 },
+        { panelId: 'ua', testName: 'Ketones',     value: 'Large +',     unit: '', flag: 'H', collectedH: -18, resultedH: -17.5 },
+        { panelId: 'ua', testName: 'Glucose',     value: '>1000 mg/dL', unit: '', flag: 'H', collectedH: -18, resultedH: -17.5 },
+        // CBC - stress demargination (NOT infection)
+        { panelId: 'cbc', testName: 'WBC', value: 14.2, unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: 'H', collectedH: -18, resultedH: -17.5, notes: 'Stress demargination - no left shift, low suspicion for infxn' },
+        { panelId: 'cbc', testName: 'Hgb', value: 13.6, unit: 'g/dL', refLow: 12.0, refHigh: 16.0, flag: '', collectedH: -18, resultedH: -17.5 },
+        { panelId: 'cbc', testName: 'Plt', value: 312,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '', collectedH: -18, resultedH: -17.5 }
+    ],
+
+    // -----------------------------------------------------
+    // Robert DiMaggio - acute decompensated CHF
+    // -----------------------------------------------------
+    p_robert_dimaggio: [
+        // Cardiac
+        { panelId: 'cardiac', testName: 'BNP',        value: 1840, unit: 'pg/mL', refLow: 0, refHigh: 100, flag: 'HH', collectedH: -22, resultedH: -21.5, notes: 'Critical - acute decompensation' },
+        { panelId: 'cardiac', testName: 'BNP',        value: 980,  unit: 'pg/mL', refLow: 0, refHigh: 100, flag: 'H',  collectedH: -2,  resultedH: -1.5, notes: 'Down-trending after diuresis' },
+        { panelId: 'cardiac', testName: 'Troponin I', value: 0.05, unit: 'ng/mL', refLow: 0, refHigh: 0.04,flag: 'H',  collectedH: -22, resultedH: -21.5, notes: 'Mild bump c/w demand from CHF; not ACS' },
+        // BMP - cardiorenal + diuretic effects
+        { panelId: 'bmp', testName: 'Na',         value: 128, unit: 'mmol/L',refLow: 135, refHigh: 145, flag: 'L',  collectedH: -22, resultedH: -21.5, notes: 'Dilutional hyponatremia of CHF' },
+        { panelId: 'bmp', testName: 'K',          value: 3.2, unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: 'L',  collectedH: -22, resultedH: -21.5, notes: 'Loop diuretic-induced - replete' },
+        { panelId: 'bmp', testName: 'Cl',         value: 90,  unit: 'mmol/L',refLow: 96,  refHigh: 106, flag: 'L',  collectedH: -22, resultedH: -21.5, notes: 'Contraction alkalosis from diuresis' },
+        { panelId: 'bmp', testName: 'CO2',        value: 31,  unit: 'mmol/L',refLow: 22,  refHigh: 30,  flag: 'H',  collectedH: -22, resultedH: -21.5 },
+        { panelId: 'bmp', testName: 'BUN',        value: 42,  unit: 'mg/dL', refLow: 7,   refHigh: 20,  flag: 'H',  collectedH: -22, resultedH: -21.5, notes: 'Pre-renal from diuresis + low CO' },
+        { panelId: 'bmp', testName: 'Creatinine', value: 1.7, unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: 'H',  collectedH: -22, resultedH: -21.5, notes: 'Cardiorenal syndrome (baseline 1.2)' },
+        { panelId: 'bmp', testName: 'Glucose',    value: 118, unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'H',  collectedH: -22, resultedH: -21.5 },
+        { panelId: 'bmp', testName: 'Mg',         value: 1.6, unit: 'mg/dL', refLow: 1.8, refHigh: 2.4, flag: 'L',  collectedH: -22, resultedH: -21.5, notes: 'Diuretic-induced - replete' },
+        // CBC
+        { panelId: 'cbc', testName: 'WBC', value: 8.4,  unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: '', collectedH: -22, resultedH: -21.5 },
+        { panelId: 'cbc', testName: 'Hgb', value: 11.9, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: 'L', collectedH: -22, resultedH: -21.5, notes: 'Mild anemia of chronic disease' },
+        { panelId: 'cbc', testName: 'Plt', value: 198,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '', collectedH: -22, resultedH: -21.5 }
+    ],
+
+    // -----------------------------------------------------
+    // Leonard Kowalski - TIA/CVA on warfarin, supratherapeutic INR
+    // -----------------------------------------------------
+    p_leonard_kowalski: [
+        // Coags - supratherapeutic INR (bleed risk)
+        { panelId: 'coags', testName: 'INR', value: 4.2, unit: '',    refLow: 2.0, refHigh: 3.0, flag: 'HH', collectedH: -1, resultedH: -0.5, notes: 'Critical - supratherapeutic. Hold warfarin. Consider Vit K if any bleeding.' },
+        { panelId: 'coags', testName: 'PT',  value: 42.1,unit: 'sec', refLow: 11,  refHigh: 14,  flag: 'H',  collectedH: -1, resultedH: -0.5 },
+        { panelId: 'coags', testName: 'PTT', value: 38,  unit: 'sec', refLow: 25,  refHigh: 35,  flag: '',   collectedH: -1, resultedH: -0.5, notes: 'Within normal - warfarin specifically affects extrinsic (PT/INR)' },
+        // BMP - stress glucose, otherwise normal
+        { panelId: 'bmp', testName: 'Na',         value: 137, unit: 'mmol/L',refLow: 135, refHigh: 145, flag: '',  collectedH: -1, resultedH: -0.5 },
+        { panelId: 'bmp', testName: 'K',          value: 4.1, unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '',  collectedH: -1, resultedH: -0.5 },
+        { panelId: 'bmp', testName: 'BUN',        value: 22,  unit: 'mg/dL', refLow: 7,   refHigh: 20,  flag: 'H', collectedH: -1, resultedH: -0.5 },
+        { panelId: 'bmp', testName: 'Creatinine', value: 1.1, unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '',  collectedH: -1, resultedH: -0.5 },
+        { panelId: 'bmp', testName: 'Glucose',    value: 142, unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'H', collectedH: -1, resultedH: -0.5, notes: 'Stress hyperglycemia - common in acute stroke' },
+        // CBC normal
+        { panelId: 'cbc', testName: 'WBC', value: 7.8,  unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: '', collectedH: -1, resultedH: -0.5 },
+        { panelId: 'cbc', testName: 'Hgb', value: 13.2, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: 'L', collectedH: -1, resultedH: -0.5 },
+        { panelId: 'cbc', testName: 'Plt', value: 218,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '', collectedH: -1, resultedH: -0.5 },
+        // Lipid (admission baseline)
+        { panelId: 'misc', testName: 'LDL',           value: 142, unit: 'mg/dL', refLow: 0,  refHigh: 100, flag: 'H', collectedH: -1, resultedH: -0.5, notes: 'Above goal - review statin dosing' },
+        { panelId: 'misc', testName: 'HbA1c',         value: 6.4, unit: '%',     refLow: 4,  refHigh: 5.6, flag: 'H', collectedH: -1, resultedH: -0.5, notes: 'Pre-diabetic range' }
+    ],
+
+    // -----------------------------------------------------
+    // Marcus Webb - atypical chest pain (low-pretest, ruling out)
+    // -----------------------------------------------------
+    p_marcus_webb: [
+        { panelId: 'cardiac', testName: 'Troponin I', value: 0.02, unit: 'ng/mL', refLow: 0, refHigh: 0.04, flag: '', collectedH: -1.5, resultedH: -1, notes: 'Initial - negative' },
+        { panelId: 'cardiac', testName: 'Troponin I', value: 0.02, unit: 'ng/mL', refLow: 0, refHigh: 0.04, flag: '', collectedH: -0.2, resultedH: 0,  notes: 'Repeat at 90 min - flat. Reassuring.' },
+        { panelId: 'cbc', testName: 'WBC', value: 8.2,  unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: '', collectedH: -1.5, resultedH: -1 },
+        { panelId: 'cbc', testName: 'Hgb', value: 15.4, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: '', collectedH: -1.5, resultedH: -1 },
+        { panelId: 'cbc', testName: 'Plt', value: 256,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '', collectedH: -1.5, resultedH: -1 },
+        { panelId: 'bmp', testName: 'Na',         value: 139, unit: 'mmol/L',refLow: 135, refHigh: 145, flag: '', collectedH: -1.5, resultedH: -1 },
+        { panelId: 'bmp', testName: 'K',          value: 4.2, unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '', collectedH: -1.5, resultedH: -1 },
+        { panelId: 'bmp', testName: 'Creatinine', value: 0.9, unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '', collectedH: -1.5, resultedH: -1 },
+        { panelId: 'bmp', testName: 'Glucose',    value: 96,  unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: '', collectedH: -1.5, resultedH: -1 }
+    ],
+
+    // -----------------------------------------------------
+    // James Holloway - acute pancreatitis (alcohol-induced)
+    // -----------------------------------------------------
+    p_james_holloway: [
+        { panelId: 'misc', testName: 'Lipase',  value: 1240, unit: 'U/L', refLow: 13, refHigh: 60, flag: 'HH', collectedH: -2, resultedH: -1.5, notes: '>3x ULN - diagnostic for acute pancreatitis' },
+        { panelId: 'misc', testName: 'Amylase', value: 412,  unit: 'U/L', refLow: 25, refHigh: 125,flag: 'H',  collectedH: -2, resultedH: -1.5 },
+        // LFTs - alcoholic hepatitis pattern (AST > ALT, ratio >2)
+        { panelId: 'lfts', testName: 'AST',     value: 178, unit: 'U/L',  refLow: 10,  refHigh: 40,  flag: 'H',  collectedH: -2, resultedH: -1.5, notes: 'AST/ALT >2:1 c/w alcoholic liver injury' },
+        { panelId: 'lfts', testName: 'ALT',     value: 84,  unit: 'U/L',  refLow: 7,   refHigh: 56,  flag: 'H',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'lfts', testName: 'Alk Phos',value: 142, unit: 'U/L',  refLow: 44,  refHigh: 147, flag: '',   collectedH: -2, resultedH: -1.5 },
+        { panelId: 'lfts', testName: 'Total bili',value: 2.4,unit: 'mg/dL',refLow: 0.1, refHigh: 1.2, flag: 'H',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'lfts', testName: 'Albumin', value: 3.1, unit: 'g/dL', refLow: 3.5, refHigh: 5.0, flag: 'L',  collectedH: -2, resultedH: -1.5, notes: 'Chronic ETOH - synthetic dysfunction' },
+        // BMP
+        { panelId: 'bmp', testName: 'Na',         value: 134, unit: 'mmol/L',refLow: 135, refHigh: 145, flag: 'L', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'K',          value: 3.6, unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'Mg',         value: 1.4, unit: 'mg/dL', refLow: 1.8, refHigh: 2.4, flag: 'L', collectedH: -2, resultedH: -1.5, notes: 'Chronic ETOH - replete; CIWA risk' },
+        { panelId: 'bmp', testName: 'Glucose',    value: 158, unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'H', collectedH: -2, resultedH: -1.5 },
+        // CBC
+        { panelId: 'cbc', testName: 'WBC', value: 12.1, unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: 'H', collectedH: -2, resultedH: -1.5, notes: 'Inflammatory leukocytosis' },
+        { panelId: 'cbc', testName: 'Hgb', value: 12.4, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: 'L', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'cbc', testName: 'Plt', value: 102,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: 'L', collectedH: -2, resultedH: -1.5, notes: 'Mild thrombocytopenia c/w chronic ETOH' }
+    ],
+
+    // -----------------------------------------------------
+    // Sofia Reyes - acute appendicitis
+    // -----------------------------------------------------
+    p_sofia_reyes: [
+        { panelId: 'cbc', testName: 'WBC',         value: 16.4, unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: 'H', collectedH: -2, resultedH: -1.5, notes: 'Leukocytosis c/w acute appendicitis' },
+        { panelId: 'cbc', testName: 'Neut %',      value: 86,   unit: '%',    refLow: 40,   refHigh: 70,   flag: 'H', collectedH: -2, resultedH: -1.5, notes: 'Neutrophilic predominance' },
+        { panelId: 'cbc', testName: 'Hgb',         value: 13.4, unit: 'g/dL', refLow: 12.0, refHigh: 16.0, flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'cbc', testName: 'Plt',         value: 312,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'Na',          value: 138,  unit: 'mmol/L',refLow: 135, refHigh: 145, flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'K',           value: 3.9,  unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'Creatinine',  value: 0.8,  unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'Glucose',     value: 102,  unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: '',  collectedH: -2, resultedH: -1.5 },
+        // hCG - important pre-op for any reproductive-age female
+        { panelId: 'misc', testName: 'Beta-hCG (qual)', value: 'Negative', unit: '', flag: '', collectedH: -2, resultedH: -1.5, notes: 'Pre-op - pregnancy excluded' },
+        // Coags - pre-op
+        { panelId: 'coags', testName: 'INR', value: 1.0, unit: '', refLow: 0.8, refHigh: 1.2, flag: '', collectedH: -2, resultedH: -1.5, notes: 'Pre-op clearance' }
+    ],
+
+    // -----------------------------------------------------
+    // Walter Huang - recurrent aspiration pneumonia
+    // -----------------------------------------------------
+    p_walter_huang: [
+        { panelId: 'cbc', testName: 'WBC',         value: 14.8, unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: 'H', collectedH: -16, resultedH: -15.5 },
+        { panelId: 'cbc', testName: 'Bands',       value: 8,    unit: '%',    refLow: 0,    refHigh: 5,    flag: 'H', collectedH: -16, resultedH: -15.5 },
+        { panelId: 'cbc', testName: 'Hgb',         value: 11.2, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: 'L', collectedH: -16, resultedH: -15.5 },
+        { panelId: 'cbc', testName: 'Plt',         value: 188,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '',  collectedH: -16, resultedH: -15.5 },
+        { panelId: 'bmp', testName: 'Na',          value: 132,  unit: 'mmol/L',refLow: 135, refHigh: 145, flag: 'L', collectedH: -16, resultedH: -15.5 },
+        { panelId: 'bmp', testName: 'K',           value: 3.7,  unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '',  collectedH: -16, resultedH: -15.5 },
+        { panelId: 'bmp', testName: 'BUN',         value: 28,   unit: 'mg/dL', refLow: 7,   refHigh: 20,  flag: 'H', collectedH: -16, resultedH: -15.5 },
+        { panelId: 'bmp', testName: 'Creatinine',  value: 1.0,  unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '',  collectedH: -16, resultedH: -15.5 },
+        { panelId: 'misc', testName: 'Albumin',    value: 2.6,  unit: 'g/dL',  refLow: 3.5, refHigh: 5.0, flag: 'L', collectedH: -16, resultedH: -15.5, notes: 'Malnutrition - advanced dementia' },
+        { panelId: 'cultures', testName: 'Sputum culture', value: 'Pending - preliminary mixed flora c/w aspiration', unit: '', flag: '', collectedH: -16, resultedH: -8 }
+    ],
+
+    // -----------------------------------------------------
+    // Helen Cho - POD#2 TKR, doing well
+    // -----------------------------------------------------
+    p_helen_cho: [
+        { panelId: 'cbc', testName: 'WBC',         value: 9.4,  unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'cbc', testName: 'Hgb',         value: 9.8,  unit: 'g/dL', refLow: 12.0, refHigh: 16.0, flag: 'L', collectedH: -8, resultedH: -7.5, notes: 'Post-op anemia from intra-op blood loss' },
+        { panelId: 'cbc', testName: 'Hct',         value: 30,   unit: '%',    refLow: 36,   refHigh: 47,   flag: 'L', collectedH: -8, resultedH: -7.5 },
+        { panelId: 'cbc', testName: 'Plt',         value: 268,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'bmp', testName: 'Na',          value: 138,  unit: 'mmol/L',refLow: 135, refHigh: 145, flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'bmp', testName: 'K',           value: 4.0,  unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'bmp', testName: 'Creatinine',  value: 0.9,  unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'bmp', testName: 'Glucose',     value: 108,  unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: '',  collectedH: -8, resultedH: -7.5 }
+    ],
+
+    // -----------------------------------------------------
+    // Thomas Brandt - R hip fracture, pre-op
+    // -----------------------------------------------------
+    p_thomas_brandt: [
+        { panelId: 'cbc', testName: 'WBC',         value: 11.8, unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: 'H', collectedH: -2, resultedH: -1.5, notes: 'Mild - stress + hematoma' },
+        { panelId: 'cbc', testName: 'Hgb',         value: 10.4, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: 'L', collectedH: -2, resultedH: -1.5, notes: 'Anemia from hematoma + chronic disease' },
+        { panelId: 'cbc', testName: 'Plt',         value: 198,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'Na',          value: 134,  unit: 'mmol/L',refLow: 135, refHigh: 145, flag: 'L', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'K',           value: 4.2,  unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '',  collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'BUN',         value: 24,   unit: 'mg/dL', refLow: 7,   refHigh: 20,  flag: 'H', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'bmp', testName: 'Creatinine',  value: 1.3,  unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: 'H', collectedH: -2, resultedH: -1.5, notes: 'Age + dehydration' },
+        { panelId: 'coags', testName: 'INR',       value: 1.1,  unit: '',     refLow: 0.8, refHigh: 1.2, flag: '',  collectedH: -2, resultedH: -1.5, notes: 'Pre-op - cleared' }
+    ],
+
+    // -----------------------------------------------------
+    // Denise Abara - POD#3 CABG
+    // -----------------------------------------------------
+    p_denise_abara: [
+        { panelId: 'cbc', testName: 'WBC',         value: 11.2, unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: 'H', collectedH: -8, resultedH: -7.5, notes: 'Post-op inflammatory - trending down' },
+        { panelId: 'cbc', testName: 'Hgb',         value: 10.1, unit: 'g/dL', refLow: 12.0, refHigh: 16.0, flag: 'L', collectedH: -8, resultedH: -7.5 },
+        { panelId: 'cbc', testName: 'Plt',         value: 178,  unit: 'K/uL', refLow: 150,  refHigh: 400,  flag: '',  collectedH: -8, resultedH: -7.5, notes: 'No HIT pattern (>50% drop) - but heparin contraindicated regardless per allergy' },
+        { panelId: 'bmp', testName: 'Na',          value: 137,  unit: 'mmol/L',refLow: 135, refHigh: 145, flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'bmp', testName: 'K',           value: 3.7,  unit: 'mmol/L',refLow: 3.5, refHigh: 5.0, flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'bmp', testName: 'Creatinine',  value: 1.1,  unit: 'mg/dL', refLow: 0.6, refHigh: 1.2, flag: '',  collectedH: -8, resultedH: -7.5 },
+        { panelId: 'bmp', testName: 'Glucose',     value: 142,  unit: 'mg/dL', refLow: 70,  refHigh: 110, flag: 'H', collectedH: -8, resultedH: -7.5, notes: 'Post-op stress' }
+    ],
+
+    // -----------------------------------------------------
+    // Rachel Okonkwo - postpartum eclampsia on Mag
+    // -----------------------------------------------------
+    p_rachel_okonkwo: [
+        { panelId: 'misc',  testName: 'Mg level',         value: 6.8,  unit: 'mg/dL', refLow: 1.8, refHigh: 2.4, flag: 'H', collectedH: -1, resultedH: -0.5, notes: 'Therapeutic for eclampsia (4-7 mg/dL); monitor reflexes/RR' },
+        { panelId: 'lfts',  testName: 'AST',              value: 78,   unit: 'U/L',   refLow: 10,  refHigh: 40,  flag: 'H', collectedH: -2, resultedH: -1.5, notes: 'HELLP r/o' },
+        { panelId: 'lfts',  testName: 'ALT',              value: 64,   unit: 'U/L',   refLow: 7,   refHigh: 56,  flag: 'H', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'lfts',  testName: 'LDH',              value: 412,  unit: 'U/L',   refLow: 140, refHigh: 280, flag: 'H', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'cbc',   testName: 'Plt',              value: 88,   unit: 'K/uL',  refLow: 150, refHigh: 400, flag: 'L', collectedH: -2, resultedH: -1.5, notes: 'Thrombocytopenia c/w HELLP - escalate to MFM' },
+        { panelId: 'cbc',   testName: 'Hgb',              value: 10.8, unit: 'g/dL',  refLow: 12.0,refHigh: 16.0,flag: 'L', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'misc',  testName: 'Uric acid',        value: 7.2,  unit: 'mg/dL', refLow: 2.5, refHigh: 6.0, flag: 'H', collectedH: -2, resultedH: -1.5 },
+        { panelId: 'ua',    testName: 'Protein (urine)',  value: '3+', unit: '',      flag: 'H', collectedH: -2, resultedH: -1.5 }
+    ],
+
+    // -----------------------------------------------------
+    // Frank Ostrowski - COPD on O2 wean
+    // -----------------------------------------------------
+    p_frank_ostrowski: [
+        { panelId: 'abg', testName: 'pH',     value: 7.36, unit: '',     refLow: 7.35, refHigh: 7.45, flag: '',  collectedH: -12, resultedH: -11.5, notes: 'Compensated chronic resp acidosis at baseline' },
+        { panelId: 'abg', testName: 'PaCO2',  value: 52,   unit: 'mmHg', refLow: 35,   refHigh: 45,   flag: 'H', collectedH: -12, resultedH: -11.5, notes: 'Chronic CO2 retention - patient baseline' },
+        { panelId: 'abg', testName: 'HCO3',   value: 30,   unit: 'mmol/L',refLow: 22,  refHigh: 26,   flag: 'H', collectedH: -12, resultedH: -11.5 },
+        { panelId: 'abg', testName: 'PaO2',   value: 68,   unit: 'mmHg', refLow: 80,   refHigh: 100,  flag: 'L', collectedH: -12, resultedH: -11.5, notes: 'On 2L NC - appropriate for COPD' },
+        { panelId: 'cbc', testName: 'WBC',    value: 8.6,  unit: 'K/uL', refLow: 4.0,  refHigh: 11.0, flag: '',  collectedH: -12, resultedH: -11.5 },
+        { panelId: 'cbc', testName: 'Hgb',    value: 16.2, unit: 'g/dL', refLow: 13.5, refHigh: 17.5, flag: '',  collectedH: -12, resultedH: -11.5, notes: 'Upper-normal - chronic hypoxemia' }
+    ]
+};
+
+// =========================================================
+// SEED_IMAGING - keyed by patientId.
+// Each entry is an array of imaging studies written to:
+//     emr/imaging/{patientId}/{studyId}
+//
+// Schema:
+//   studyName    - display ('CXR PA/lat', 'CT head w/o contrast', 'ECG 12-lead')
+//   region       - body region
+//   indication   - clinical reason
+//   status       - 'ordered' | 'in-progress' | 'resulted'
+//   impression   - radiologist read / interpreter summary (free text)
+//   orderedH     - hours-from-now ordered (negative)
+//   resultedH    - hours-from-now resulted (negative; may be null if pending)
+//   orderedBy / resultedBy - defaults to 'Provider (seeded)' / 'Radiology (seeded)'
+// =========================================================
+const SEED_IMAGING = {
+    p_priya_kapoor: [
+        { studyName: 'CXR portable',  region: 'Chest', indication: 'Sepsis source eval - r/o PNA',
+          status: 'resulted', orderedH: -3.5, resultedH: -2.5,
+          impression: 'Bibasilar patchy opacities, R > L, c/w multifocal pneumonia. No effusion. No pneumothorax. Heart size normal.' }
+    ],
+    p_miguel_torres: [
+        { studyName: 'ECG 12-lead', region: 'Cardiac', indication: 'Chest pain, EMS - STEMI alert',
+          status: 'resulted', orderedH: -6, resultedH: -5.8,
+          impression: 'Sinus rhythm rate 88. ST elevation 3 mm V2-V4 c/w anterior STEMI. Reciprocal STD inferior leads. Activate cath lab.' },
+        { studyName: 'TTE (echo)', region: 'Cardiac', indication: 'Post-PCI EF + wall-motion eval',
+          status: 'in-progress', orderedH: -2, resultedH: null,
+          impression: 'Pending - scheduled today after cardiology consult.' },
+        { studyName: 'CXR portable', region: 'Chest', indication: 'Post-PCI / line check',
+          status: 'resulted', orderedH: -3, resultedH: -2.7,
+          impression: 'Right IJ central line tip in distal SVC. No pneumothorax. Lungs clear. Heart size normal. ETT not present.' }
+    ],
+    p_dorothy_nguyen: [
+        { studyName: 'CXR portable', region: 'Chest', indication: 'COPD exacerbation - r/o PNA, eval hyperinflation',
+          status: 'resulted', orderedH: -4, resultedH: -3.2,
+          impression: 'Hyperinflation with flattened diaphragms c/w COPD. No focal infiltrate. No effusion. No pneumothorax. Heart size normal.' }
+    ],
+    p_robert_dimaggio: [
+        { studyName: 'CXR portable', region: 'Chest', indication: 'CHF - eval pulmonary edema',
+          status: 'resulted', orderedH: -22, resultedH: -21.5,
+          impression: 'Cardiomegaly. Bilateral interstitial markings, Kerley B lines, small bilateral pleural effusions c/w pulmonary edema. No focal consolidation.' },
+        { studyName: 'TTE (echo)', region: 'Cardiac', indication: 'CHF exacerbation - re-eval EF',
+          status: 'resulted', orderedH: -22, resultedH: -8,
+          impression: 'EF 25-30% (down from 35% prior). Severe LV systolic dysfunction. Moderate MR. Akinetic apex (chronic).' }
+    ],
+    p_leonard_kowalski: [
+        { studyName: 'CT head w/o contrast', region: 'Brain', indication: 'TIA vs CVA r/o; on warfarin r/o ICH',
+          status: 'resulted', orderedH: -1, resultedH: -0.3,
+          impression: 'No acute intracranial hemorrhage. Small hypodensity left MCA territory c/w evolving acute infarct. Old lacunar infarcts in pons. Recommend MRI brain w/ DWI for further characterization.' },
+        { studyName: 'MRI brain w/ DWI', region: 'Brain', indication: 'Confirm acute infarct',
+          status: 'ordered', orderedH: -0.5, resultedH: null,
+          impression: 'Pending - scheduled.' },
+        { studyName: 'Carotid US', region: 'Neck', indication: 'Stroke workup',
+          status: 'ordered', orderedH: -0.5, resultedH: null,
+          impression: 'Pending - scheduled.' }
+    ],
+    p_marcus_webb: [
+        { studyName: 'ECG 12-lead', region: 'Cardiac', indication: 'Atypical chest pain',
+          status: 'resulted', orderedH: -1.5, resultedH: -1.4,
+          impression: 'Sinus rhythm rate 78. No ST changes. No T-wave inversions. No prior available for comparison.' },
+        { studyName: 'CXR PA/lat', region: 'Chest', indication: 'Chest pain - r/o PNA / pneumothorax',
+          status: 'resulted', orderedH: -1.5, resultedH: -1.2,
+          impression: 'Lungs clear. No focal consolidation. No effusion. Heart size normal. Mediastinal contour normal.' }
+    ],
+    p_walter_huang: [
+        { studyName: 'CXR portable', region: 'Chest', indication: 'Recurrent aspiration - eval',
+          status: 'resulted', orderedH: -16, resultedH: -15.5,
+          impression: 'RLL infiltrate c/w aspiration pneumonia. No effusion. Heart size normal.' }
+    ],
+    p_sofia_reyes: [
+        { studyName: 'CT abdomen/pelvis w/ IV contrast', region: 'Abdomen/Pelvis', indication: 'RLQ pain - r/o appendicitis',
+          status: 'resulted', orderedH: -2, resultedH: -1.5,
+          impression: 'Acute appendicitis. Appendix dilated to 12 mm with periappendiceal fat stranding. No perforation. No abscess. Recommend surgical consult.' }
+    ],
+    p_thomas_brandt: [
+        { studyName: 'XR R hip + pelvis', region: 'R hip', indication: 'Mechanical fall, R hip pain',
+          status: 'resulted', orderedH: -2, resultedH: -1.7,
+          impression: 'Displaced intertrochanteric R femur fracture. No other acute fracture. Severe degenerative changes bilateral hips (chronic).' },
+        { studyName: 'CXR PA/lat', region: 'Chest', indication: 'Pre-op clearance',
+          status: 'resulted', orderedH: -2, resultedH: -1.5,
+          impression: 'Mild cardiomegaly, otherwise unremarkable. No acute infiltrate.' }
+    ],
+    p_helen_cho: [
+        { studyName: 'XR R knee', region: 'R knee', indication: 'POD#2 - confirm hardware position',
+          status: 'resulted', orderedH: -36, resultedH: -34,
+          impression: 'TKR hardware in good anatomic alignment. No periprosthetic fracture. Mild post-op soft tissue swelling.' }
+    ],
+    p_denise_abara: [
+        { studyName: 'CXR portable', region: 'Chest', indication: 'POD#3 CABG - line/tube check',
+          status: 'resulted', orderedH: -8, resultedH: -7.5,
+          impression: 'Median sternotomy wires intact. Mediastinal chest tube tip in expected position. No pneumothorax. Mild bibasilar atelectasis (expected post-op).' }
+    ],
+    p_amara_diallo: [
+        { studyName: 'CXR PA/lat', region: 'Chest', indication: 'Asthma exacerbation - r/o PNA',
+          status: 'resulted', orderedH: -1, resultedH: -0.5,
+          impression: 'Hyperinflation. No focal consolidation. No effusion. No pneumothorax.' }
+    ],
+    p_angela_freeman: [
+        { studyName: 'CXR PA/lat', region: 'Chest', indication: 'DKA - r/o source of trigger',
+          status: 'resulted', orderedH: -18, resultedH: -17.2,
+          impression: 'Lungs clear. No focal consolidation. No acute cardiopulmonary process.' }
+    ]
+};
+
+// =========================================================
 // EXPORT
 // =========================================================
 window.EMR_SEED = {
@@ -1578,5 +2024,8 @@ window.EMR_SEED = {
     SEED_ORDERS: SEED_ORDERS,
     SEED_MD_LIST: SEED_MD_LIST,
     findMdByName: findMdByName,
-    pickMdForEncounter: pickMdForEncounter
+    pickMdForEncounter: pickMdForEncounter,
+    LAB_PANELS: LAB_PANELS,
+    SEED_LABS: SEED_LABS,
+    SEED_IMAGING: SEED_IMAGING
 };

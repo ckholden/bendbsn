@@ -989,6 +989,116 @@
             .ord-status-col { flex-direction: row; align-items: center; }
         }
 
+        /* ===========================================================
+           Phase 3C: Labs + Imaging tab
+           =========================================================== */
+        .labs-actions-bar {
+            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+            margin-bottom: 12px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        .labs-critical-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 14px;
+            background: #fee2e2; color: #b91c1c; font-size: 12px; font-weight: 700;
+            border: 1px solid #fca5a5;
+        }
+        [data-theme="dark"] .labs-critical-pill { background: rgba(220,38,38,0.18); color: #fca5a5; border-color: rgba(220,38,38,0.45); }
+
+        .labs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .labs-table th, .labs-table td {
+            padding: 6px 10px; text-align: left;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            vertical-align: top;
+        }
+        .labs-table th {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--clx-text-muted, #718096);
+            background: var(--clx-bg-surface-2, #f5f8fa);
+        }
+        .labs-table tr.lab-row:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
+        .labs-table .lab-test {
+            font-weight: 600; cursor: pointer; color: var(--clx-accent, #0f7490);
+            text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
+        }
+        .labs-table .lab-test:hover { color: var(--clx-accent-strong, #0a5c75); }
+        .labs-table .lab-value { font-weight: 600; min-width: 70px; }
+        .labs-table .lab-range { font-size: 11px; color: var(--clx-text-muted, #718096); }
+        .labs-table .lab-flag { font-weight: 800; font-size: 11px; letter-spacing: 0.04em; }
+        .labs-table .lab-time { font-size: 11px; color: var(--clx-text-muted, #718096); white-space: nowrap; }
+        .labs-table .lab-actions { white-space: nowrap; }
+
+        /* Flag-coded value cell backgrounds */
+        .lab-flag-cell-H, .lab-flag-cell-L { background: #fef9c3 !important; }
+        .lab-flag-cell-HH, .lab-flag-cell-LL {
+            background: #fee2e2 !important; color: #7f1d1d; font-weight: 800;
+        }
+        [data-theme="dark"] .lab-flag-cell-H, [data-theme="dark"] .lab-flag-cell-L {
+            background: rgba(234,179,8,0.18) !important;
+        }
+        [data-theme="dark"] .lab-flag-cell-HH, [data-theme="dark"] .lab-flag-cell-LL {
+            background: rgba(220,38,38,0.22) !important; color: #fecaca;
+        }
+        .lab-note { font-size: 11px; color: var(--clx-text-muted, #718096); font-style: italic; margin-top: 2px; }
+
+        /* Sparkline panel inserted via row expansion */
+        .lab-spark-row td {
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            padding: 12px 14px;
+        }
+        .lab-spark-wrap {
+            display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+        }
+        .lab-spark-svg {
+            background: var(--clx-bg-surface, #fff);
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 4px;
+        }
+        [data-theme="dark"] .lab-spark-svg { background: var(--clx-bg-surface-2, #1a2433); }
+        .lab-spark-meta { font-size: 12px; color: var(--clx-text-secondary, #4a5568); line-height: 1.5; }
+        .lab-spark-meta strong { color: var(--clx-text-primary); }
+
+        /* Imaging section */
+        .img-row {
+            display: flex; gap: 12px; padding: 10px 12px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        .img-row:last-child { border-bottom: none; }
+        .img-row .img-main { flex: 1; min-width: 0; }
+        .img-row .img-head { font-size: 13px; font-weight: 600; color: var(--clx-text-primary); margin-bottom: 2px; }
+        .img-row .img-sub  { font-size: 11px; color: var(--clx-text-muted, #718096); margin-top: 1px; }
+        .img-row .img-impression {
+            font-size: 12px; color: var(--clx-text-secondary, #4a5568);
+            margin-top: 6px; line-height: 1.5; padding: 8px 10px;
+            background: var(--clx-bg-surface-2, #f5f8fa); border-radius: 4px;
+            border-left: 3px solid var(--clx-accent, #0f7490);
+        }
+        .img-status {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+            flex-shrink: 0;
+        }
+        .img-status.ordered     { background: #dbeafe; color: #1e40af; }
+        .img-status.inprogress  { background: #fef3c7; color: #854d0e; }
+        .img-status.resulted    { background: #dcfce7; color: #166534; }
+        [data-theme="dark"] .img-status.ordered    { background: rgba(59,130,246,0.18); color: #93c5fd; }
+        [data-theme="dark"] .img-status.inprogress { background: rgba(234,179,8,0.18); color: #fde68a; }
+        [data-theme="dark"] .img-status.resulted   { background: rgba(34,197,94,0.18); color: #86efac; }
+
+        @media (max-width: 600px) {
+            .labs-table thead { display: none; }
+            .labs-table, .labs-table tbody, .labs-table tr, .labs-table td { display: block; width: 100%; }
+            .labs-table tr.lab-row {
+                border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+                padding: 8px; margin-bottom: 8px; background: var(--clx-bg-surface, #fff);
+            }
+            .labs-table td { padding: 4px 0; border-bottom: none; }
+            .labs-table td::before {
+                content: attr(data-label) ': '; font-weight: 700;
+                color: var(--clx-text-muted); font-size: 10px; text-transform: uppercase;
+            }
+            .img-row { flex-direction: column; }
+        }
+
         /* Phase 3F-lite: Scenario picker */
         .scenario-list { display: flex; flex-direction: column; gap: 8px; }
         .scenario-card {
@@ -1387,6 +1497,7 @@
                     <button class="chart-tab" role="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
                     <button class="chart-tab" role="tab" data-tab="orders" onclick="switchTab('orders')">📋 Orders</button>
                     <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
+                    <button class="chart-tab" role="tab" data-tab="labs" onclick="switchTab('labs')">🧪 Labs</button>
                     <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
                     <button class="chart-tab" role="tab" data-tab="ldas" onclick="switchTab('ldas')">LDAs</button>
                     <button class="chart-tab" role="tab" data-tab="flags" onclick="switchTab('flags')">Flags</button>
@@ -1412,6 +1523,7 @@
                 <div class="tab-panel" id="tab-notes" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-orders" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-mar" role="tabpanel"></div>
+                <div class="tab-panel" id="tab-labs" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-tar" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-ldas" role="tabpanel"></div>
                 <div class="tab-panel" id="tab-flags" role="tabpanel"></div>
@@ -1449,6 +1561,7 @@
             <div class="adm-sub">A few new features have been added to the simulation. Click Continue to load the latest scenario data so you can try them out.</div>
             <div style="background:var(--clx-bg-surface-2);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:13px;">
                 <ul style="margin:0 0 0 18px;line-height:1.65;">
+                    <li><strong>🧪 Labs &amp; Imaging tab</strong> — Real lab results with abnormal-flag colors, critical-value alerts, sparkline trends, and "Copy to Note" for documentation. Imaging studies with radiology impressions at the bottom of the same tab.</li>
                     <li><strong>📋 Provider Orders &amp; CPOE-lite</strong> — Place medication, consult, lab, diet, and other orders with allergy checking and acknowledge workflow.</li>
                     <li><strong>👥 Care Team assignments</strong> — Assign yourself as Primary RN, edit the full care team (RN, CNA, MD, Case Mgr, etc.). Hover any RN initials chip to see the full team.</li>
                     <li><strong>🚩 Pending transfers</strong> — Some patients are now waiting for receiving units to accept them. Practice the bed-management workflow.</li>
@@ -1532,6 +1645,8 @@
     let currentLdas = [];         // per-encounter LDAs for the encounter currently being viewed
     let currentOrders = [];       // per-encounter orders (Phase 3B)
     let allOrdersByEnc = {};      // Phase 3B.2: global listener at emr/orders — {encId: {orderId: order}} for board indicators
+    let currentLabs = [];         // Phase 3C: ALL labs for current patient (filtered by encounter at render time)
+    let currentImaging = [];      // Phase 3C: ALL imaging studies for current patient (filtered by encounter at render time)
 
     let activeNoteType = 'soap';
     let activeNoteRole = 'RN';    // Phase 3A.5b — default role for new notes
@@ -1675,7 +1790,12 @@
             'emr/mar': null,
             'emr/tar': null,
             'emr/transfers': null,
-            'emr/ldas': null
+            'emr/ldas': null,
+            // Phase 3B / 3C: orders + labs + imaging are encounter-keyed, so a
+            // re-seed must wipe them or stale rows from prior seed remain.
+            'emr/orders': null,
+            'emr/labs': null,
+            'emr/imaging': null
         };
         database.ref().update(wipeUpdates).then(function () {
             status.textContent = 'Seeding Phase 2 data…';
@@ -1739,6 +1859,12 @@
             //   - Treatment orders auto-generated from TAR seed items
             //   - Each MAR/TAR item gets an orderId backref tying it to the originating order
             writeSeededOrders(updates, p.id, encId, chart, enc.admissionDate, seed);
+
+            // Phase 3C: Labs + Imaging for current encounter
+            //   Lab/imaging timestamps are computed off enc.admissionDate so they line up with
+            //   the rest of the encounter timeline (vitals, notes, orders).
+            writeSeededLabs(updates, p.id, encId, enc.admissionDate, seed);
+            writeSeededImaging(updates, p.id, encId, enc.admissionDate, seed);
 
             // LDAs (lines/drains/airways) for current encounter
             const ldaList = (seed.SEED_LDAS || {})[p.id] || [];
@@ -1897,6 +2023,63 @@
         return out;
     }
 
+    // Phase 3C: Write seeded lab results.
+    // collectedH / resultedH are negative-hour offsets from "now" so the timeline
+    // looks fresh on each migration regardless of when the seed was authored.
+    function writeSeededLabs(updates, patientId, encounterId, baseTs, seed) {
+        const labsList = (seed.SEED_LABS || {})[patientId] || [];
+        if (!labsList.length) return;
+        const now = Date.now();
+        labsList.forEach(function (lab) {
+            const labKey = database.ref('emr/labs/' + patientId).push().key;
+            const collectedAt = now + ((lab.collectedH != null ? lab.collectedH : -1) * 3600000);
+            const resultedAt  = now + ((lab.resultedH  != null ? lab.resultedH  : -0.5) * 3600000);
+            updates['emr/labs/' + patientId + '/' + labKey] = sanitizeForFirebase({
+                encounterId: encounterId,
+                patientId: patientId,
+                panelId: lab.panelId || 'misc',
+                testName: lab.testName || '—',
+                value: (lab.value != null ? lab.value : ''),
+                unit: lab.unit || '',
+                refLow: (lab.refLow != null ? lab.refLow : null),
+                refHigh: (lab.refHigh != null ? lab.refHigh : null),
+                flag: lab.flag || '',
+                collectedAt: collectedAt,
+                resultedAt: resultedAt,
+                collectedBy: lab.collectedBy || 'Lab (seeded)',
+                resultedBy: lab.resultedBy || 'Lab (seeded)',
+                notes: lab.notes || '',
+                orderId: lab.orderId || null
+            });
+        });
+    }
+
+    // Phase 3C: Write seeded imaging studies.
+    function writeSeededImaging(updates, patientId, encounterId, baseTs, seed) {
+        const imgList = (seed.SEED_IMAGING || {})[patientId] || [];
+        if (!imgList.length) return;
+        const now = Date.now();
+        imgList.forEach(function (study) {
+            const studyKey = database.ref('emr/imaging/' + patientId).push().key;
+            const orderedAt  = now + ((study.orderedH  != null ? study.orderedH  : -1) * 3600000);
+            const resultedAt = (study.resultedH != null) ? (now + study.resultedH * 3600000) : null;
+            updates['emr/imaging/' + patientId + '/' + studyKey] = sanitizeForFirebase({
+                encounterId: encounterId,
+                patientId: patientId,
+                studyName: study.studyName || '—',
+                region: study.region || '',
+                indication: study.indication || '',
+                status: study.status || 'ordered',
+                impression: study.impression || '',
+                orderedAt: orderedAt,
+                resultedAt: resultedAt,
+                orderedBy: study.orderedBy || 'Provider (seeded)',
+                resultedBy: study.resultedBy || (resultedAt ? 'Radiology (seeded)' : null),
+                orderId: study.orderId || null
+            });
+        });
+    }
+
     // Phase 3B: Write the non-medication seeded orders (consult/diet/activity/labs/etc)
     // from SEED_ORDERS dict for one patient's encounter.
     function writeSeededOrders(updates, patientId, encounterId, chart, baseTs, seed) {
@@ -2013,6 +2196,15 @@
             { ref: database.ref('emr/tar/' + pid), cb: function (snap) {
                 currentTar = snapshotToSortedArray(snap, 'scheduledTime', 'asc');
                 if (currentTab === 'tar') renderTarTab();
+            }},
+            // Phase 3C: Labs + Imaging listeners — patient-scoped (filtered to encounter at render time)
+            { ref: database.ref('emr/labs/' + pid), cb: function (snap) {
+                currentLabs = snapshotToSortedArray(snap, 'collectedAt', 'desc');
+                if (currentTab === 'labs') renderLabsTab();
+            }},
+            { ref: database.ref('emr/imaging/' + pid), cb: function (snap) {
+                currentImaging = snapshotToSortedArray(snap, 'orderedAt', 'desc');
+                if (currentTab === 'labs') renderLabsTab();
             }}
         ];
         refs.forEach(function (r) {
@@ -2062,6 +2254,7 @@
         if (ldaUnsubscriber) { try { ldaUnsubscriber(); } catch (e) {} ldaUnsubscriber = null; }
         if (ordersUnsubscriber) { try { ordersUnsubscriber(); } catch (e) {} ordersUnsubscriber = null; }
         currentVitals = []; currentNotes = []; currentMar = []; currentTar = []; currentLdas = []; currentOrders = [];
+        currentLabs = []; currentImaging = [];
     }
 
     function snapshotToSortedArray(snap, sortKey, dir) {
@@ -2692,6 +2885,7 @@
             case 'notes':        renderNotesTab(); break;
             case 'orders':       renderOrdersTab(); break;
             case 'mar':          renderMarTab(); break;
+            case 'labs':         renderLabsTab(); break;
             case 'tar':          renderTarTab(); break;
             case 'ldas':         renderLdasTab(); break;
             case 'flags':        renderFlagsTab(); break;
@@ -3482,6 +3676,562 @@
                 '</table></div></div>' +
             '</div>';
     }
+
+    // ===========================================================
+    // [1545] PHASE 3C — LABS + IMAGING TAB
+    // ===========================================================
+    // Defaults if seed-data.js wasn't reloaded with the new LAB_PANELS export.
+    const LAB_PANELS_FALLBACK = [
+        { id: 'cbc',      label: 'CBC w/ diff' },
+        { id: 'bmp',      label: 'BMP / Chemistry' },
+        { id: 'lfts',     label: 'LFTs' },
+        { id: 'coags',    label: 'Coags' },
+        { id: 'cardiac',  label: 'Cardiac markers' },
+        { id: 'abg',      label: 'ABG' },
+        { id: 'ua',       label: 'UA / Urine' },
+        { id: 'cultures', label: 'Cultures' },
+        { id: 'misc',     label: 'Other / Misc' }
+    ];
+    function getLabPanels() {
+        return (window.EMR_SEED && window.EMR_SEED.LAB_PANELS) || LAB_PANELS_FALLBACK;
+    }
+    function panelMeta(id) {
+        return getLabPanels().find(function (p) { return p.id === id; }) ||
+            { id: id, label: (id || 'Other').toUpperCase() };
+    }
+
+    // Track which (panelId|testName) sparkline rows are expanded so re-renders don't collapse them.
+    const expandedSparklines = {};
+
+    // Map flag → human label (for screen readers / tooltips)
+    function flagLabel(f) {
+        return ({ H: 'High', L: 'Low', HH: 'Critical High', LL: 'Critical Low' })[f] || '';
+    }
+
+    function renderLabsTab() {
+        if (!currentPatient) return;
+        const el = document.getElementById('tab-labs');
+        const ro = chartReadOnly;
+        const labs = filterToActiveEncounter(currentLabs);
+        const studies = filterToActiveEncounter(currentImaging);
+
+        // Critical-value count for the alert pill at top
+        const criticalCount = labs.filter(function (l) { return l.flag === 'HH' || l.flag === 'LL'; }).length;
+
+        let html = '';
+        // Action bar
+        html += '<div class="labs-actions-bar">' +
+            '<span style="font-size:12px;color:var(--clx-text-muted);">' +
+                labs.length + ' lab result' + (labs.length === 1 ? '' : 's') +
+                ' · ' + studies.length + ' imaging stud' + (studies.length === 1 ? 'y' : 'ies') +
+            '</span>' +
+            (criticalCount > 0
+                ? '<span class="labs-critical-pill">⚠ ' + criticalCount + ' critical value' + (criticalCount === 1 ? '' : 's') + '</span>'
+                : '') +
+            (ro ? '' : '<span style="margin-left:auto;font-size:11px;color:var(--clx-text-muted);">' +
+                'Tip: click a test name to see trend. Use <strong>Copy</strong> to insert into your active note.</span>') +
+        '</div>';
+
+        if (!labs.length && !studies.length) {
+            html += '<div class="emr-panel"><div class="emr-panel-bd"><div class="vitals-empty">' +
+                'No labs or imaging results for this encounter.' +
+                (ro ? '' : ' Place a lab/imaging order from the Orders tab to start.') +
+                '</div></div></div>';
+            el.innerHTML = html;
+            return;
+        }
+
+        // Group labs by panel
+        const byPanel = {};
+        labs.forEach(function (l) {
+            const pid = l.panelId || 'misc';
+            if (!byPanel[pid]) byPanel[pid] = [];
+            byPanel[pid].push(l);
+        });
+
+        // Sort within each panel: testName asc, then collectedAt desc.
+        Object.keys(byPanel).forEach(function (pid) {
+            byPanel[pid].sort(function (a, b) {
+                if (a.testName !== b.testName) return (a.testName || '').localeCompare(b.testName || '');
+                return (b.collectedAt || 0) - (a.collectedAt || 0);
+            });
+        });
+
+        // Render each panel that has results, in canonical order
+        getLabPanels().forEach(function (pmeta) {
+            const list = byPanel[pmeta.id];
+            if (!list || !list.length) return;
+            // For each test name within the panel, only show the MOST RECENT row in the table —
+            // older results are surfaced via the sparkline expansion. Keeps the view scannable.
+            const seen = {};
+            const display = [];
+            list.forEach(function (l) {
+                const k = l.testName || '';
+                if (seen[k]) return;
+                seen[k] = true;
+                display.push(l);
+            });
+
+            html += '<div class="emr-panel">' +
+                '<div class="emr-panel-hd">' +
+                    '<span>🧪 ' + esc(pmeta.label) + ' (' + display.length + ')</span>' +
+                    '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">latest result; click test name for trend</span>' +
+                '</div>' +
+                '<div class="emr-panel-bd" style="padding:0;">' +
+                    '<div class="mar-table-wrap"><table class="labs-table">' +
+                        '<thead><tr>' +
+                            '<th>Test</th><th>Value</th><th>Range</th><th>Flag</th>' +
+                            '<th>Collected</th><th>Resulted</th><th></th>' +
+                        '</tr></thead>' +
+                        '<tbody>' +
+                            display.map(function (l) { return renderLabRow(l, pmeta.id, ro); }).join('') +
+                        '</tbody>' +
+                    '</table></div>' +
+                '</div>' +
+            '</div>';
+        });
+
+        // Imaging section at the bottom
+        if (studies.length) {
+            // Sort imaging: resulted first (newest first), then in-progress, then ordered
+            const ord = { 'resulted': 0, 'in-progress': 1, 'ordered': 2 };
+            const sortedStudies = studies.slice().sort(function (a, b) {
+                const sa = ord[a.status] != null ? ord[a.status] : 9;
+                const sb = ord[b.status] != null ? ord[b.status] : 9;
+                if (sa !== sb) return sa - sb;
+                return (b.orderedAt || 0) - (a.orderedAt || 0);
+            });
+            html += '<div class="emr-panel">' +
+                '<div class="emr-panel-hd">' +
+                    '<span>🩻 Imaging (' + studies.length + ')</span>' +
+                    '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">studies + radiology impressions</span>' +
+                '</div>' +
+                '<div class="emr-panel-bd" style="padding:0;">' +
+                    sortedStudies.map(renderImagingRow).join('') +
+                '</div>' +
+            '</div>';
+        }
+
+        el.innerHTML = html;
+    }
+
+    function renderLabRow(l, panelId, ro) {
+        const flag = l.flag || '';
+        const flagCellClass = flag ? ' lab-flag-cell-' + flag : '';
+        const range = (l.refLow != null && l.refHigh != null)
+            ? (l.refLow + '–' + l.refHigh + (l.unit ? ' ' + l.unit : ''))
+            : '—';
+        const trendKey = panelId + '|' + (l.testName || '');
+        const noteHtml = l.notes ? '<div class="lab-note">' + esc(l.notes) + '</div>' : '';
+        const copyBtn = ro ? '' :
+            '<button class="btn sm" title="Copy to active note" onclick="copyLabToNote(\'' + esc(l._key) + '\')">Copy</button>';
+        const row =
+            '<tr class="lab-row" data-trend-key="' + esc(trendKey) + '">' +
+                '<td data-label="Test"><span class="lab-test" onclick="toggleLabSparkline(\'' + esc(trendKey) + '\')">' + esc(l.testName || '—') + '</span></td>' +
+                '<td data-label="Value" class="lab-value' + flagCellClass + '">' + esc(String(l.value != null ? l.value : '—')) + (l.unit ? ' ' + esc(l.unit) : '') + noteHtml + '</td>' +
+                '<td data-label="Range" class="lab-range">' + esc(range) + '</td>' +
+                '<td data-label="Flag" class="lab-flag" title="' + esc(flagLabel(flag)) + '">' + esc(flag) + '</td>' +
+                '<td data-label="Collected" class="lab-time">' + esc(fmtTimeShort(l.collectedAt)) + '</td>' +
+                '<td data-label="Resulted" class="lab-time">' + esc(fmtTimeShort(l.resultedAt)) + '</td>' +
+                '<td data-label="Action" class="lab-actions">' + copyBtn + '</td>' +
+            '</tr>';
+        // If this trend is currently expanded, append the sparkline row
+        if (expandedSparklines[trendKey]) {
+            return row + renderSparklineRow(panelId, l.testName);
+        }
+        return row;
+    }
+
+    function renderImagingRow(s) {
+        const statusKey = (s.status || 'ordered').replace(/[^a-z]/g, '');
+        const orderedTxt = s.orderedAt ? fmtTime(s.orderedAt) : '—';
+        const resultedTxt = s.resultedAt ? fmtTime(s.resultedAt) : 'Pending';
+        const impression = s.impression
+            ? '<div class="img-impression"><strong>Impression:</strong> ' + esc(s.impression) + '</div>'
+            : (s.status !== 'resulted'
+                ? '<div class="img-impression" style="border-left-color:#94a3b8;color:var(--clx-text-muted);"><em>Result pending.</em></div>'
+                : '');
+        return '<div class="img-row">' +
+            '<div class="img-main">' +
+                '<div class="img-head">' + esc(s.studyName || '—') +
+                    (s.region ? ' <span style="font-size:11px;color:var(--clx-text-muted);font-weight:400;">· ' + esc(s.region) + '</span>' : '') +
+                '</div>' +
+                (s.indication ? '<div class="img-sub">Indication: ' + esc(s.indication) + '</div>' : '') +
+                '<div class="img-sub">Ordered ' + esc(orderedTxt) + ' by ' + esc(s.orderedBy || '—') +
+                    ' · Resulted ' + esc(resultedTxt) +
+                    (s.resultedBy ? ' by ' + esc(s.resultedBy) : '') +
+                '</div>' +
+                impression +
+            '</div>' +
+            '<span class="img-status ' + statusKey + '">' + esc((s.status || 'ordered').toUpperCase()) + '</span>' +
+        '</div>';
+    }
+
+    // Build a tiny SVG sparkline of all values for (panelId, testName) in the active encounter.
+    function renderSparklineRow(panelId, testName) {
+        const labs = filterToActiveEncounter(currentLabs).filter(function (l) {
+            return (l.panelId || 'misc') === panelId && l.testName === testName;
+        });
+        // Sort oldest -> newest for the line
+        labs.sort(function (a, b) { return (a.collectedAt || 0) - (b.collectedAt || 0); });
+        if (!labs.length) return '';
+        // Filter to numeric-only values for the chart; cultures/etc. show "trend not plottable"
+        const numericLabs = labs.filter(function (l) {
+            const v = parseFloat(l.value);
+            return !isNaN(v) && isFinite(v);
+        });
+        const W = 220, H = 50, PAD_X = 10, PAD_Y = 10;
+        let svg;
+        if (numericLabs.length < 1) {
+            svg = '<svg class="lab-spark-svg" width="' + W + '" height="' + H + '"><text x="10" y="28" font-size="11" fill="#9ca3af">No numeric trend</text></svg>';
+        } else {
+            const values = numericLabs.map(function (l) { return parseFloat(l.value); });
+            const refLow = numericLabs[0].refLow;
+            const refHigh = numericLabs[0].refHigh;
+            const ymin = Math.min.apply(null, values.concat(refLow != null ? [refLow] : []));
+            const ymax = Math.max.apply(null, values.concat(refHigh != null ? [refHigh] : []));
+            const yspan = (ymax - ymin) || 1;
+            const xstep = numericLabs.length > 1 ? (W - 2 * PAD_X) / (numericLabs.length - 1) : 0;
+            function yPx(v) {
+                return PAD_Y + (H - 2 * PAD_Y) * (1 - (v - ymin) / yspan);
+            }
+            // Reference-range shaded band (if available)
+            let bandRect = '';
+            if (refLow != null && refHigh != null) {
+                const yHigh = yPx(refHigh), yLow = yPx(refLow);
+                bandRect = '<rect x="' + PAD_X + '" y="' + Math.min(yHigh, yLow) +
+                    '" width="' + (W - 2 * PAD_X) + '" height="' + Math.abs(yLow - yHigh) +
+                    '" fill="#dcfce7" opacity="0.5"/>';
+            }
+            // Polyline of values
+            const points = numericLabs.map(function (l, i) {
+                return (PAD_X + i * xstep) + ',' + yPx(parseFloat(l.value));
+            }).join(' ');
+            const polyline = numericLabs.length > 1
+                ? '<polyline fill="none" stroke="#0f7490" stroke-width="2" points="' + points + '"/>'
+                : '';
+            // Dots, color-coded by flag
+            const dots = numericLabs.map(function (l, i) {
+                const cx = PAD_X + i * xstep, cy = yPx(parseFloat(l.value));
+                const f = l.flag || '';
+                const fill = (f === 'HH' || f === 'LL') ? '#dc2626'
+                          : (f === 'H' || f === 'L') ? '#ca8a04'
+                          : '#0f7490';
+                return '<circle cx="' + cx + '" cy="' + cy + '" r="3.5" fill="' + fill + '"/>';
+            }).join('');
+            svg = '<svg class="lab-spark-svg" width="' + W + '" height="' + H + '">' +
+                bandRect + polyline + dots + '</svg>';
+        }
+        // Side panel: min/max + most-recent value summary
+        const mostRecent = labs[labs.length - 1];
+        const mostRecentVal = String(mostRecent.value != null ? mostRecent.value : '—') +
+            (mostRecent.unit ? ' ' + mostRecent.unit : '') + (mostRecent.flag ? ' ' + mostRecent.flag : '');
+        const meta =
+            '<div class="lab-spark-meta">' +
+                '<div><strong>' + esc(testName) + '</strong> — ' + labs.length + ' result' + (labs.length === 1 ? '' : 's') + ' this encounter</div>' +
+                '<div>Most recent: <strong>' + esc(mostRecentVal) + '</strong> @ ' + esc(fmtTimeShort(mostRecent.collectedAt)) + '</div>' +
+                (numericLabs.length > 1
+                    ? '<div>Range across encounter: ' +
+                        Math.min.apply(null, numericLabs.map(function (l) { return parseFloat(l.value); })) + ' – ' +
+                        Math.max.apply(null, numericLabs.map(function (l) { return parseFloat(l.value); })) +
+                      '</div>'
+                    : '') +
+            '</div>';
+        return '<tr class="lab-spark-row"><td colspan="7"><div class="lab-spark-wrap">' + svg + meta + '</div></td></tr>';
+    }
+
+    // Toggle expansion of the inline sparkline row beneath a test
+    window.toggleLabSparkline = function (trendKey) {
+        if (expandedSparklines[trendKey]) delete expandedSparklines[trendKey];
+        else expandedSparklines[trendKey] = true;
+        renderLabsTab();
+    };
+
+    // Copy a single lab line into the active note editor.
+    // Format: "WBC 19.3 H (ref 4.0–11.0 K/uL) collected 0530"
+    window.copyLabToNote = function (labKey) {
+        const l = currentLabs.find(function (x) { return x._key === labKey; });
+        if (!l) { showToast('Lab not found.', 'error'); return; }
+        if (!lastActiveTextarea) {
+            // Auto-jump to Notes tab so the user has a textarea to land in.
+            switchTab('notes');
+            setTimeout(function () {
+                const ta = document.querySelector('#noteEditorArea textarea');
+                if (ta) { ta.focus(); lastActiveTextarea = ta; doCopyLab(l); }
+                else showToast('Click in a note field first, then re-click Copy.', 'warning', 5000);
+            }, 100);
+            return;
+        }
+        doCopyLab(l);
+    };
+    function doCopyLab(l) {
+        const flagBit = l.flag ? ' ' + l.flag : '';
+        const range = (l.refLow != null && l.refHigh != null)
+            ? ' (ref ' + l.refLow + '–' + l.refHigh + (l.unit ? ' ' + l.unit : '') + ')'
+            : '';
+        const valBit = String(l.value != null ? l.value : '—') + (l.unit ? ' ' + l.unit : '');
+        const time = fmtTimeShort(l.collectedAt);
+        const text = (l.testName || 'Lab') + ' ' + valBit + flagBit + range + ' collected ' + time + '. ';
+        insertAtCursor(text);
+        showToast('Copied to note.', 'success', 2000);
+    }
+
+    // ===========================================================
+    // Phase 3C: "Enter Results" modal
+    // Triggered from Orders tab when a lab order needs simulated results entered.
+    // ===========================================================
+    // Try to pre-populate test names by parsing the order's testName field
+    // (e.g., "CBC, BMP, Troponin" -> three rows). Falls back to a free-form row.
+    function expandLabOrderToTests(order) {
+        if (!order) return [];
+        const raw = (order.testName || order.orderText || '').toString();
+        if (!raw.trim()) return [{ panelId: 'misc', testName: '' }];
+        const parts = raw.split(/[,;]| and /i).map(function (s) { return s.trim(); }).filter(Boolean);
+        // Map common panel shorthands to a default panelId
+        const panelHints = {
+            'cbc': 'cbc', 'cbc w/ diff': 'cbc',
+            'bmp': 'bmp', 'cmp': 'bmp', 'chem 7': 'bmp', 'electrolytes': 'bmp', 'lytes': 'bmp',
+            'lfts': 'lfts', 'liver panel': 'lfts',
+            'pt': 'coags', 'ptt': 'coags', 'aptt': 'coags', 'inr': 'coags', 'coags': 'coags',
+            'troponin': 'cardiac', 'trop': 'cardiac', 'bnp': 'cardiac', 'ck-mb': 'cardiac',
+            'abg': 'abg',
+            'ua': 'ua', 'urine': 'ua',
+            'blood culture': 'cultures', 'blood cultures': 'cultures', 'urine culture': 'cultures',
+            'lactate': 'misc', 'procalcitonin': 'misc'
+        };
+        return parts.map(function (p) {
+            const lower = p.toLowerCase();
+            const matched = Object.keys(panelHints).find(function (k) { return lower.indexOf(k) !== -1; });
+            return { panelId: matched ? panelHints[matched] : 'misc', testName: p };
+        });
+    }
+
+    // Reusable test-name catalog by panel for the Enter Results dropdowns
+    const COMMON_TESTS_BY_PANEL = {
+        cbc:      ['WBC', 'Bands', 'Hgb', 'Hct', 'Plt', 'MCV', 'Neut %', 'Lymph %'],
+        bmp:      ['Na', 'K', 'Cl', 'CO2', 'BUN', 'Creatinine', 'Glucose', 'Ca', 'Mg', 'Anion gap'],
+        lfts:     ['AST', 'ALT', 'Alk Phos', 'Total bili', 'Direct bili', 'Albumin', 'Total protein'],
+        coags:    ['INR', 'PT', 'PTT', 'aPTT', 'Fibrinogen', 'D-dimer'],
+        cardiac:  ['Troponin I', 'Troponin T', 'CK-MB', 'BNP', 'NT-proBNP'],
+        abg:      ['pH', 'PaCO2', 'PaO2', 'HCO3', 'SaO2', 'Base excess'],
+        ua:       ['Color', 'Specific gravity', 'pH', 'Protein (urine)', 'Glucose (urine)', 'Ketones', 'Blood', 'Leukocyte esterase', 'Nitrites', 'WBC (urine)', 'RBC (urine)', 'Bacteria'],
+        cultures: ['Blood culture', 'Blood culture x 2', 'Urine culture', 'Sputum culture', 'Wound culture', 'CSF culture'],
+        misc:     ['Lactate', 'Procalcitonin', 'HbA1c', 'LDL', 'Lipase', 'Amylase', 'Beta-hydroxybutyrate', 'Mg level', 'Uric acid']
+    };
+
+    window.openEnterResultsModal = function (orderId) {
+        if (!currentPatientId || chartReadOnly) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) { showToast('No active encounter.', 'error'); return; }
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) { showToast('Order not found.', 'error'); return; }
+        if (order.orderType !== 'lab' && order.orderType !== 'imaging') {
+            showToast('Enter Results only applies to lab and imaging orders.', 'warning');
+            return;
+        }
+        if (order.orderType === 'imaging') return openEnterImagingResultsModal(order);
+
+        const tests = expandLabOrderToTests(order);
+        // Build a row per test
+        const rowsHtml = tests.map(function (t, i) {
+            const panelOpts = getLabPanels().map(function (p) {
+                return '<option value="' + p.id + '"' + (p.id === t.panelId ? ' selected' : '') + '>' + esc(p.label) + '</option>';
+            }).join('');
+            const testOpts = '<option value="">— pick or type —</option>' +
+                (COMMON_TESTS_BY_PANEL[t.panelId] || []).map(function (n) {
+                    return '<option' + (n === t.testName ? ' selected' : '') + '>' + esc(n) + '</option>';
+                }).join('');
+            return '<div class="ff-result-row" data-row-idx="' + i + '" style="display:grid;grid-template-columns:130px 1fr 90px 80px 90px;gap:6px;align-items:end;padding:8px;border:1px solid var(--clx-border);border-radius:6px;margin-bottom:6px;background:var(--clx-bg-surface-2);">' +
+                '<div class="ff-field"><label>Panel</label><select data-r="panel" onchange="onResultPanelChange(' + i + ')">' + panelOpts + '</select></div>' +
+                '<div class="ff-field"><label>Test name</label><input data-r="name" value="' + esc(t.testName || '') + '" placeholder="e.g., WBC" list="result_test_list_' + i + '"><datalist id="result_test_list_' + i + '">' + testOpts + '</datalist></div>' +
+                '<div class="ff-field"><label>Value</label><input data-r="value" placeholder="e.g., 12.4"></div>' +
+                '<div class="ff-field"><label>Unit</label><input data-r="unit" placeholder="K/uL"></div>' +
+                '<div class="ff-field"><label>Flag</label><select data-r="flag"><option value="">—</option><option>L</option><option>H</option><option>LL</option><option>HH</option></select></div>' +
+            '</div>';
+        }).join('');
+
+        const orderSummary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        const body =
+            '<div class="adm-info-block"><span class="lbl">Order</span><span class="val">' + esc(orderSummary) + '</span></div>' +
+            '<p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:8px;">' +
+                'Enter simulated result values. Reference ranges + critical thresholds are not auto-applied (this is a teaching tool — pick the flag yourself based on the value). ' +
+                'On submit, the order will be marked <strong>completed</strong>.' +
+            '</p>' +
+            '<div id="enterResultsRows">' + rowsHtml + '</div>' +
+            '<div style="margin-top:6px;"><button class="btn sm" onclick="addResultRow()">+ Add another test</button></div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="submitEnteredResults(\'' + esc(orderId) + '\')">Save Results &amp; Complete Order</button>' +
+            '</div>';
+        openFlowModal('Enter Lab Results — ' + (currentPatient ? currentPatient.name : ''), body);
+    };
+
+    window.onResultPanelChange = function (idx) {
+        const row = document.querySelector('.ff-result-row[data-row-idx="' + idx + '"]');
+        if (!row) return;
+        const panel = row.querySelector('[data-r="panel"]').value;
+        const list = row.querySelector('datalist');
+        if (list) {
+            list.innerHTML = '<option value="">— pick or type —</option>' +
+                (COMMON_TESTS_BY_PANEL[panel] || []).map(function (n) {
+                    return '<option>' + esc(n) + '</option>';
+                }).join('');
+        }
+    };
+
+    window.addResultRow = function () {
+        const wrap = document.getElementById('enterResultsRows');
+        if (!wrap) return;
+        const idx = wrap.children.length;
+        const panelOpts = getLabPanels().map(function (p) {
+            return '<option value="' + p.id + '"' + (p.id === 'misc' ? ' selected' : '') + '>' + esc(p.label) + '</option>';
+        }).join('');
+        const testOpts = (COMMON_TESTS_BY_PANEL.misc || []).map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('');
+        const div = document.createElement('div');
+        div.className = 'ff-result-row';
+        div.dataset.rowIdx = idx;
+        div.style.cssText = 'display:grid;grid-template-columns:130px 1fr 90px 80px 90px;gap:6px;align-items:end;padding:8px;border:1px solid var(--clx-border);border-radius:6px;margin-bottom:6px;background:var(--clx-bg-surface-2);';
+        div.innerHTML =
+            '<div class="ff-field"><label>Panel</label><select data-r="panel" onchange="onResultPanelChange(' + idx + ')">' + panelOpts + '</select></div>' +
+            '<div class="ff-field"><label>Test name</label><input data-r="name" placeholder="e.g., WBC" list="result_test_list_' + idx + '"><datalist id="result_test_list_' + idx + '">' + testOpts + '</datalist></div>' +
+            '<div class="ff-field"><label>Value</label><input data-r="value" placeholder="e.g., 12.4"></div>' +
+            '<div class="ff-field"><label>Unit</label><input data-r="unit" placeholder="K/uL"></div>' +
+            '<div class="ff-field"><label>Flag</label><select data-r="flag"><option value="">—</option><option>L</option><option>H</option><option>LL</option><option>HH</option></select></div>';
+        wrap.appendChild(div);
+    };
+
+    window.submitEnteredResults = function (orderId) {
+        if (!currentPatientId) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) return;
+        const rows = document.querySelectorAll('.ff-result-row');
+        const now = Date.now();
+        const updates = {};
+        let written = 0;
+        rows.forEach(function (row) {
+            const panel = row.querySelector('[data-r="panel"]').value || 'misc';
+            const name  = (row.querySelector('[data-r="name"]').value || '').trim();
+            const value = (row.querySelector('[data-r="value"]').value || '').trim();
+            const unit  = (row.querySelector('[data-r="unit"]').value || '').trim();
+            const flag  = (row.querySelector('[data-r="flag"]').value || '').trim();
+            if (!name || !value) return;
+            const labKey = database.ref('emr/labs/' + currentPatientId).push().key;
+            // Try to coerce numeric values; keep as string otherwise (cultures, qualitative).
+            const numVal = parseFloat(value);
+            const finalVal = (!isNaN(numVal) && isFinite(numVal) && String(numVal) === value.replace(/^\+/, '')) ? numVal : value;
+            updates['emr/labs/' + currentPatientId + '/' + labKey] = sanitizeForFirebase({
+                encounterId: encId,
+                patientId: currentPatientId,
+                panelId: panel,
+                testName: name,
+                value: finalVal,
+                unit: unit,
+                refLow: null,
+                refHigh: null,
+                flag: flag,
+                collectedAt: order.placedAt || now,
+                resultedAt: now,
+                collectedBy: 'Lab',
+                resultedBy: currentUserName || 'Lab',
+                notes: '',
+                orderId: orderId
+            });
+            written++;
+        });
+        if (!written) {
+            showToast('No complete result rows to save (need at least Test name + Value).', 'warning');
+            return;
+        }
+        // Mark the order as completed
+        updates['emr/orders/' + encId + '/' + orderId + '/status'] = 'completed';
+        updates['emr/orders/' + encId + '/' + orderId + '/completedBy'] = currentUserName;
+        updates['emr/orders/' + encId + '/' + orderId + '/completedAt'] = now;
+        // Audit note
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        const summary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160);
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: encId, type: 'chart-edit', authorRole: 'RN',
+            body: 'Lab results entered (' + written + ' value' + (written === 1 ? '' : 's') + '): ' + summary,
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Saved ' + written + ' result' + (written === 1 ? '' : 's') + '. Order marked complete.', 'success');
+            closeFlowModal();
+            // Auto-switch to Labs tab so the user immediately sees their work
+            switchTab('labs');
+        }).catch(function (err) {
+            showToast('Save failed: ' + (err.message || err), 'error');
+        });
+    };
+
+    // Imaging variant — single text field for impression
+    window.openEnterImagingResultsModal = function (order) {
+        if (!order) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const orderSummary = orderRowSummary(order).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        const body =
+            '<div class="adm-info-block"><span class="lbl">Order</span><span class="val">' + esc(orderSummary) + '</span></div>' +
+            '<div class="flow-form-grid">' +
+                '<div class="ff-field full-row"><label>Study name (auto-filled, edit if needed)</label><input id="img_studyname" value="' + esc(order.testName || order.orderText || '') + '"></div>' +
+                '<div class="ff-field"><label>Region</label><input id="img_region" placeholder="e.g., Chest"></div>' +
+                '<div class="ff-field"><label>Status</label><select id="img_status"><option value="resulted">Resulted</option><option value="in-progress">In progress</option></select></div>' +
+                '<div class="ff-field full-row"><label>Impression (radiologist read)</label><textarea id="img_impression" rows="4" placeholder="e.g., No acute intracranial hemorrhage. Small left MCA hypodensity c/w evolving infarct."></textarea></div>' +
+            '</div>' +
+            '<div class="adm-buttons">' +
+                '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
+                '<button class="btn primary" onclick="submitEnteredImaging(\'' + esc(order._key) + '\')">Save &amp; Complete Order</button>' +
+            '</div>';
+        openFlowModal('Enter Imaging Result — ' + (currentPatient ? currentPatient.name : ''), body);
+    };
+
+    window.submitEnteredImaging = function (orderId) {
+        if (!currentPatientId) return;
+        const encId = activeEncounterIdForView();
+        if (!encId) return;
+        const order = currentOrders.find(function (o) { return o._key === orderId; });
+        if (!order) return;
+        const studyName  = (document.getElementById('img_studyname').value || '').trim();
+        const region     = (document.getElementById('img_region').value || '').trim();
+        const status     = (document.getElementById('img_status').value || 'resulted').trim();
+        const impression = (document.getElementById('img_impression').value || '').trim();
+        if (!studyName) { showToast('Study name required.', 'warning'); return; }
+        const now = Date.now();
+        const updates = {};
+        const studyKey = database.ref('emr/imaging/' + currentPatientId).push().key;
+        updates['emr/imaging/' + currentPatientId + '/' + studyKey] = sanitizeForFirebase({
+            encounterId: encId,
+            patientId: currentPatientId,
+            studyName: studyName,
+            region: region,
+            indication: '',
+            status: status,
+            impression: impression,
+            orderedAt: order.placedAt || now,
+            resultedAt: status === 'resulted' ? now : null,
+            orderedBy: order.placedBy || 'Provider',
+            resultedBy: status === 'resulted' ? (currentUserName || 'Radiology') : null,
+            orderId: orderId
+        });
+        if (status === 'resulted') {
+            updates['emr/orders/' + encId + '/' + orderId + '/status'] = 'completed';
+            updates['emr/orders/' + encId + '/' + orderId + '/completedBy'] = currentUserName;
+            updates['emr/orders/' + encId + '/' + orderId + '/completedAt'] = now;
+        }
+        const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
+        updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
+            encounterId: encId, type: 'chart-edit', authorRole: 'RN',
+            body: 'Imaging result entered: ' + studyName + (impression ? ' — ' + impression.slice(0, 120) : ''),
+            by: currentUserName, timestamp: now
+        };
+        database.ref().update(updates).then(function () {
+            showToast('Imaging result saved.', 'success');
+            closeFlowModal();
+            switchTab('labs');
+        }).catch(function (err) { showToast('Save failed: ' + (err.message || err), 'error'); });
+    };
 
     // ===========================================================
     // [1550] ADMINISTER MODAL — Allergy + 5 Rights gate
@@ -4937,6 +5687,9 @@
             if (plan.tarByPid   && plan.tarByPid[p.id])   chart.tar   = (chart.tar   || []).concat(plan.tarByPid[p.id]);
             writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
             writeSeededOrders(updates, p.id, encId, chart, enc.admissionDate, seed);
+            // Phase 3C: scenarios that name floor patients pull labs/imaging from SEED_LABS/IMAGING
+            writeSeededLabs(updates, p.id, encId, enc.admissionDate, seed);
+            writeSeededImaging(updates, p.id, encId, enc.admissionDate, seed);
             // LDAs
             const ldaList = (plan.ldasByPid || {})[p.id] || [];
             ldaList.forEach(function (lda) {
@@ -5043,7 +5796,9 @@
         const wipeUpdates = {
             'emr/patients': null, 'emr/encounters': null, 'emr/beds': null,
             'emr/vitals': null, 'emr/notes': null, 'emr/mar': null, 'emr/tar': null,
-            'emr/transfers': null, 'emr/ldas': null, 'emr/unitBanners': null
+            'emr/transfers': null, 'emr/ldas': null, 'emr/unitBanners': null,
+            // Phase 3B / 3C: encounter-keyed data must be wiped on scenario reload too
+            'emr/orders': null, 'emr/labs': null, 'emr/imaging': null
         };
         database.ref().update(wipeUpdates).then(function () {
             // Step 2: build writes
@@ -5733,6 +6488,12 @@
     function orderRowActions(o) {
         // Phase 3B.2: Full lifecycle — pending-ack → active/acknowledged → held (resumable) / discontinued / completed
         const s = (o.status || 'active');
+        // Phase 3C: lab + imaging orders get an "Enter Results" affordance once acknowledged/active
+        // (closes the loop between order placement and result reporting).
+        const isResultable = (o.orderType === 'lab' || o.orderType === 'imaging');
+        const enterResultsBtn = isResultable
+            ? ' <button class="btn sm" title="Simulate the lab/radiology resulting this order" onclick="openEnterResultsModal(\'' + esc(o._key) + '\')">Enter Results</button>'
+            : '';
         if (s === 'pending-ack') {
             return '<button class="btn sm primary" onclick="acknowledgeOrder(\'' + esc(o._key) + '\')">Acknowledge</button>';
         }
@@ -5747,6 +6508,7 @@
         if (s === 'active' || s === 'acknowledged') {
             // Any user can Hold. Instructor can Discontinue.
             let html = '<button class="btn sm" onclick="holdOrder(\'' + esc(o._key) + '\')">Hold</button>';
+            html += enterResultsBtn;
             if (userIsInstructor()) {
                 html += ' <button class="btn sm danger-solid" onclick="discontinueOrder(\'' + esc(o._key) + '\')">D/C</button>';
             }
