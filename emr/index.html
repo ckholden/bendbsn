@@ -1496,8 +1496,8 @@
                     <button class="chart-tab" role="tab" data-tab="vitals" onclick="switchTab('vitals')">Vitals</button>
                     <button class="chart-tab" role="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
                     <button class="chart-tab" role="tab" data-tab="orders" onclick="switchTab('orders')">📋 Orders</button>
-                    <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
                     <button class="chart-tab" role="tab" data-tab="labs" onclick="switchTab('labs')">🧪 Labs</button>
+                    <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
                     <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
                     <button class="chart-tab" role="tab" data-tab="ldas" onclick="switchTab('ldas')">LDAs</button>
                     <button class="chart-tab" role="tab" data-tab="flags" onclick="switchTab('flags')">Flags</button>
@@ -3644,6 +3644,19 @@
             const adminInfo = (status !== 'scheduled' && it.administeredAt)
                 ? '<div style="font-size:11px;color:var(--clx-text-muted);margin-top:4px;">' + esc(fmtTime(it.administeredAt)) + ' by ' + esc(it.administeredBy || '—') + (it.notes ? ' — ' + esc(it.notes) : '') + '</div>'
                 : '';
+            // Hold / refused reason — surfaced inline below the med name so
+            // the off-going RN's reasoning is visible during board scan
+            // (no click required). Pulls from the linked order's holdReason
+            // first, falls back to per-row reason / notes if the row was
+            // marked held independently.
+            const _encId = activeEncounterIdForView();
+            const ord = (it.orderId && _encId && allOrders[_encId]) ? allOrders[_encId][it.orderId] : null;
+            const heldReason = (ord && ord.holdReason) || it.holdReason || it.refusedReason;
+            const reasonChip = (status === 'held' || status === 'refused') && heldReason
+                ? '<div style="margin-top:4px;font-size:11px;color:#b91c1c;font-style:italic;display:flex;align-items:flex-start;gap:4px;">' +
+                    '<span aria-hidden="true">⚠</span><span><strong>' + (status === 'held' ? 'Held' : 'Refused') + ':</strong> ' + esc(heldReason) + '</span>' +
+                  '</div>'
+                : '';
             const isPRN = !!it.isPRN;
             const canAdmin = (status === 'scheduled' || (isPRN && status !== 'given'));
             const ro = chartReadOnly;
@@ -3655,6 +3668,7 @@
                     (kind === 'mar' && it.dose ? '<div style="font-size:12px;color:var(--clx-text-secondary);">' + esc(it.dose) + (it.route ? ' · ' + esc(it.route) : '') + '</div>' : '') +
                     (it.frequency ? '<div style="font-size:11px;color:var(--clx-text-muted);">' + esc(it.frequency) + '</div>' : '') +
                     (isPRN && it.prnIndication ? '<div style="font-size:11px;color:var(--clx-text-muted);">PRN: ' + esc(it.prnIndication) + '</div>' : '') +
+                    reasonChip +
                     orderChip +
                     adminInfo +
                 '</td>' +
@@ -5036,7 +5050,14 @@
             database.ref().update(updates).then(function () {
                 showToast('Transferred to ' + toBed + '.', 'success');
                 closeFlowModal();
-                setTimeout(function () { if (confirm('Transfer complete. Open Handoff/SBAR generator?')) openHandoffModal(); }, 300);
+                setTimeout(function () {
+                    showConfirmModal(
+                        'Transfer complete',
+                        'Open the Handoff / SBAR generator now?',
+                        function () { openHandoffModal(); },
+                        { confirmText: 'Open Handoff' }
+                    );
+                }, 300);
             }).catch(function (err) {
                 showToast('Transfer failed: ' + (err.message || err), 'error');
             });

@@ -2843,11 +2843,14 @@
             </div>
 
             <div class="btn-container">
-                <button class="btn btn-clear" onclick="clearForm()">Clear</button>
-                <button class="btn" onclick="copyNoteToClipboard()" style="background:var(--clx-bg-surface-2);color:var(--clx-text-primary);border:1px solid var(--clx-border);">Copy</button>
+                <!-- Action ordering reflects cognitive flow:
+                       Templates (set up) → Copy/Word (intermediate options) → PDF (primary export) → Clear (destructive, last + de-prioritized).
+                     PDF is the only filled-color button so it reads as THE primary CTA. -->
                 <button class="btn" onclick="openTemplatesModal()" style="background:var(--clx-bg-surface-2);color:var(--clx-text-primary);border:1px solid var(--clx-border);">Templates</button>
-                <button class="btn btn-word" id="btnExportWord" onclick="generateWord(this)">Export Word</button>
+                <button class="btn" onclick="copyNoteToClipboard()" style="background:var(--clx-bg-surface-2);color:var(--clx-text-primary);border:1px solid var(--clx-border);">Copy</button>
+                <button class="btn" id="btnExportWord" onclick="generateWord(this)" style="background:var(--clx-bg-surface-2);color:var(--clx-text-primary);border:1px solid var(--clx-border);">Export Word</button>
                 <button class="btn btn-pdf" id="btnExportPdf" onclick="generatePDF(this)">Export PDF</button>
+                <button class="btn btn-clear" onclick="clearForm()" style="background:transparent;color:var(--clx-text-muted);border:1px solid var(--clx-border);">Clear</button>
             </div>
 
             <div id="section-history"></div>
@@ -7072,6 +7075,19 @@
         loadRolesConfig();
         loadDraft(currentNoteType);
         startSessionHeartbeat();
+
+        // Auto-focus the Patient ID field on first load IF there's nothing
+        // there yet — gives students an obvious starting point. Skip on
+        // touch (would pop the soft keyboard the moment the page loads).
+        try {
+            var pidEl = document.getElementById('patientId');
+            var isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            if (pidEl && !pidEl.value && !isTouch) {
+                setTimeout(function () {
+                    if (!pidEl.value) pidEl.focus({ preventScroll: true });
+                }, 250);  // brief delay so loadDraft has settled first
+            }
+        } catch (e) {}
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') updateSessionHeartbeat();
         });
