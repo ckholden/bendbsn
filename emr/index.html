@@ -174,6 +174,14 @@
         .esi-3 { background: #eab308; }
         .esi-4 { background: #84cc16; }
         .esi-5 { background: #16a34a; }
+        /* ESI-color left border on bed cards — matches the .esi-btn pattern
+           used in the ED Arrival picker, so the design language is consistent.
+           At 5+ feet, the border is visible even when the tiny dot isn't. */
+        .bed-card.esi-band-1 { border-left: 4px solid #dc2626; padding-left: 9px; }
+        .bed-card.esi-band-2 { border-left: 4px solid #f97316; padding-left: 9px; }
+        .bed-card.esi-band-3 { border-left: 4px solid #eab308; padding-left: 9px; }
+        .bed-card.esi-band-4 { border-left: 4px solid #84cc16; padding-left: 9px; }
+        .bed-card.esi-band-5 { border-left: 4px solid #16a34a; padding-left: 9px; }
         .bed-card .pt-name { font-size: 14px; font-weight: 600; color: var(--clx-text-primary); margin-bottom: 2px; }
         .bed-card .pt-meta { font-size: 11px; color: var(--clx-text-muted, #718096); margin-bottom: 6px; }
         .bed-card .pt-dx { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-bottom: 8px;
@@ -209,7 +217,21 @@
         .chart-header .ch-value { font-size: 13px; font-weight: 600; color: var(--clx-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .chart-header .ch-value.large { font-size: 16px; }
         .chart-header .ch-value.warn { color: #b91c1c; }
-        .chart-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .chart-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+        /* Sticky chart-actions strip — keeps "+ New Order / Handoff /
+           Transfer / Discharge" visible while scrolling long Notes /
+           LDA / Labs lists. Top offset matches the SIM-disclaimer +
+           shared site header (~56 + small gutter). */
+        .chart-title-bar-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: var(--clx-bg-canvas, #f0f4f8);
+            padding-top: 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+        }
+        [data-theme="dark"] .chart-title-bar-sticky { background: var(--clx-bg-canvas, #0d1f2d); }
         .chart-actions button {
             padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
             border: 1px solid var(--clx-border, #d1dce8); background: var(--clx-bg-surface, #fff); color: var(--clx-text-secondary, #4a5568);
@@ -1279,6 +1301,11 @@
             font-style: normal;
         }
         .status-note:hover { filter: brightness(0.97); }
+        .sn-pencil {
+            margin-left: 6px; font-size: 10px; opacity: 0.55;
+            color: var(--clx-text-muted, #718096);
+        }
+        .status-note:hover .sn-pencil { opacity: 1; color: var(--clx-accent); }
         [data-theme="dark"] .status-note { background: rgba(245,158,11,0.12); color: #fde68a; }
         .status-note-editor {
             display: block; width: 100%; margin-top: 6px;
@@ -1497,7 +1524,7 @@
 
             <!-- VIEW B: Patient Chart -->
             <section class="view" id="viewChart">
-                <div class="emr-title-bar">
+                <div class="emr-title-bar chart-title-bar-sticky">
                     <button class="emr-back-btn" onclick="closeChart()">← Back to Unit Board</button>
                     <div class="chart-actions">
                         <button class="btn sm primary" id="chartBtnAssignBed" onclick="assignBedFromChart()" style="display:none;">Assign Bed</button>
@@ -1667,6 +1694,7 @@
     let currentLabs = [];         // Phase 3C: ALL labs for current patient (filtered by encounter at render time)
     let currentImaging = [];      // Phase 3C: ALL imaging studies for current patient (filtered by encounter at render time)
     let allLabsByPatient = {};    // Round-2 polish: global listener at emr/labs for board-side critical-value indicators — {pid: {labId: lab}}
+    let lastVitalsByPatient = {}; // Round-3 polish: per-patient most-recent vitals timestamp for bed-card "VS Xm ago" display
 
     let activeNoteType = 'soap';
     let activeNoteRole = 'RN';    // Phase 3A.5b — default role for new notes
@@ -2175,6 +2203,43 @@
             allLabsByPatient = snap.val() || {};
             renderBoard();
         });
+        // Round-3 polish: global vitals listener for board-side "last vitals
+        // Xm ago" display. We only need the most-recent timestamp per
+        // patient, so reduce the payload to a flat {pid: ts} map at fold
+        // time to keep memory tiny.
+        database.ref('emr/vitals').on('value', function (snap) {
+            const val = snap.val() || {};
+            const out = {};
+            Object.keys(val).forEach(function (pid) {
+                let maxTs = 0;
+                const rows = val[pid] || {};
+                Object.keys(rows).forEach(function (k) {
+                    const ts = (rows[k] && rows[k].timestamp) || 0;
+                    if (ts > maxTs) maxTs = ts;
+                });
+                if (maxTs) out[pid] = maxTs;
+            });
+            lastVitalsByPatient = out;
+            renderBoard();
+        });
+    }
+
+    // Format vitals-elapsed for bed-card display. Color-codes:
+    //   <2h: muted
+    //   2-4h: amber
+    //   >4h:  red (escalates the "this patient hasn't been re-vitals'd"
+    //              charge-RN scan signal)
+    function lastVitalsBadgeHtml(pid) {
+        const ts = lastVitalsByPatient[pid];
+        if (!ts) return '';
+        const mins = Math.floor((Date.now() - ts) / 60000);
+        if (mins < 0) return '';
+        let label, color;
+        if (mins < 60) { label = mins + 'm ago'; color = 'var(--clx-text-muted, #718096)'; }
+        else if (mins < 120) { label = Math.floor(mins / 60) + 'h ago'; color = 'var(--clx-text-muted, #718096)'; }
+        else if (mins < 240) { label = Math.floor(mins / 60) + 'h ago'; color = '#b45309'; }
+        else { label = Math.floor(mins / 60) + 'h ago'; color = '#b91c1c'; }
+        return '<div class="bc-last-vs" style="font-size:10px;color:' + color + ';margin-top:4px;" data-elapsed-ts="' + ts + '" title="Last vitals charted">🩺 VS ' + label + '</div>';
     }
 
     // Returns the count of unresulted-or-recently-resulted CRITICAL labs
@@ -2415,11 +2480,12 @@
                 ? '<span class="bc-crit-pill">🔬 ' + critLabs.length + ' critical' + criticalLabsHoverTooltip(p.id) + '</span>'
                 : '';
             const indicators = (newPill || overduePill || critPill) ? '<div class="bc-indicators">' + newPill + overduePill + critPill + '</div>' : '';
-            return '<div class="bed-card' + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
+            return '<div class="bed-card esi-band-' + (p.esiAcuity || 3) + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
                 '<div class="bed-num"><span class="esi-dot esi-' + (p.esiAcuity || 3) + '" title="ESI ' + (p.esiAcuity || '—') + ' (1 = resuscitation, 5 = non-urgent)"></span>' + esc(b.bedId) + rnChip + '</div>' +
                 '<div class="pt-name">' + esc(p.name) + '</div>' +
                 '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
                 '<div class="pt-dx">' + esc(p.dx) + '</div>' +
+                lastVitalsBadgeHtml(p.id) +
                 indicators +
                 statusNoteHtml(enc) +
                 pendingChip +
@@ -2473,7 +2539,7 @@
             '<span class="fyi-icon">📢</span>' +
             '<span class="fyi-text">' + esc(text) + '</span>' +
             '<span class="fyi-meta">' + meta + '</span>' +
-            '<button class="fyi-clear" onclick="clearFyiBanner(event, \'' + unit + '\')" title="Clear banner">×</button>' +
+            '<button class="fyi-clear" onclick="clearFyiBanner(event, \'' + unit + '\')" title="Clear banner" aria-label="Close">×</button>' +
         '</div>';
     }
 
@@ -3565,7 +3631,7 @@
             savedScreenings.forEach(function (s, i) {
                 html += '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--clx-bg-surface-2);border:1px solid var(--clx-border);padding:4px 10px;border-radius:14px;font-size:12px;">' +
                     esc(s.display) +
-                    ' <button class="btn sm" style="padding:0 6px;font-size:10px;" onclick="removeSavedScreening(' + i + ')">×</button>' +
+                    ' <button class="btn sm" style="padding:0 6px;font-size:10px;" onclick="removeSavedScreening(' + i + ')" aria-label="Close">×</button>' +
                 '</span>';
             });
             html += '</div>';
@@ -6366,8 +6432,13 @@
         if (!enc) return '';
         const val = enc.statusNote || '';
         const classes = 'status-note' + (val ? '' : ' empty');
-        const display = val ? esc(val) : '+ Add status note';
         const encId = Object.keys(allEncounters).find(function (k) { return allEncounters[k] === enc; }) || '';
+        // Always show a small ✎ pencil so the edit affordance is visible
+        // even when the note is populated. Empty state already says "+ Add"
+        // so it doesn't need the pencil.
+        const display = val
+            ? esc(val) + '<span class="sn-pencil" aria-hidden="true">✎</span>'
+            : '+ Add status note';
         return '<div class="' + classes + '" onclick="editStatusNote(this, \'' + esc(encId) + '\', event)" title="Click to edit">' + display + '</div>';
     }
 
@@ -7706,8 +7777,12 @@
         const chips = CARE_TEAM_ROLES.map(function (r) {
             const m = team[r.id];
             if (m) {
+                // Spell out the full role label so new students don't need
+                // to learn 5 abbreviations. The bed-card initials chip
+                // (separate code path) keeps the compact display for
+                // board-scan density.
                 return '<span class="ct-chip" style="background:' + esc(r.color) + ';" title="' + esc(r.label) + ': ' + esc(m.name) + '">' +
-                    esc(r.short) + ' · ' + esc(m.name) +
+                    esc(r.label) + ' · ' + esc(m.name) +
                 '</span>';
             }
             return '';

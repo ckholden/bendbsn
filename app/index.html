@@ -1064,7 +1064,7 @@
                 <div style="background: var(--clx-bg-surface); border-radius: 12px; padding: 20px; max-width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 24px rgba(0,0,0,0.10); animation: bsnModalSlideIn 0.18s ease;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--clx-accent); padding-bottom: 10px;">
                         <h3 style="color: var(--clx-text-primary); margin: 0;">📝 Smart Phrases Reference</h3>
-                        <button onclick="document.getElementById('phrasesModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--clx-text-muted);">×</button>
+                        <button onclick="document.getElementById('phrasesModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--clx-text-muted);" aria-label="Close">×</button>
                     </div>
                     <p style="font-size: 12px; color: var(--clx-text-muted); margin-bottom: 10px;">Type shortcut + <strong>space</strong> to expand. <em>Hover over any phrase to preview.</em></p>
 
@@ -1108,7 +1108,7 @@
                 <div style="background: var(--clx-bg-surface); border-radius: 12px; padding: 25px; max-width: 500px; width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,0.10); animation: bsnModalSlideIn 0.18s ease;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--clx-accent); padding-bottom: 15px;">
                         <h3 style="color: var(--clx-text-primary); margin: 0;">💡 Feedback & Suggestions</h3>
-                        <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--clx-text-muted);">×</button>
+                        <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--clx-text-muted);" aria-label="Close">×</button>
                     </div>
                     <p style="color: var(--clx-text-secondary); font-size: 14px; margin-bottom: 20px;">Help us improve! Report issues, suggest new features, or request new smart phrases.</p>
                     <form action="https://formsubmit.co/christiankholden@gmail.com" method="POST" target="_blank">
@@ -1174,8 +1174,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Patient Identifier (fictional) <span style="color:#e53e3e;">*</span></label>
-                    <input type="text" id="patientId" placeholder="e.g., Pt A / Room 302">
+                    <input type="text" id="patientId" placeholder="e.g., Pt A / Room 302" onblur="checkPatientIdForRealName(this)">
                     <div style="font-size:11px;color:#718096;margin-top:3px;">Do not enter real patient identifiers.</div>
+                    <div id="patientIdHipaaTip" style="display:none;font-size:11px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:6px 8px;margin-top:6px;line-height:1.4;">
+                        ⚠ That looks like a real name or honorific. Per HIPAA, please use a fictional ID like <code style="background:rgba(255,255,255,0.5);padding:1px 5px;border-radius:3px;">Pt A</code> or <code style="background:rgba(255,255,255,0.5);padding:1px 5px;border-radius:3px;">Room 302</code>. <a href="#" onclick="event.preventDefault();document.getElementById('patientIdHipaaTip').style.display='none';" style="color:#92400e;text-decoration:underline;">dismiss</a>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Demographics</label>
@@ -1363,7 +1366,7 @@
                         <label style="font-size: 11px; color: #1565c0; font-weight: 600;">Medication Name</label>
                         <div style="position: relative;">
                             <input type="text" id="medName" placeholder="Start typing or select above..." style="width: 100%; padding: 8px 32px 8px 8px; font-size: 13px;" autocomplete="off">
-                            <button id="clearMedName" onclick="clearMedNameInput()" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; font-size: 16px; display: none;" title="Clear input">✕</button>
+                            <button id="clearMedName" onclick="clearMedNameInput()" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; font-size: 16px; display: none;" title="Clear input" aria-label="Close">✕</button>
                         </div>
                         <div id="drugDropdown" class="drug-dropdown"></div>
                         <div id="medRecents" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;"></div>
@@ -2896,7 +2899,7 @@
         <div style="background: var(--clx-bg-surface); border-radius: 12px; padding: 25px; max-width: 700px; width: 90%; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 24px rgba(0,0,0,0.10); animation: bsnModalSlideIn 0.18s ease;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--clx-accent); padding-bottom: 15px;">
                 <h3 style="color: var(--clx-text-primary); margin: 0;">📂 Saved Documents</h3>
-                <button onclick="document.getElementById('historyModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--clx-text-muted);">×</button>
+                <button onclick="document.getElementById('historyModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--clx-text-muted);" aria-label="Close">×</button>
             </div>
 
             <!-- Search/Filter -->
@@ -4463,7 +4466,7 @@
                     actions = ''
                         + '<div class="rt-pp-actions">'
                         +   '<button type="button" class="rt-pp-action" data-edit="' + escapedSc + '" title="Edit">✎</button>'
-                        +   '<button type="button" class="rt-pp-action" data-del="' + escapedSc + '" title="Delete">✕</button>'
+                        +   '<button type="button" class="rt-pp-action" data-del="' + escapedSc + '" title="Delete" aria-label="Close">✕</button>'
                         + '</div>';
                 }
                 return ''
@@ -6260,7 +6263,7 @@
                 html += `<tr style="border-bottom: 1px solid #ffcc80;">
                     <td style="padding: 8px;"><code style="background:#e65100;color:#fff;padding:2px 6px;border-radius:4px;">${shortcut}</code></td>
                     <td style="padding: 8px;">${text.substring(0, 60)}${text.length > 60 ? '...' : ''}</td>
-                    <td style="padding: 8px;"><button onclick="deleteCustomPhrase('${shortcut}')" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">✕</button></td>
+                    <td style="padding: 8px;"><button onclick="deleteCustomPhrase('${shortcut}')" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;" aria-label="Close">✕</button></td>
                 </tr>`;
             }
             html += '</table>';
@@ -6343,7 +6346,7 @@
             for (const username of Object.keys(customUsers)) {
                 html += '<tr style="border-bottom: 1px solid #ffcc80;">';
                 html += '<td style="padding: 8px;"><strong>' + username + '</strong></td>';
-                html += '<td style="padding: 8px;"><button onclick="deleteCustomUser(\'' + username + '\')" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">✕</button></td>';
+                html += '<td style="padding: 8px;"><button onclick="deleteCustomUser(\'' + username + '\')" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;" aria-label="Close">✕</button></td>';
                 html += '</tr>';
             }
             html += '</table>';
@@ -7075,6 +7078,22 @@
         loadRolesConfig();
         loadDraft(currentNoteType);
         startSessionHeartbeat();
+
+        // R3-6: HIPAA inline tip — flags likely real names / honorifics in
+        // the Patient Identifier field at the moment of entry. Non-blocking.
+        // Conservative wordlist (top US surnames + common honorifics) — false
+        // positives are dismissable; this is a teaching nudge, not a gate.
+        const _REAL_NAME_HONORIFICS = /^(Mr|Mrs|Ms|Miss|Dr|Doctor|Sir|Madam)\.?\s+/i;
+        const _REAL_NAME_SURNAMES = /\b(Smith|Johnson|Williams|Brown|Jones|Garcia|Miller|Davis|Rodriguez|Martinez|Hernandez|Lopez|Gonzalez|Wilson|Anderson|Thomas|Taylor|Moore|Jackson|Martin|Lee|Perez|Thompson|White|Harris|Sanchez|Clark|Ramirez|Lewis|Robinson|Walker|Young|Allen|King|Wright|Scott|Torres|Nguyen|Hill|Flores|Green|Adams|Nelson|Baker|Hall|Rivera|Campbell|Mitchell|Carter|Roberts)\b/i;
+        function checkPatientIdForRealName(el) {
+            const tip = document.getElementById('patientIdHipaaTip');
+            if (!tip) return;
+            const v = (el.value || '').trim();
+            if (!v) { tip.style.display = 'none'; return; }
+            const looksReal = _REAL_NAME_HONORIFICS.test(v) || _REAL_NAME_SURNAMES.test(v);
+            tip.style.display = looksReal ? 'block' : 'none';
+        }
+        window.checkPatientIdForRealName = checkPatientIdForRealName;
 
         // Auto-focus the Patient ID field on first load IF there's nothing
         // there yet — gives students an obvious starting point. Skip on
