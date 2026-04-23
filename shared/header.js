@@ -777,10 +777,15 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
             if (location.pathname === '/' || location.pathname === '/index.html') return;
             // One-shot flag set by the login page after successful auth.
             if (sessionStorage.getItem('bendbsn_show_affirmation') !== '1') return;
-            // 30-second cooldown across tabs — opening 4 tabs in quick
-            // succession after login should NOT show 4 banners.
-            var lastShownAt = parseInt(localStorage.getItem('bendbsn_affirmation_shown_at') || '0', 10);
-            if (Date.now() - lastShownAt < 30000) {
+
+            // De-dup by login fingerprint, NOT wall-clock time. Each unique
+            // login (different bendbsn_login_at) earns one banner; opening
+            // multiple tabs within the same login session shares that one.
+            // Logging out and back in immediately produces a NEW login_at,
+            // so a fresh affirmation fires — even seconds later.
+            var loginAt = parseInt(localStorage.getItem('bendbsn_login_at') || '0', 10);
+            var lastFor = parseInt(localStorage.getItem('bendbsn_affirmation_for_login') || '0', 10);
+            if (loginAt && lastFor === loginAt) {
                 sessionStorage.removeItem('bendbsn_show_affirmation');
                 return;
             }
@@ -792,11 +797,25 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
                 var pick = window.pickAffirmation();
                 if (!pick || !pick.text) return;
                 sessionStorage.removeItem('bendbsn_show_affirmation');
-                try { localStorage.setItem('bendbsn_affirmation_shown_at', String(Date.now())); } catch (e) {}
+                if (loginAt) {
+                    try { localStorage.setItem('bendbsn_affirmation_for_login', String(loginAt)); } catch (e) {}
+                }
                 renderAffirmationBanner(pick);
             });
         } catch (e) { /* never block on the affirmation */ }
     }
+
+    // Console testing: window.testAffirmation() force-shows a random one.
+    // Useful for debugging "did it actually appear?" reports.
+    window.testAffirmation = function () {
+        ensureAffirmationsLoaded(function () {
+            if (typeof window.pickAffirmation !== 'function') {
+                console.warn('[affirmation] catalog failed to load');
+                return;
+            }
+            renderAffirmationBanner(window.pickAffirmation());
+        });
+    };
 
     // Load /shared/affirmations.js on demand. Idempotent — a second call
     // while the first is still loading queues a callback rather than
