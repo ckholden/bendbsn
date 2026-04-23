@@ -653,6 +653,8 @@
                 localStorage.setItem('bendbsn_uid', user.uid);
 
                 localStorage.setItem('bendbsn_login_at', String(Date.now()));
+
+                try { sessionStorage.setItem('bendbsn_show_affirmation', '1'); } catch (e) {}
                 // Cache role from Firebase profile (fire-and-forget)
                 database.ref('userProfiles/' + user.uid).once('value').then(function(snap) {
                     const profile = snap.val() || {};
@@ -806,6 +808,7 @@
                 localStorage.setItem('bendbsn_displayName', name);
                 localStorage.setItem('bendbsn_uid', user.uid || '');
                 localStorage.setItem('bendbsn_login_at', String(Date.now()));
+                try { sessionStorage.setItem('bendbsn_show_affirmation', '1'); } catch (e) {}
                 window.location.href = '/home/';
 
             } catch (error) {
@@ -1162,6 +1165,7 @@
                     localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
                     localStorage.setItem('bendbsn_uid', user.uid);
                     localStorage.setItem('bendbsn_login_at', String(Date.now()));
+                    try { sessionStorage.setItem('bendbsn_show_affirmation', '1'); } catch (e) {}
                     if (profile.role_id) {
                         cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: !!profile.role_year, year: profile.role_year || null });
                     }
@@ -1260,6 +1264,8 @@
                 localStorage.setItem("bendbsn_uid", user.uid);
 
                 localStorage.setItem("bendbsn_login_at", String(Date.now()));
+
+                try { sessionStorage.setItem("bendbsn_show_affirmation", "1"); } catch (e) {}
                 await logLoginEvent(user.email, name, true);
 
                 modal.classList.remove("show");
@@ -1284,6 +1290,7 @@
                 localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
                 localStorage.setItem('bendbsn_uid', user.uid || '');
                 localStorage.setItem('bendbsn_login_at', String(Date.now()));
+                try { sessionStorage.setItem('bendbsn_show_affirmation', '1'); } catch (e) {}
                 window.location.href = '/home/';
             } else if (localStorage.getItem('bendbsn_auth') === 'true') {
                 localStorage.removeItem('bendbsn_auth');

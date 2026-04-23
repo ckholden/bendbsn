@@ -762,4 +762,114 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         }
     };
 })();
+
+// ── Daily login affirmation ──────────────────────────────────────────────
+// On first authed page-load after a fresh sign-in, /index.html sets
+// sessionStorage.bendbsn_show_affirmation = '1'. We read + clear it and
+// show ONE soft top-of-screen banner with a random encouragement line.
+// Auto-dismisses after 7s; ESC or ✕ dismisses early. Honors prefers-
+// reduced-motion. Multi-tab spam suppressed by a 30s localStorage cooldown.
+(function () {
+    'use strict';
+    function maybeShowAffirmation() {
+        try {
+            // Don't show on the login page itself.
+            if (location.pathname === '/' || location.pathname === '/index.html') return;
+            // One-shot flag set by the login page after successful auth.
+            if (sessionStorage.getItem('bendbsn_show_affirmation') !== '1') return;
+            // 30-second cooldown across tabs — opening 4 tabs in quick
+            // succession after login should NOT show 4 banners.
+            var lastShownAt = parseInt(localStorage.getItem('bendbsn_affirmation_shown_at') || '0', 10);
+            if (Date.now() - lastShownAt < 30000) {
+                sessionStorage.removeItem('bendbsn_show_affirmation');
+                return;
+            }
+
+            // Lazy-load the catalog so pages that never trigger an
+            // affirmation don't pay the parse cost.
+            ensureAffirmationsLoaded(function () {
+                if (typeof window.pickAffirmation !== 'function') return;
+                var pick = window.pickAffirmation();
+                if (!pick || !pick.text) return;
+                sessionStorage.removeItem('bendbsn_show_affirmation');
+                try { localStorage.setItem('bendbsn_affirmation_shown_at', String(Date.now())); } catch (e) {}
+                renderAffirmationBanner(pick);
+            });
+        } catch (e) { /* never block on the affirmation */ }
+    }
+
+    // Load /shared/affirmations.js on demand. Idempotent — a second call
+    // while the first is still loading queues a callback rather than
+    // injecting a second <script>. Silent on network failure.
+    var _affLoadingCallbacks = null;
+    function ensureAffirmationsLoaded(cb) {
+        if (typeof window.pickAffirmation === 'function') { cb(); return; }
+        if (_affLoadingCallbacks) { _affLoadingCallbacks.push(cb); return; }
+        _affLoadingCallbacks = [cb];
+        var s = document.createElement('script');
+        s.src = '/shared/affirmations.js';
+        s.async = true;
+        s.onload = function () {
+            var queue = _affLoadingCallbacks; _affLoadingCallbacks = null;
+            queue.forEach(function (fn) { try { fn(); } catch (e) {} });
+        };
+        s.onerror = function () { _affLoadingCallbacks = null; /* silent */ };
+        document.head.appendChild(s);
+    }
+
+    function renderAffirmationBanner(pick) {
+        // Build banner element
+        var banner = document.createElement('div');
+        banner.className = 'bsn-affirmation-banner';
+        banner.setAttribute('role', 'status');
+        banner.setAttribute('aria-live', 'polite');
+
+        var firstName = '';
+        try {
+            var dn = localStorage.getItem('bendbsn_displayName') || '';
+            firstName = (dn.split(/\s+/)[0] || '').trim();
+        } catch (e) {}
+        var welcome = firstName ? 'Welcome back, ' + escapeHtml(firstName) + '.' : 'Welcome back.';
+
+        banner.innerHTML =
+            '<span class="bsn-aff-icon" aria-hidden="true">' + escapeHtml(pick.icon || '\u2728') + '</span>' +
+            '<div class="bsn-aff-text">' +
+                '<div class="bsn-aff-line">' + escapeHtml(pick.text) + '</div>' +
+                '<div class="bsn-aff-sub">' + welcome + '</div>' +
+            '</div>' +
+            '<button type="button" class="bsn-aff-close" aria-label="Dismiss affirmation">\u2715</button>';
+
+        document.body.appendChild(banner);
+        // Trigger CSS slide-in on next frame
+        requestAnimationFrame(function () { banner.classList.add('visible'); });
+
+        var closeTimer = null;
+        function dismiss() {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            banner.classList.remove('visible');
+            banner.classList.add('leaving');
+            setTimeout(function () { if (banner.parentNode) banner.parentNode.removeChild(banner); }, 350);
+            document.removeEventListener('keydown', onEsc);
+        }
+        function onEsc(e) { if (e.key === 'Escape') dismiss(); }
+
+        banner.querySelector('.bsn-aff-close').addEventListener('click', dismiss);
+        document.addEventListener('keydown', onEsc);
+        closeTimer = setTimeout(dismiss, 7000);
+    }
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Wait for body to be available (header.js can load before parser
+    // finishes the body in some pages).
+    if (document.body) {
+        maybeShowAffirmation();
+    } else {
+        document.addEventListener('DOMContentLoaded', maybeShowAffirmation);
+    }
+})();
 // ===== END IT TICKET / FEEDBACK MODAL =====

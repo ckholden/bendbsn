@@ -571,3 +571,101 @@ textarea:focus-visible {
 }
 .clx-mobile-nav-item { position: relative; }
 .bsn-chat-mobnav-badge { top: 2px; right: calc(50% - 22px); border: none; }
+
+/* ── Daily login affirmation banner ──────────────────────────
+   Soft top-of-screen banner shown ONCE per fresh login. Slides
+   in from above, auto-dismisses after 7s. Honors reduced-motion
+   and prints hidden. */
+.bsn-affirmation-banner {
+    position: fixed;
+    top: 70px;             /* below the site header (56px) + small gutter */
+    left: 50%;
+    transform: translate(-50%, -120%);
+    z-index: 10005;
+    max-width: 92vw;
+    width: max-content;
+    min-width: 280px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--clx-bg-surface, #fff);
+    border: 1px solid var(--clx-accent, #0f7490);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(15, 116, 144, 0.18), 0 2px 6px rgba(0,0,0,0.05);
+    opacity: 0;
+    transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+.bsn-affirmation-banner.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+}
+.bsn-affirmation-banner.leaving {
+    opacity: 0;
+    transform: translate(-50%, -20%);
+}
+.bsn-aff-icon {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.bsn-aff-text { flex: 1; min-width: 0; }
+.bsn-aff-line {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--clx-text-primary, #1a3a5c);
+    line-height: 1.35;
+}
+.bsn-aff-sub {
+    font-size: 11.5px;
+    color: var(--clx-text-muted, #718096);
+    margin-top: 2px;
+}
+.bsn-aff-close {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--clx-text-muted, #718096);
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+.bsn-aff-close:hover {
+    background: var(--clx-accent-subtle, #e0f2f8);
+    color: var(--clx-accent, #0f7490);
+}
+[data-theme="dark"] .bsn-affirmation-banner {
+    background: var(--clx-bg-surface, #14283a);
+    border-color: var(--clx-accent, #22a8c4);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.2);
+}
+@media (max-width: 480px) {
+    .bsn-affirmation-banner {
+        top: 64px;
+        padding: 12px 14px;
+        gap: 10px;
+        min-width: 0;
+        width: calc(100vw - 24px);
+    }
+    .bsn-aff-icon { font-size: 22px; }
+    .bsn-aff-line { font-size: 13px; }
+    .bsn-aff-close { width: 44px; height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bsn-affirmation-banner {
+        transition: opacity 0.2s ease;
+        transform: translate(-50%, 0);
+    }
+    .bsn-affirmation-banner.leaving { transform: translate(-50%, 0); }
+}
+@media print {
+    .bsn-affirmation-banner { display: none !important; }
+}
