@@ -217,6 +217,40 @@ Replace crowded side buttons with a clean bottom bar:
 
 ---
 
+## 🔕 Paused (code present, gated off)
+
+### Daily login affirmation banner
+**Shipped then paused 2026-04-22.** Code remains in place; flip the
+feature flag to re-enable.
+
+- **Files:**
+  - `shared/affirmations.js` — 67 nursing-student-specific affirmations
+    + `pickAffirmation()` with no-repeat-recent guard (last-5 picks
+    tracked in `localStorage.bendbsn_recent_affirmations`).
+  - `shared/header.js` — `maybeShowAffirmation()` IIFE; gated by
+    `var AFFIRMATION_ENABLED = false;` constant near the top of the
+    affirmation block.
+  - `shared/header.css` — `.bsn-affirmation-banner` styles + dark
+    mode + reduced-motion + mobile + print.
+  - `index.html` — sets `sessionStorage.bendbsn_show_affirmation =
+    '1'` at all 5 successful-auth sites. Flag is consumed silently
+    while the feature is disabled (no banner, no orphan flag).
+- **Re-enable:** edit `shared/header.js`, change
+  `AFFIRMATION_ENABLED = false` → `true`, bump SW.
+- **Console testing:** `window.testAffirmation()` force-shows one
+  banner (also gated when disabled).
+- **Why paused:** UX needs more thought. First-deploy testing showed
+  (a) banner sometimes only appeared for ~0.5s if the landing page
+  navigated/re-rendered during the 7s display window;
+  (b) initial multi-tab spam suppression was blocking legitimate
+  fast log-out/log-back-in cycles (later fixed via login-fingerprint
+  check, but pause came before re-validation).
+- **If re-enabled:** consider persisting the banner across the first
+  navigation by injecting into `<header>` rather than `<body>`, or
+  use a cross-page sessionStorage persist.
+
+---
+
 ## Ideas Parking Lot
 *Ideas to consider for future versions:*
 

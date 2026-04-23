@@ -764,14 +764,26 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
 })();
 
 // ── Daily login affirmation ──────────────────────────────────────────────
+// PAUSED — see ROADMAP.md "Daily login affirmation". Banner display is
+// gated by AFFIRMATION_ENABLED so the existing scaffolding (catalog,
+// css, login flag set in /index.html) stays in place. Flip back to
+// true to re-enable; no other changes needed.
+//
 // On first authed page-load after a fresh sign-in, /index.html sets
 // sessionStorage.bendbsn_show_affirmation = '1'. We read + clear it and
 // show ONE soft top-of-screen banner with a random encouragement line.
 // Auto-dismisses after 7s; ESC or ✕ dismisses early. Honors prefers-
-// reduced-motion. Multi-tab spam suppressed by a 30s localStorage cooldown.
+// reduced-motion. Multi-tab spam suppressed by a login-fingerprint check.
 (function () {
     'use strict';
+    var AFFIRMATION_ENABLED = false;  // ← roadmap'd; flip to true to re-enable
     function maybeShowAffirmation() {
+        if (!AFFIRMATION_ENABLED) {
+            // Still consume the one-shot flag so it doesn't pile up across
+            // future page loads if/when we re-enable.
+            try { sessionStorage.removeItem('bendbsn_show_affirmation'); } catch (e) {}
+            return;
+        }
         try {
             // Don't show on the login page itself.
             if (location.pathname === '/' || location.pathname === '/index.html') return;
