@@ -1930,13 +1930,17 @@
                     </div>
                 </div>
                 <div id="painContent" style="display: none; margin-top: 12px;">
+                    <div style="font-size:11px;color:#b71c1c;background:rgba(198,40,40,0.06);border-radius:6px;padding:6px 10px;margin-bottom:10px;">
+                        <strong>PQRST framework:</strong> <strong>P</strong>rovocation/Palliation &middot; <strong>Q</strong>uality &middot; <strong>R</strong>egion/Radiation &middot; <strong>S</strong>everity (0-10) &middot; <strong>T</strong>iming
+                    </div>
                     <!-- Initial Assessment -->
                     <div style="margin-bottom: 12px;">
                         <div style="font-weight: 600; font-size: 12px; color: #b71c1c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Initial Assessment</div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">
-                            <div><label style="font-size:11px;font-weight:600;">Pain Scale (0-10)</label><input type="number" id="painInitScore" placeholder="0" min="0" max="10" style="width:100%;padding:6px;font-size:12px;" oninput="updatePainVisual('init')"></div>
-                            <div><label style="font-size:11px;font-weight:600;">Location</label><input type="text" id="painLocation" placeholder="e.g. RLQ abdomen" style="width:100%;padding:6px;font-size:12px;"></div>
-                            <div><label style="font-size:11px;font-weight:600;">Quality</label>
+                            <div><label style="font-size:11px;font-weight:600;">S &mdash; Severity (0-10)</label><input type="number" id="painInitScore" placeholder="0" min="0" max="10" style="width:100%;padding:6px;font-size:12px;" oninput="updatePainVisual('init')"></div>
+                            <div><label style="font-size:11px;font-weight:600;">R &mdash; Location</label><input type="text" id="painLocation" placeholder="e.g. RLQ abdomen" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">R &mdash; Radiation</label><input type="text" id="painRadiation" placeholder="e.g. to back" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">Q &mdash; Quality</label>
                                 <select id="painQuality" style="width:100%;padding:6px;font-size:12px;">
                                     <option value="">--</option>
                                     <option value="Sharp">Sharp</option>
@@ -1950,7 +1954,9 @@
                                     <option value="Radiating">Radiating</option>
                                 </select>
                             </div>
-                            <div><label style="font-size:11px;font-weight:600;">Onset</label>
+                            <div><label style="font-size:11px;font-weight:600;">P &mdash; Provoked by</label><input type="text" id="painProvocation" placeholder="e.g. movement, eating" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">P &mdash; Palliated by</label><input type="text" id="painPalliation" placeholder="e.g. rest, ice, position" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">T &mdash; Onset</label>
                                 <select id="painOnset" style="width:100%;padding:6px;font-size:12px;">
                                     <option value="">--</option>
                                     <option value="Sudden">Sudden</option>
@@ -1960,7 +1966,17 @@
                                     <option value="Post-procedure">Post-procedure</option>
                                 </select>
                             </div>
-                            <div><label style="font-size:11px;font-weight:600;">Radiation</label><input type="text" id="painRadiation" placeholder="e.g. to back" style="width:100%;padding:6px;font-size:12px;"></div>
+                            <div><label style="font-size:11px;font-weight:600;">T &mdash; Pattern</label>
+                                <select id="painTiming" style="width:100%;padding:6px;font-size:12px;">
+                                    <option value="">--</option>
+                                    <option value="Constant">Constant</option>
+                                    <option value="Intermittent">Intermittent</option>
+                                    <option value="Brief episodes">Brief episodes</option>
+                                    <option value="Worse at night">Worse at night</option>
+                                    <option value="Worse with activity">Worse with activity</option>
+                                </select>
+                            </div>
+                            <div><label style="font-size:11px;font-weight:600;">T &mdash; Duration</label><input type="text" id="painDuration" placeholder="e.g. 2 hours, since AM" style="width:100%;padding:6px;font-size:12px;"></div>
                         </div>
                         <div id="painInitVisual" style="margin-top: 6px; height: 6px; border-radius: 3px; background: #e0e0e0;"><div style="height: 100%; border-radius: 3px; width: 0%; transition: width 0.3s;"></div></div>
                     </div>
@@ -2025,6 +2041,43 @@
                         <button onclick="clearSavedPain()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
                     </div>
                     <div id="savedPainEntries"></div>
+                </div>
+            </div>
+
+            <!-- OLDCARTS HPI Interview Guide Panel -->
+            <div class="oldcarts-panel" style="background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-left: 4px solid #00897b; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePanel('oldcartsContent', this)">
+                    <h3 style="color: #00695c; margin: 0;">📝 OLDCARTS &mdash; HPI Interview Guide <span style="font-size: 12px; opacity: 0.7;">▶</span></h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); saveOldcarts()" style="background: #1565c0; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" title="Save to include in export">Save for Export</button>
+                        <button onclick="event.stopPropagation(); insertOldcarts()" style="background: #00897b; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Insert as HPI ➜</button>
+                    </div>
+                </div>
+                <div id="oldcartsContent" style="display: none; margin-top: 12px;">
+                    <div style="font-size:11px;color:#00695c;background:rgba(0,137,123,0.06);border-radius:6px;padding:6px 10px;margin-bottom:10px;">
+                        <strong>Interview Guide → HPI:</strong> ask the patient these questions, then click <em>Insert as HPI</em> to generate a formatted History of Present Illness paragraph. Filling this in is the interview &mdash; not the documentation itself.
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+                        <div><label style="font-size:11px;font-weight:600;">O &mdash; Onset</label><input type="text" id="ocOnset" placeholder="When did it start?" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">L &mdash; Location</label><input type="text" id="ocLocation" placeholder="Where is it?" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">D &mdash; Duration</label><input type="text" id="ocDuration" placeholder="How long does it last?" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">C &mdash; Character</label><input type="text" id="ocCharacter" placeholder="What does it feel like?" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">A &mdash; Aggravating factors</label><input type="text" id="ocAggravating" placeholder="What makes it worse?" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">R &mdash; Relieving factors</label><input type="text" id="ocRelieving" placeholder="What makes it better?" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">T &mdash; Timing / pattern</label><input type="text" id="ocTiming" placeholder="Constant? Intermittent? When?" style="width:100%;padding:6px;font-size:12px;"></div>
+                        <div><label style="font-size:11px;font-weight:600;">S &mdash; Severity</label><input type="text" id="ocSeverity" placeholder="0-10 scale, or how disruptive?" style="width:100%;padding:6px;font-size:12px;"></div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <label style="font-size:11px;font-weight:600;">Chief Complaint (what brought them in)</label>
+                        <input type="text" id="ocChiefComplaint" placeholder="e.g. chest pain, abdominal pain, shortness of breath" style="width:100%;padding:6px;font-size:12px;">
+                    </div>
+                </div>
+                <div id="savedOldcartsList" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #00897b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #00695c;">Saved HPI entries (will be included in export):</span>
+                        <button onclick="clearSavedOldcarts()" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 11px; text-decoration: underline;">Clear All</button>
+                    </div>
+                    <div id="savedOldcartsEntries"></div>
                 </div>
             </div>
 
@@ -2454,6 +2507,14 @@
                     <h3>Narrative</h3>
                     <p>Free-form Note</p>
                 </div>
+                <div class="note-type-card" data-note-type="birp" style="border-left: 3px solid #8e24aa;">
+                    <h3>BIRP <span style="font-size:9px; background:#8e24aa; color:white; padding:1px 5px; border-radius:8px; vertical-align:middle;">PSYCH</span></h3>
+                    <p>Behavior, Intervention, Response, Plan</p>
+                </div>
+                <div class="note-type-card" data-note-type="ipass" style="border-left: 3px solid #1565c0;">
+                    <h3>I-PASS <span style="font-size:9px; background:#1565c0; color:white; padding:1px 5px; border-radius:8px; vertical-align:middle;">HANDOFF</span></h3>
+                    <p>Shift Handoff (nurse-to-nurse)</p>
+                </div>
             </div>
 
             <!-- NANDA Diagnosis Section -->
@@ -2469,23 +2530,26 @@
             <h2 class="section-title" id="section-docs">Documentation</h2>
 
             <div class="form-group" id="focusGroup">
-                <label>FOCUS</label>
-                <input type="text" id="focus" placeholder="e.g., Pain management, Fall risk, Post-op care">
+                <label>FOCUS <span style="font-weight: 400; font-size: 11px; color: var(--clx-text-muted);">&mdash; the patient concern this entry anchors to</span></label>
+                <input type="text" id="focus" placeholder="e.g., Acute Pain, Fall Risk, Post-op care, Anxiety">
+                <div style="font-size: 11px; color: var(--clx-text-muted); margin-top: 4px; line-height: 1.4;">
+                    In Focus Charting (DAR / DARP), this Focus label heads every entry. Each note below anchors to this concern. This is what makes DARP equivalent to <strong>FDARP</strong> &mdash; the Focus is right here.
+                </div>
             </div>
 
             <!-- DAR -->
             <div id="darFields" class="note-fields active">
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">D</span><div class="field-info"><h4>Data</h4></div></div>
-                    <textarea id="darData" class="large" placeholder="Subjective & objective data..."></textarea>
+                    <textarea id="darData" class="large" placeholder="Subjective & objective data &mdash; what you saw, heard, measured. Patient quotes, VS, assessment findings, lab values."></textarea>
                 </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">A</span><div class="field-info"><h4>Action</h4></div></div>
-                    <textarea id="darAction" class="large" placeholder="Nursing interventions..."></textarea>
+                    <textarea id="darAction" class="large" placeholder="ALL interventions &mdash; not just meds: patient teaching, repositioning, provider notification, referrals, safety measures, equipment changes."></textarea>
                 </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">R</span><div class="field-info"><h4>Response/Recommendations</h4></div></div>
-                    <textarea id="darResponse" placeholder="Patient response and recommendations..."></textarea>
+                    <textarea id="darResponse" placeholder="The IMMEDIATE patient response to the action above &mdash; what happened right after? Not a long-term goal."></textarea>
                 </div>
             </div>
 
@@ -2521,11 +2585,11 @@
                 </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">A</span><div class="field-info"><h4>Assessment</h4></div></div>
-                    <textarea id="soapAssessment" placeholder="Nursing diagnosis..."></textarea>
+                    <textarea id="soapAssessment" placeholder="Your clinical judgment / nursing diagnosis &mdash; NOT exam findings (those go in Objective). Example: 'Patient demonstrates signs consistent with fluid volume excess.'"></textarea>
                 </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">P</span><div class="field-info"><h4>Plan</h4></div></div>
-                    <textarea id="soapPlan" placeholder="Care plan..."></textarea>
+                    <textarea id="soapPlan" placeholder="Nursing interventions, notifications, teaching, follow-up. Example: 'Notified Dr. Okoro of VS change. Will reassess in 1 hour.'"></textarea>
                 </div>
             </div>
 
@@ -2573,23 +2637,26 @@
                 </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">R</span><div class="field-info"><h4>Recommendation</h4></div></div>
-                    <textarea id="sbarRecommendation" placeholder="What do you need?"></textarea>
+                    <textarea id="sbarRecommendation" placeholder="State exactly what you need: 'I am requesting...', 'I need you to come evaluate...', 'I am asking for an order for...' &mdash; this is the part students most often skip."></textarea>
                 </div>
             </div>
 
             <!-- PIE -->
             <div id="pieFields" class="note-fields">
+                <div style="background: var(--clx-info-bg, #e0f2fe); border-left: 3px solid var(--clx-info, #0284c7); padding: 8px 12px; margin-bottom: 12px; border-radius: 6px; font-size: 12px; color: var(--clx-info-text, #0c4a6e);">
+                    <strong>PIE charting:</strong> in real systems, each note is numbered to a care plan problem (P-1, I-1, E-1 all reference the same numbered problem). Common in LTC and SNF. You can prefix entries with P-1 / I-1 / E-1 manually if your facility uses numbered problem lists.
+                </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">P</span><div class="field-info"><h4>Problem</h4></div></div>
-                    <textarea id="pieProblem" class="large" placeholder="Nursing diagnosis or problem..."></textarea>
+                    <textarea id="pieProblem" class="large" placeholder="Nursing diagnosis or specific patient problem &mdash; e.g., 'Acute Pain related to surgical incision' or 'P-1: Risk for falls'."></textarea>
                 </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">I</span><div class="field-info"><h4>Intervention</h4></div></div>
-                    <textarea id="pieIntervention" class="large" placeholder="Actions taken..."></textarea>
+                    <textarea id="pieIntervention" class="large" placeholder="ALL nursing actions taken to address this problem &mdash; meds, teaching, positioning, monitoring, referrals."></textarea>
                 </div>
                 <div class="form-group">
                     <div class="field-header"><span class="field-letter">E</span><div class="field-info"><h4>Evaluation</h4></div></div>
-                    <textarea id="pieEvaluation" placeholder="Effectiveness, outcomes..."></textarea>
+                    <textarea id="pieEvaluation" placeholder="How effective were the interventions? Did the patient outcome meet the goal? Be specific and measurable."></textarea>
                 </div>
             </div>
 
@@ -2598,6 +2665,56 @@
                 <div class="form-group">
                     <label>Narrative Note</label>
                     <textarea id="narrativeText" class="large" style="min-height:200px" placeholder="Document in free-form narrative format..."></textarea>
+                </div>
+            </div>
+
+            <!-- BIRP (Behavioral Health) -->
+            <div id="birpFields" class="note-fields">
+                <div style="background: #f3e5f5; border-left: 3px solid #8e24aa; padding: 8px 12px; margin-bottom: 12px; border-radius: 6px; font-size: 12px; color: #4a148c;">
+                    <strong>BIRP &mdash; Behavioral Health</strong> note format. Used in inpatient psych, partial hospitalization, behavioral health outpatient, and substance use treatment.
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#8e24aa">B</span><div class="field-info"><h4>Behavior</h4></div></div>
+                    <textarea id="birpBehavior" class="large" placeholder="Describe OBSERVABLE behaviors and direct quotes &mdash; not interpretations. Example: 'Patient pacing room, wringing hands, voice raised, stated &quot;I can&apos;t take this anymore.&quot;' (NOT 'patient was anxious')"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#8e24aa">I</span><div class="field-info"><h4>Intervention</h4></div></div>
+                    <textarea id="birpIntervention" class="large" placeholder="Nursing and therapeutic interventions performed: de-escalation, redirection, PRN meds, 1:1, environmental changes, contacts made."></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#8e24aa">R</span><div class="field-info"><h4>Response</h4></div></div>
+                    <textarea id="birpResponse" placeholder="Patient's response to interventions &mdash; observable changes in behavior, affect, statements. Did agitation de-escalate? Did patient accept PRN?"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#8e24aa">P</span><div class="field-info"><h4>Plan</h4></div></div>
+                    <textarea id="birpPlan" placeholder="Ongoing plan, follow-up, referrals, safety planning, level of observation, communicated to oncoming shift."></textarea>
+                </div>
+            </div>
+
+            <!-- I-PASS (Shift Handoff) -->
+            <div id="ipassFields" class="note-fields">
+                <div style="background: #e3f2fd; border-left: 3px solid #1565c0; padding: 8px 12px; margin-bottom: 12px; border-radius: 6px; font-size: 12px; color: #0d47a1;">
+                    <strong>I-PASS &mdash; Shift Handoff.</strong> Used at most academic medical centers for nurse-to-nurse handoff. Different purpose than SBAR (which is for provider call-outs). I-PASS is what you tell the oncoming nurse.
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#1565c0">I</span><div class="field-info"><h4>Illness Severity</h4></div></div>
+                    <textarea id="ipassIllness" placeholder="Stable / Watcher / Unstable. One line. Example: 'Watcher &mdash; new onset a-fib overnight, on cardizem drip.'"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#1565c0">P</span><div class="field-info"><h4>Patient Summary</h4></div></div>
+                    <textarea id="ipassPatient" class="large" placeholder="Brief HPI, hospital course summary, key events this shift. Example: '76yo F admitted POD#2 R hip ORIF, ambulated with PT today, pain controlled on PO oxy.'"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#1565c0">A</span><div class="field-info"><h4>Action List</h4></div></div>
+                    <textarea id="ipassAction" placeholder="Outstanding tasks and pending labs/results. Example: 'AM CBC pending, draw at 0500. PT eval ordered, will re-eval ambulation tomorrow. NPO after midnight for OR.'"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#1565c0">S</span><div class="field-info"><h4>Situation Awareness &amp; Contingencies</h4></div></div>
+                    <textarea id="ipassSituation" placeholder="What might happen and what to do if it does. Example: 'If SBP &lt;90, hold metoprolol and call house officer. Patient has tendency to remove SCDs &mdash; reinforce.'"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="field-header"><span class="field-letter" style="background:#1565c0">S</span><div class="field-info"><h4>Synthesis by Receiver</h4></div></div>
+                    <textarea id="ipassSynthesis" placeholder="Receiver reads back the key points to confirm understanding. Document that read-back occurred. Example: 'Read-back confirmed by RN Smith.'"></textarea>
                 </div>
             </div>
 
@@ -3442,7 +3559,7 @@
 
         function renderHistoryList(docs) {
             const historyList = document.getElementById('historyList');
-            const noteTypeNames = {dar:'DAR', darp:'DARP', soap:'SOAP', soapie:'SOAPIE', sbar:'SBAR', pie:'PIE', h2t:'Head-to-Toe', narrative:'Narrative'};
+            const noteTypeNames = {dar:'DAR', darp:'DARP', soap:'SOAP', soapie:'SOAPIE', sbar:'SBAR', pie:'PIE', h2t:'Head-to-Toe', narrative:'Narrative', birp:'BIRP', ipass:'I-PASS'};
 
             if (docs.length === 0) {
                 historyList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">No documents match your search.</p>';
@@ -5423,17 +5540,25 @@
             const quality = document.getElementById('painQuality')?.value || '';
             const onset = document.getElementById('painOnset')?.value || '';
             const radiation = document.getElementById('painRadiation')?.value || '';
+            const provocation = document.getElementById('painProvocation')?.value || '';
+            const palliation = document.getElementById('painPalliation')?.value || '';
+            const timing = document.getElementById('painTiming')?.value || '';
+            const duration = document.getElementById('painDuration')?.value || '';
             const intervention = document.getElementById('painIntervention')?.value || '';
             const med = document.getElementById('painMedGiven')?.value || '';
             const timeGiven = document.getElementById('painTimeGiven')?.value || '';
             const reassess = document.getElementById('painReassessScore')?.value || '';
             const reassessTime = document.getElementById('painReassessTime')?.value || '';
             const response = document.getElementById('painResponse')?.value || '';
-            let display = 'Pain ' + init + '/10';
+            let display = 'Pain assessment (PQRST): ' + init + '/10';
             if (loc) display += ' at ' + loc;
             if (quality) display += ', ' + quality.toLowerCase();
-            if (onset) display += ', ' + onset.toLowerCase() + ' onset';
             if (radiation) display += ', radiating to ' + radiation;
+            if (provocation) display += '. Provoked by ' + provocation;
+            if (palliation) display += '; relieved by ' + palliation;
+            if (onset) display += '. ' + onset + ' onset';
+            if (timing) display += ', ' + timing.toLowerCase();
+            if (duration) display += ', duration ' + duration;
             display += '.';
             if (intervention) {
                 display += ' Intervention: ' + intervention;
@@ -5474,6 +5599,61 @@
 
         function clearSavedPain() {
             showConfirmModal('Clear Pain Assessments', 'Clear all saved pain assessments?', function() { savedPain = []; renderSavedPain(); }, { danger: true });
+        }
+
+        // ========== OLDCARTS HPI INTERVIEW GUIDE ==========
+        let savedOldcarts = [];
+
+        function buildOldcartsDisplay() {
+            const cc = document.getElementById('ocChiefComplaint')?.value?.trim() || '';
+            const o = document.getElementById('ocOnset')?.value?.trim() || '';
+            const l = document.getElementById('ocLocation')?.value?.trim() || '';
+            const d = document.getElementById('ocDuration')?.value?.trim() || '';
+            const c = document.getElementById('ocCharacter')?.value?.trim() || '';
+            const a = document.getElementById('ocAggravating')?.value?.trim() || '';
+            const r = document.getElementById('ocRelieving')?.value?.trim() || '';
+            const t = document.getElementById('ocTiming')?.value?.trim() || '';
+            const s = document.getElementById('ocSeverity')?.value?.trim() || '';
+            const parts = [];
+            if (cc) parts.push('Patient presents with ' + cc + '.');
+            if (o) parts.push('Onset: ' + o + '.');
+            if (l) parts.push('Location: ' + l + '.');
+            if (d) parts.push('Duration: ' + d + '.');
+            if (c) parts.push('Character: ' + c + '.');
+            if (a) parts.push('Aggravated by: ' + a + '.');
+            if (r) parts.push('Relieved by: ' + r + '.');
+            if (t) parts.push('Timing/pattern: ' + t + '.');
+            if (s) parts.push('Severity: ' + s + '.');
+            if (parts.length === 0) return '';
+            return 'History of Present Illness: ' + parts.join(' ');
+        }
+
+        function saveOldcarts() {
+            const display = buildOldcartsDisplay();
+            if (!display) { showToast('Fill in at least one OLDCARTS field.', 'warning'); return; }
+            savedOldcarts.push({ display: display, time: formatTimeDisplay(new Date()), timestamp: Date.now() });
+            renderSavedOldcarts();
+            showToast('HPI saved for export.', 'success');
+        }
+
+        function insertOldcarts() {
+            if (!lastActiveTextarea) { showToast('Click in a text field first.', 'warning'); return; }
+            const display = buildOldcartsDisplay();
+            if (!display) { showToast('Fill in at least one OLDCARTS field.', 'warning'); return; }
+            window.richTextarea.insertAtCursor(lastActiveTextarea, display + ' ');
+            showToast('HPI inserted.', 'success');
+        }
+
+        function renderSavedOldcarts() {
+            const list = document.getElementById('savedOldcartsList'), entries = document.getElementById('savedOldcartsEntries');
+            if (!list || !entries) return;
+            if (savedOldcarts.length === 0) { list.style.display = 'none'; return; }
+            list.style.display = 'block';
+            entries.innerHTML = savedOldcarts.map((item, i) => `<div style="display:flex;justify-content:space-between;align-items:flex-start;background:white;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px;gap:8px;"><div style="flex:1;"><span style="color:#00695c;font-weight:600;">${item.time}</span> <span style="margin-left:8px;color:#333;">${escapeHtml(item.display)}</span></div><button onclick="savedOldcarts.splice(${i},1);renderSavedOldcarts();" style="background:#ffebee;border:none;color:#d32f2f;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;flex-shrink:0;">Remove</button></div>`).join('');
+        }
+
+        function clearSavedOldcarts() {
+            showConfirmModal('Clear HPI Entries', 'Clear all saved HPI entries?', function() { savedOldcarts = []; renderSavedOldcarts(); }, { danger: true });
         }
 
         // ========== PROVIDER NOTIFICATION (SBAR) ==========
@@ -5556,6 +5736,10 @@
             // Blood Glucose
             if (savedBG.length > 0) {
                 savedBG.forEach(bg => parts.push(bg.display));
+            }
+            // OLDCARTS HPI (lead with HPI when present)
+            if (savedOldcarts && savedOldcarts.length > 0) {
+                savedOldcarts.forEach(h => parts.push(h.display));
             }
             // Pain
             if (savedPain.length > 0) {
@@ -6679,6 +6863,19 @@
             narrative: [
                 { id: 'narrativeText', label: 'Narrative' }
             ],
+            birp: [
+                { id: 'birpBehavior', label: 'Behavior' },
+                { id: 'birpIntervention', label: 'Intervention' },
+                { id: 'birpResponse', label: 'Response' },
+                { id: 'birpPlan', label: 'Plan' }
+            ],
+            ipass: [
+                { id: 'ipassIllness', label: 'Illness Severity' },
+                { id: 'ipassPatient', label: 'Patient Summary' },
+                { id: 'ipassAction', label: 'Action List' },
+                { id: 'ipassSituation', label: 'Situation Awareness' },
+                { id: 'ipassSynthesis', label: 'Synthesis (read-back)' }
+            ],
             h2t: [
                 { id: 'h2tHeent', label: 'HEENT' },
                 { id: 'h2tNeck', label: 'Neck' },
@@ -7504,6 +7701,17 @@
                 c.push({l:'E',t:'Evaluation',x:document.getElementById('pieEvaluation').value});
             } else if (t === 'narrative') {
                 c.push({l:'',t:'Narrative',x:document.getElementById('narrativeText').value});
+            } else if (t === 'birp') {
+                c.push({l:'B',t:'Behavior',x:document.getElementById('birpBehavior').value});
+                c.push({l:'I',t:'Intervention',x:document.getElementById('birpIntervention').value});
+                c.push({l:'R',t:'Response',x:document.getElementById('birpResponse').value});
+                c.push({l:'P',t:'Plan',x:document.getElementById('birpPlan').value});
+            } else if (t === 'ipass') {
+                c.push({l:'I',t:'Illness Severity',x:document.getElementById('ipassIllness').value});
+                c.push({l:'P',t:'Patient Summary',x:document.getElementById('ipassPatient').value});
+                c.push({l:'A',t:'Action List',x:document.getElementById('ipassAction').value});
+                c.push({l:'S',t:'Situation Awareness',x:document.getElementById('ipassSituation').value});
+                c.push({l:'S',t:'Synthesis by Receiver',x:document.getElementById('ipassSynthesis').value});
             } else if (t === 'h2t') {
                 c.push({l:'',t:'HEENT',x:(document.getElementById('h2tHeent')||{}).value||''});
                 c.push({l:'',t:'Neck',x:(document.getElementById('h2tNeck')||{}).value||''});
@@ -7533,7 +7741,7 @@
             const d = getFormData();
             const nc = getNoteContent();
             if (nc.length === 0) return '';
-            const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe',narrative:'Narrative'};
+            const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe',narrative:'Narrative',birp:'BIRP',ipass:'I-PASS'};
             let out = [];
             out.push(`Note Type: ${tn[currentNoteType] || currentNoteType}`);
             out.push(`Nurse: ${d.nurseName} ${d.credentials || ''}`.trim());
@@ -7600,7 +7808,7 @@
             let y = 15;
             const d = getFormData();
             const nc = getNoteContent();
-            const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe Assessment',narrative:'Narrative Note'};
+            const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe Assessment',narrative:'Narrative Note',birp:'BIRP (Behavioral Health)',ipass:'I-PASS Shift Handoff'};
 
             // Header
             doc.setFillColor(31, 78, 121);
@@ -7769,6 +7977,22 @@
                 doc.setFont('helvetica','normal'); doc.setTextColor(0);
                 let bgY = y + 10; bgLines.forEach(line => { doc.text(line, m + 4, bgY); bgY += 4; });
                 y += bgH + 4;
+            }
+
+            // OLDCARTS HPI
+            if (savedOldcarts && savedOldcarts.length > 0) {
+                doc.setFillColor(232, 245, 243);
+                doc.setDrawColor(0, 137, 123);
+                const hpiContent = savedOldcarts.map(item => `${item.time}: ${item.display}`).join('\n');
+                const hpiLines = doc.splitTextToSize(hpiContent, cw - 12);
+                const hpiH = 10 + hpiLines.length * 4;
+                if (y + hpiH > 280) { doc.addPage(); y = 15; }
+                doc.roundedRect(m, y, cw, hpiH, 2, 2, 'FD');
+                doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(0, 105, 92);
+                doc.text('History of Present Illness (OLDCARTS):', m + 4, y + 6);
+                doc.setFont('helvetica','normal'); doc.setTextColor(0);
+                let hpiY = y + 10; hpiLines.forEach(line => { doc.text(line, m + 4, hpiY); hpiY += 4; });
+                y += hpiH + 4;
             }
 
             // Pain Assessments
@@ -8045,7 +8269,7 @@
 
                 const d = getFormData();
                 const nc = getNoteContent();
-                const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe Assessment',narrative:'Narrative Note'};
+                const tn = {dar:'DAR',darp:'DARP',soap:'SOAP',soapie:'SOAPIE',sbar:'SBAR',pie:'PIE',h2t:'Head-to-Toe Assessment',narrative:'Narrative Note',birp:'BIRP (Behavioral Health)',ipass:'I-PASS Shift Handoff'};
 
                 const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
 
@@ -8237,6 +8461,12 @@
                 if (savedBG.length > 0) {
                     ch.push(new Paragraph({ children: [new TextRun({text: 'Blood Glucose:', bold: true, color: 'e65100'})], spacing: {before: 100, after: 50} }));
                     savedBG.forEach(item => { ch.push(new Paragraph({ children: [new TextRun({text: item.time + ': ', bold: true, color: 'f57c00'}), new TextRun(item.display)], spacing: {after: 40} })); });
+                }
+
+                // Saved OLDCARTS HPI
+                if (savedOldcarts && savedOldcarts.length > 0) {
+                    ch.push(new Paragraph({ children: [new TextRun({text: 'History of Present Illness (OLDCARTS):', bold: true, color: '00695c'})], spacing: {before: 100, after: 50} }));
+                    savedOldcarts.forEach(item => { ch.push(new Paragraph({ children: [new TextRun({text: item.time + ': ', bold: true, color: '00897b'}), new TextRun(item.display)], spacing: {after: 40} })); });
                 }
 
                 // Saved Pain Assessments
