@@ -714,11 +714,16 @@
                         <select id="registeredUsersRoleSelect" onchange="registeredUsersRoleFilter=this.value;filterRegisteredUsers()"
                             style="padding: 5px 8px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             <option value="">All Roles</option>
-                            <option value="RN Student">RN Student</option>
-                            <option value="Instructor">Instructor</option>
-                            <option value="RN">RN</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Other">Other</option>
+                            <option value="student_nurse">Student Nurse (any year)</option>
+                            <option value="student_nurse:Year 1">Student Nurse — Year 1</option>
+                            <option value="student_nurse:Year 2">Student Nurse — Year 2</option>
+                            <option value="student_nurse:Year 3">Student Nurse — Year 3</option>
+                            <option value="student_nurse:Year 4">Student Nurse — Year 4</option>
+                            <option value="rn">RN</option>
+                            <option value="bsn_rn">BSN, RN</option>
+                            <option value="lpn">LPN</option>
+                            <option value="instructor">Instructor</option>
+                            <option value="unset">— Unset / Other</option>
                         </select>
                         <select id="registeredUsersStatusSelect" onchange="registeredUsersStatusFilter=this.value;filterRegisteredUsers()"
                             style="padding: 5px 8px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
@@ -1015,7 +1020,45 @@
         const userProfilesRef = database.ref('userProfiles');
         const directMessagesRef = database.ref('directMessages');
         const userDocumentsRef = database.ref('userDocuments');
-        const ROLE_OPTIONS = ['RN Student', 'Instructor', 'RN', 'Admin', 'Other'];
+        // Each role maps to the 4 Firebase fields the app/profile pages expect.
+        // 'role' is the legacy human-readable string (kept for back-compat).
+        const ROLE_OPTIONS = [
+            { value: 'student_nurse_y1', label: 'Student Nurse — Year 1', role: 'Student Nurse Year 1', role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 1' },
+            { value: 'student_nurse_y2', label: 'Student Nurse — Year 2', role: 'Student Nurse Year 2', role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 2' },
+            { value: 'student_nurse_y3', label: 'Student Nurse — Year 3', role: 'Student Nurse Year 3', role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 3' },
+            { value: 'student_nurse_y4', label: 'Student Nurse — Year 4', role: 'Student Nurse Year 4', role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 4' },
+            { value: 'rn',               label: 'RN',                     role: 'RN',                   role_id: 'rn',            role_label: 'RN',            role_year: null },
+            { value: 'bsn_rn',           label: 'BSN, RN',                role: 'BSN RN',               role_id: 'bsn_rn',        role_label: 'BSN, RN',       role_year: null },
+            { value: 'lpn',              label: 'LPN',                    role: 'LPN',                  role_id: 'lpn',           role_label: 'LPN',           role_year: null },
+            { value: 'instructor',       label: 'Instructor',             role: 'Instructor',           role_id: 'instructor',    role_label: 'Instructor',    role_year: null }
+        ];
+
+        // Map a profile object → the matching ROLE_OPTIONS value, falling back
+        // to legacy 'role' string matching for users who haven't been migrated.
+        function getRoleOptionValue(profile, fallbackRole) {
+            if (!profile && !fallbackRole) return '';
+            // Preferred: match by role_id (+ role_year for student nurses)
+            if (profile && profile.role_id) {
+                if (profile.role_id === 'student_nurse' && profile.role_year) {
+                    const yearNum = (profile.role_year.match(/\d+/) || [])[0];
+                    if (yearNum) return 'student_nurse_y' + yearNum;
+                }
+                const match = ROLE_OPTIONS.find(r => r.role_id === profile.role_id);
+                if (match) return match.value;
+            }
+            // Fallback: match by legacy 'role' string
+            const legacyRole = (profile && profile.role) || fallbackRole || '';
+            const m = ROLE_OPTIONS.find(r => r.role === legacyRole);
+            return m ? m.value : '';
+        }
+
+        // Build display string: "Student Nurse (Year 2)" or "RN" or "—"
+        function getRoleDisplay(profile, fallbackRole) {
+            if (profile && profile.role_label) {
+                return profile.role_label + (profile.role_year ? ' (' + profile.role_year + ')' : '');
+            }
+            return (profile && profile.role) || fallbackRole || '—';
+        }
 
         // Seed and load role configuration on init
         setTimeout(function() { seedDefaultRoles(); loadRoles(); }, 1200);
@@ -1475,11 +1518,13 @@
             }
         }
 
-        function getRoleOptionsHtml(selected) {
-            return ROLE_OPTIONS.map((role) => {
-                const isSelected = role === selected ? 'selected' : '';
-                return `<option value="${role}" ${isSelected}>${role}</option>`;
-            }).join('');
+        function getRoleOptionsHtml(selectedValue) {
+            const opts = ['<option value="">— Select role —</option>'];
+            opts.push(ROLE_OPTIONS.map((r) => {
+                const sel = r.value === selectedValue ? ' selected' : '';
+                return `<option value="${r.value}"${sel}>${r.label}</option>`;
+            }).join(''));
+            return opts.join('');
         }
 
         async function grantAdminClaim(uid, revoke) {
@@ -1503,7 +1548,7 @@
             );
         }
 
-        async function updateUserRole(uid, email, role) {
+        async function updateUserRole(uid, email, optionValue) {
             if (!auth.currentUser) {
                 showToast('Sign in to Firebase first.', 'error');
                 openFirebaseAuthModal();
@@ -1515,12 +1560,26 @@
                     showToast('Cannot update role: no Firebase UID for this user', 'error');
                     return;
                 }
+                if (!optionValue) {
+                    showToast('Pick a role first.', 'warning');
+                    return;
+                }
+                const r = ROLE_OPTIONS.find(o => o.value === optionValue);
+                if (!r) {
+                    showToast('Unknown role selection.', 'error');
+                    return;
+                }
+                // Write all 4 fields so /app/, /profile/, and badges all stay in sync.
                 await userProfilesRef.child(uid).update({
-                    role: role,
+                    role: r.role,
+                    role_id: r.role_id,
+                    role_label: r.role_label,
+                    role_year: r.role_year,
                     email: email || null,
                     updatedAt: Date.now()
                 });
-                showToast(`Role updated to ${role}`, 'success');
+                const friendly = r.role_label + (r.role_year ? ' (' + r.role_year + ')' : '');
+                showToast('Role updated to ' + friendly, 'success');
                 await refreshUserProfilesMap();
                 loadRegisteredUsers();
             } catch (e) {
@@ -1548,7 +1607,8 @@
                 const emailKey = (user.email || '').toLowerCase();
                 const profile = userProfilesByEmail[emailKey] || null;
                 const uid = user.uid || (profile ? (profile.uid || '') : '');
-                const roleValue = (profile && profile.role) || user.role || 'RN Student';
+                const roleOptionValue = getRoleOptionValue(profile, user.role);
+                const roleDisplay = getRoleDisplay(profile, user.role);
                 const name = user.name || user.username || 'Unknown';
                 const initials = name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
@@ -1557,8 +1617,8 @@
                 const safeEmail = (user.email || '').replace(/'/g, '');
 
                 const roleSelect = auth.currentUser
-                    ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid var(--clx-border); font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
-                           ${getRoleOptionsHtml(roleValue)}
+                    ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid var(--clx-border); font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary); min-width: 170px;">
+                           ${getRoleOptionsHtml(roleOptionValue)}
                        </select>
                        <button class="btn btn-sm btn-primary" onclick="updateUserRole('${safeUid}', '${safeEmail}', this.previousElementSibling.value)" style="white-space:nowrap;">Save Role</button>`
                     : '';
@@ -1570,7 +1630,7 @@
                             <div class="user-name">${escapeHtml(name)}</div>
                             <div class="user-email">${escapeHtml(user.email || '')}${user.username ? ' · @' + escapeHtml(user.username) : ''}</div>
                             <div class="user-badges">
-                                <span class="user-badge badge-role">${escapeHtml(roleValue)}</span>
+                                <span class="user-badge badge-role">${escapeHtml(roleDisplay)}</span>
                                 <span class="user-badge ${statusBadgeClass}">${escapeHtml(status)}</span>
                             </div>
                         </div>
@@ -1603,11 +1663,23 @@
                 const name = (u.name || '').toLowerCase();
                 const email = (u.email || '').toLowerCase();
                 const username = (u.username || '').toLowerCase();
-                const role = (u.role || '').toLowerCase();
                 const status = (u.status || 'approved').toLowerCase();
                 if (search && !name.includes(search) && !email.includes(search) && !username.includes(search)) return false;
-                if (roleF && role !== roleF.toLowerCase()) return false;
                 if (statusF && status !== statusF.toLowerCase()) return false;
+                if (roleF) {
+                    const profile = userProfilesByEmail[email] || null;
+                    const pid = profile && profile.role_id;
+                    const pyear = profile && profile.role_year;
+                    if (roleF === 'unset') {
+                        if (pid) return false;
+                    } else if (roleF.indexOf(':') !== -1) {
+                        const [wantId, wantYear] = roleF.split(':');
+                        if (pid !== wantId) return false;
+                        if (pyear !== wantYear) return false;
+                    } else {
+                        if (pid !== roleF) return false;
+                    }
+                }
                 return true;
             });
             renderRegisteredUsers(filtered);
