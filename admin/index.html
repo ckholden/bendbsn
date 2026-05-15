@@ -278,6 +278,76 @@
             .admin-tab { padding: 9px 12px; font-size: 12px; }
         }
 
+        /* ========== USER DIAGNOSTICS SLIDE-IN PANEL ========== */
+        .diag-panel-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1500; display: none;
+        }
+        .diag-panel-backdrop.open { display: block; }
+        .diag-panel {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: 480px; max-width: 100vw;
+            background: var(--clx-bg-surface, #fff);
+            border-left: 1px solid var(--clx-border, #d1dce8);
+            z-index: 1501;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+        }
+        .diag-panel.open { transform: translateX(0); }
+        .diag-panel-hdr {
+            position: sticky; top: 0;
+            background: var(--clx-bg-surface);
+            border-bottom: 1px solid var(--clx-border);
+            padding: 14px 18px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 5;
+        }
+        .diag-panel-body { padding: 16px 18px; }
+        .diag-section {
+            background: var(--clx-bg-surface-2);
+            border: 1px solid var(--clx-border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+        .diag-section h4 {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--clx-text-muted);
+            margin: 0 0 8px;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+        }
+        .diag-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 5px 0;
+            font-size: 13px;
+            gap: 12px;
+            border-bottom: 1px dashed var(--clx-border);
+        }
+        .diag-row:last-child { border-bottom: none; }
+        .diag-row strong {
+            color: var(--clx-text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+        .diag-row span {
+            color: var(--clx-text-primary);
+            text-align: right;
+            word-break: break-word;
+        }
+        .user-info { cursor: pointer; }
+        .user-info:hover .user-name { color: var(--clx-accent); text-decoration: underline; }
+
         /* ========== MOBILE RESPONSIVE ========== */
         @media (max-width: 600px) {
             .grid { grid-template-columns: 1fr !important; gap: 14px; }
@@ -967,10 +1037,36 @@
                     <div id="rolesList"><div class="empty-state"><div class="icon">&#128101;</div><p>Loading roles...</p></div></div>
                 </div>
             </div>
-            </div><!-- /grid -->
 
-            <!-- ===== LOGS subsection (placeholder for tools section bottom) ===== -->
-            <!-- Logs section is its own admin-section below -->
+            <!-- Firebase Data Explorer -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <span>🔎 Firebase Data Explorer</span>
+                    <span style="font-size:11px;color:var(--clx-text-muted);">Read/write any RTDB path</span>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
+                        <div style="flex:1;min-width:240px;">
+                            <label style="font-size:11px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Path</label>
+                            <input type="text" id="fbExplorerPath" placeholder="e.g. userProfiles/abc123 or appConfig/roles" style="width:100%;padding:8px 10px;border:1px solid var(--clx-border);border-radius:6px;font-family:monospace;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);" onkeydown="if(event.key==='Enter'){event.preventDefault();fbExplorerLoad();}">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="fbExplorerLoad()">Load</button>
+                        <button class="btn btn-secondary btn-sm" onclick="fbExplorerSave()">Save</button>
+                        <button class="btn btn-danger btn-sm" onclick="fbExplorerDelete()">Delete</button>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                        <span style="font-size:11px;color:var(--clx-text-muted);align-self:center;">Quick:</span>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fbExplorerPath').value='userProfiles';fbExplorerLoad();">userProfiles</button>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fbExplorerPath').value='appConfig/roles';fbExplorerLoad();">appConfig/roles</button>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fbExplorerPath').value='announcements';fbExplorerLoad();">announcements</button>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fbExplorerPath').value='userActions';fbExplorerLoad();">userActions</button>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fbExplorerPath').value='clientErrors';fbExplorerLoad();">clientErrors</button>
+                    </div>
+                    <div id="fbExplorerStatus" style="font-size:12px;color:var(--clx-text-muted);margin-bottom:6px;">Enter a path and click Load. Save writes JSON back. Delete removes the path entirely.</div>
+                    <textarea id="fbExplorerJson" style="width:100%;min-height:280px;padding:10px;border:1px solid var(--clx-border);border-radius:6px;font-family:monospace;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);resize:vertical;line-height:1.4;" placeholder="JSON output appears here after Load. Edit and Save to write back."></textarea>
+                </div>
+            </div>
+            </div><!-- /grid -->
         </div><!-- /section: tools -->
 
         <!-- ===== SECTION: TICKETS ===== -->
@@ -1048,9 +1144,39 @@
                         <div style="font-weight:600;">Pending Welcome Emails</div>
                         <div style="font-size:11px; color:var(--clx-text-muted);">Users still owed a welcome email</div>
                     </button>
+                    <button class="btn btn-secondary" onclick="showClientErrors()" style="padding:18px 12px; flex-direction:column; gap:4px; text-align:center;">
+                        <div style="font-size:24px;">🐛</div>
+                        <div style="font-weight:600;">Client Error Log <span class="tab-badge" id="clientErrorBadge" style="display:none;background:var(--clx-danger);">0</span></div>
+                        <div style="font-size:11px; color:var(--clx-text-muted);">JS errors users hit but didn't report</div>
+                    </button>
                 </div>
             </div>
         </div><!-- /section: logs -->
+
+        <!-- Client Errors Modal -->
+        <div id="clientErrorsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
+            <div style="max-width: 1100px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
+                <div style="background: var(--clx-danger,#dc2626); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 18px;">🐛 Client Error Log <span id="clientErrorsCount" style="font-weight:400;font-size:13px;opacity:0.9;"></span></h2>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="clearAllClientErrors()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Clear All</button>
+                        <button onclick="loadClientErrors()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Refresh</button>
+                        <button onclick="closeClientErrors()" style="background: rgba(0,0,0,0.3); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+                <div style="padding: 12px 20px; background: var(--clx-bg-surface-2); border-bottom: 1px solid var(--clx-border); display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                    <input type="text" id="clientErrorSearch" placeholder="Filter by message, email, or URL..." oninput="renderClientErrors()" style="flex:1;min-width:240px;padding: 7px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                    <select id="clientErrorTypeFilter" onchange="renderClientErrors()" style="padding:7px 10px; border:1px solid var(--clx-border); border-radius:6px; font-size:12px; background:var(--clx-bg-surface); color:var(--clx-text-primary);">
+                        <option value="">All Types</option>
+                        <option value="error">JS Errors</option>
+                        <option value="unhandledrejection">Promise Rejections</option>
+                    </select>
+                </div>
+                <div id="clientErrorsList" style="padding: 15px 20px; max-height: 70vh; overflow-y: auto;">
+                    <p style="color: var(--clx-text-muted);">Loading errors...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- IT Ticket Detail Modal -->
@@ -1156,6 +1282,21 @@
     </div>
     </main><!-- /clx-main -->
     </div><!-- /clx-shell -->
+
+    <!-- ===== USER DIAGNOSTICS PANEL ===== -->
+    <div class="diag-panel-backdrop" id="diagPanelBackdrop" onclick="closeUserDiagnostics()"></div>
+    <aside class="diag-panel" id="diagPanel" aria-hidden="true" aria-label="User diagnostics">
+        <div class="diag-panel-hdr">
+            <div style="min-width:0;flex:1;">
+                <div style="font-size:14px; font-weight:700; color:var(--clx-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="diagUserName">User</div>
+                <div style="font-size:11px; color:var(--clx-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="diagUserEmail">—</div>
+            </div>
+            <button onclick="closeUserDiagnostics()" aria-label="Close" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--clx-text-muted);padding:0 4px;line-height:1;">&times;</button>
+        </div>
+        <div class="diag-panel-body" id="diagPanelBody">
+            <div class="empty-state"><p>Loading...</p></div>
+        </div>
+    </aside>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -1797,7 +1938,7 @@
                 html += `
                     <div class="user-item">
                         <div class="user-avatar">${escapeHtml(initials)}</div>
-                        <div class="user-info">
+                        <div class="user-info" onclick="openUserDiagnostics('${safeUid}', '${safeEmail}')" title="Click to open diagnostics">
                             <div class="user-name">${escapeHtml(name)}</div>
                             <div class="user-email">${escapeHtml(user.email || '')}${user.username ? ' · @' + escapeHtml(user.username) : ''}</div>
                             <div class="user-badges">
@@ -2255,6 +2396,368 @@
                     .catch((e) => showToast('Error: ' + e.message, 'error'));
             }, { confirmText: 'Kick', danger: true });
         }
+
+        // ========== CLIENT ERROR LOG VIEWER ==========
+        const clientErrorsRef = database.ref('clientErrors');
+        let _allClientErrors = [];
+
+        function showClientErrors() {
+            document.getElementById('clientErrorsModal').style.display = 'block';
+            loadClientErrors();
+        }
+        function closeClientErrors() {
+            document.getElementById('clientErrorsModal').style.display = 'none';
+        }
+
+        async function loadClientErrors() {
+            const list = document.getElementById('clientErrorsList');
+            const countEl = document.getElementById('clientErrorsCount');
+            if (!list) return;
+            list.innerHTML = '<p style="color: var(--clx-text-muted);">Loading errors...</p>';
+            try {
+                const snap = await clientErrorsRef.orderByChild('timestamp').limitToLast(500).once('value');
+                _allClientErrors = [];
+                snap.forEach(c => _allClientErrors.push({ id: c.key, ...c.val() }));
+                _allClientErrors.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                if (countEl) countEl.textContent = '(' + _allClientErrors.length + ' total, last 500 shown)';
+                renderClientErrors();
+            } catch (e) {
+                list.innerHTML = '<p style="color: var(--clx-danger);">Failed to load: ' + escapeHtml(e.message) + '</p>';
+            }
+        }
+
+        function renderClientErrors() {
+            const list = document.getElementById('clientErrorsList');
+            if (!list) return;
+            const search = ((document.getElementById('clientErrorSearch') || {}).value || '').toLowerCase();
+            const typeF = (document.getElementById('clientErrorTypeFilter') || {}).value || '';
+            const filtered = _allClientErrors.filter(e => {
+                if (typeF && e.type !== typeF) return false;
+                if (search) {
+                    const blob = ((e.message || '') + ' ' + (e.url || '') + ' ' + (e.email || '') + ' ' + (e.source || '')).toLowerCase();
+                    if (blob.indexOf(search) === -1) return false;
+                }
+                return true;
+            });
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="icon">✨</div><p>No errors match. (Either no bugs, or the filter is too tight.)</p></div>';
+                return;
+            }
+            list.innerHTML = filtered.map(e => {
+                const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '—';
+                const typeColor = e.type === 'unhandledrejection' ? '#7c4dff' : '#dc2626';
+                const path = (e.url || '').replace(location.origin, '') || e.url || '—';
+                return '<div style="background:var(--clx-bg-surface-2);border-left:3px solid ' + typeColor + ';border-radius:6px;padding:10px 14px;margin-bottom:8px;">' +
+                    '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px;">' +
+                        '<span style="font-size:11px;font-weight:700;color:' + typeColor + ';text-transform:uppercase;">' + escapeHtml(e.type || 'error') + '</span>' +
+                        '<span style="font-size:11px;color:var(--clx-text-muted);">' + escapeHtml(ts) + '</span>' +
+                    '</div>' +
+                    '<div style="font-family:monospace;font-size:12px;color:var(--clx-text-primary);word-break:break-word;margin-bottom:6px;">' + escapeHtml(e.message || '(no message)') + '</div>' +
+                    '<div style="font-size:11px;color:var(--clx-text-muted);display:flex;flex-wrap:wrap;gap:12px;">' +
+                        '<span><strong>User:</strong> ' + escapeHtml(e.email || '(anon)') + '</span>' +
+                        '<span><strong>Page:</strong> ' + escapeHtml(path) + '</span>' +
+                        (e.source ? '<span><strong>Source:</strong> ' + escapeHtml(e.source) + (e.line ? ':' + e.line : '') + '</span>' : '') +
+                    '</div>' +
+                    (e.stack ? '<details style="margin-top:6px;"><summary style="cursor:pointer;font-size:11px;color:var(--clx-text-muted);">Stack trace</summary><pre style="font-size:10px;background:var(--clx-bg-surface);padding:8px;border-radius:4px;overflow-x:auto;margin-top:4px;">' + escapeHtml(e.stack) + '</pre></details>' : '') +
+                    '<div style="margin-top:6px;text-align:right;"><button class="btn btn-sm" style="background:#dc3545;color:white;font-size:11px;padding:3px 8px;" onclick="deleteClientError(\'' + e.id + '\')">Delete</button></div>' +
+                '</div>';
+            }).join('');
+        }
+
+        async function deleteClientError(id) {
+            try {
+                await clientErrorsRef.child(id).remove();
+                _allClientErrors = _allClientErrors.filter(e => e.id !== id);
+                renderClientErrors();
+            } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+        }
+
+        function clearAllClientErrors() {
+            showConfirmModal('Clear All Errors', 'Delete ALL client error log entries? This cannot be undone.', async () => {
+                try {
+                    await clientErrorsRef.remove();
+                    _allClientErrors = [];
+                    renderClientErrors();
+                    showToast('All client errors cleared.', 'success');
+                } catch (e) { showToast('Clear failed: ' + e.message, 'error'); }
+            }, { danger: true, confirmText: 'Clear All' });
+        }
+
+        // Live badge: count errors in last 24h
+        clientErrorsRef.orderByChild('timestamp').limitToLast(100).on('value', snap => {
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            let recentCount = 0;
+            snap.forEach(c => { if ((c.val() || {}).timestamp >= cutoff) recentCount++; });
+            const badge = document.getElementById('clientErrorBadge');
+            if (badge) {
+                if (recentCount > 0) { badge.style.display = ''; badge.textContent = recentCount; }
+                else { badge.style.display = 'none'; }
+            }
+        });
+
+        // ========== FIREBASE DATA EXPLORER ==========
+        function fbExplorerSetStatus(msg, color) {
+            const el = document.getElementById('fbExplorerStatus');
+            if (!el) return;
+            el.textContent = msg;
+            el.style.color = color || 'var(--clx-text-muted)';
+        }
+
+        async function fbExplorerLoad() {
+            if (!auth.currentUser) { showToast('Sign in to Firebase first.', 'error'); openFirebaseAuthModal(); return; }
+            const path = (document.getElementById('fbExplorerPath').value || '').trim().replace(/^\/+|\/+$/g, '');
+            if (!path) { fbExplorerSetStatus('Enter a path first.', 'var(--clx-warning)'); return; }
+            fbExplorerSetStatus('Loading ' + path + '…');
+            try {
+                const snap = await database.ref(path).once('value');
+                const val = snap.val();
+                document.getElementById('fbExplorerJson').value = JSON.stringify(val, null, 2);
+                const count = val && typeof val === 'object' ? Object.keys(val).length : (val == null ? 0 : 1);
+                fbExplorerSetStatus('Loaded ' + path + ' (' + count + ' ' + (count === 1 ? 'key/value' : 'keys') + ', ' + new Blob([JSON.stringify(val)]).size + ' bytes)', 'var(--clx-success)');
+            } catch(e) {
+                fbExplorerSetStatus('Load failed: ' + (e.message || e), 'var(--clx-danger)');
+            }
+        }
+
+        async function fbExplorerSave() {
+            if (!auth.currentUser) { showToast('Sign in to Firebase first.', 'error'); openFirebaseAuthModal(); return; }
+            const path = (document.getElementById('fbExplorerPath').value || '').trim().replace(/^\/+|\/+$/g, '');
+            if (!path) { fbExplorerSetStatus('Enter a path first.', 'var(--clx-warning)'); return; }
+            const raw = document.getElementById('fbExplorerJson').value || '';
+            let parsed;
+            try { parsed = raw.trim() ? JSON.parse(raw) : null; }
+            catch(e) { fbExplorerSetStatus('Invalid JSON: ' + e.message, 'var(--clx-danger)'); return; }
+            showConfirmModal('Save to Firebase', 'Overwrite ' + path + ' with the JSON in the editor? This is irreversible.', async () => {
+                try {
+                    await database.ref(path).set(parsed);
+                    fbExplorerSetStatus('Saved ' + path + ' at ' + new Date().toLocaleTimeString(), 'var(--clx-success)');
+                    showToast('Saved.', 'success');
+                } catch(e) {
+                    fbExplorerSetStatus('Save failed: ' + (e.message || e), 'var(--clx-danger)');
+                    showToast('Save failed: ' + e.message, 'error');
+                }
+            }, { confirmText: 'Save', danger: true });
+        }
+
+        async function fbExplorerDelete() {
+            if (!auth.currentUser) { showToast('Sign in to Firebase first.', 'error'); openFirebaseAuthModal(); return; }
+            const path = (document.getElementById('fbExplorerPath').value || '').trim().replace(/^\/+|\/+$/g, '');
+            if (!path) { fbExplorerSetStatus('Enter a path first.', 'var(--clx-warning)'); return; }
+            if (path.length < 3 || path.indexOf('/') === -1) {
+                showConfirmModal('Delete top-level path?', 'You\'re about to delete a TOP-LEVEL Firebase path: "' + path + '". This will wipe an entire collection. Type confirm to proceed.', async () => {
+                    try {
+                        await database.ref(path).remove();
+                        fbExplorerSetStatus('Deleted ' + path, 'var(--clx-success)');
+                        document.getElementById('fbExplorerJson').value = '';
+                        showToast('Deleted.', 'success');
+                    } catch(e) {
+                        fbExplorerSetStatus('Delete failed: ' + (e.message || e), 'var(--clx-danger)');
+                    }
+                }, { confirmText: 'Delete top-level', danger: true });
+                return;
+            }
+            showConfirmModal('Delete path?', 'Permanently delete ' + path + '? This is irreversible.', async () => {
+                try {
+                    await database.ref(path).remove();
+                    fbExplorerSetStatus('Deleted ' + path, 'var(--clx-success)');
+                    document.getElementById('fbExplorerJson').value = '';
+                    showToast('Deleted.', 'success');
+                } catch(e) {
+                    fbExplorerSetStatus('Delete failed: ' + (e.message || e), 'var(--clx-danger)');
+                }
+            }, { confirmText: 'Delete', danger: true });
+        }
+
+        // ========== PER-USER DIAGNOSTICS PANEL ==========
+        async function openUserDiagnostics(uid, email) {
+            const panel = document.getElementById('diagPanel');
+            const backdrop = document.getElementById('diagPanelBackdrop');
+            const body = document.getElementById('diagPanelBody');
+            if (!panel || !backdrop || !body) return;
+
+            const cleanEmail = (email || '').trim();
+            const cleanUid = (uid || '').trim();
+
+            document.getElementById('diagUserName').textContent = cleanEmail || 'Unknown user';
+            document.getElementById('diagUserEmail').textContent = cleanUid ? 'UID: ' + cleanUid : '(no Firebase UID)';
+            body.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Loading user data...</p></div>';
+
+            panel.classList.add('open');
+            panel.setAttribute('aria-hidden', 'false');
+            backdrop.classList.add('open');
+
+            // Bail early if no UID — show what we can
+            if (!cleanUid) {
+                body.innerHTML = '<div class="diag-section"><h4>Cannot Diagnose</h4><p style="font-size:13px;color:var(--clx-text-muted);">This user has no Firebase UID stored. They may not have logged in since UID tracking was added. Ask them to sign in once, then return here.</p></div>';
+                return;
+            }
+
+            try {
+                // Sanitize email for userDocuments path (replace . # $ [ ] with _)
+                const safeEmail = cleanEmail ? cleanEmail.replace(/[.#$\[\]\/]/g, '_') : '';
+
+                // Parallel reads — degrade gracefully if any fail (permissions etc.)
+                const tasks = [
+                    userProfilesRef.child(cleanUid).once('value').catch(() => null),
+                    safeEmail ? database.ref('userDocuments/' + safeEmail).once('value').catch(() => null) : Promise.resolve(null),
+                    database.ref('loginHistory').orderByChild('uid').equalTo(cleanUid).once('value').catch(() => null),
+                    cleanEmail ? database.ref('appTickets').orderByChild('userEmail').equalTo(cleanEmail).once('value').catch(() => null) : Promise.resolve(null),
+                    database.ref('userActions/' + cleanUid).once('value').catch(() => null)
+                ];
+                const [profileSnap, docsSnap, loginSnap, ticketsSnap, actionsSnap] = await Promise.all(tasks);
+
+                const profile = (profileSnap && profileSnap.val()) || {};
+                const docsCount = docsSnap ? docsSnap.numChildren() : 0;
+                const loginEntries = [];
+                if (loginSnap) loginSnap.forEach(c => loginEntries.push(c.val()));
+                loginEntries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const ticketEntries = [];
+                if (ticketsSnap) ticketsSnap.forEach(c => ticketEntries.push({ id: c.key, ...c.val() }));
+                const pendingActions = (actionsSnap && actionsSnap.val()) || {};
+
+                // Update header with friendly name from profile if available
+                const displayName = profile.displayName || cleanEmail || 'Unknown';
+                document.getElementById('diagUserName').textContent = displayName;
+
+                body.innerHTML = renderDiagPanel(cleanUid, cleanEmail, profile, docsCount, loginEntries, ticketEntries, pendingActions);
+            } catch (e) {
+                console.error('openUserDiagnostics failed:', e);
+                body.innerHTML = '<div class="diag-section"><h4>Error</h4><p style="font-size:13px;color:var(--clx-danger);">Failed to load user data: ' + escapeHtml(e.message || 'unknown error') + '</p></div>';
+            }
+        }
+
+        function closeUserDiagnostics() {
+            const panel = document.getElementById('diagPanel');
+            const backdrop = document.getElementById('diagPanelBackdrop');
+            if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
+            if (backdrop) backdrop.classList.remove('open');
+        }
+
+        function renderDiagPanel(uid, email, profile, docsCount, loginEntries, ticketEntries, pendingActions) {
+            const phraseCount = profile.smartPhrases ? Object.keys(profile.smartPhrases).length : 0;
+            const lastLogin = loginEntries[0];
+            const roleDisplay = (profile.role_label || profile.role || '—') + (profile.role_year ? ' (' + profile.role_year + ')' : '');
+            const fmtTs = ts => ts ? new Date(ts).toLocaleString() : '—';
+            const safeUid = (uid || '').replace(/'/g, '');
+            const safeEmail = (email || '').replace(/'/g, '');
+
+            // Pending action warnings
+            let pendingHtml = '';
+            if (pendingActions && Object.keys(pendingActions).length > 0) {
+                const items = [];
+                if (pendingActions.forceLogout) items.push('Force logout (set ' + fmtTs(pendingActions.forceLogout.ts) + ' by ' + escapeHtml(pendingActions.forceLogout.by || 'admin') + ')');
+                if (pendingActions.clearCache) items.push('Clear cache (set ' + fmtTs(pendingActions.clearCache.ts) + ' by ' + escapeHtml(pendingActions.clearCache.by || 'admin') + ')');
+                if (items.length) {
+                    pendingHtml = '<div class="diag-section" style="border-left:3px solid var(--clx-warning);"><h4 style="color:var(--clx-warning-text);">⚠ Pending Actions</h4>' +
+                        items.map(i => '<div style="font-size:12px;padding:3px 0;">' + i + '</div>').join('') +
+                        '<button class="btn btn-secondary btn-sm" onclick="clearUserActions(\'' + safeUid + '\')" style="margin-top:8px;">Cancel pending actions</button></div>';
+                }
+            }
+
+            return pendingHtml +
+                `<div class="diag-section">
+                    <h4>Profile</h4>
+                    <div class="diag-row"><strong>Display Name</strong><span>${escapeHtml(profile.displayName || '—')}</span></div>
+                    <div class="diag-row"><strong>Email</strong><span>${escapeHtml(profile.email || email || '—')}</span></div>
+                    <div class="diag-row"><strong>Role</strong><span>${escapeHtml(roleDisplay)}</span></div>
+                    <div class="diag-row"><strong>Role ID</strong><span style="font-family:monospace;font-size:11px;">${escapeHtml(profile.role_id || '—')}</span></div>
+                    <div class="diag-row"><strong>UID</strong><span style="font-family:monospace;font-size:11px;">${escapeHtml(uid)}</span></div>
+                    <div class="diag-row"><strong>Admin</strong><span>${profile.isAdmin ? '✓ Yes' : 'No'}</span></div>
+                    <div class="diag-row"><strong>Tenant</strong><span>${escapeHtml(profile.tenantId || '—')}</span></div>
+                    <div class="diag-row"><strong>Created</strong><span>${fmtTs(profile.createdAt)}</span></div>
+                    <div class="diag-row"><strong>Updated</strong><span>${fmtTs(profile.updatedAt)}</span></div>
+                </div>
+
+                <div class="diag-section">
+                    <h4>Activity</h4>
+                    <div class="diag-row"><strong>Last Login</strong><span>${fmtTs(lastLogin?.timestamp)}</span></div>
+                    <div class="diag-row"><strong>Total Logins</strong><span>${loginEntries.length}</span></div>
+                    <div class="diag-row"><strong>Saved Documents</strong><span>${docsCount}</span></div>
+                    <div class="diag-row"><strong>Smart Phrases</strong><span>${phraseCount}</span></div>
+                    <div class="diag-row"><strong>Tickets Filed</strong><span>${ticketEntries.length}</span></div>
+                </div>
+
+                ${loginEntries.length > 0 ? `
+                <div class="diag-section">
+                    <h4>Recent Logins (last 10)</h4>
+                    <div style="font-size:12px;">
+                        ${loginEntries.slice(0, 10).map(e => `<div style="padding:5px 0;border-bottom:1px solid var(--clx-border);"><strong>${fmtTs(e.timestamp)}</strong><br><span style="font-size:10px;color:var(--clx-text-muted);font-family:monospace;">${escapeHtml((e.userAgent || '').substring(0, 80))}</span></div>`).join('')}
+                    </div>
+                </div>` : ''}
+
+                ${ticketEntries.length > 0 ? `
+                <div class="diag-section">
+                    <h4>Tickets Filed (${ticketEntries.length})</h4>
+                    <div style="font-size:12px;">
+                        ${ticketEntries.slice(0, 5).map(t => `<div style="padding:5px 0;border-bottom:1px solid var(--clx-border);"><strong>${escapeHtml(t.subject || '(no subject)')}</strong> &middot; <span style="color:var(--clx-text-muted);">${escapeHtml(t.status || 'open')}</span><br><span style="font-size:10px;color:var(--clx-text-muted);">${fmtTs(t.timestamp)}</span></div>`).join('')}
+                    </div>
+                </div>` : ''}
+
+                <div class="diag-section">
+                    <h4>Admin Actions</h4>
+                    <div style="display:grid;gap:8px;">
+                        <button class="btn btn-warning btn-sm" onclick="forceUserLogout('${safeUid}')">🚪 Force Logout (next page load)</button>
+                        <button class="btn btn-warning btn-sm" onclick="forceUserClearCache('${safeUid}')">🗑️ Clear Their localStorage</button>
+                        <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${safeUid}'); showToast('UID copied','success');">📋 Copy UID</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.open('https://console.firebase.google.com/project/bendbsn-17377/database/bendbsn-17377-default-rtdb/data/userProfiles/${safeUid}', '_blank')">🔗 Open in Firebase Console</button>
+                    </div>
+                </div>`;
+        }
+
+        async function forceUserLogout(uid) {
+            if (!uid) return;
+            showConfirmModal('Force Logout', 'Sign this user out on their next page load? They\'ll need to log in again.', async () => {
+                try {
+                    await database.ref('userActions/' + uid + '/forceLogout').set({
+                        ts: Date.now(),
+                        by: (auth.currentUser && auth.currentUser.email) || 'admin'
+                    });
+                    showToast('Force logout flag set. Will trigger on next page load.', 'success');
+                    // Refresh diag panel to show pending action
+                    const email = document.getElementById('diagUserEmail').textContent;
+                    openUserDiagnostics(uid, email.replace(/^UID: .*/, ''));
+                } catch (e) {
+                    showToast('Failed: ' + e.message, 'error');
+                }
+            }, { confirmText: 'Force Logout', danger: true });
+        }
+
+        async function forceUserClearCache(uid) {
+            if (!uid) return;
+            showConfirmModal('Clear User Cache', 'Clear this user\'s localStorage on their next page load (theme, role cache, drafts, etc.)? They will NOT be logged out.', async () => {
+                try {
+                    await database.ref('userActions/' + uid + '/clearCache').set({
+                        ts: Date.now(),
+                        by: (auth.currentUser && auth.currentUser.email) || 'admin'
+                    });
+                    showToast('Clear cache flag set. Will trigger on next page load.', 'success');
+                    const email = document.getElementById('diagUserEmail').textContent;
+                    openUserDiagnostics(uid, email.replace(/^UID: .*/, ''));
+                } catch (e) {
+                    showToast('Failed: ' + e.message, 'error');
+                }
+            }, { confirmText: 'Set flag' });
+        }
+
+        async function clearUserActions(uid) {
+            if (!uid) return;
+            try {
+                await database.ref('userActions/' + uid).remove();
+                showToast('Pending actions cleared.', 'success');
+                const email = document.getElementById('diagUserEmail').textContent;
+                openUserDiagnostics(uid, email.replace(/^UID: .*/, ''));
+            } catch (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }
+        }
+
+        // ESC closes diagnostics panel
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const panel = document.getElementById('diagPanel');
+                if (panel && panel.classList.contains('open')) closeUserDiagnostics();
+            }
+        });
 
         // ========== ADMIN SECTION NAVIGATION ==========
         function showAdminSection(name) {

@@ -168,6 +168,19 @@
       }
     },
 
+    "userActions": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
+      }
+    },
+
+    "clientErrors": {
+      ".read": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+      ".write": "auth != null",
+      ".indexOn": ["timestamp", "uid"]
+    },
+
     "appConfig": {
       ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true",
       "roles": {

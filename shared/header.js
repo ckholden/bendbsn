@@ -904,3 +904,155 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     }
 })();
 // ===== END IT TICKET / FEEDBACK MODAL =====
+
+
+// ===== ADMIN PER-USER ACTIONS LISTENER =====
+// Listens for admin-set flags at userActions/{uid}/{forceLogout|clearCache}.
+// When a flag fires, the client takes the action and immediately deletes
+// the flag (so it's one-shot). Used by admin panel's User Diagnostics
+// pane to remotely sign a user out or wipe their localStorage cache.
+(function () {
+    'use strict';
+
+    var isLoginPage = location.pathname === '/' || location.pathname === '/index.html';
+    if (isLoginPage) return; // never run on the login page
+
+    var attempts = 0;
+    function tryInit() {
+        attempts++;
+        if (!window.firebase || !firebase.apps || !firebase.apps.length) {
+            if (attempts < 15) setTimeout(tryInit, 700); // up to ~10s wait
+            return;
+        }
+        try {
+            firebase.auth().onAuthStateChanged(function (user) {
+                if (!user || !user.uid) return;
+                var ref = firebase.database().ref('userActions/' + user.uid);
+                ref.on('value', function (snap) {
+                    var actions = snap && snap.val();
+                    if (!actions) return;
+
+                    if (actions.forceLogout) {
+                        ref.child('forceLogout').remove().catch(function () {});
+                        ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid',
+                         'bendbsn_role_v2', 'bendbsn_login_at'].forEach(function (k) {
+                            try { localStorage.removeItem(k); } catch (e) {}
+                        });
+                        try {
+                            Object.keys(localStorage)
+                                .filter(function (k) { return k.indexOf('bendbsn_draft_') === 0; })
+                                .forEach(function (k) { localStorage.removeItem(k); });
+                        } catch (e) {}
+                        try { firebase.auth().signOut(); } catch (e) {}
+                        try { sessionStorage.setItem('bendbsn_force_logout', '1'); } catch (e) {}
+                        location.replace('/');
+                        return;
+                    }
+
+                    if (actions.clearCache) {
+                        ref.child('clearCache').remove().catch(function () {});
+                        // Wipe all bendbsn_* localStorage EXCEPT auth keys
+                        // (so user stays logged in but cached state is reset)
+                        var preserve = { 'bendbsn_auth': 1, 'bendbsn_user': 1,
+                                         'bendbsn_displayName': 1, 'bendbsn_uid': 1,
+                                         'bendbsn_login_at': 1 };
+                        try {
+                            var toRemove = [];
+                            for (var i = 0; i < localStorage.length; i++) {
+                                var k = localStorage.key(i);
+                                if (k && k.indexOf('bendbsn_') === 0 && !preserve[k]) toRemove.push(k);
+                            }
+                            toRemove.forEach(function (k) { localStorage.removeItem(k); });
+                        } catch (e) {}
+                        try { sessionStorage.setItem('bendbsn_cache_cleared', '1'); } catch (e) {}
+                        location.reload();
+                        return;
+                    }
+                });
+            });
+        } catch (e) { /* never block render */ }
+    }
+    tryInit();
+
+    // Show a one-time toast after admin-triggered cache clear (next page load)
+    function showCacheClearedToast() {
+        try {
+            if (sessionStorage.getItem('bendbsn_cache_cleared') === '1') {
+                sessionStorage.removeItem('bendbsn_cache_cleared');
+                if (typeof showToast === 'function') {
+                    showToast('Local cache was reset by an admin. You\'re still signed in.', 'info');
+                }
+            }
+        } catch (e) {}
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', showCacheClearedToast);
+    } else {
+        showCacheClearedToast();
+    }
+})();
+// ===== END ADMIN PER-USER ACTIONS LISTENER =====
+
+
+// ===== CLIENT ERROR CAPTURE =====
+// Captures unhandled JS errors and unhandled promise rejections, writing
+// them to clientErrors/{pushId} in Firebase. Admin can view these in the
+// Logs section to see when users hit bugs without them reporting.
+// Errors are throttled (max 1/sec, max 20/page-load) to prevent runaway
+// loops from hammering Firebase.
+(function () {
+    'use strict';
+
+    var isLoginPage = location.pathname === '/' || location.pathname === '/index.html';
+    if (isLoginPage) return;
+
+    var errorCount = 0;
+    var lastErrorTs = 0;
+    var MAX_ERRORS_PER_PAGE = 20;
+    var THROTTLE_MS = 1000;
+
+    function logClientError(payload) {
+        try {
+            var now = Date.now();
+            if (errorCount >= MAX_ERRORS_PER_PAGE) return;
+            if (now - lastErrorTs < THROTTLE_MS) return;
+            errorCount++;
+            lastErrorTs = now;
+
+            // Add common context
+            payload.timestamp = now;
+            payload.url = location.href;
+            payload.userAgent = navigator.userAgent;
+            payload.uid = (window.firebase && firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.uid : null;
+            payload.email = localStorage.getItem('bendbsn_user') || null;
+            payload.displayName = localStorage.getItem('bendbsn_displayName') || null;
+
+            if (window.firebase && firebase.apps && firebase.apps.length) {
+                firebase.database().ref('clientErrors').push(payload).catch(function () {});
+            }
+        } catch (e) { /* never throw from error handler */ }
+    }
+
+    window.addEventListener('error', function (e) {
+        logClientError({
+            type: 'error',
+            message: (e.message || 'Unknown error').substring(0, 500),
+            source: (e.filename || '').substring(0, 200),
+            line: e.lineno || null,
+            col: e.colno || null,
+            stack: (e.error && e.error.stack ? String(e.error.stack) : '').substring(0, 2000)
+        });
+    });
+
+    window.addEventListener('unhandledrejection', function (e) {
+        var reason = e.reason;
+        var message = reason && reason.message ? reason.message : String(reason).substring(0, 500);
+        var stack = reason && reason.stack ? String(reason.stack).substring(0, 2000) : '';
+        logClientError({
+            type: 'unhandledrejection',
+            message: message.substring(0, 500),
+            stack: stack
+        });
+    });
+})();
+// ===== END CLIENT ERROR CAPTURE =====
