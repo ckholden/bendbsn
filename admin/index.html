@@ -207,6 +207,77 @@
         }
         .action-bar label { font-weight: 600; color: var(--clx-text-secondary, #4a5568); font-size: 12px; }
 
+        /* ========== ADMIN SECTIONED NAV ========== */
+        .admin-tabs {
+            display: flex;
+            gap: 2px;
+            border-bottom: 2px solid var(--clx-border, #d1dce8);
+            margin-bottom: 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .admin-tabs::-webkit-scrollbar { display: none; }
+        .admin-tab {
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--clx-text-muted, #718096);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            font-family: inherit;
+            transition: color 0.15s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .admin-tab:hover { color: var(--clx-text-primary, #1a2532); }
+        .admin-tab.active {
+            color: var(--clx-accent, #0f7490);
+            border-bottom-color: var(--clx-accent, #0f7490);
+        }
+        .admin-tab .tab-badge {
+            background: var(--clx-danger, #dc2626);
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+        }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+
+        /* Section header inside a section */
+        .admin-section-hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .admin-section-hdr h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--clx-text-primary, #1a2532);
+            margin: 0;
+        }
+        .admin-section-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        @media (max-width: 600px) {
+            .admin-tab { padding: 9px 12px; font-size: 12px; }
+        }
+
         /* ========== MOBILE RESPONSIVE ========== */
         @media (max-width: 600px) {
             .grid { grid-template-columns: 1fr !important; gap: 14px; }
@@ -389,73 +460,89 @@
             </div>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="stat-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px;">
-            <div class="stat-box" style="border-left: 3px solid #28a745;">
-                <div class="stat-number" id="statOnline" style="color: #28a745;">0</div>
-                <div class="stat-label">Online</div>
+        <!-- Sub-nav: tabbed sections -->
+        <div class="admin-tabs" role="tablist" id="adminTabs">
+            <button class="admin-tab active" data-section="dashboard" onclick="showAdminSection('dashboard')" role="tab">📊 Dashboard</button>
+            <button class="admin-tab" data-section="users" onclick="showAdminSection('users')" role="tab">👥 Users</button>
+            <button class="admin-tab" data-section="community" onclick="showAdminSection('community')" role="tab">💬 Community</button>
+            <button class="admin-tab" data-section="tickets" onclick="showAdminSection('tickets')" role="tab">🎫 Tickets <span class="tab-badge" id="tabBadgeTickets" style="display:none;">0</span></button>
+            <button class="admin-tab" data-section="logs" onclick="showAdminSection('logs')" role="tab">📜 Logs</button>
+            <button class="admin-tab" data-section="tools" onclick="showAdminSection('tools')" role="tab">🛠️ Tools</button>
+            <button class="admin-tab" data-section="danger" onclick="showAdminSection('danger')" role="tab">⚠️ Danger</button>
+        </div>
+
+        <!-- ===== SECTION: DASHBOARD ===== -->
+        <div class="admin-section active" data-section="dashboard">
+            <div class="admin-section-hdr">
+                <h2>📊 At-a-glance</h2>
+                <div class="admin-section-actions">
+                    <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All</button>
+                </div>
             </div>
-            <div class="stat-box" style="border-left: 3px solid var(--clx-accent, #0f7490);">
-                <div class="stat-number" id="statRegistered">0</div>
-                <div class="stat-label">Registered</div>
+            <div class="stat-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px;">
+                <div class="stat-box" style="border-left: 3px solid #28a745; cursor:pointer;" onclick="showAdminSection('users')">
+                    <div class="stat-number" id="statOnline" style="color: #28a745;">0</div>
+                    <div class="stat-label">Online</div>
+                </div>
+                <div class="stat-box" style="border-left: 3px solid var(--clx-accent, #0f7490); cursor:pointer;" onclick="showAdminSection('users')">
+                    <div class="stat-number" id="statRegistered">0</div>
+                    <div class="stat-label">Registered</div>
+                </div>
+                <div class="stat-box" style="border-left: 3px solid #dc3545; cursor:pointer;" onclick="showAdminSection('users')">
+                    <div class="stat-number" id="statBanned" style="color: #dc3545;">0</div>
+                    <div class="stat-label">Banned</div>
+                </div>
+                <div class="stat-box" style="border-left: 3px solid #6f42c1; cursor:pointer;" onclick="showAdminSection('community')">
+                    <div class="stat-number" id="statPosts" style="color: #6f42c1;">0</div>
+                    <div class="stat-label">Posts</div>
+                </div>
+                <div class="stat-box" style="border-left: 3px solid #e67e22; cursor:pointer;" onclick="showAdminSection('tickets')">
+                    <div class="stat-number" id="statOpenTickets" style="color: #e67e22;">0</div>
+                    <div class="stat-label">Open Tickets</div>
+                </div>
             </div>
-            <div class="stat-box" style="border-left: 3px solid #dc3545;">
-                <div class="stat-number" id="statBanned" style="color: #dc3545;">0</div>
-                <div class="stat-label">Banned</div>
-            </div>
-            <div class="stat-box" style="border-left: 3px solid #6f42c1;">
-                <div class="stat-number" id="statPosts" style="color: #6f42c1;">0</div>
-                <div class="stat-label">Posts</div>
-            </div>
-            <div class="stat-box" style="border-left: 3px solid #e67e22;">
-                <div class="stat-number" id="statOpenTickets" style="color: #e67e22;">0</div>
-                <div class="stat-label">Open Tickets</div>
+            <div class="card">
+                <div class="card-header"><span>Quick Jump</span></div>
+                <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('users')">👥 Manage Users &amp; Roles</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('community')">💬 Moderate Community</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('tickets')">🎫 Review Tickets</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('logs')">📜 View Logs</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('tools')">🛠️ Tools &amp; Config</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('danger')">⚠️ Danger Zone</button>
+                </div>
             </div>
         </div>
 
-        <!-- Action Bar -->
-        <div class="action-bar" style="gap: 6px;">
-            <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All</button>
-            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
-            <button class="btn btn-secondary btn-sm" onclick="showLoginHistory()">Login History</button>
-            <button class="btn btn-secondary btn-sm" onclick="showExportHistory()">Export History</button>
-            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
-            <button class="btn btn-secondary btn-sm" onclick="showNotificationLog()">Email Log</button>
-            <button class="btn btn-secondary btn-sm" onclick="showPendingWelcomeEmails()" id="pendingEmailsBtn">Pending Emails</button>
-            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
-            <button class="btn btn-secondary btn-sm" onclick="showSmartPhrases()">Smart Phrases</button>
-            <button class="btn btn-secondary btn-sm" onclick="showCommunityStats()">Community Stats</button>
-            <span style="color: var(--clx-border); margin: 0 2px;">|</span>
-            <button class="btn btn-secondary btn-sm" onclick="showTicketsPanel()">🎫 Tickets</button>
-            <button class="btn btn-secondary btn-sm" onclick="normalizeUserRoles()">Normalize Roles</button>
-        </div>
-
-        <!-- Danger Zone (collapsed by default) -->
-        <div class="card" style="margin-bottom: 20px;">
-            <div class="card-header" style="background:var(--clx-danger-bg,#fef2f2);color:var(--clx-danger-text,#991b1b);border-bottom-color:var(--clx-danger,#dc2626);cursor:pointer;" onclick="toggleDangerZone()" id="dangerZoneHeader">
-                <span>⚠️ Danger Zone</span>
-                <span id="dangerZoneChev" style="font-size:12px;">▶ Click to expand</span>
+        <!-- ===== SECTION: DANGER ===== -->
+        <div class="admin-section" data-section="danger">
+            <div class="admin-section-hdr">
+                <h2 style="color:var(--clx-danger-text,#991b1b);">⚠️ Danger Zone</h2>
             </div>
-            <div class="card-body" id="dangerZoneBody" style="display:none;">
-                <p style="font-size: 12px; color: var(--clx-text-muted); margin-bottom: 12px;">
-                    High-impact actions. Use with care.
-                </p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
-                    <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
-                    <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
-                    <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
-                    <button class="btn btn-danger btn-sm" onclick="clearAppCache()">🗑️ Clear Cache</button>
-                    <button class="btn btn-danger btn-sm" onclick="clearChatPresence()">Clear Chat Presence</button>
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <input id="purgeUserSearch" type="text" placeholder="Purge user everywhere (name/email/uid)" style="flex: 1; min-width: 180px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
-                        <button class="btn btn-danger btn-sm" onclick="purgeUserEverywhere()">Purge User</button>
+            <div class="card" style="border-left: 4px solid var(--clx-danger,#dc2626);">
+                <div class="card-header" style="background:var(--clx-danger-bg,#fef2f2);color:var(--clx-danger-text,#991b1b);border-bottom-color:var(--clx-danger,#dc2626);">
+                    <span>High-impact actions</span>
+                </div>
+                <div class="card-body">
+                    <p style="font-size: 12px; color: var(--clx-text-muted); margin-bottom: 12px;">
+                        These actions are irreversible. Each one prompts for confirmation. Use only when needed.
+                    </p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                        <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
+                        <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAppCache()">🗑️ Clear Cache</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearChatPresence()">Clear Chat Presence</button>
+                        <button class="btn btn-danger btn-sm" onclick="purgeOrphanedDMs()">Purge Orphan DMs</button>
+                        <div style="grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <input id="purgeUserSearch" type="text" placeholder="Purge user everywhere (name/email/uid)" style="flex: 1; min-width: 180px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                            <button class="btn btn-danger btn-sm" onclick="purgeUserEverywhere()">Purge User</button>
+                        </div>
+                        <div style="grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <input id="dmPurgeSearch" type="text" placeholder="Purge DMs by name/email/uid" style="flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                            <button class="btn btn-danger btn-sm" onclick="purgeDMsBySearch()">Purge DMs</button>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <input id="dmPurgeSearch" type="text" placeholder="Purge DMs by name/email/uid" style="flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
-                        <button class="btn btn-danger btn-sm" onclick="purgeDMsBySearch()">Purge DMs</button>
-                    </div>
-                    <button class="btn btn-danger btn-sm" onclick="purgeOrphanedDMs()">Purge Orphan DMs</button>
-                    <button class="btn btn-secondary btn-sm" onclick="runBackfillTenantId()" title="One-time: add tenantId: bendbsn to all user profiles">Backfill tenantId</button>
                 </div>
             </div>
         </div>
@@ -653,7 +740,15 @@
             </div>
         </div>
 
-        <div class="grid">
+        <!-- ===== SECTION: USERS ===== -->
+        <div class="admin-section" data-section="users">
+            <div class="admin-section-hdr">
+                <h2>👥 Users</h2>
+                <div class="admin-section-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="refreshAll()">Refresh</button>
+                </div>
+            </div>
+            <div class="grid">
             <!-- Online Users -->
             <div class="card">
                 <div class="card-header">
@@ -743,7 +838,19 @@
                     </div>
                 </div>
             </div>
+            </div><!-- /grid -->
+        </div><!-- /section: users -->
 
+        <!-- ===== SECTION: COMMUNITY ===== -->
+        <div class="admin-section" data-section="community">
+            <div class="admin-section-hdr">
+                <h2>💬 Community Moderation</h2>
+                <div class="admin-section-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="showCommunityStats()">Stats</button>
+                    <button class="btn btn-secondary btn-sm" onclick="refreshAll()">Refresh</button>
+                </div>
+            </div>
+            <div class="grid">
             <!-- Chat Messages -->
             <div class="card">
                 <div class="card-header">
@@ -802,7 +909,20 @@
                     </div>
                 </div>
             </div>
+            </div><!-- /grid -->
+        </div><!-- /section: community -->
 
+        <!-- ===== SECTION: TOOLS ===== -->
+        <div class="admin-section" data-section="tools">
+            <div class="admin-section-hdr">
+                <h2>🛠️ Tools &amp; Configuration</h2>
+                <div class="admin-section-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="showSmartPhrases()">Smart Phrases</button>
+                    <button class="btn btn-secondary btn-sm" onclick="normalizeUserRoles()">Normalize Roles</button>
+                    <button class="btn btn-secondary btn-sm" onclick="runBackfillTenantId()" title="One-time: add tenantId: bendbsn to all user profiles">Backfill tenantId</button>
+                </div>
+            </div>
+            <div class="grid">
             <!-- Role Configuration -->
             <div class="card" style="grid-column: span 2;">
                 <div class="card-header">
@@ -847,7 +967,22 @@
                     <div id="rolesList"><div class="empty-state"><div class="icon">&#128101;</div><p>Loading roles...</p></div></div>
                 </div>
             </div>
+            </div><!-- /grid -->
 
+            <!-- ===== LOGS subsection (placeholder for tools section bottom) ===== -->
+            <!-- Logs section is its own admin-section below -->
+        </div><!-- /section: tools -->
+
+        <!-- ===== SECTION: TICKETS ===== -->
+        <div class="admin-section" data-section="tickets">
+            <div class="admin-section-hdr">
+                <h2>🎫 Tickets &amp; Submissions</h2>
+                <div class="admin-section-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="loadTickets()">Refresh Tickets</button>
+                    <button class="btn btn-secondary btn-sm" onclick="loadStudentSubmissions()">Refresh Submissions</button>
+                </div>
+            </div>
+            <div class="grid">
             <!-- Student Submissions for Review -->
             <div class="card" style="grid-column: 1 / -1;">
                 <div class="card-header">
@@ -866,7 +1001,7 @@
             </div>
 
             <!-- IT Tickets Card -->
-            <div class="card" id="ticketsPanelCard" style="grid-column: 1 / -1; display:none; margin-top:16px;">
+            <div class="card" id="ticketsPanelCard" style="grid-column: 1 / -1; margin-top:16px;">
                 <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
                     <span>🎫 IT Tickets / Feedback</span>
                     <div style="display:flex;gap:8px;align-items:center;">
@@ -883,7 +1018,39 @@
                     <div class="empty-state"><p>Loading tickets...</p></div>
                 </div>
             </div>
-        </div>
+            </div><!-- /grid -->
+        </div><!-- /section: tickets -->
+
+        <!-- ===== SECTION: LOGS ===== -->
+        <div class="admin-section" data-section="logs">
+            <div class="admin-section-hdr">
+                <h2>📜 Activity Logs</h2>
+            </div>
+            <div class="card">
+                <div class="card-body" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                    <button class="btn btn-secondary" onclick="showLoginHistory()" style="padding:18px 12px; flex-direction:column; gap:4px; text-align:center;">
+                        <div style="font-size:24px;">🕒</div>
+                        <div style="font-weight:600;">Login History</div>
+                        <div style="font-size:11px; color:var(--clx-text-muted);">Who signed in, when, from where</div>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showExportHistory()" style="padding:18px 12px; flex-direction:column; gap:4px; text-align:center;">
+                        <div style="font-size:24px;">📥</div>
+                        <div style="font-weight:600;">Export History</div>
+                        <div style="font-size:11px; color:var(--clx-text-muted);">Documents exported by users</div>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showNotificationLog()" style="padding:18px 12px; flex-direction:column; gap:4px; text-align:center;">
+                        <div style="font-size:24px;">📧</div>
+                        <div style="font-weight:600;">Email Notification Log</div>
+                        <div style="font-size:11px; color:var(--clx-text-muted);">All admin/welcome emails sent</div>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showPendingWelcomeEmails()" style="padding:18px 12px; flex-direction:column; gap:4px; text-align:center;">
+                        <div style="font-size:24px;">📬</div>
+                        <div style="font-weight:600;">Pending Welcome Emails</div>
+                        <div style="font-size:11px; color:var(--clx-text-muted);">Users still owed a welcome email</div>
+                    </button>
+                </div>
+            </div>
+        </div><!-- /section: logs -->
     </div>
 
     <!-- IT Ticket Detail Modal -->
@@ -1382,6 +1549,7 @@
             loadAdminChannels();
             loadStudentSubmissions();
             updatePendingEmailsBadge();
+            loadTickets();
 
             // Real-time updates
             presenceRef.on('value', () => loadOnlineUsers());
@@ -1389,6 +1557,9 @@
             chatRef.on('value', () => loadMessages());
             communityPostsRef.on('value', () => loadCommunityPosts());
             channelsRef.on('value', () => loadAdminChannels());
+
+            // Restore last-viewed admin section after auth completes
+            restoreAdminSection();
         }
 
         // ========== FIREBASE LISTENER CLEANUP ==========
@@ -2085,13 +2256,31 @@
             }, { confirmText: 'Kick', danger: true });
         }
 
-        // Danger Zone toggle
+        // ========== ADMIN SECTION NAVIGATION ==========
+        function showAdminSection(name) {
+            document.querySelectorAll('.admin-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+            const sec = document.querySelector('.admin-section[data-section="' + name + '"]');
+            if (sec) sec.classList.add('active');
+            const tab = document.querySelector('.admin-tab[data-section="' + name + '"]');
+            if (tab) tab.classList.add('active');
+            try { localStorage.setItem('admin_active_section', name); } catch(e) {}
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Restore last viewed section on load (skipped during admin auth)
+        function restoreAdminSection() {
+            try {
+                const last = localStorage.getItem('admin_active_section');
+                if (last && document.querySelector('.admin-section[data-section="' + last + '"]')) {
+                    showAdminSection(last);
+                }
+            } catch(e) {}
+        }
+
+        // Legacy: kept for callsites that still want to "open Danger Zone"
         function toggleDangerZone() {
-            const body = document.getElementById('dangerZoneBody');
-            const chev = document.getElementById('dangerZoneChev');
-            const open = body.style.display !== 'none';
-            body.style.display = open ? 'none' : '';
-            chev.textContent = open ? '▶ Click to expand' : '▲ Click to collapse';
+            showAdminSection('danger');
         }
 
         // Kick all users
@@ -4086,10 +4275,8 @@
         let _currentTicketId = null;
 
         function showTicketsPanel() {
-            const card = document.getElementById('ticketsPanelCard');
-            if (!card) return;
-            card.style.display = '';
-            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Now just navigates to the Tickets section (which is always rendered)
+            showAdminSection('tickets');
             loadTickets();
         }
 
@@ -4208,13 +4395,18 @@
             }, { danger: true, confirmText: 'Delete' });
         }
 
-        // Listen for open tickets → update badge
+        // Listen for open tickets → update badge on dashboard + tickets tab
         appTicketsRef.orderByChild('status').equalTo('open').on('value', snap => {
             const count = snap.numChildren();
             const statEl = document.getElementById('statOpenTickets');
             if (statEl) {
                 statEl.textContent = count;
                 statEl.style.color = count > 0 ? '#e67e22' : 'var(--clx-text-muted)';
+            }
+            const badge = document.getElementById('tabBadgeTickets');
+            if (badge) {
+                if (count > 0) { badge.style.display = ''; badge.textContent = count; }
+                else { badge.style.display = 'none'; }
             }
         });
 
