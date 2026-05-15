@@ -666,6 +666,16 @@
                 role_label: mapped.role_label,
                 role_year: mapped.role_year
             }).then(() => {
+                // Sync localStorage cache so /app/ picks up the new role immediately
+                // on next visit without waiting for Firebase profile re-read.
+                try {
+                    localStorage.setItem('bendbsn_role_v2', JSON.stringify({
+                        id: mapped.role_id,
+                        label: mapped.role_label,
+                        requires_year: !!mapped.role_year,
+                        year: mapped.role_year
+                    }));
+                } catch(e) {}
                 document.getElementById('profRoleBadge').textContent = role;
                 showToast('Role updated to ' + role + '.', 'success');
             }).catch(err => {

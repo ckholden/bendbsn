@@ -1160,7 +1160,7 @@
                 </div>
                 <div class="form-group" id="noteRoleGroup" style="display:none;">
                     <label>Role</label>
-                    <select id="noteRole" onchange="onNoteRoleChange()">
+                    <select id="noteRole" onchange="onNoteRoleChange(); updateRoleCache();">
                         <option value="">Loading…</option>
                     </select>
                 </div>
@@ -4067,16 +4067,26 @@
                     // value (e.g. "Year 1" from a prior session) would shadow an
                     // updated profile (e.g. user bumped to Year 2 in /profile/).
                     if (profile.role_id) {
+                        // 1. Update localStorage cache from Firebase (source of truth)
                         const data = { id: profile.role_id, label: profile.role_label || '', requires_year: !!profile.role_year, year: profile.role_year || null };
                         try { localStorage.setItem('bendbsn_role_v2', JSON.stringify(data)); } catch(e) {}
+
+                        // 2. Apply to form dropdowns. May race with loadRolesConfig —
+                        //    if options aren't built yet, stash and apply when they are.
                         const noteRole = document.getElementById('noteRole');
                         if (noteRole && noteRole.querySelector('[value="' + CSS.escape(profile.role_id) + '"]')) {
                             noteRole.value = profile.role_id;
-                            onNoteRoleChange(true);  // rebuilds year options + reads cache (now updated)
-                        }
-                        if (profile.role_year) {
-                            const noteYear = document.getElementById('noteYear');
-                            if (noteYear) noteYear.value = profile.role_year;
+                            onNoteRoleChange(); // rebuilds year, reads updated cache → correct year
+                            if (profile.role_year) {
+                                const noteYear = document.getElementById('noteYear');
+                                if (noteYear && noteYear.querySelector('[value="' + CSS.escape(profile.role_year) + '"]')) {
+                                    noteYear.value = profile.role_year;
+                                }
+                            }
+                        } else if (noteRole) {
+                            // Options not loaded yet — defer. populateNoteRoleDropdown
+                            // will see the cache (just updated) and apply correctly.
+                            noteRole.dataset.profileLoaded = '1';
                         }
                         buildDocumentedBy();
                     }
@@ -7112,26 +7122,49 @@
             if (!sel) return;
             const sorted = Object.entries(_rolesConfig).sort((a,b) => (a[1].order||99)-(b[1].order||99));
             sel.innerHTML = sorted.map(([id,r]) => `<option value="${id}">${r.label}</option>`).join('');
-            // Default from cached session role
+            // Apply from cache (updated by Firebase profile load if available).
             const cached = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
             if (cached.id && sel.querySelector(`[value="${CSS.escape(cached.id)}"]`)) {
                 sel.value = cached.id;
             }
-            onNoteRoleChange(true);
+            onNoteRoleChange(); // UI-only — rebuilds year options + reads cache for year
+            // Belt-and-suspenders: if cache has year, apply it (in case role config
+            // was missing year_options for some reason).
+            if (cached.year) {
+                const ys = document.getElementById('noteYear');
+                if (ys && ys.querySelector(`[value="${CSS.escape(cached.year)}"]`)) {
+                    ys.value = cached.year;
+                }
+            }
+            buildDocumentedBy();
         }
 
-        function onNoteRoleChange(fromCache) {
+        // UI-only: rebuild year dropdown + show/hide year group.
+        // Does NOT write to Firebase. Persistence is handled by explicit
+        // user-driven paths (the <select onchange> handlers and modal save).
+        // This prevents transient-state writes from clobbering user data
+        // (the historical "year reverts to Year 1" bug).
+        function onNoteRoleChange(_unused) {
             const roleId = (document.getElementById('noteRole') || {}).value || '';
             const role = _rolesConfig[roleId] || {};
             const yearGroup = document.getElementById('noteYearGroup');
             const yearSel = document.getElementById('noteYear');
-            const loggedInRole = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
+            const cachedRole = JSON.parse(localStorage.getItem('bendbsn_role_v2') || '{}');
 
             if (role.requires_year && role.year_options && yearSel) {
+                const prevYear = yearSel.value;
                 yearSel.innerHTML = role.year_options.map(y => `<option>${y}</option>`).join('');
-                if (fromCache && loggedInRole.year) yearSel.value = loggedInRole.year;
+                // Restore year priority: previous form value (user may have set
+                // before changing role) → cache (only if same role) → first option.
+                if (prevYear && role.year_options.includes(prevYear)) {
+                    yearSel.value = prevYear;
+                } else if (cachedRole.id === roleId && cachedRole.year && role.year_options.includes(cachedRole.year)) {
+                    yearSel.value = cachedRole.year;
+                }
+                if (yearGroup) yearGroup.style.display = '';
+            } else if (yearGroup) {
+                yearGroup.style.display = 'none';
             }
-            updateRoleCache();
             buildDocumentedBy();
         }
 
@@ -7196,21 +7229,41 @@
             const roleId = document.getElementById('modalNoteRole')?.value || '';
             const role = _rolesConfig[roleId] || {};
             const year = (role.requires_year && document.getElementById('modalNoteYear')) ? document.getElementById('modalNoteYear').value || null : null;
+
+            if (!roleId) { showToast('Please select a role.', 'warning'); return; }
+            if (role.requires_year && !year) { showToast('Please select a year.', 'warning'); return; }
+
+            // 1. Update localStorage cache FIRST so onNoteRoleChange() can read correct year
             const data = { id: roleId, label: role.label || '', requires_year: !!role.requires_year, year };
             try { localStorage.setItem('bendbsn_role_v2', JSON.stringify(data)); } catch(e) {}
-            // Sync to form dropdowns
+
+            // 2. Sync to form dropdowns. onNoteRoleChange will rebuild year options;
+            //    it now reads cache (just updated) so year sticks correctly.
             const noteRole = document.getElementById('noteRole');
-            if (noteRole) { noteRole.value = roleId; onNoteRoleChange(false); }
+            if (noteRole) {
+                noteRole.value = roleId;
+                onNoteRoleChange(); // UI-only, no Firebase write
+            }
             const noteYear = document.getElementById('noteYear');
             if (noteYear && year) noteYear.value = year;
-            // Persist to Firebase
+
+            // 3. Single explicit Firebase write — source of truth for next page load.
             const uid = localStorage.getItem('bendbsn_uid');
             if (uid && typeof database !== 'undefined') {
-                database.ref('userProfiles/' + uid).update({ role_id: roleId, role_label: role.label || '', role_year: year || null }).catch(()=>{});
+                database.ref('userProfiles/' + uid).update({
+                    role_id: roleId,
+                    role_label: role.label || '',
+                    role_year: year || null
+                }).then(() => {
+                    showToast('Role saved: ' + (role.label || 'Unknown') + (year ? ' (' + year + ')' : ''), 'success');
+                }).catch(err => {
+                    showToast('Failed to save role: ' + (err.code || err.message || 'unknown error'), 'error');
+                });
+            } else {
+                showToast('Role updated locally (not signed in to sync).', 'warning');
             }
             buildDocumentedBy();
             closeRoleChangeModal();
-            showToast('Role updated to ' + (role.label || 'Unknown') + (year ? ' (' + year + ')' : ''), 'success');
         }
 
         function setNoteTimeNow() {
