@@ -1055,4 +1055,71 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         });
     });
 })();
+
+// ── Idle auto-logout (fallback for pages without the presence system) ──────
+// The 30-minute inactivity logout security policy was only implemented on the
+// 5 pages that carry the full presence system (app, chat, community, home,
+// resources). This block gives every OTHER authenticated page (emr, careplan,
+// sbar, rotationlog, profile, clinical, apa, ai, ...) the same timeout, without
+// presence tracking. It self-disables on any page that already defines its own
+// IDLE_TIMEOUT so timers never double up.
+(function () {
+    'use strict';
+
+    var isLoginPage = location.pathname === '/' || location.pathname === '/index.html';
+    if (isLoginPage) return;
+    // These pages ship the full presence system with their own idle/logout timers
+    // (their top-level `const IDLE_TIMEOUT` is NOT a window property, so we can't
+    // feature-detect it — skip by path so timers never double up).
+    var p = location.pathname;
+    var PRESENCE_PAGES = ['/app', '/chat', '/community', '/home', '/resources'];
+    if (PRESENCE_PAGES.some(function (base) { return p === base || p === base + '/' || p.indexOf(base + '/') === 0; })) return;
+    // Only arm for authenticated sessions.
+    if (localStorage.getItem('bendbsn_auth') !== 'true') return;
+
+    var IDLE_WARNING_MS = 25 * 60 * 1000; // warn at 25 min
+    var LOGOUT_MS       = 30 * 60 * 1000; // sign out at 30 min
+    var DEBOUNCE_MS     = 30 * 1000;
+
+    var warnTimer = null, logoutTimer = null, debounceTimer = null;
+
+    function doIdleLogout() {
+        try {
+            ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid',
+             'bendbsn_role_v2', 'bendbsn_login_at'].forEach(function (k) {
+                try { localStorage.removeItem(k); } catch (e) {}
+            });
+            if (window.firebase && firebase.apps && firebase.apps.length) {
+                try { firebase.auth().signOut(); } catch (e) {}
+            }
+            try { sessionStorage.setItem('bendbsn_idle_logout', '1'); } catch (e) {}
+        } catch (e) {}
+        location.replace('/');
+    }
+
+    function resetTimers() {
+        clearTimeout(warnTimer);
+        clearTimeout(logoutTimer);
+        warnTimer = setTimeout(function () {
+            if (typeof showToast === 'function') {
+                showToast('You will be logged out in 5 minutes due to inactivity.', 'warning', 10000);
+            }
+        }, IDLE_WARNING_MS);
+        logoutTimer = setTimeout(doIdleLogout, LOGOUT_MS);
+    }
+
+    function onActivity() {
+        if (debounceTimer) return;
+        debounceTimer = setTimeout(function () { debounceTimer = null; }, DEBOUNCE_MS);
+        resetTimers();
+    }
+
+    ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function (ev) {
+        document.addEventListener(ev, onActivity, { passive: true });
+    });
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') resetTimers();
+    });
+    resetTimers();
+})();
 // ===== END CLIENT ERROR CAPTURE =====

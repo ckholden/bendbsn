@@ -392,51 +392,6 @@
     </div>
 
     <!-- Create Account Prompt Modal (for generic login users) -->
-    <div class="modal" id="createAccountModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Create Your Personal Account</h2>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 20px; color: var(--clx-text-secondary);">You're using a shared login. Create your own account for a personalized experience!</p>
-
-                <div class="error-message" id="createErrorMsg"></div>
-                <div class="success-message" id="createSuccessMsg"></div>
-
-                <form onsubmit="return handleCreateAccount(event)">
-                    <div class="form-group">
-                        <label for="createName">Full Name</label>
-                        <input type="text" id="createName" placeholder="e.g. Jane Smith" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="createRole">Role</label>
-                        <select id="createRole" required onchange="onRegRoleChange('create')">
-                            <option value="" disabled selected>Select your role</option>
-                        </select>
-                    </div>
-                    <div id="createYearRow" class="form-group" style="display:none;">
-                        <label for="createYear">Year Level</label>
-                        <select id="createYear"></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="createEmail">Email</label>
-                        <input type="email" id="createEmail" placeholder="your.email@example.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="createUsername">Desired Username</label>
-                        <input type="text" id="createUsername" placeholder="e.g. jsmith" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="createPassword">Password</label>
-                        <input type="password" id="createPassword" placeholder="Choose a password" required>
-                    </div>
-
-                    <button type="submit" class="btn" id="createBtn">Create Account</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Pending Approval Modal (for unrecognized users) -->
     <div class="modal" id="pendingModal">
         <div class="modal-content">
@@ -705,12 +660,18 @@
             } catch (error) {
                 // Log failed login attempt
                 logLoginEvent(email, '', false);
+                console.error('Login error:', error);
 
-                // Show user-friendly error message
-                let message = 'Invalid email or password.';
+                // Distinguish infrastructure failures (network down, expired/invalid API key,
+                // Firebase internal error) from genuine bad credentials. Without this, an outage
+                // like an expired API key looks identical to a wrong password to every user.
+                const code = error && error.code ? error.code : '';
+                const isInfraFailure = !code || /network|api-key|internal|unavailable|timeout/i.test(code);
+
+                let message;
                 if (error.code === 'auth/user-not-found') {
                     message = 'No account found with this email. Please register first.';
-                } else if (error.code === 'auth/wrong-password') {
+                } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
                     message = 'Incorrect password. Try again or reset your password.';
                 } else if (error.code === 'auth/invalid-email') {
                     message = 'Please enter a valid email address.';
@@ -718,6 +679,10 @@
                     message = 'This account has been disabled. Contact admin.';
                 } else if (error.code === 'auth/too-many-requests') {
                     message = 'Too many failed attempts. Please try again later.';
+                } else if (isInfraFailure) {
+                    message = "Can't reach the sign-in service right now — this is a connection problem, not your password. Please try again in a moment.";
+                } else {
+                    message = 'Invalid email or password.';
                 }
 
                 errorMsg.textContent = message;
@@ -832,55 +797,6 @@
                 errorMsg.classList.add('show');
                 regBtn.disabled = false;
                 regBtn.innerHTML = 'Create Account';
-            }
-
-            return false;
-        }
-
-        async function handleCreateAccount(event) {
-            event.preventDefault();
-
-            const name = document.getElementById('createName').value.trim();
-            const role = document.getElementById('createRole').value;
-            const email = document.getElementById('createEmail').value.trim();
-            const username = document.getElementById('createUsername').value.toLowerCase().trim();
-            const password = document.getElementById('createPassword').value;
-            const createBtn = document.getElementById('createBtn');
-            const errorMsg = document.getElementById('createErrorMsg');
-            const successMsg = document.getElementById('createSuccessMsg');
-
-            createBtn.disabled = true;
-            createBtn.innerHTML = '<span class="loading"></span>Creating...';
-            errorMsg.classList.remove('show');
-            successMsg.classList.remove('show');
-
-            // Check if username already exists
-            let users = usersCache || await fetchUsers();
-            if (users && users.some(u => u.username.toLowerCase() === username)) {
-                errorMsg.textContent = 'Username already taken. Please choose another.';
-                errorMsg.classList.add('show');
-                createBtn.disabled = false;
-                createBtn.innerHTML = 'Create Account';
-                return false;
-            }
-
-            try {
-                // Send email notification to admin for auditing
-                await sendEmailNotification(name, email, username, 'new_registration', role);
-                // Send welcome email to the new user
-                await sendWelcomeEmail(name, email);
-
-                successMsg.textContent = 'Account created! Welcome, ' + name.split(' ')[0] + '!';
-                successMsg.classList.add('show');
-                setTimeout(() => {
-                    window.location.href = '/home/';
-                }, 2000);
-
-            } catch (e) {
-                errorMsg.textContent = 'Error creating account. Please try again.';
-                errorMsg.classList.add('show');
-                createBtn.disabled = false;
-                createBtn.innerHTML = 'Create Account';
             }
 
             return false;
@@ -1104,11 +1020,21 @@
             populateRoleDropdowns();
         }
 
+        // Roles a user may NOT self-assign at signup — must be granted by an admin.
+        // (Enforced server-side by database.rules.json too; this just hides the option.)
+        const SELF_SIGNUP_BLOCKED_ROLES = ['instructor'];
+
+        function selfSignupRoleEntries() {
+            return Object.entries(_rolesConfig)
+                .filter(([id]) => !SELF_SIGNUP_BLOCKED_ROLES.includes(id))
+                .sort((a,b) => (a[1].order||99)-(b[1].order||99));
+        }
+
         function populateRoleDropdowns() {
-            const sorted = Object.entries(_rolesConfig).sort((a,b) => (a[1].order||99)-(b[1].order||99));
+            const sorted = selfSignupRoleEntries();
             const optHtml = '<option value="" disabled selected>Select your role</option>' +
                 sorted.map(([id, r]) => '<option value="' + id + '">' + r.label + '</option>').join('');
-            ['regRole', 'createRole'].forEach(function(selId) {
+            ['regRole'].forEach(function(selId) {
                 const sel = document.getElementById(selId);
                 if (sel) sel.innerHTML = optHtml;
             });
@@ -1181,18 +1107,21 @@
                 if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
                     return; // user dismissed popup — no toast needed
                 }
+                console.error('Google sign-in error:', error);
+                const gCode = error && error.code ? error.code : '';
                 if (error.code === 'auth/account-exists-with-different-credential') {
                     showToast('An account already exists with this email. Please sign in with your email and password.', 'warning', 6000);
+                } else if (!gCode || /network|api-key|internal|unavailable|timeout/i.test(gCode)) {
+                    showToast("Can't reach the sign-in service right now — a connection problem, not your account. Please try again shortly.", 'error', 6000);
                 } else {
                     showToast('Google sign-in failed. Please try again.', 'error');
-                    console.error('Google sign-in error:', error);
                 }
             }
         }
         // ====== END GOOGLE SIGN-IN ======
 
         function showGoogleRoleModal(user) {
-            const sorted = Object.entries(_rolesConfig).sort((a, b) => (a[1].order || 99) - (b[1].order || 99));
+            const sorted = selfSignupRoleEntries();
             const optHtml = "<option value=\"\" disabled selected>Select your role</option>" +
                 sorted.map(([id, r]) => "<option value=\"" + id + "\">" + r.label + "</option>").join("");
             const sel = document.getElementById("googleRRole");
@@ -1564,6 +1493,11 @@
                     sessionStorage.removeItem('bendbsn_force_logout');
                     setTimeout(function () {
                         if (window.showToast) showToast('You\u2019ve been signed out for a fresh update. Please log in again.', 'info', 6000);
+                    }, 200);
+                } else if (sessionStorage.getItem('bendbsn_idle_logout') === '1') {
+                    sessionStorage.removeItem('bendbsn_idle_logout');
+                    setTimeout(function () {
+                        if (window.showToast) showToast('You were signed out after 30 minutes of inactivity. Please log in again.', 'info', 6000);
                     }, 200);
                 }
             } catch (e) {}

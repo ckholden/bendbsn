@@ -3178,10 +3178,6 @@
             return [id1, id2].sort().join('_').replace(/[.@\s#$/\[\]]/g, '_').toLowerCase();
         }
 
-        function getDMIdentifier(uid, email) {
-            return uid || (email || '').replace(/[.@]/g, '_');
-        }
-
         // Look up UID by display name from user profiles
         async function lookupUidByName(displayName) {
             // Check cache first
@@ -3666,7 +3662,7 @@
             });
         }
 
-        function sendDM(event) {
+        async function sendDM(event) {
             event.preventDefault();
             // If in a group chat, send to group instead
             if (currentDMConversation?.type === 'group') { sendGroupMessage(event); return; }
@@ -3687,19 +3683,30 @@
             const conversationId = currentDMConversation.conversationId;
             const partnerName = currentDMConversation.partnerName;
 
+            // Resolve the partner's UID. Prefer any UID already attached to the conversation,
+            // then the cache, then an async profile lookup. Without this the recipient's
+            // userDMs index (below) never gets written on a cache miss, so a brand-new
+            // conversation won't appear in the recipient's DM list until some later write.
+            const currentUid = getCurrentUserUid();
+            // Capture "participants/index not yet written" BEFORE we resolve/store partnerUid,
+            // so resolving the UID here doesn't flip the new-conversation check below.
+            const participantsNotYetWritten = !currentDMConversation.partnerUid;
+            let partnerUid = currentDMConversation.partnerUid || userUidCache[partnerName] || null;
+            if (!partnerUid) {
+                try { partnerUid = await lookupUidByName(partnerName); } catch (e) { partnerUid = null; }
+            }
+
             const messageData = {
                 sender: currentUsername,
                 senderName: displayName,
-                senderUid: getCurrentUserUid(),
-                recipientUid: userUidCache[partnerName] || null,
+                senderUid: currentUid,
+                recipientUid: partnerUid,
                 text: text,
                 timestamp: Date.now(),
                 read: false
             };
 
             try {
-                const currentUid = getCurrentUserUid();
-                const partnerUid = userUidCache[partnerName] || null;
 
                 // Capture timestamp once for consistency between message and lastMessage
                 const nowTs = Date.now();
@@ -3712,7 +3719,7 @@
                 const updates = {};
 
                 // Only write participants if this is a new conversation (no UID data yet)
-                if (!currentDMConversation.partnerUid) {
+                if (participantsNotYetWritten) {
                     updates['directMessages/' + conversationId + '/participants/user1'] = displayName;
                     updates['directMessages/' + conversationId + '/participants/user2'] = partnerName;
                     if (currentUid) updates['directMessages/' + conversationId + '/participants/user1_uid'] = currentUid;
@@ -3721,6 +3728,8 @@
                     if (currentUid) updates['userDMs/' + currentUid + '/' + conversationId] = true;
                     if (partnerUid) updates['userDMs/' + partnerUid + '/' + conversationId] = true;
                 }
+                // Remember the resolved UID for subsequent sends in this session
+                if (partnerUid) currentDMConversation.partnerUid = partnerUid;
 
                 updates['directMessages/' + conversationId + '/messages/' + msgKey] = messageData;
                 updates['directMessages/' + conversationId + '/lastMessage'] = {

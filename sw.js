@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v219';
+const CACHE_VERSION = 'v220';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -51,7 +51,6 @@ const OFFLINE_URLS = [
     '/app/',
     '/chat/',
     '/ai/',
-    '/admin/',
     '/resources/',
     '/community/',
     '/clinical/',
@@ -99,7 +98,6 @@ const STALE_WHILE_REVALIDATE = [
     '/app/index.html',
     '/resources/index.html',
     '/community/index.html',
-    '/admin/index.html',
     '/chat/index.html',
     '/ai/index.html',
     '/clinical/index.html',

@@ -1241,7 +1241,12 @@
             const d = document.getElementById('userListDropdown');
             if (d) d.style.display = userListOpen ? 'block' : 'none';
         }
-        function escapeHtml(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+        function escapeHtml(s) {
+            // Quote-safe (also escapes " and ') for attribute/inline-JS-string contexts.
+            return String(s ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
 
         function renderUserList(online, away) {
             const el = document.getElementById('userListNames');

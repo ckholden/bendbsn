@@ -17,16 +17,57 @@
 ## Site Structure
 - `/` - Login page (index.html)
 - `/home/` - Home dashboard with hero CTA and nav cards
-- `/app/` - Main documentation generator (RN Notes)
+- `/app/` - Main documentation generator (RN Notes) — largest page (~9,200 lines)
 - `/chat/` - Full-page Slack-style chat (channels, DMs, presence)
 - `/ai/` - AI nursing assistant (drug info, care plans, NCLEX)
 - `/resources/` - Clinical references, calculators, drug lookup
 - `/community/` - Community hub with posts, announcements
-- `/labsched/` - Lab schedule generator
+- `/labsched/` - Lab schedule generator (intentionally public — no auth)
 - `/apa/` - APA 7th Edition paper generator (students only - instructors redirected)
 - `/clinical/` - Clinical Assessment Packet builder (students only)
-- `/admin/` - Admin panel (user mgmt, login history, community moderation)
-- `/shared/` - Shared header CSS + JS (included by all pages)
+- `/clinical/packet/` - Clinical packet sub-page
+- `/clinical/standalone/` - Standalone AL/Memory-Care assessment packet (legacy — opts out of shared design system)
+- `/emr/` - Sim EMR (patients, orders, MAR/TAR, vitals, labs, imaging) — ~7,900 lines
+- `/careplan/` - Care Plan Builder
+- `/sbar/` - SBAR Handoff generator
+- `/rotationlog/` - Clinical rotation log
+- `/profile/` - User profile page
+- `/admin/` - Admin panel (user mgmt, login history, community moderation, per-user diagnostics)
+- `/tos/`, `/privacy/` - Terms of Service / Privacy Policy (standalone, own header)
+- `/offline/` - PWA offline fallback page
+- `/shared/` - Shared header/toast CSS + JS, clinical-ui tokens (included by all app pages)
+
+## Security Invariants (July 2026 audit — DO NOT REGRESS)
+
+These were fixed in the July 2026 security pass. Preserve them:
+
+1. **Role escalation is blocked in `database.rules.json`.** A user can write their own
+   `userProfiles/{uid}`, but `.validate` on `role_id` (and legacy `role`) forbids
+   setting the value `instructor`/`Instructor` unless the caller is ALREADY admin or
+   instructor. Never remove these `.validate` rules — without them any student can
+   self-promote to instructor via the Firebase console and read every user's profile +
+   login history. `isAdmin` has the same guard.
+2. **Instructor is not self-assignable at signup.** `index.html` filters `instructor`
+   out of the registration + Google-role dropdowns via `SELF_SIGNUP_BLOCKED_ROLES`.
+   Instructors are promoted from the admin panel (which writes as admin). If you add
+   privileged roles, add them to that array AND to the rules `.validate`.
+3. **`emr` node** is read-by-any-authed-user but top-level writes require admin/
+   instructor; per-section child writes must be non-deleting (`newData.exists()`), so a
+   single `set()` can't wipe the shared sandbox.
+4. **chat/channelMembers, chat/threads (parent), groupChats**: whole-node writes are
+   scoped to members/admins; a user can only add/remove their OWN membership key.
+5. **Apps Script token** (`?token=...` in index/app/chat/admin/ai) is a shared secret
+   visible in source — see `HANDOFF-appsscript-security.md` in the PARENT `BendBSN/`
+   folder (kept out of the deployed repo on purpose). `getUsers` is called
+   pre-auth during login, so it can't be gated behind a Firebase ID token; mutating
+   actions should be. If you rotate the token, update all 5 client call sites.
+6. **Login error handling** (`index.html`): infra failures (network / expired API key /
+   internal) show a "connection problem, not your password" message — do NOT collapse
+   this back into the generic "Invalid email or password" catch-all. That masking is
+   what hid the July 3 API-key outage.
+7. **Idle auto-logout**: 5 pages (app/chat/community/home/resources) have their own
+   presence-coupled 30-min logout. `shared/header.js` provides a fallback for all OTHER
+   authed pages, skipped by path for those 5 to avoid double timers.
 
 ## Performance & Accessibility Improvements (Jan 2026)
 
@@ -56,11 +97,12 @@
 - Debounced NANDA search (300ms)
 
 ### Service Worker (sw.js)
-- Versioned cache (`CACHE_VERSION = 'v25'`)
-- Stale-while-revalidate for HTML pages
+- Versioned cache — **`CACHE_VERSION` lives in `sw.js` (check the file for the current value; bump it on every deploy).** Do not trust a version number written elsewhere in these notes.
+- Network-first for HTML pages (constant is named `STALE_WHILE_REVALIDATE` for historical reasons but behaves network-first)
+- `/admin/` is always fetched fresh (never cached)
 - Automatic old cache cleanup on activation
 - Support for `SKIP_WAITING` and `CLEAR_CACHE` messages
-- Caches `/shared/header.css` and `/shared/header.js` for offline use
+- Precaches all app pages + `/shared/*` for offline use
 
 ## Shared Header System (Feb 2026)
 
@@ -88,6 +130,14 @@ Header HTML is kept inline for instant render (no FOUC).
 - App page: lazy-loaded from `https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js`
 
 ---
+
+---
+
+> **⚠️ Everything below is a historical, dated changelog (Jan 2025 – Feb 2026).**
+> It is kept for provenance but is NOT a reliable description of current state —
+> version numbers, "current" markers, and "pending" items are frozen at their
+> write date. For current facts see the sections above and the actual source
+> (`sw.js` for the SW version, `database.rules.json` for rules, page files for features).
 
 ## Key Features Implemented (Jan 2025)
 

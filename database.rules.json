@@ -44,13 +44,19 @@
       },
       "channelMembers": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        "$channelId": {
+          ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+          "$memberKey": {
+            ".write": "auth != null && ((newData.isString() && newData.val().toLowerCase() === auth.token.email.toLowerCase()) || (!newData.exists() && data.exists() && data.val().toLowerCase() === auth.token.email.toLowerCase()))",
+            ".validate": "newData.isString()"
+          }
+        }
       },
       "threads": {
         "$channelId": {
           "$msgKey": {
             ".read": "auth != null",
-            ".write": "auth != null",
+            ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
             "replies": {
               "$replyKey": {
                 ".write": "auth != null && (!data.exists() || data.child('username').val() === auth.token.email)"
@@ -121,6 +127,12 @@
         ".write": "auth != null && (auth.uid === $uid || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
         "isAdmin": {
           ".validate": "root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true && (newData.isBoolean() || !newData.exists())"
+        },
+        "role_id": {
+          ".validate": "newData.isString() && (newData.val() !== 'instructor' || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
+        },
+        "role": {
+          ".validate": "newData.isString() && (newData.val() !== 'Instructor' || root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
         }
       }
     },
@@ -217,7 +229,10 @@
 
     "emr": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')",
+      "$section": {
+        ".write": "auth != null && newData.exists()"
+      }
     },
 
     "emr-clinical": {

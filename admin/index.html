@@ -2569,6 +2569,10 @@
         }
 
         // ========== PER-USER DIAGNOSTICS PANEL ==========
+        // Remembered so the force-logout / clear-cache / clear-actions handlers can
+        // re-open the panel without re-deriving the email from the "UID: …" label.
+        let _diagCurrentEmail = '';
+
         async function openUserDiagnostics(uid, email) {
             const panel = document.getElementById('diagPanel');
             const backdrop = document.getElementById('diagPanelBackdrop');
@@ -2577,6 +2581,7 @@
 
             const cleanEmail = (email || '').trim();
             const cleanUid = (uid || '').trim();
+            _diagCurrentEmail = cleanEmail;
 
             document.getElementById('diagUserName').textContent = cleanEmail || 'Unknown user';
             document.getElementById('diagUserEmail').textContent = cleanUid ? 'UID: ' + cleanUid : '(no Firebase UID)';
@@ -2714,8 +2719,7 @@
                     });
                     showToast('Force logout flag set. Will trigger on next page load.', 'success');
                     // Refresh diag panel to show pending action
-                    const email = document.getElementById('diagUserEmail').textContent;
-                    openUserDiagnostics(uid, email.replace(/^UID: .*/, ''));
+                    openUserDiagnostics(uid, _diagCurrentEmail);
                 } catch (e) {
                     showToast('Failed: ' + e.message, 'error');
                 }
@@ -2731,8 +2735,7 @@
                         by: (auth.currentUser && auth.currentUser.email) || 'admin'
                     });
                     showToast('Clear cache flag set. Will trigger on next page load.', 'success');
-                    const email = document.getElementById('diagUserEmail').textContent;
-                    openUserDiagnostics(uid, email.replace(/^UID: .*/, ''));
+                    openUserDiagnostics(uid, _diagCurrentEmail);
                 } catch (e) {
                     showToast('Failed: ' + e.message, 'error');
                 }
@@ -2744,8 +2747,7 @@
             try {
                 await database.ref('userActions/' + uid).remove();
                 showToast('Pending actions cleared.', 'success');
-                const email = document.getElementById('diagUserEmail').textContent;
-                openUserDiagnostics(uid, email.replace(/^UID: .*/, ''));
+                openUserDiagnostics(uid, _diagCurrentEmail);
             } catch (e) {
                 showToast('Failed: ' + e.message, 'error');
             }

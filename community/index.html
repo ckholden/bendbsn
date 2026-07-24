@@ -1657,9 +1657,15 @@
         }
 
         function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            // Quote-safe: also escapes " and ' so output is safe in attribute and
+            // inline-JS-string contexts, not just element text. (The DOM-textContent
+            // trick escapes < > & but leaves quotes intact.)
+            return String(text ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function likePost(postId) {
