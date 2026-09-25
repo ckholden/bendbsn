@@ -18,11 +18,7 @@
 - `/` - Login page (index.html)
 - `/home/` - Home dashboard with hero CTA and nav cards
 - `/app/` - Main documentation generator (RN Notes) — largest page (~9,200 lines)
-- `/chat/` - Full-page Slack-style chat (channels, DMs, presence)
-- `/ai/` - AI nursing assistant (drug info, care plans, NCLEX)
 - `/resources/` - Clinical references, calculators, drug lookup
-- `/community/` - Community hub with posts, announcements
-- `/labsched/` - Lab schedule generator (intentionally public — no auth)
 - `/apa/` - APA 7th Edition paper generator (students only - instructors redirected)
 - `/clinical/` - Clinical Assessment Packet builder (students only)
 - `/clinical/packet/` - Clinical packet sub-page
@@ -32,7 +28,7 @@
 - `/sbar/` - SBAR Handoff generator
 - `/rotationlog/` - Clinical rotation log
 - `/profile/` - User profile page
-- `/admin/` - Admin panel (user mgmt, login history, community moderation, per-user diagnostics)
+- `/admin/` - Admin panel (user mgmt, login history, per-user diagnostics)
 - `/tos/`, `/privacy/` - Terms of Service / Privacy Policy (standalone, own header)
 - `/offline/` - PWA offline fallback page
 - `/shared/` - Shared header/toast CSS + JS, clinical-ui tokens (included by all app pages)
@@ -54,20 +50,18 @@ These were fixed in the July 2026 security pass. Preserve them:
 3. **`emr` node** is read-by-any-authed-user but top-level writes require admin/
    instructor; per-section child writes must be non-deleting (`newData.exists()`), so a
    single `set()` can't wipe the shared sandbox.
-4. **chat/channelMembers, chat/threads (parent), groupChats**: whole-node writes are
-   scoped to members/admins; a user can only add/remove their OWN membership key.
-5. **Apps Script token** (`?token=...` in index/app/chat/admin/ai) is a shared secret
+4. **Apps Script token** (`?token=...` in index/app/admin) is a shared secret
    visible in source — see `HANDOFF-appsscript-security.md` in the PARENT `BendBSN/`
    folder (kept out of the deployed repo on purpose). `getUsers` is called
    pre-auth during login, so it can't be gated behind a Firebase ID token; mutating
-   actions should be. If you rotate the token, update all 5 client call sites.
-6. **Login error handling** (`index.html`): infra failures (network / expired API key /
+   actions should be. If you rotate the token, update all 3 client call sites.
+5. **Login error handling** (`index.html`): infra failures (network / expired API key /
    internal) show a "connection problem, not your password" message — do NOT collapse
    this back into the generic "Invalid email or password" catch-all. That masking is
    what hid the July 3 API-key outage.
-7. **Idle auto-logout**: 5 pages (app/chat/community/home/resources) have their own
-   presence-coupled 30-min logout. `shared/header.js` provides a fallback for all OTHER
-   authed pages, skipped by path for those 5 to avoid double timers.
+6. **Idle auto-logout**: 3 pages (app/home/resources) have their own inline 30-min
+   logout. `shared/header.js` provides a fallback for all OTHER authed pages, skipped
+   by path for those 3 to avoid double timers.
 
 ## Performance & Accessibility Improvements (Jan 2026)
 
@@ -78,21 +72,18 @@ These were fixed in the July 2026 security pass. Preserve them:
 
 ### Firebase Optimizations
 - Listener cleanup on page unload (`cleanupFirebaseListeners()`)
-- User list caching in localStorage with 10-minute expiry (`USER_CACHE_KEY`)
-- Chat messages limited to last 50 for DOM performance
 
 ### Accessibility (WCAG)
 - ARIA labels on all interactive elements
 - `role="navigation"`, `role="dialog"`, `role="tablist"`, `role="tab"` attributes
 - `aria-expanded` for expandable menus
-- `aria-live="polite"` for dynamic content (badges, chat messages)
+- `aria-live="polite"` for dynamic content (badges, toasts)
 - Keyboard navigation (ESC to close modals)
 - Focus management with `:focus-visible` styles
 
 ### UI/UX Improvements
 - Toast notifications replace all `alert()` calls (`showToast()` function)
 - `showConfirmModal()` and `showPromptModal()` replace all `confirm()`/`prompt()` calls (in `shared/header.js`)
-- Dark mode CSS for chat widget elements
 - Loading states on export buttons (`btn-loading` class)
 - Debounced NANDA search (300ms)
 
@@ -128,6 +119,39 @@ Header HTML is kept inline for instant render (no FOUC).
 - **IMPORTANT**: Must use `build/index.umd.js` (NOT `build/index.js` which is ES module and won't expose `docx` global)
 - APA/Clinical: `https://unpkg.com/docx@8.2.2/build/index.umd.js`
 - App page: lazy-loaded from `https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js`
+
+## Retired features (Sept 24, 2026)
+
+- **Lab Schedule generator (`/labsched/`)**, retired Sept 25, 2026: no longer used. Same treatment as the others: the page is a redirect stub to `/home/`, the sidebar links and the `sw.js` entries are gone. It had no Firebase data or rules.
+
+The Slack-style chat (`/chat/`), the Community Hub (`/community/`) and the AI nursing
+assistant (`/ai/`) were retired. Do not describe them as current behaviour, and do not
+re-add their nav links, rules, or functions.
+
+- **Pages**: `/chat/index.html`, `/community/index.html` and `/ai/index.html` are now
+  redirect stubs to `/home/` (meta refresh + `location.replace`, `noindex`). Their
+  sidebar/mobile-nav links, `sw.js` precache entries, and the chat/presence code in
+  `shared/header.js` / `shared/header.css` were removed.
+- **Cloud Functions**: `cleanupStalePresence`, `onDMSent` and `onChatMention` were
+  deleted from `functions/index.js`. They must also be removed from Firebase — run
+  `firebase deploy --only functions` and accept the prompt to delete functions missing
+  from source. Remaining: `sendDailyWelcomeEmails`, `setAdminClaim`,
+  `bootstrapAdminClaims`, `backfillTenantId`.
+- **Database rules**: the `chat`, `directMessages`, `community`, `groupChats`,
+  `userFCMTokens`, `userDMs` and `userLastSeen` nodes were removed from
+  `database.rules.json`, so those paths now fall under the root deny. Existing RTDB
+  data under them was NOT deleted — purge it from the Firebase console when convenient.
+- **Kept on purpose**: `banned` (ban system), `announcements` (alert/FYI banners) and
+  `notificationLog` (welcome-email log) are unrelated to this removal and stay live.
+- **Service worker**: `CACHE_VERSION` was bumped to `v221` for this change (as always,
+  `sw.js` is the source of truth for the current value).
+- **Push notifications / FCM**: gone with the chat. No page requests an FCM token and `sw.js` has no
+  messaging handlers (the Med Timer on `/resources/` still uses the local browser
+  Notification API, which is unrelated to push).
+- **Apps Script AI proxy**: the Groq-backed `handleAIRequest` path in the deployed
+  Apps Script is now dead code. Revoke the Groq API key (see
+  `HANDOFF-groq-model-deploy.md` in the PARENT `BendBSN/` folder) and drop the handler
+  the next time the script is edited.
 
 ---
 

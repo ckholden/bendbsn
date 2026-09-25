@@ -141,6 +141,26 @@
         }
     }
 
+    // close() of the confirm/prompt modal that is currently open, if any.
+    // Replacing a modal goes through it so the old Escape listener is removed.
+    var _bsnModalClose = null;
+
+    // Close any open confirm/prompt modal; returns the element that had focus
+    // before it opened, so a replacement modal can hand focus back there.
+    function replaceOpenModal() {
+        var prev = document.activeElement;
+        if (_bsnModalClose) prev = _bsnModalClose(true) || prev;
+        var old = document.getElementById('bsnConfirmModal');
+        if (old) old.remove();
+        return prev;
+    }
+
+    function restoreFocus(el) {
+        if (el && el !== document.body && el.focus && document.contains(el)) {
+            try { el.focus({ preventScroll: true }); } catch (e) {}
+        }
+    }
+
     // ── Confirm Modal ─────────────────────────────────────
     // Usage: showConfirmModal('Delete?', 'This cannot be undone.', () => { doDelete(); })
     // Options: { confirmText, cancelText, danger }
@@ -151,13 +171,12 @@
         var danger = options.danger || false;
 
         // Remove any existing modal
-        var old = document.getElementById('bsnConfirmModal');
-        if (old) old.remove();
+        var prev = replaceOpenModal();
 
         var overlay = document.createElement('div');
         overlay.id = 'bsnConfirmModal';
         overlay.className = 'bsn-modal-overlay';
-        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('role', danger ? 'alertdialog' : 'dialog');
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-label', title);
         overlay.innerHTML =
@@ -175,16 +194,22 @@
         var confirmBtn = document.getElementById('bsnModalConfirm');
         var cancelBtn = document.getElementById('bsnModalCancel');
 
-        function close() {
+        // replacing = another modal is taking over; it restores focus itself
+        function close(replacing) {
+            if (_bsnModalClose === close) _bsnModalClose = null;
             overlay.remove();
+            document.removeEventListener('keydown', onKey);
+            if (replacing !== true) restoreFocus(prev);
+            return prev;
         }
+        _bsnModalClose = close;
 
         confirmBtn.addEventListener('click', function () {
             close();
             if (onConfirm) onConfirm();
         });
 
-        cancelBtn.addEventListener('click', close);
+        cancelBtn.addEventListener('click', function () { close(); });
 
         // Close on overlay click
         overlay.addEventListener('click', function (e) {
@@ -193,15 +218,12 @@
 
         // Close on Escape
         function onKey(e) {
-            if (e.key === 'Escape') {
-                close();
-                document.removeEventListener('keydown', onKey);
-            }
+            if (e.key === 'Escape') close();
         }
         document.addEventListener('keydown', onKey);
 
-        // Focus confirm button
-        confirmBtn.focus();
+        // Destructive dialogs focus Cancel so a reflexive Enter doesn't delete
+        (danger ? cancelBtn : confirmBtn).focus();
     };
 
     // ── Prompt Modal ──────────────────────────────────────
@@ -213,8 +235,7 @@
         var defaultValue = options.defaultValue || '';
         var placeholder = options.placeholder || '';
 
-        var old = document.getElementById('bsnConfirmModal');
-        if (old) old.remove();
+        var prev = replaceOpenModal();
 
         var overlay = document.createElement('div');
         overlay.id = 'bsnConfirmModal';
@@ -240,9 +261,14 @@
         var confirmBtn = document.getElementById('bsnModalConfirm');
         var cancelBtn = document.getElementById('bsnModalCancel');
 
-        function close() {
+        function close(replacing) {
+            if (_bsnModalClose === close) _bsnModalClose = null;
             overlay.remove();
+            document.removeEventListener('keydown', onKey);
+            if (replacing !== true) restoreFocus(prev);
+            return prev;
         }
+        _bsnModalClose = close;
 
         confirmBtn.addEventListener('click', function () {
             var val = input.value;
@@ -250,7 +276,7 @@
             if (onSubmit) onSubmit(val);
         });
 
-        cancelBtn.addEventListener('click', close);
+        cancelBtn.addEventListener('click', function () { close(); });
 
         overlay.addEventListener('click', function (e) {
             if (e.target === overlay) close();
@@ -259,6 +285,10 @@
         // Enter key submits
         input.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
+                // Swallow the keypress: focus returns to the opener in close(),
+                // and an Enter keypress landing on that button would click it
+                // and reopen this prompt.
+                e.preventDefault();
                 var val = input.value;
                 close();
                 if (onSubmit) onSubmit(val);
@@ -266,10 +296,7 @@
         });
 
         function onKey(e) {
-            if (e.key === 'Escape') {
-                close();
-                document.removeEventListener('keydown', onKey);
-            }
+            if (e.key === 'Escape') close();
         }
         document.addEventListener('keydown', onKey);
 
@@ -317,54 +344,6 @@
     if (!navigator.onLine) {
         offlineBanner.classList.add('visible');
     }
-
-    // ========== ONLINE USER COUNT ==========
-    // Reuse existing #onlineCount element (home/chat pages) or inject a new chip
-    var siteHeader = document.querySelector('.site-header');
-    var targetCountEl = document.getElementById('onlineCount');
-
-    if (siteHeader && !targetCountEl && !isLoginPage) {
-        targetCountEl = document.createElement('div');
-        targetCountEl.className = 'online-count';
-        targetCountEl.id = 'bsnOnlineCount';
-        targetCountEl.title = 'Click to see who\'s online';
-        targetCountEl.innerHTML = '<span class="online-dot"></span><span class="online-count-text">0 online</span>';
-        targetCountEl.style.display = 'none';
-
-        var headerActions = siteHeader.querySelector('.header-actions');
-        if (headerActions) {
-            siteHeader.insertBefore(targetCountEl, headerActions);
-        } else {
-            siteHeader.appendChild(targetCountEl);
-        }
-
-        targetCountEl.addEventListener('click', function() {
-            if (typeof toggleUserListPanel === 'function') {
-                toggleUserListPanel();
-            } else if (typeof toggleUserList === 'function') {
-                toggleUserList();
-            } else if (window.location.pathname !== '/chat/' && window.location.pathname !== '/chat/index.html') {
-                window.open('/chat/', '_blank');
-            }
-        });
-    }
-
-    window.updateOnlineCount = function(count, users) {
-        var el = document.getElementById('bsnOnlineCount') || document.getElementById('onlineCount');
-        if (!el) return;
-        if (count > 0) {
-            el.style.display = 'flex';
-            var countText = el.querySelector('.online-count-text') || el.querySelector('#onlineCountText');
-            if (countText) countText.textContent = count === 1 ? '1 online' : count + ' online';
-            if (users && users.length > 0) {
-                var names = users.slice(0, 10).join(', ');
-                if (users.length > 10) names += ', +' + (users.length - 10) + ' more';
-                el.title = 'Online: ' + names;
-            }
-        } else {
-            el.style.display = 'none';
-        }
-    };
 
     // ── Versioned Onboarding Modal ────────────────────────
     var CURRENT_ONBOARDING_VERSION = '3.0-sim-emr';
@@ -451,15 +430,28 @@ window._bsnDb  = null;
 window._bsnUid = null;
 
 window.getTheme = function() {
-    return document.documentElement.getAttribute('data-theme') || 'light';
+    // Fall back to the stored preference: on pages that load header.js before
+    // their own initTheme(), data-theme is not set yet.
+    var t = document.documentElement.getAttribute('data-theme');
+    if (!t) { try { t = localStorage.getItem('bendbsn_theme'); } catch (e) {} }
+    return t || 'light';
 };
 
 window.setTheme = function(name) {
     document.documentElement.setAttribute('data-theme', name);
-    localStorage.setItem('bendbsn_theme', name);
-    // Sync to Firebase if available
-    if (window._bsnDb && window._bsnUid) {
-        try { window._bsnDb.ref('userProfiles/' + window._bsnUid + '/theme').set(name); } catch(e) {}
+    try { localStorage.setItem('bendbsn_theme', name); } catch (e) {}
+    // Sync to Firebase. Pages that never call initThemeSync still save, so
+    // the next synced page doesn't revert the change.
+    var db = window._bsnDb, uid = window._bsnUid;
+    if ((!db || !uid) && window.firebase && firebase.apps && firebase.apps.length &&
+        typeof firebase.auth === 'function' && typeof firebase.database === 'function') {
+        try {
+            var u = firebase.auth().currentUser;
+            if (u) { uid = u.uid; db = firebase.database(); }
+        } catch (e) {}
+    }
+    if (db && uid) {
+        try { db.ref('userProfiles/' + uid + '/theme').set(name); } catch(e) {}
     }
     // Close picker + backdrop
     var picker = document.getElementById('bsnThemePicker');
@@ -469,7 +461,7 @@ window.setTheme = function(name) {
     // Update sidebar icon (sidebar-style pages)
     var sidebarIcon = document.getElementById('sidebarThemeIcon');
     if (sidebarIcon) sidebarIcon.textContent = name === 'dark' ? '🌙' : '🎨';
-    // Update header icon (chat/ai-style pages)
+    // Update header icon (header-style pages)
     var hIcon = document.getElementById('themeMenuIcon');
     var hText = document.getElementById('themeMenuText');
     if (hIcon) hIcon.textContent = name === 'dark' ? '🌙' : '🎨';
@@ -522,6 +514,14 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     if (!themeBtn) return;
 
     themeBtn.id = 'bsnThemeBtn';
+    // A page-level `function toggleDarkMode()` declared in a later script
+    // replaces the window.toggleDarkMode override above, which left the
+    // button as a binary dark/light toggle. Bind the picker directly.
+    themeBtn.removeAttribute('onclick');
+    themeBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.toggleThemePicker();
+    });
 
     // Sidebar pages: update the label text ("Dark Mode" → "Theme")
     var sidebarLabel = themeBtn.querySelector('.clx-sidebar-label');
@@ -554,72 +554,19 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         '</div>';
     document.body.appendChild(picker);
 
-    // Sync icon + active state to current theme
-    window.setTheme(window.getTheme());
-})();
-
-// ── Chat Unread Badge (sidebar + hamburger + mobile-nav) ──────────────────
-// Three placements for the same chat-unread count, each scoped to its
-// viewport via CSS:
-//   • Sidebar Chat icon — visible >=900px (desktop sidebar always shown)
-//   • Hamburger button   — visible 481-899px (sidebar collapsed to drawer)
-//   • Mobile-nav Chat    — visible <=480px (bottom-nav phone layout)
-// All three read the same localStorage key (bendbsn_chat_unread) and update
-// in real time via the storage event when the chat tab updates the count.
-(function initChatUnreadBadges() {
-    // Don't show any badge when the user is already on the chat page
-    if (location.pathname.startsWith('/chat')) return;
-
-    var badges = []; // collected (badgeEl, anchorEl) pairs we'll keep in sync
-
-    // 1. Sidebar Chat icon (desktop)
-    var chatLink = document.querySelector('a[data-page="chat"]');
-    if (chatLink) {
-        var sidebarIcon = chatLink.querySelector('.clx-sidebar-icon');
-        if (sidebarIcon) {
-            sidebarIcon.style.position = 'relative';
-            var sb = makeBadge('bsnChatSidebarBadge', 'bsn-chat-sidebar-badge');
-            sidebarIcon.appendChild(sb);
-            badges.push(sb);
-        }
-    }
-
-    // 2. Hamburger button (tablet) — appended to the button itself
-    var hamburger = document.getElementById('hamburgerBtn') || document.querySelector('.clx-hamburger');
-    if (hamburger) {
-        var hb = makeBadge('bsnChatHamburgerBadge', 'bsn-chat-hamburger-badge');
-        hamburger.appendChild(hb);
-        badges.push(hb);
-    }
-
-    // 3. Mobile-nav Chat link (phone) — appended to the bottom-nav anchor
-    var mobChat = document.querySelector('.clx-mobile-nav a[href^="/chat"], .clx-mobile-nav-item[href^="/chat"]');
-    if (mobChat) {
-        var mb = makeBadge('bsnChatMobnavBadge', 'bsn-chat-mobnav-badge');
-        mobChat.appendChild(mb);
-        badges.push(mb);
-    }
-
-    function makeBadge(id, cls) {
-        var b = document.createElement('span');
-        b.id = id;
-        b.className = cls;
-        return b;
-    }
-
-    function updateAll() {
-        var val = parseInt(localStorage.getItem('bendbsn_chat_unread') || '0', 10);
-        var text = val > 99 ? '99+' : String(val);
-        for (var i = 0; i < badges.length; i++) {
-            badges[i].textContent = text;
-            badges[i].style.display = val > 0 ? 'flex' : 'none';
-        }
-    }
-
-    updateAll();
-    // Real-time cross-tab updates from /chat/ writing to the same key
-    window.addEventListener('storage', function (e) {
-        if (e.key === 'bendbsn_chat_unread') updateAll();
+    // Sync icon + active state to the current theme WITHOUT saving it:
+    // setTheme() here wrote 'light' over the stored preference on pages
+    // whose initTheme() runs after header.js.
+    var cur = window.getTheme();
+    document.documentElement.setAttribute('data-theme', cur);
+    var si = document.getElementById('sidebarThemeIcon');
+    if (si) si.textContent = cur === 'dark' ? '🌙' : '🎨';
+    var hIcon = document.getElementById('themeMenuIcon');
+    var hText = document.getElementById('themeMenuText');
+    if (hIcon) hIcon.textContent = cur === 'dark' ? '🌙' : '🎨';
+    if (hText) hText.textContent = cur === 'dark' ? 'Dark Mode' : 'Theme';
+    document.querySelectorAll('.bsn-theme-opt').forEach(function(o) {
+        o.classList.toggle('active', o.dataset.theme === cur);
     });
 })();
 
@@ -668,7 +615,7 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         + '</div>'
         + '<div class="bsn-modal-btns">'
         + '<button class="bsn-btn-cancel" onclick="closeTicketModal()">Cancel</button>'
-        + '<button class="bsn-btn-confirm" onclick="submitTicket()" style="background:#3b82f6;border-color:#3b82f6;">Submit</button>'
+        + '<button class="bsn-btn-confirm" onclick="submitTicket()">Submit</button>'
         + '</div>'
         + '</div>'
         + '</div>';
@@ -704,6 +651,7 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         if (modal) modal.style.display = 'none';
     };
 
+    var _ticketSubmitting = false;
     window.submitTicket = async function () {
         var category = (document.getElementById('itTicketCategory') || {}).value || '';
         var priority = (document.getElementById('itTicketPriority') || {}).value || '';
@@ -716,8 +664,19 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
             return;
         }
 
+        // A second click during the round-trip must not file a duplicate.
+        if (_ticketSubmitting) return;
+
+        // The appTickets rule requires uid === auth.uid; localStorage can be
+        // stale, so prefer the signed-in Firebase user.
+        var authUid = '';
+        try {
+            var cu = (window.firebase && firebase.apps && firebase.apps.length) ? firebase.auth().currentUser : null;
+            if (cu) authUid = cu.uid;
+        } catch (e) {}
+
         var ticket = {
-            uid: localStorage.getItem('bendbsn_uid') || '',
+            uid: authUid || localStorage.getItem('bendbsn_uid') || '',
             name: localStorage.getItem('bendbsn_displayName') || '',
             email: localStorage.getItem('bendbsn_user') || '',
             category: category,
@@ -730,7 +689,11 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
             emailNotified: false
         };
 
+        // Set inside the try: every path below reaches the reset after catch.
+        var submitBtn = document.querySelector('#itTicketModal .bsn-btn-confirm');
         try {
+            _ticketSubmitting = true;
+            if (submitBtn) submitBtn.disabled = true;
             var ref = firebase.database().ref('appTickets').push();
             await ref.set(ticket);
             var ticketKey = ref.key;
@@ -760,6 +723,8 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
                 showToast('Failed to submit ticket. Please try again.', 'error');
             }
         }
+        _ticketSubmitting = false;
+        if (submitBtn) submitBtn.disabled = false;
     };
 })();
 
@@ -906,6 +871,124 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
 // ===== END IT TICKET / FEEDBACK MODAL =====
 
 
+// ===== LOCAL USER-DATA PURGE =====
+// Per-user caches that must not survive a sign-out on a shared lab computer.
+// The smart-phrase keys match shared/smart-phrases.js (STORAGE_KEY, SEED_FLAG,
+// OWNER_KEY, SYNCED_KEY); dropping the owner key together with the cache keeps
+// that file's owner check consistent (no cache + no owner = fresh start).
+// Clinical packet backups (bendbsn_cap_local_*) are deliberately NOT purged:
+// /clinical/packet/ only keeps one while edits have not reached the server
+// (it is removed after every successful save), so at sign-out it is the only
+// copy of those edits. The packet page restores it on its owner's next load.
+window.bsnPurgeLocalUserData = function () {
+    try {
+        ['bendbsn_custom_phrases', 'bendbsn_phrases_seeded_v1',
+         'bendbsn_custom_phrases_uid', 'bendbsn_phrases_synced'].forEach(function (k) {
+            try { localStorage.removeItem(k); } catch (e) {}
+        });
+    } catch (e) {}
+};
+// ===== END LOCAL USER-DATA PURGE =====
+
+
+// ===== PRIVACY LOCK OVERLAY =====
+// For pages without lock markup of their own. Same idea as /app/'s
+// lockScreen()/unlockScreen(): covers the page until Unlock is clicked and
+// does NOT sign the user out (idle auto-logout keeps running). Esc does not
+// dismiss it; Tab stays on the Unlock button.
+(function () {
+    'use strict';
+    var OVERLAY_ID = 'bsnLockOverlay';
+    var prevFocus = null;
+
+    function onKey(e) {
+        var o = document.getElementById(OVERLAY_ID);
+        if (!o || o.style.display === 'none') return;
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            e.preventDefault();
+            e.stopPropagation();
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+            var b = o.querySelector('button');
+            if (b) b.focus();
+        }
+    }
+
+    function hide() {
+        var o = document.getElementById(OVERLAY_ID);
+        if (o) o.style.display = 'none';
+        document.removeEventListener('keydown', onKey, true);
+        if (prevFocus && typeof prevFocus.focus === 'function') {
+            try { prevFocus.focus(); } catch (e) {}
+        }
+        prevFocus = null;
+    }
+
+    function build() {
+        var o = document.createElement('div');
+        o.id = OVERLAY_ID;
+        o.setAttribute('role', 'dialog');
+        o.setAttribute('aria-modal', 'true');
+        o.setAttribute('aria-labelledby', OVERLAY_ID + 'Title');
+        o.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;' +
+            'background:var(--clx-bg-canvas);color:var(--clx-text-primary);' +
+            'align-items:center;justify-content:center;flex-direction:column;padding:16px;';
+
+        var box = document.createElement('div');
+        box.style.cssText = 'text-align:center;max-width:360px;';
+
+        var icon = document.createElement('div');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.style.cssText = 'font-size:56px;margin-bottom:16px;';
+        icon.textContent = '🔒';
+
+        var h = document.createElement('h1');
+        h.id = OVERLAY_ID + 'Title';
+        h.style.cssText = 'font-size:28px;margin:0 0 8px;color:var(--clx-text-primary);';
+        h.textContent = 'BendBSN';
+
+        var p = document.createElement('p');
+        p.style.cssText = 'font-size:15px;margin:0 0 32px;color:var(--clx-text-secondary);';
+        p.textContent = 'Portal Locked';
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.cssText = 'background:var(--clx-accent);color:var(--clx-accent-text);border:none;' +
+            'padding:14px 40px;min-height:44px;border-radius:8px;font-size:15px;font-weight:700;' +
+            'cursor:pointer;font-family:inherit;';
+        btn.textContent = '🔓 Unlock';
+        btn.addEventListener('click', hide);
+
+        var hint = document.createElement('p');
+        hint.style.cssText = 'margin:24px 0 0;font-size:12px;color:var(--clx-text-muted);';
+        hint.textContent = 'Click unlock to return to your session';
+
+        box.appendChild(icon);
+        box.appendChild(h);
+        box.appendChild(p);
+        box.appendChild(btn);
+        box.appendChild(hint);
+        o.appendChild(box);
+        document.body.appendChild(o);
+        return o;
+    }
+
+    window.bsnShowLockOverlay = function () {
+        if (!document.body) return;
+        var o = document.getElementById(OVERLAY_ID) || build();
+        if (o.style.display !== 'flex') {
+            prevFocus = document.activeElement;
+            document.removeEventListener('keydown', onKey, true);
+            document.addEventListener('keydown', onKey, true);
+        }
+        o.style.display = 'flex';
+        var b = o.querySelector('button');
+        if (b) b.focus();
+    };
+})();
+// ===== END PRIVACY LOCK OVERLAY =====
+
+
 // ===== ADMIN PER-USER ACTIONS LISTENER =====
 // Listens for admin-set flags at userActions/{uid}/{forceLogout|clearCache}.
 // When a flag fires, the client takes the action and immediately deletes
@@ -917,6 +1000,53 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     var isLoginPage = location.pathname === '/' || location.pathname === '/index.html';
     if (isLoginPage) return; // never run on the login page
 
+    // Ban enforcement for pages without their own watch. /app/, /home/ and
+    // /resources/ run startBanWatch() inline, so skip them to avoid doubling up.
+    // Mirrors their isBanMatch(): admin entries carry uid + email; username
+    // (email local part) is compared only for legacy entries that lack both.
+    var path = location.pathname;
+    var hasInlineBanWatch = ['/app', '/home', '/resources'].some(function (base) {
+        return path === base || path === base + '/' || path.indexOf(base + '/') === 0;
+    });
+    var banWatchStarted = false, banHandled = false;
+    function isBanMatch(b, u) {
+        if (!b || !u) return false;
+        if (b.uid || b.email) {
+            return !!((b.uid && b.uid === u.uid) ||
+                (b.email && u.email && String(b.email).toLowerCase() === u.email.toLowerCase()));
+        }
+        var uname = u.email || localStorage.getItem('bendbsn_user') || '';
+        var dname = localStorage.getItem('bendbsn_displayName') || uname;
+        return !!b.username && (b.username === uname || b.username === dname);
+    }
+    function handleBanned(b) {
+        if (banHandled) return;
+        banHandled = true;
+        if (typeof showToast === 'function') {
+            showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
+        }
+        setTimeout(function () {
+            ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid',
+             'bendbsn_role_v2', 'bendbsn_login_at', 'bendbsn_last_activity'].forEach(function (k) {
+                try { localStorage.removeItem(k); } catch (e) {}
+            });
+            try { window.bsnPurgeLocalUserData(); } catch (e) {}
+            // Sign out before leaving, or the login page sees the live session
+            // and sends the user straight back.
+            var go = function () { location.replace('/'); };
+            try { firebase.auth().signOut().then(go, go); } catch (e) { go(); }
+        }, 2000);
+    }
+    function startBanWatch() {
+        if (banWatchStarted || hasInlineBanWatch) return;
+        banWatchStarted = true;
+        // child_added fires for every existing entry first, then for new bans.
+        firebase.database().ref('banned').on('child_added', function (snap) {
+            var b = snap && snap.val();
+            if (isBanMatch(b, firebase.auth().currentUser)) handleBanned(b);
+        });
+    }
+
     var attempts = 0;
     function tryInit() {
         attempts++;
@@ -927,6 +1057,7 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         try {
             firebase.auth().onAuthStateChanged(function (user) {
                 if (!user || !user.uid) return;
+                try { startBanWatch(); } catch (e) {}
                 var ref = firebase.database().ref('userActions/' + user.uid);
                 ref.on('value', function (snap) {
                     var actions = snap && snap.val();
@@ -943,6 +1074,7 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
                                 .filter(function (k) { return k.indexOf('bendbsn_draft_') === 0; })
                                 .forEach(function (k) { localStorage.removeItem(k); });
                         } catch (e) {}
+                        try { window.bsnPurgeLocalUserData(); } catch (e) {}
                         try { firebase.auth().signOut(); } catch (e) {}
                         try { sessionStorage.setItem('bendbsn_force_logout', '1'); } catch (e) {}
                         location.replace('/');
@@ -1056,39 +1188,77 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     });
 })();
 
-// ── Idle auto-logout (fallback for pages without the presence system) ──────
-// The 30-minute inactivity logout security policy was only implemented on the
-// 5 pages that carry the full presence system (app, chat, community, home,
-// resources). This block gives every OTHER authenticated page (emr, careplan,
-// sbar, rotationlog, profile, clinical, apa, ai, ...) the same timeout, without
-// presence tracking. It self-disables on any page that already defines its own
-// IDLE_TIMEOUT so timers never double up.
+// ── Idle auto-logout (fallback for pages without their own timers) ─────────
+// The 30-minute inactivity logout security policy was originally implemented
+// inline on app, home and resources. This block gives every OTHER
+// authenticated page (emr, careplan, sbar, rotationlog, profile, clinical,
+// apa, ...) the same timeout. It self-disables on the three pages that still
+// carry their own timers so they never double up.
 (function () {
     'use strict';
 
     var isLoginPage = location.pathname === '/' || location.pathname === '/index.html';
     if (isLoginPage) return;
-    // These pages ship the full presence system with their own idle/logout timers
-    // (their top-level `const IDLE_TIMEOUT` is NOT a window property, so we can't
-    // feature-detect it — skip by path so timers never double up).
-    var p = location.pathname;
-    var PRESENCE_PAGES = ['/app', '/chat', '/community', '/home', '/resources'];
-    if (PRESENCE_PAGES.some(function (base) { return p === base || p === base + '/' || p.indexOf(base + '/') === 0; })) return;
     // Only arm for authenticated sessions.
     if (localStorage.getItem('bendbsn_auth') !== 'true') return;
 
-    var IDLE_WARNING_MS = 25 * 60 * 1000; // warn at 25 min
-    var LOGOUT_MS       = 30 * 60 * 1000; // sign out at 30 min
+    // Activity is shared across tabs through this wall-clock timestamp, so an
+    // idle background tab never signs out a tab that is in active use.
+    var LAST_KEY = 'bendbsn_last_activity';
+    function readShared() {
+        try { return parseInt(localStorage.getItem(LAST_KEY) || '0', 10) || 0; } catch (e) { return 0; }
+    }
+    function writeShared(t) {
+        try { localStorage.setItem(LAST_KEY, String(t)); } catch (e) {}
+    }
+    var ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
     var DEBOUNCE_MS     = 30 * 1000;
 
+    // These pages ship their own inline idle/logout timers (their top-level
+    // `const LOGOUT_TIMEOUT` is NOT a window property, so we can't feature-detect
+    // it — skip by path so timers never double up). They still report their
+    // activity so fallback-timer tabs (emr, sbar, ...) see it.
+    var p = location.pathname;
+    var INLINE_TIMER_PAGES = ['/app', '/home', '/resources'];
+    if (INLINE_TIMER_PAGES.some(function (base) { return p === base || p === base + '/' || p.indexOf(base + '/') === 0; })) {
+        var lastReport = 0;
+        var report = function () {
+            var now = Date.now();
+            if (now - lastReport < DEBOUNCE_MS) return;
+            lastReport = now;
+            writeShared(now);
+        };
+        ACTIVITY_EVENTS.forEach(function (ev) {
+            document.addEventListener(ev, report, { passive: true });
+        });
+        report();
+        return;
+    }
+
+    var IDLE_WARNING_MS = 25 * 60 * 1000; // warn at 25 min
+    var LOGOUT_MS       = 30 * 60 * 1000; // sign out at 30 min
+
     var warnTimer = null, logoutTimer = null, debounceTimer = null;
+    // Wall-clock time of this tab's last activity. Timers alone don't advance
+    // during system sleep or a frozen tab, so every check compares real time.
+    var lastLocal = Date.now();
+    writeShared(lastLocal);
+
+    function idleMs() {
+        // Ignore a shared timestamp from the future (clock change), as /app/ does.
+        return Date.now() - Math.max(lastLocal, Math.min(readShared(), Date.now()));
+    }
 
     function doIdleLogout() {
         try {
             ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid',
-             'bendbsn_role_v2', 'bendbsn_login_at'].forEach(function (k) {
+             'bendbsn_role_v2', 'bendbsn_login_at', LAST_KEY].forEach(function (k) {
                 try { localStorage.removeItem(k); } catch (e) {}
             });
+            // Smart-phrase cache: the next person on this device must not
+            // inherit it (phrases re-pull on login). Unsynced packet backups
+            // are kept (see bsnPurgeLocalUserData).
+            try { window.bsnPurgeLocalUserData(); } catch (e) {}
             if (window.firebase && firebase.apps && firebase.apps.length) {
                 try { firebase.auth().signOut(); } catch (e) {}
             }
@@ -1097,28 +1267,45 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         location.replace('/');
     }
 
+    // (Re)arm both timers for the time remaining. Does NOT count as activity.
     function resetTimers() {
         clearTimeout(warnTimer);
         clearTimeout(logoutTimer);
-        warnTimer = setTimeout(function () {
-            if (typeof showToast === 'function') {
-                showToast('You will be logged out in 5 minutes due to inactivity.', 'warning', 10000);
-            }
-        }, IDLE_WARNING_MS);
-        logoutTimer = setTimeout(doIdleLogout, LOGOUT_MS);
+        var idle = idleMs();
+        if (idle < IDLE_WARNING_MS) {
+            warnTimer = setTimeout(function () {
+                var i = idleMs();
+                if (i < IDLE_WARNING_MS) { resetTimers(); return; } // another tab was active
+                if (i < LOGOUT_MS && typeof showToast === 'function') {
+                    showToast('You will be logged out in 5 minutes due to inactivity.', 'warning', 10000);
+                }
+            }, IDLE_WARNING_MS - idle);
+        }
+        logoutTimer = setTimeout(function () {
+            if (idleMs() >= LOGOUT_MS) { doIdleLogout(); return; }
+            resetTimers(); // activity elsewhere: wait out the remainder
+        }, Math.max(0, LOGOUT_MS - idle));
     }
 
     function onActivity() {
+        // Check real elapsed time before this event counts: after sleep the
+        // 30-minute timer may not have fired yet, and the first mousemove
+        // must not grant a fresh 30 minutes.
+        if (idleMs() >= LOGOUT_MS) { doIdleLogout(); return; }
+        lastLocal = Date.now();
         if (debounceTimer) return;
         debounceTimer = setTimeout(function () { debounceTimer = null; }, DEBOUNCE_MS);
+        writeShared(lastLocal);
         resetTimers();
     }
 
-    ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(function (ev) {
+    ACTIVITY_EVENTS.forEach(function (ev) {
         document.addEventListener(ev, onActivity, { passive: true });
     });
     document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible') resetTimers();
+        if (document.visibilityState !== 'visible') return;
+        if (idleMs() >= LOGOUT_MS) { doIdleLogout(); return; }
+        resetTimers();
     });
     resetTimers();
 })();

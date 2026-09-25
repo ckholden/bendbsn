@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org https://api.emailjs.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org https://api.emailjs.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0d1f2d">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
     <meta name="robots" content="noindex, nofollow">
@@ -47,6 +48,11 @@
         .btn-secondary { background: var(--clx-bg-surface-2, #f5f8fa) !important; color: var(--clx-text-primary, #1a2532) !important; border: 1px solid var(--clx-border, #d1dce8) !important; }
         .btn-secondary:hover { background: var(--clx-bg-surface-3, #eef2f6) !important; }
         .btn-sm { padding: 5px 12px !important; font-size: 12px !important; }
+        /* Admin-only variants (kept out of clinical-ui.css: apa defines its own solid .btn-success) */
+        .btn-warning { background: var(--clx-warning-bg, #fffbeb) !important; color: var(--clx-warning-text, #92400e) !important; border: 1px solid var(--clx-warning, #d97706) !important; }
+        .btn-warning:hover { filter: brightness(0.95); }
+        .btn-success { background: var(--clx-success-bg, #ecfdf5) !important; color: var(--clx-success-text, #065f46) !important; border: 1px solid var(--clx-success, #059669) !important; }
+        .btn-success:hover { filter: brightness(0.95); }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
         .card {
@@ -72,6 +78,7 @@
 
         .user-item {
             display: flex;
+            flex-wrap: wrap;
             align-items: flex-start;
             gap: 10px;
             padding: 10px 14px;
@@ -86,7 +93,7 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
         }
-        .user-info { flex: 1; min-width: 0; }
+        .user-info { flex: 1 1 200px; min-width: 0; }
         .user-name { font-weight: 600; font-size: 14px; color: var(--clx-text-primary, #1a2532); }
         .user-email { font-size: 12px; color: var(--clx-text-secondary, #4a5568); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .user-badges { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
@@ -94,37 +101,17 @@
             display: inline-block; padding: 1px 7px; border-radius: 10px;
             font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
         }
-        .badge-role { background: #e0f2fe; color: #0369a1; }
-        .badge-approved { background: #dcfce7; color: #166534; }
-        .badge-pending { background: #fef3c7; color: #92400e; }
-        .badge-banned { background: #fee2e2; color: #991b1b; }
-        .user-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+        .badge-role { background: var(--clx-bg-surface-2, #f5f8fa); color: var(--clx-text-secondary, #4a5568); border: 1px solid var(--clx-border, #d1dce8); }
+        .badge-approved { background: var(--clx-success-bg, #ecfdf5); color: var(--clx-success-text, #065f46); }
+        .badge-pending { background: var(--clx-warning-bg, #fffbeb); color: var(--clx-warning-text, #92400e); }
+        .badge-banned { background: var(--clx-danger-bg, #fef2f2); color: var(--clx-danger-text, #991b1b); }
+        .user-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; flex: 0 1 auto; justify-content: flex-end; max-width: 100%; }
+        .user-actions select { min-width: 150px; max-width: 100%; }
 
-        .online-dot {
-            width: 8px;
-            height: 8px;
-            background: #28a745;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .message-item {
-            padding: 10px;
-            border-bottom: 1px solid var(--clx-border, #e2e8f0);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-        .message-content { flex: 1; }
-        .message-user { font-weight: 600; font-size: 12px; color: var(--clx-accent, #0f7490); }
-        .message-text { font-size: 14px; color: var(--clx-text-primary, #1a2532); margin: 5px 0; }
-        .message-time { font-size: 10px; color: var(--clx-text-muted, #718096); }
+        /* Form rows: wrap instead of squeezing; stack on phones */
+        .phrase-add-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(180px, 2fr) auto; gap: 10px; margin-bottom: 20px; }
+        .phrase-add-row input { min-width: 0; width: 100%; box-sizing: border-box; }
+        .ticket-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
 
         .stat-box {
             text-align: center;
@@ -239,7 +226,7 @@
             color: var(--clx-accent, #0f7490);
             border-bottom-color: var(--clx-accent, #0f7490);
         }
-        .admin-tab .tab-badge {
+        .tab-badge {
             background: var(--clx-danger, #dc2626);
             color: white;
             font-size: 10px;
@@ -358,14 +345,23 @@
             .card-header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
             .card-header div { flex-wrap: wrap; }
             .user-item { flex-direction: column; align-items: flex-start; gap: 8px; }
-            .user-actions { width: 100%; }
+            .user-actions { width: 100%; justify-content: flex-start; }
             .login-box { padding: 24px 20px; }
-            .message-item { flex-direction: column; gap: 6px; }
         }
         @media (max-width: 480px) {
             .action-bar { gap: 6px; padding: 10px 12px; }
+            .phrase-add-row { grid-template-columns: 1fr; }
+            .user-actions select { flex: 1 1 100%; }
             /* App-like flush layout */
             .container { padding: 0 8px !important; max-width: 100% !important; }
+        }
+
+        /* Touch targets: admin controls are small on desktop, but need 44px on touch screens */
+        @media (pointer: coarse) {
+            #adminContent .btn, #adminContent button.btn-sm, #firebaseAuthModal .btn,
+            #adminContent input[type="text"], #adminContent input[type="email"], #adminContent input[type="number"],
+            #adminContent select, .bsn-modal-overlay select { min-height: 44px; }
+            .clx-sidebar-item { min-height: 44px; }
         }
 
     </style>
@@ -375,27 +371,18 @@
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo"></a>
     </header>
     <!-- Alert/FYI Banners -->
-    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: alertFlash 1s infinite;">
+    <div id="alertBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: #dc2626; color: white; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000;">
         <span id="alertText"></span>
         <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.8;">⚠️ ALERT</span>
     </div>
-    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1a1a2e; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
+    <div id="fyiBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: #d97706; color: #1a1a2e; padding: 12px 20px; text-align: center; font-weight: 600; font-size: 14px; z-index: 9999;">
         <span id="fyiText"></span>
         <span style="position: absolute; right: 15px; font-size: 11px; opacity: 0.7;">ℹ️ FYI</span>
     </div>
     <style>
-        @keyframes alertFlash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        }
         body.has-alert { padding-top: 50px; }
         body.has-fyi { padding-top: 50px; }
         body.has-alert.has-fyi { padding-top: 100px; }
-        /* Toast notifications */
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
     </style>
 
     <!-- Admin Login -->
@@ -447,35 +434,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
         <a href="/apa/" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -486,10 +459,6 @@
         <button class="clx-sidebar-item" onclick="toggleDarkMode()">
             <span class="clx-sidebar-icon" id="sidebarThemeIcon">&#127769;</span>
             <span class="clx-sidebar-label">Theme</span>
-        </button>
-        <button class="clx-sidebar-item" onclick="lockScreen()">
-            <span class="clx-sidebar-icon">&#128274;</span>
-            <span class="clx-sidebar-label">Lock</span>
         </button>
         <button class="clx-sidebar-item" onclick="openTicketModal()">
             <span class="clx-sidebar-icon">&#127915;</span>
@@ -509,7 +478,7 @@
         <div class="clx-page-title-bar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <div>
                 <h1 class="clx-page-title">Admin Panel</h1>
-                <p class="clx-page-subtitle">Manage users, chat, and site settings</p>
+                <p class="clx-page-subtitle">Manage users and site settings</p>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <span id="firebaseAuthStatus" style="font-size:12px;color:var(--clx-text-muted,#718096);"></span>
@@ -534,11 +503,10 @@
         <div class="admin-tabs" role="tablist" id="adminTabs">
             <button class="admin-tab active" data-section="dashboard" onclick="showAdminSection('dashboard')" role="tab">📊 Dashboard</button>
             <button class="admin-tab" data-section="users" onclick="showAdminSection('users')" role="tab">👥 Users</button>
-            <button class="admin-tab" data-section="community" onclick="showAdminSection('community')" role="tab">💬 Community</button>
             <button class="admin-tab" data-section="tickets" onclick="showAdminSection('tickets')" role="tab">🎫 Tickets <span class="tab-badge" id="tabBadgeTickets" style="display:none;">0</span></button>
             <button class="admin-tab" data-section="logs" onclick="showAdminSection('logs')" role="tab">📜 Logs</button>
             <button class="admin-tab" data-section="tools" onclick="showAdminSection('tools')" role="tab">🛠️ Tools</button>
-            <button class="admin-tab" data-section="danger" onclick="showAdminSection('danger')" role="tab">⚠️ Danger</button>
+            <button class="admin-tab admin-only" data-section="danger" onclick="showAdminSection('danger')" role="tab">⚠️ Danger</button>
         </div>
 
         <!-- ===== SECTION: DASHBOARD ===== -->
@@ -549,11 +517,7 @@
                     <button class="btn btn-primary btn-sm" onclick="refreshAll()">Refresh All</button>
                 </div>
             </div>
-            <div class="stat-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px;">
-                <div class="stat-box" style="border-left: 3px solid #28a745; cursor:pointer;" onclick="showAdminSection('users')">
-                    <div class="stat-number" id="statOnline" style="color: #28a745;">0</div>
-                    <div class="stat-label">Online</div>
-                </div>
+            <div class="stat-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
                 <div class="stat-box" style="border-left: 3px solid var(--clx-accent, #0f7490); cursor:pointer;" onclick="showAdminSection('users')">
                     <div class="stat-number" id="statRegistered">0</div>
                     <div class="stat-label">Registered</div>
@@ -561,10 +525,6 @@
                 <div class="stat-box" style="border-left: 3px solid #dc3545; cursor:pointer;" onclick="showAdminSection('users')">
                     <div class="stat-number" id="statBanned" style="color: #dc3545;">0</div>
                     <div class="stat-label">Banned</div>
-                </div>
-                <div class="stat-box" style="border-left: 3px solid #6f42c1; cursor:pointer;" onclick="showAdminSection('community')">
-                    <div class="stat-number" id="statPosts" style="color: #6f42c1;">0</div>
-                    <div class="stat-label">Posts</div>
                 </div>
                 <div class="stat-box" style="border-left: 3px solid #e67e22; cursor:pointer;" onclick="showAdminSection('tickets')">
                     <div class="stat-number" id="statOpenTickets" style="color: #e67e22;">0</div>
@@ -575,17 +535,16 @@
                 <div class="card-header"><span>Quick Jump</span></div>
                 <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
                     <button class="btn btn-secondary btn-sm" onclick="showAdminSection('users')">👥 Manage Users &amp; Roles</button>
-                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('community')">💬 Moderate Community</button>
                     <button class="btn btn-secondary btn-sm" onclick="showAdminSection('tickets')">🎫 Review Tickets</button>
                     <button class="btn btn-secondary btn-sm" onclick="showAdminSection('logs')">📜 View Logs</button>
                     <button class="btn btn-secondary btn-sm" onclick="showAdminSection('tools')">🛠️ Tools &amp; Config</button>
-                    <button class="btn btn-secondary btn-sm" onclick="showAdminSection('danger')">⚠️ Danger Zone</button>
+                    <button class="btn btn-secondary btn-sm admin-only" onclick="showAdminSection('danger')">⚠️ Danger Zone</button>
                 </div>
             </div>
         </div>
 
         <!-- ===== SECTION: DANGER ===== -->
-        <div class="admin-section" data-section="danger">
+        <div class="admin-section admin-only" data-section="danger">
             <div class="admin-section-hdr">
                 <h2 style="color:var(--clx-danger-text,#991b1b);">⚠️ Danger Zone</h2>
             </div>
@@ -598,19 +557,10 @@
                         These actions are irreversible. Each one prompts for confirmation. Use only when needed.
                     </p>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
-                        <button class="btn btn-danger btn-sm" onclick="kickAllUsers()">Kick All from Chat</button>
-                        <button class="btn btn-warning btn-sm" onclick="clearAllMessages()">Clear All Messages</button>
-                        <button class="btn btn-danger btn-sm" onclick="clearAllPosts()">Clear All Posts</button>
                         <button class="btn btn-danger btn-sm" onclick="clearAppCache()">🗑️ Clear Cache</button>
-                        <button class="btn btn-danger btn-sm" onclick="clearChatPresence()">Clear Chat Presence</button>
-                        <button class="btn btn-danger btn-sm" onclick="purgeOrphanedDMs()">Purge Orphan DMs</button>
                         <div style="grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <input id="purgeUserSearch" type="text" placeholder="Purge user everywhere (name/email/uid)" style="flex: 1; min-width: 180px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             <button class="btn btn-danger btn-sm" onclick="purgeUserEverywhere()">Purge User</button>
-                        </div>
-                        <div style="grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                            <input id="dmPurgeSearch" type="text" placeholder="Purge DMs by name/email/uid" style="flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid var(--clx-border); border-radius: 8px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
-                            <button class="btn btn-danger btn-sm" onclick="purgeDMsBySearch()">Purge DMs</button>
                         </div>
                     </div>
                 </div>
@@ -620,12 +570,12 @@
         <!-- Login History Modal -->
         <div id="loginHistoryModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
             <div style="max-width: 900px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-header">
                     <h2 style="margin: 0; font-size: 18px;">Login History</h2>
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="exportLoginHistory()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Export CSV</button>
-                        <button onclick="clearAllLoginHistory()" style="background: #ff9800; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Clear All</button>
-                        <button onclick="closeLoginHistory()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                        <button class="btn btn-secondary btn-sm" onclick="exportLoginHistory()">Export CSV</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAllLoginHistory()">Clear All</button>
+                        <button class="btn btn-secondary btn-sm" onclick="closeLoginHistory()">Close</button>
                     </div>
                 </div>
                 <!-- Bulk Actions Bar -->
@@ -634,7 +584,7 @@
                         <input type="checkbox" id="selectAllLoginHistory" onchange="toggleSelectAllLoginHistory()">
                         <span style="font-size: 13px; font-weight: 600;">Select All</span>
                     </label>
-                    <button id="deleteSelectedBtn" onclick="deleteSelectedLoginHistory()" style="background: #dc3545; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; display: none;">Delete Selected (<span id="selectedCount">0</span>)</button>
+                    <button id="deleteSelectedBtn" class="btn btn-danger btn-sm" onclick="deleteSelectedLoginHistory()" style="display: none;">Delete Selected (<span id="selectedCount">0</span>)</button>
                 </div>
                 <div id="loginHistoryContent" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
                     <p>Loading...</p>
@@ -648,14 +598,14 @@
         <!-- Export History Modal -->
         <div id="exportHistoryModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
             <div style="max-width: 900px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-header">
                     <h2 style="margin: 0; font-size: 18px;">Document Export History</h2>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="exportHistoryUserFilter" onchange="filterExportHistory()" style="padding: 6px 10px; border-radius: 6px; border: none;">
+                        <select id="exportHistoryUserFilter" onchange="filterExportHistory()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--clx-border); background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             <option value="all">All Users</option>
                         </select>
-                        <button onclick="exportExportHistoryCSV()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Export CSV</button>
-                        <button onclick="closeExportHistory()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                        <button class="btn btn-secondary btn-sm" onclick="exportExportHistoryCSV()">Export CSV</button>
+                        <button class="btn btn-secondary btn-sm" onclick="closeExportHistory()">Close</button>
                     </div>
                 </div>
                 <div id="exportHistoryContent" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
@@ -667,14 +617,14 @@
         <!-- Notification Log Modal -->
         <div id="notificationLogModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
             <div style="max-width: 1000px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-header">
                     <div>
                         <h2 style="margin: 0; font-size: 18px;">📧 Email Notification Log</h2>
-                        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Track registration email notifications sent to admin</p>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: 400; color: var(--clx-text-muted);">Track registration email notifications sent to admin</p>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="refreshNotificationLog()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Refresh</button>
-                        <button onclick="closeNotificationLog()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                        <button class="btn btn-secondary btn-sm" onclick="refreshNotificationLog()">🔄 Refresh</button>
+                        <button class="btn btn-secondary btn-sm" onclick="closeNotificationLog()">Close</button>
                     </div>
                 </div>
                 <div id="notificationLogContent" style="padding: 20px; max-height: 65vh; overflow-y: auto;">
@@ -686,15 +636,15 @@
         <!-- Pending Welcome Emails Modal -->
         <div id="pendingWelcomeModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
             <div style="max-width: 900px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-header">
                     <div>
                         <h2 style="margin: 0; font-size: 18px;">📬 Pending Welcome Emails</h2>
-                        <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Users whose welcome email failed or was not yet sent</p>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: 400; color: var(--clx-text-muted);">Users whose welcome email failed or was not yet sent</p>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <button onclick="sendAllPendingWelcomeEmails()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">📤 Send All Now</button>
-                        <button onclick="refreshPendingWelcomeEmails()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Refresh</button>
-                        <button onclick="closePendingWelcomeEmails()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                        <button class="btn btn-primary btn-sm" onclick="sendAllPendingWelcomeEmails()">📤 Send All Now</button>
+                        <button class="btn btn-secondary btn-sm" onclick="refreshPendingWelcomeEmails()">🔄 Refresh</button>
+                        <button class="btn btn-secondary btn-sm" onclick="closePendingWelcomeEmails()">Close</button>
                     </div>
                 </div>
                 <div id="pendingWelcomeContent" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
@@ -706,16 +656,16 @@
         <!-- Smart Phrases Modal -->
         <div id="smartPhrasesModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
             <div style="max-width: 700px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-header">
                     <h2 style="margin: 0; font-size: 18px;">Manage Smart Phrases</h2>
-                    <button onclick="closeSmartPhrases()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                    <button class="btn btn-secondary btn-sm" onclick="closeSmartPhrases()">Close</button>
                 </div>
                 <div style="padding: 20px;">
                     <p style="color: var(--clx-text-secondary); margin-bottom: 15px;">Add custom smart phrases that all users can use. Shortcuts start with a period (e.g., .custom)</p>
-                    <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; margin-bottom: 20px;">
+                    <div class="phrase-add-row">
                         <input type="text" id="newPhraseShortcut" placeholder=".shortcut" style="padding: 10px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                         <input type="text" id="newPhraseText" placeholder="Expansion text..." style="padding: 10px; border: 1px solid var(--clx-border); border-radius: 6px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
-                        <button onclick="addGlobalPhrase()" style="background: var(--clx-accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Add</button>
+                        <button class="btn btn-primary" onclick="addGlobalPhrase()">Add</button>
                     </div>
                     <div id="globalPhrasesList" style="max-height: 300px; overflow-y: auto;">
                         <p style="color: var(--clx-text-muted);">Custom phrases will appear here.</p>
@@ -724,48 +674,12 @@
             </div>
         </div>
 
-        <!-- Post Detail Modal -->
-        <div id="postDetailModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 700px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="margin: 0; font-size: 18px;">Post Details</h2>
-                    <button onclick="closePostDetail()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
-                </div>
-                <div id="postDetailContent" style="padding: 20px;">
-                    <p>Loading...</p>
-                </div>
-                <div style="padding: 0 20px 20px; display: flex; gap: 10px;">
-                    <button id="pinPostBtn" onclick="togglePostPin()" style="background: var(--clx-accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Pin Post</button>
-                    <button onclick="deletePostAdmin()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Delete Post</button>
-                </div>
-                <div style="padding: 0 20px 20px;">
-                    <h4 style="margin: 0 0 10px; color: var(--clx-text-primary);">Replies</h4>
-                    <div id="postRepliesList" style="max-height: 200px; overflow-y: auto; background: var(--clx-bg-surface-2); border-radius: 8px; padding: 10px;">
-                        <p style="color: var(--clx-text-muted); margin: 0;">No replies</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Community Stats Modal -->
-        <div id="communityStatsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
-            <div style="max-width: 500px; margin: 50px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="margin: 0; font-size: 18px;">Community Statistics</h2>
-                    <button onclick="closeCommunityStats()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
-                </div>
-                <div id="communityStatsContent" style="padding: 20px;">
-                    <p>Loading...</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Add User Modal -->
         <div id="addUserModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
             <div style="max-width: 480px; margin: 60px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-accent); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-header">
                     <h2 style="margin: 0; font-size: 18px;">+ Add User</h2>
-                    <button onclick="closeAddUserModal()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer;" aria-label="Close">✕</button>
+                    <button class="btn btn-secondary btn-sm" onclick="closeAddUserModal()" aria-label="Close">✕</button>
                 </div>
                 <div style="padding: 20px;">
                     <p style="font-size: 12px; color: var(--clx-text-secondary); margin: 0 0 16px; padding: 10px 12px; background: var(--clx-accent-subtle); border-radius: 6px; border-left: 3px solid var(--clx-accent);">
@@ -803,8 +717,8 @@
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
-                        <button onclick="closeAddUserModal()" style="padding: 9px 20px; border: 1px solid var(--clx-border); background: var(--clx-bg-surface-2); color: var(--clx-text-primary); border-radius: 7px; cursor: pointer; font-size: 13px;">Cancel</button>
-                        <button onclick="submitAddUser()" style="padding: 9px 20px; background: var(--clx-accent); color: white; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600;">Add User</button>
+                        <button class="btn btn-secondary" onclick="closeAddUserModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="submitAddUser()">Add User</button>
                     </div>
                 </div>
             </div>
@@ -819,23 +733,6 @@
                 </div>
             </div>
             <div class="grid">
-            <!-- Online Users -->
-            <div class="card">
-                <div class="card-header">
-                    <span>Online Users</span>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span class="updated-label" id="onlineUsersUpdated">Updated —</span>
-                        <button class="refresh-btn" onclick="loadOnlineUsers()">&#x21bb;</button>
-                    </div>
-                </div>
-                <div class="card-body" id="onlineUsersList">
-                    <div class="empty-state">
-                        <div class="icon">&#128274;</div>
-                        <p>Loading...</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Banned Users -->
             <div class="card">
                 <div class="card-header">
@@ -859,8 +756,7 @@
                     <span>Registered Users <span id="registeredUsersCountBadge" style="font-size:11px;font-weight:400;color:var(--clx-text-muted);"></span></span>
                     <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                         <span class="updated-label muted" id="registeredUsersUpdated">Updated —</span>
-                        <button class="btn btn-sm" style="background:#28a745;color:white;" onclick="openAddUserModal()" title="Manually add a user">+ Add User</button>
-                        <button class="btn btn-sm btn-warning" onclick="sendWelcomeEmailsToAll()" title="Send welcome email to all users">📧 Email All</button>
+                        <button class="btn btn-sm btn-success" onclick="openAddUserModal()" title="Manually add a user">+ Add User</button>
                         <button class="refresh-btn" onclick="loadRegisteredUsers()">&#x21bb;</button>
                     </div>
                 </div>
@@ -911,77 +807,6 @@
             </div><!-- /grid -->
         </div><!-- /section: users -->
 
-        <!-- ===== SECTION: COMMUNITY ===== -->
-        <div class="admin-section" data-section="community">
-            <div class="admin-section-hdr">
-                <h2>💬 Community Moderation</h2>
-                <div class="admin-section-actions">
-                    <button class="btn btn-secondary btn-sm" onclick="showCommunityStats()">Stats</button>
-                    <button class="btn btn-secondary btn-sm" onclick="refreshAll()">Refresh</button>
-                </div>
-            </div>
-            <div class="grid">
-            <!-- Chat Messages -->
-            <div class="card">
-                <div class="card-header">
-                    <span>Recent Chat Messages</span>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span class="updated-label" id="messagesUpdated">Updated —</span>
-                        <button class="refresh-btn" onclick="loadMessages()">&#x21bb;</button>
-                    </div>
-                </div>
-                <div style="padding: 8px 15px; border-bottom: 1px solid var(--clx-border); background: var(--clx-bg-surface-2);">
-                    <input type="text" id="chatMessageSearch" placeholder="Search messages..." oninput="filterChatMessages()" style="width: 100%; padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
-                </div>
-                <div class="card-body tall" id="messagesList">
-                    <div class="empty-state">
-                        <div class="icon">&#128172;</div>
-                        <p>Loading...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Channels -->
-            <div class="card">
-                <div class="card-header">
-                    <span>Chat Channels</span>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span class="updated-label" id="channelsUpdated">Updated —</span>
-                        <button class="refresh-btn" onclick="loadAdminChannels()">&#x21bb;</button>
-                    </div>
-                </div>
-                <div class="card-body tall" id="adminChannelsList">
-                    <div class="empty-state"><div class="icon">&#35;</div><p>Loading...</p></div>
-                </div>
-            </div>
-
-            <!-- Community Posts -->
-            <div class="card" style="grid-column: span 2;">
-                <div class="card-header">
-                    <span>Community Posts</span>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="categoryFilter" onchange="loadCommunityPosts()" style="padding: 5px 10px; border-radius: 4px; border: none; font-size: 12px;">
-                            <option value="all">All Categories</option>
-                            <option value="announcements">Announcements</option>
-                            <option value="study-tips">Study Tips</option>
-                            <option value="career">Career</option>
-                            <option value="nclex">NCLEX</option>
-                            <option value="general">General</option>
-                        </select>
-                        <span class="updated-label" id="communityPostsUpdated">Updated —</span>
-                        <button class="refresh-btn" onclick="loadCommunityPosts()">&#x21bb;</button>
-                    </div>
-                </div>
-                <div class="card-body tall" id="communityPostsList" style="max-height: 350px;">
-                    <div class="empty-state">
-                        <div class="icon">&#128221;</div>
-                        <p>Loading...</p>
-                    </div>
-                </div>
-            </div>
-            </div><!-- /grid -->
-        </div><!-- /section: community -->
-
         <!-- ===== SECTION: TOOLS ===== -->
         <div class="admin-section" data-section="tools">
             <div class="admin-section-hdr">
@@ -1015,7 +840,7 @@
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Order</label>
-                                <input type="number" id="roleFormOrder" value="99" min="1" max="99" style="width: 70px; padding: 7px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
+                                <input type="number" id="roleFormOrder" value="99" min="1" max="99" inputmode="numeric" style="width: 84px; padding: 7px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary);">
                             </div>
                         </div>
                         <div style="margin-top: 10px;">
@@ -1141,12 +966,12 @@
                     </button>
                     <button class="btn btn-secondary" onclick="showPendingWelcomeEmails()" style="padding:18px 12px; flex-direction:column; gap:4px; text-align:center;">
                         <div style="font-size:24px;">📬</div>
-                        <div style="font-weight:600;">Pending Welcome Emails</div>
+                        <div style="font-weight:600;">Pending Welcome Emails <span class="tab-badge" id="pendingEmailsBadge" style="display:none;">0</span></div>
                         <div style="font-size:11px; color:var(--clx-text-muted);">Users still owed a welcome email</div>
                     </button>
                     <button class="btn btn-secondary" onclick="showClientErrors()" style="padding:18px 12px; flex-direction:column; gap:4px; text-align:center;">
                         <div style="font-size:24px;">🐛</div>
-                        <div style="font-weight:600;">Client Error Log <span class="tab-badge" id="clientErrorBadge" style="display:none;background:var(--clx-danger);">0</span></div>
+                        <div style="font-weight:600;">Client Error Log <span class="tab-badge" id="clientErrorBadge" style="display:none;">0</span></div>
                         <div style="font-size:11px; color:var(--clx-text-muted);">JS errors users hit but didn't report</div>
                     </button>
                 </div>
@@ -1156,12 +981,12 @@
         <!-- Client Errors Modal -->
         <div id="clientErrorsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; overflow-y: auto;">
             <div style="max-width: 1100px; margin: 20px auto; background: var(--clx-bg-surface); border-radius: 12px; overflow: hidden;">
-                <div style="background: var(--clx-danger,#dc2626); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="margin: 0; font-size: 18px;">🐛 Client Error Log <span id="clientErrorsCount" style="font-weight:400;font-size:13px;opacity:0.9;"></span></h2>
+                <div class="card-header">
+                    <h2 style="margin: 0; font-size: 18px;">🐛 Client Error Log <span id="clientErrorsCount" style="font-weight:400;font-size:13px;color:var(--clx-text-muted);"></span></h2>
                     <div style="display:flex; gap:10px;">
-                        <button onclick="clearAllClientErrors()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Clear All</button>
-                        <button onclick="loadClientErrors()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Refresh</button>
-                        <button onclick="closeClientErrors()" style="background: rgba(0,0,0,0.3); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Close</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAllClientErrors()">Clear All</button>
+                        <button class="btn btn-secondary btn-sm" onclick="loadClientErrors()">Refresh</button>
+                        <button class="btn btn-secondary btn-sm" onclick="closeClientErrors()">Close</button>
                     </div>
                 </div>
                 <div style="padding: 12px 20px; background: var(--clx-bg-surface-2); border-bottom: 1px solid var(--clx-border); display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -1177,7 +1002,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- IT Ticket Detail Modal -->
     <div id="itTicketDetailModal" class="bsn-modal-overlay" style="display:none;z-index:9200;" onclick="if(event.target===this)closeTicketDetail()">
@@ -1189,7 +1013,7 @@
             <div id="ticketDetailMeta" style="font-size:12px;color:var(--clx-text-muted);margin-bottom:14px;display:flex;gap:12px;flex-wrap:wrap;"></div>
             <div style="background:var(--clx-bg-surface-2,#1e2b3a);border:1px solid var(--clx-border);border-radius:6px;padding:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto;margin-bottom:14px;" id="ticketDetailMessage"></div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div class="ticket-detail-grid">
                 <div>
                     <label style="font-size:11px;font-weight:700;color:var(--clx-text-secondary);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Status</label>
                     <select id="ticketDetailStatus" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
@@ -1260,6 +1084,10 @@
         </div>
     </div>
 
+    </main><!-- /clx-main -->
+    </div><!-- /clx-shell -->
+    </div><!-- /adminContent -->
+
     <!-- Firebase Auth Modal -->
     <div id="firebaseAuthModal" class="bsn-modal-overlay" style="display:none;">
         <div class="bsn-confirm-modal" style="max-width:420px;">
@@ -1280,8 +1108,6 @@
             <button class="btn btn-secondary" style="width: 100%;" onclick="firebaseAdminSignIn()">Sign In with Email</button>
         </div>
     </div>
-    </main><!-- /clx-main -->
-    </div><!-- /clx-shell -->
 
     <!-- ===== USER DIAGNOSTICS PANEL ===== -->
     <div class="diag-panel-backdrop" id="diagPanelBackdrop" onclick="closeUserDiagnostics()"></div>
@@ -1306,8 +1132,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?token=bsn_k7x9m2p4';
-
         // Firebase setup
         const firebaseConfig = {
             apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
@@ -1321,12 +1145,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const database = firebase.database();
-        const chatRef = database.ref('chat/messages');
-        const presenceRef = database.ref('chat/presence');
-        const channelsRef = database.ref('chat/channels');
-        const channelMembersRef = database.ref('chat/channelMembers');
         const userProfilesRef = database.ref('userProfiles');
-        const directMessagesRef = database.ref('directMessages');
         const userDocumentsRef = database.ref('userDocuments');
         // Each role maps to the 4 Firebase fields the app/profile pages expect.
         // 'role' is the legacy human-readable string (kept for back-compat).
@@ -1438,71 +1257,12 @@
         });
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
-        const communityPostsRef = database.ref('community/posts');
-
-        // Community posts state
-        let allCommunityPosts = [];
-        let currentPostId = null;
-
-        // Toast notification function
 
         // EmailJS Configuration
         const EMAILJS_PUBLIC_KEY = 'Paf-N3lByYsImp0af';
         const EMAILJS_SERVICE_ID = 'service_2dw80zz';
         const EMAILJS_TEMPLATE_ID = 'template_ty32lyw';
         emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-
-        // Send welcome emails to all registered users
-        async function sendWelcomeEmailsToAll() {
-            showConfirmModal('Send Welcome Emails', 'Send welcome email to ALL registered users? This cannot be undone.', async function() {
-            try {
-                const response = await fetch(API_URL + '&action=getUsers');
-                const data = await response.json();
-
-                if (!data.success || !data.users) {
-                    showToast('Failed to fetch users', 'error');
-                    return;
-                }
-
-                const users = data.users;
-                let sent = 0;
-                let failed = 0;
-
-                const statusDiv = document.createElement('div');
-                statusDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 10000; text-align: center;';
-                statusDiv.innerHTML = '<h3>Sending Emails...</h3><p id="emailProgress">0 / ' + users.length + '</p>';
-                document.body.appendChild(statusDiv);
-
-                for (let i = 0; i < users.length; i++) {
-                    const user = users[i];
-                    if (!user.email) continue;
-
-                    try {
-                        const templateParams = {
-                            to_name: user.name || user.email.split('@')[0],
-                            to_email: user.email,
-                            reply_to: user.email,
-                            login_link: 'https://bendbsn.com',
-                            message: 'Your BendBSN account has been successfully created!\n\nPlease use your email address (' + user.email + ') and the password you created to log in.\n\nClick the link below to access your account.'
-                        };
-                        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
-                        sent++;
-                    } catch (e) {
-                        console.error('Failed to send to', user.email, e);
-                        failed++;
-                    }
-
-                    document.getElementById('emailProgress').textContent = (i + 1) + ' / ' + users.length;
-                    await new Promise(r => setTimeout(r, 500)); // Rate limit
-                }
-
-                statusDiv.remove();
-                showToast('Done! Sent: ' + sent + ', Failed: ' + failed, 'success');
-            } catch (e) {
-                showToast('Error: ' + e.message, 'error');
-            }
-            }, { confirmText: 'Send Emails', danger: true });
-        }
 
         // Listen for announcements (alert/fyi banners)
         announcementsRef.on('value', (snapshot) => {
@@ -1607,17 +1367,17 @@
             }
 
             setAdminUiVisible(true);
-            // Hide Danger Zone for instructors — only true admins (isAdmin flag) can see it
+            // Hide Danger Zone (.admin-only) for instructors — only true admins
+            // (isAdmin custom claim or RTDB flag) see it. UI gate only, not a security boundary.
             try {
+                let claimAdmin = false;
+                try { claimAdmin = (await auth.currentUser.getIdTokenResult()).claims?.isAdmin === true; } catch (e) { /* fall back to RTDB flag */ }
                 const snap = await userProfilesRef.child(auth.currentUser.uid).once('value');
                 const profile = snap.val() || {};
-                const isTrueAdmin = profile.isAdmin === true;
-                const dangerHeader = document.getElementById('dangerZoneHeader');
-                const dangerBody = document.getElementById('dangerZoneBody');
-                if (!isTrueAdmin) {
-                    if (dangerHeader) dangerHeader.style.display = 'none';
-                    if (dangerBody) dangerBody.style.display = 'none';
-                }
+                const isTrueAdmin = claimAdmin || profile.isAdmin === true;
+                window._isTrueAdmin = isTrueAdmin;
+                document.querySelectorAll('.admin-only').forEach(el => { el.style.display = isTrueAdmin ? '' : 'none'; });
+                if (!isTrueAdmin && document.querySelector('.admin-section.active[data-section="danger"]')) showAdminSection('dashboard');
             } catch (e) { /* non-fatal */ }
             if (!adminInitialized) {
                 initAdmin();
@@ -1682,22 +1442,13 @@
 
         function initAdmin() {
             updateFirebaseAuthStatus();
-            loadOnlineUsers();
             loadBannedUsers();
             loadRegisteredUsers();
-            loadMessages();
-            loadCommunityPosts();
-            loadAdminChannels();
             loadStudentSubmissions();
-            updatePendingEmailsBadge();
             loadTickets();
 
             // Real-time updates
-            presenceRef.on('value', () => loadOnlineUsers());
             bannedRef.on('value', () => loadBannedUsers());
-            chatRef.on('value', () => loadMessages());
-            communityPostsRef.on('value', () => loadCommunityPosts());
-            channelsRef.on('value', () => loadAdminChannels());
 
             // Restore last-viewed admin section after auth completes
             restoreAdminSection();
@@ -1706,12 +1457,8 @@
         // ========== FIREBASE LISTENER CLEANUP ==========
         function cleanupAdminListeners() {
             try {
-                if (typeof presenceRef !== 'undefined') presenceRef.off();
                 if (typeof bannedRef !== 'undefined') bannedRef.off();
-                if (typeof communityPostsRef !== 'undefined') communityPostsRef.off();
-                if (typeof channelsRef !== 'undefined') channelsRef.off();
                 if (typeof announcementsRef !== 'undefined') announcementsRef.off();
-                if (typeof chatRef !== 'undefined') chatRef.off();
                 console.log('Admin Firebase listeners cleaned up');
             } catch (e) { /* non-fatal on unload */ }
         }
@@ -1719,59 +1466,16 @@
         window.addEventListener('pagehide', cleanupAdminListeners);
 
         function logout() {
-            cleanupAdminListeners();
-            auth.signOut().catch(() => {});
+            // Write the session end while still authenticated, then finish signOut before clearing and redirecting
             endSessionTracking('logout');
-            localStorage.removeItem('bendbsn_auth');
-            localStorage.removeItem('bendbsn_user');
-            localStorage.removeItem('bendbsn_displayName');
-            localStorage.removeItem('bendbsn_uid');
-            clearSessionTracking();
-            window.location.href = '/';
-        }
-
-        // Load online users
-        function loadOnlineUsers() {
-            presenceRef.once('value', (snapshot) => {
-                const container = document.getElementById('onlineUsersList');
-                const count = snapshot.numChildren();
-                document.getElementById('statOnline').textContent = count;
-                updateLastUpdated('onlineUsersUpdated');
-
-                if (!snapshot.exists() || count === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128564;</div><p>No users online</p></div>';
-                    // Update header count to 0
-                    if (typeof window.updateOnlineCount === 'function') {
-                        window.updateOnlineCount(0, []);
-                    }
-                    return;
-                }
-
-                let html = '';
-                const userNames = [];
-                snapshot.forEach((child) => {
-                    const user = child.val();
-                    const key = child.key;
-                    userNames.push(user.user || 'Anonymous');
-                    html += `
-                        <div class="user-item">
-                            <div class="user-info">
-                                <span class="online-dot"></span>
-                                <span class="user-name">${escapeHtml(user.user || 'Anonymous')}</span>
-                            </div>
-                            <div class="user-actions">
-                                <button class="btn btn-warning btn-sm" onclick="kickUser('${key}', '${user.user}')">Kick</button>
-                                <button class="btn btn-danger btn-sm" onclick="banUser('${user.user}')">Ban</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-
-                // Update header online count (injected by shared/header.js)
-                if (typeof window.updateOnlineCount === 'function') {
-                    window.updateOnlineCount(count, userNames);
-                }
+            cleanupAdminListeners();
+            auth.signOut().catch(() => {}).then(() => {
+                localStorage.removeItem('bendbsn_auth');
+                localStorage.removeItem('bendbsn_user');
+                localStorage.removeItem('bendbsn_displayName');
+                localStorage.removeItem('bendbsn_uid');
+                clearSessionTracking();
+                window.location.href = '/';
             });
         }
 
@@ -1796,7 +1500,7 @@
                         <div class="user-item">
                             <div class="user-info">
                                 <span class="user-name">${escapeHtml(data.username)}</span>
-                                <div class="user-status status-banned">Banned: ${escapeHtml(data.reason || 'No reason given')}</div>
+                                <div class="user-email" style="color: var(--clx-danger-text, #991b1b);">Banned: ${escapeHtml(data.reason || 'No reason given')}</div>
                                 <div class="user-email">Banned on: ${new Date(data.timestamp).toLocaleString()}</div>
                             </div>
                             <div class="user-actions">
@@ -1899,6 +1603,19 @@
             }
         }
 
+        function _rowUid(user) {
+            const profile = userProfilesByEmail[(user.email || '').toLowerCase()] || null;
+            return user.uid || (profile ? (profile.uid || '') : '');
+        }
+        function updateUserRoleAt(idx, optionValue) {
+            const user = _userRowData[idx];
+            if (user) updateUserRole(_rowUid(user), user.email || '', optionValue);
+        }
+        function openUserDiagnosticsAt(idx) {
+            const user = _userRowData[idx];
+            if (user) openUserDiagnostics(_rowUid(user), user.email || '');
+        }
+
         function renderRegisteredUsers(users) {
             const container = document.getElementById('registeredUsersList');
             if (!container) return;
@@ -1924,21 +1641,20 @@
                 const name = user.name || user.username || 'Unknown';
                 const initials = name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
-                // Safe attribute escaping for uid/email used in onclick (no user-controlled content)
-                const safeUid = uid.replace(/'/g, '');
-                const safeEmail = (user.email || '').replace(/'/g, '');
+                // uid is the profile key (== auth.uid). Email is user-controlled, so handlers look it up by row index.
+                const safeUid = uid.replace(/[^A-Za-z0-9_-]/g, '');
 
                 const roleSelect = auth.currentUser
-                    ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid var(--clx-border); font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary); min-width: 170px;">
+                    ? `<select style="padding: 4px 6px; border-radius: 6px; border: 1px solid var(--clx-border); font-size: 12px; background: var(--clx-bg-surface); color: var(--clx-text-primary);" aria-label="Role">
                            ${getRoleOptionsHtml(roleOptionValue)}
                        </select>
-                       <button class="btn btn-sm btn-primary" onclick="updateUserRole('${safeUid}', '${safeEmail}', this.previousElementSibling.value)" style="white-space:nowrap;">Save Role</button>`
+                       <button class="btn btn-sm btn-primary" onclick="updateUserRoleAt(${i}, this.previousElementSibling.value)" style="white-space:nowrap;">Save Role</button>`
                     : '';
 
                 html += `
                     <div class="user-item">
                         <div class="user-avatar">${escapeHtml(initials)}</div>
-                        <div class="user-info" onclick="openUserDiagnostics('${safeUid}', '${safeEmail}')" title="Click to open diagnostics">
+                        <div class="user-info" onclick="openUserDiagnosticsAt(${i})" title="Click to open diagnostics">
                             <div class="user-name">${escapeHtml(name)}</div>
                             <div class="user-email">${escapeHtml(user.email || '')}${user.username ? ' · @' + escapeHtml(user.username) : ''}</div>
                             <div class="user-badges">
@@ -1950,10 +1666,10 @@
                             ${status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveUser(${i})">Approve</button>` : ''}
                             ${roleSelect}
                             ${uid ? (profile && profile.isAdmin
-                                ? `<button class="btn btn-sm" style="background:#6b7280;color:white;white-space:nowrap;" onclick="grantAdminClaim('${safeUid}', true)" title="Revoke admin access">−Admin</button>`
-                                : `<button class="btn btn-sm" style="background:#1f4e79;color:white;white-space:nowrap;" onclick="grantAdminClaim('${safeUid}', false)" title="Grant admin access">+Admin</button>`) : ''}
+                                ? `<button class="btn btn-sm btn-secondary" style="white-space:nowrap;" onclick="grantAdminClaim('${safeUid}', true)" title="Revoke admin access">−Admin</button>`
+                                : `<button class="btn btn-sm btn-primary" style="white-space:nowrap;" onclick="grantAdminClaim('${safeUid}', false)" title="Grant admin access">+Admin</button>`) : ''}
                             <button class="btn btn-warning btn-sm" onclick="banUser(${i})">Ban</button>
-                            <button class="btn btn-sm" style="background:#dc3545;color:white;" onclick="deleteUser(${i})" title="Permanently delete user" aria-label="Delete">🗑️</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${i})" title="Permanently delete user" aria-label="Delete">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -1997,13 +1713,6 @@
             renderRegisteredUsers(filtered);
         }
 
-        function clearRegisteredUsersCache() {
-            localStorage.removeItem('bendbsn_userCache');
-            localStorage.removeItem('bendbsn_userCacheTime');
-            showToast('User cache cleared', 'success');
-            loadRegisteredUsers();
-        }
-
         async function bulkDeleteFilteredUsers() {
             const input = document.getElementById('registeredUserSearch');
             const search = (input?.value || '').toLowerCase().trim();
@@ -2017,7 +1726,7 @@
                 return;
             }
 
-            const confirmMsg = `Delete ${targets.length} user(s) matching "${search}"?\n\nThis will remove them from the Google Sheet and Firebase profiles (if present).`;
+            const confirmMsg = `Delete ${targets.length} user(s) matching "${search}"?\n\nThis will remove their Firebase profiles and ban-list entries.`;
             showConfirmModal('Bulk Delete Users', confirmMsg, async function() {
                 for (let i = 0; i < targets.length; i++) {
                     const u = targets[i];
@@ -2047,8 +1756,11 @@
                 try {
                     const bannedSnapshot = await bannedRef.once('value');
                     bannedSnapshot.forEach((child) => {
-                        const val = child.val();
-                        if (val.username === username || val.email === email || val.uid === uid) {
+                        const val = child.val() || {};
+                        // Username alone only identifies legacy entries with no uid/email;
+                        // newer entries store the email local part, which other users can share.
+                        if ((uid && val.uid === uid) || (email && val.email === email) ||
+                            (username && !val.uid && !val.email && val.username === username)) {
                             child.ref.remove();
                         }
                     });
@@ -2057,7 +1769,7 @@
                 }
 
                 if (deletedItems.length > 0) {
-                    showToast(`Deleted ${escapeHtml(displayName || username)} from: ${deletedItems.join(', ')}`, 'success');
+                    showToast(`Deleted ${displayName || username} from: ${deletedItems.join(', ')}`, 'success');
                 } else if (errors.length === 0) {
                     showToast('No Firebase profile found to delete (may only have Auth account)', 'warning');
                 }
@@ -2069,38 +1781,7 @@
             }
         }
 
-        function normalizeRegisteredUser(user) {
-            const rawEmail = String(user?.email || '').trim();
-            const rawUsername = String(user?.username || user?.user || '').trim();
-            const fallbackFromEmail = rawEmail.includes('@') ? rawEmail.split('@')[0] : '';
-            const username = rawUsername || fallbackFromEmail || 'unknown';
-            const name = String(user?.name || user?.displayName || user?.fullName || username || 'Unknown').trim();
-            const email = rawEmail || (String(user?.username || '').includes('@') ? String(user.username).trim() : '');
-            const status = String(user?.status || 'approved').trim() || 'approved';
-            const role = String(user?.role || 'RN Student').trim() || 'RN Student';
-            return { name, email, username, status, role };
-        }
-
-        function usersFromProfilesFallback() {
-            const users = [];
-            Object.entries(userProfilesByUid || {}).forEach(([uid, profile]) => {
-                const email = String(profile?.email || '').trim();
-                const fallbackUsername = email.includes('@') ? email.split('@')[0] : uid;
-                const username = String(profile?.username || fallbackUsername || uid).trim();
-                const name = String(profile?.displayName || profile?.name || username || 'Unknown').trim();
-                const role = String(profile?.role || 'RN Student').trim() || 'RN Student';
-                users.push({
-                    name,
-                    email,
-                    username,
-                    status: 'approved',
-                    role
-                });
-            });
-            return users;
-        }
-
-        // Load registered users from Google Sheets
+        // Load registered users from Firebase userProfiles
         async function loadRegisteredUsers() {
             const container = document.getElementById('registeredUsersList');
             updateLastUpdated('registeredUsersUpdated');
@@ -2118,6 +1799,8 @@
 
             try {
                 await refreshUserProfilesMap();
+                // Reuse the profiles just read for the Pending Welcome Emails badge (no extra read)
+                updatePendingEmailsBadge(Object.values(userProfilesByUid).filter(p => p && !p.welcomeEmailSent && p.email).length);
 
                 registeredUsersCache = Object.entries(userProfilesByUid).map(([uid, profile]) => ({
                     uid: uid,
@@ -2219,7 +1902,7 @@
                 });
 
                 const emailNote = welcomeEmailSent ? ' — welcome email sent' : '';
-                showToast(`User "${escapeHtml(name)}" added${emailNote}`, 'success');
+                showToast(`User "${name}" added${emailNote}`, 'success');
                 closeAddUserModal();
                 loadRegisteredUsers();
             } catch (e) {
@@ -2255,147 +1938,28 @@
             URL.revokeObjectURL(url);
         }
 
-        // Close Add User modal on overlay click
-        document.getElementById('addUserModal').addEventListener('click', function(e) {
-            if (e.target === this) closeAddUserModal();
+        // Ad-hoc overlay modals: close on backdrop click and on Escape.
+        // Backdrop close needs press AND release on the backdrop, so a text-selection drag that ends outside doesn't close it.
+        const ADHOC_MODALS = ['loginHistoryModal', 'exportHistoryModal', 'notificationLogModal', 'pendingWelcomeModal', 'smartPhrasesModal', 'addUserModal', 'clientErrorsModal'];
+        ADHOC_MODALS.forEach(id => {
+            const m = document.getElementById(id);
+            if (!m) return;
+            let pressedOnBackdrop = false;
+            m.addEventListener('pointerdown', e => { pressedOnBackdrop = (e.target === m); });
+            m.addEventListener('click', e => {
+                if (e.target === m && pressedOnBackdrop) m.style.display = 'none';
+                pressedOnBackdrop = false;
+            });
         });
-
-        // Load chat messages
-        // ========== CHAT CHANNELS ADMIN ==========
-        async function loadAdminChannels() {
-            const container = document.getElementById('adminChannelsList');
-            if (!container) return;
-            container.innerHTML = '<div class="empty-state"><div class="icon">&#9203;</div><p>Loading...</p></div>';
-            updateLastUpdated('channelsUpdated');
-            try {
-                const [channelsSnap, membersSnap] = await Promise.all([
-                    channelsRef.once('value'),
-                    channelMembersRef.once('value')
-                ]);
-
-                // Count members per channel
-                const memberCounts = {};
-                membersSnap.forEach(chSnap => {
-                    memberCounts[chSnap.key] = Object.keys(chSnap.val() || {}).length;
-                });
-
-                const allChannels = [{ key: 'general', val: { name: 'general', description: 'General chat for everyone', createdBy: 'System' } }];
-                channelsSnap.forEach(child => {
-                    if (child.key !== 'general') allChannels.push({ key: child.key, val: child.val() || {} });
-                });
-
-                if (allChannels.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="icon">&#35;</div><p>No channels found.</p></div>';
-                    return;
-                }
-
-                let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-                html += '<thead><tr style="border-bottom:1px solid var(--clx-border);"><th style="text-align:left;padding:6px 8px;color:var(--clx-text-muted);font-weight:500;">Channel</th><th style="text-align:left;padding:6px 8px;color:var(--clx-text-muted);font-weight:500;">Created By</th><th style="text-align:center;padding:6px 8px;color:var(--clx-text-muted);font-weight:500;">Members</th><th style="padding:6px 8px;"></th></tr></thead><tbody>';
-
-                allChannels.forEach(({ key, val }) => {
-                    const isGeneral = key === 'general';
-                    const members = (memberCounts[key] || 0) + (isGeneral ? ' (all)' : '');
-                    const deleteBtn = isGeneral ? '<span style="color:var(--clx-text-muted);font-size:11px;">Protected</span>'
-                        : `<button onclick="deleteChannelAdmin('${key.replace(/'/g,"\\'")}','${(val.name||key).replace(/'/g,"\\'")}') " style="padding:3px 10px;background:#dc2626;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">Delete</button>`;
-                    html += `<tr style="border-bottom:1px solid var(--clx-border);">
-                        <td style="padding:8px;"><span style="color:var(--clx-text-muted);">#</span> <strong>${escapeHtml(val.name || key)}</strong>${val.description ? `<br><span style="font-size:11px;color:var(--clx-text-muted);">${escapeHtml(val.description)}</span>` : ''}</td>
-                        <td style="padding:8px;color:var(--clx-text-secondary);">${escapeHtml(val.createdBy || '—')}</td>
-                        <td style="padding:8px;text-align:center;color:var(--clx-text-secondary);">${members}</td>
-                        <td style="padding:8px;text-align:right;">${deleteBtn}</td>
-                    </tr>`;
-                });
-
-                html += '</tbody></table>';
-                container.innerHTML = html;
-            } catch (err) {
-                container.innerHTML = `<div class="empty-state"><div class="icon">&#9888;</div><p>Error: ${escapeHtml(err.message)}</p></div>`;
-            }
-        }
-
-        function deleteChannelAdmin(id, name) {
-            showConfirmModal('Delete Channel', `Delete #${name} and all its messages? This cannot be undone.`, () => {
-                Promise.all([
-                    channelsRef.child(id).remove(),
-                    chatRef.child(id).remove(),
-                    channelMembersRef.child(id).remove()
-                ]).then(() => {
-                    showToast('Channel #' + name + ' deleted', 'success');
-                    loadAdminChannels();
-                }).catch(err => showToast('Failed: ' + err.message, 'error'));
-            }, { danger: true, confirmText: 'Delete Channel' });
-        }
-
-        function loadMessages() {
-            const container = document.getElementById('messagesList');
-            updateLastUpdated('messagesUpdated');
-            container.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
-
-            // chat/messages is keyed by channelId, then by messageId
-            chatRef.once('value', (snapshot) => {
-                if (!snapshot.exists()) {
-                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128172;</div><p>No messages</p></div>';
-                    return;
-                }
-
-                const messages = [];
-                snapshot.forEach((channelChild) => {
-                    const channelId = channelChild.key;
-                    channelChild.forEach((msgChild) => {
-                        const v = msgChild.val() || {};
-                        messages.push({
-                            key: msgChild.key,
-                            channelId: channelId,
-                            user: v.user || '',
-                            text: v.text || '',
-                            timestamp: v.timestamp || 0
-                        });
-                    });
-                });
-
-                messages.sort((a, b) => b.timestamp - a.timestamp);
-                const recent = messages.slice(0, 50);
-
-                if (recent.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128172;</div><p>No messages</p></div>';
-                    return;
-                }
-
-                let html = '';
-                recent.forEach((msg) => {
-                    html += `
-                        <div class="message-item">
-                            <div class="message-content">
-                                <div class="message-user">${escapeHtml(msg.user)}</div>
-                                <div class="message-text">${escapeHtml(msg.text)}</div>
-                                <div class="message-time">${new Date(msg.timestamp).toLocaleString()} — #${escapeHtml(msg.channelId)}</div>
-                            </div>
-                            <button class="btn btn-danger btn-sm" onclick="deleteMessage('${escapeHtml(msg.channelId)}','${msg.key}')">Delete</button>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-            }, (err) => {
-                container.innerHTML = `<div class="empty-state"><p>Error: ${escapeHtml(err.message)}</p></div>`;
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            // A shared confirm/prompt stacked on top gets this Escape; leave the modal underneath open
+            if (document.getElementById('bsnConfirmModal')) return;
+            ADHOC_MODALS.forEach(id => {
+                const m = document.getElementById(id);
+                if (m && m.style.display === 'block') m.style.display = 'none';
             });
-        }
-
-        function filterChatMessages() {
-            const term = (document.getElementById('chatMessageSearch')?.value || '').toLowerCase();
-            const items = document.querySelectorAll('#messagesList .message-item');
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(term) ? '' : 'none';
-            });
-        }
-
-        // Kick user from chat
-        function kickUser(presenceKey, username) {
-            showConfirmModal('Kick User', `Kick ${username} from chat?`, function() {
-                presenceRef.child(presenceKey).remove()
-                    .then(() => showToast(`${username} has been kicked from chat`, 'success'))
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Kick', danger: true });
-        }
+        });
 
         // ========== CLIENT ERROR LOG VIEWER ==========
         const clientErrorsRef = database.ref('clientErrors');
@@ -2456,13 +2020,22 @@
                     '<div style="font-size:11px;color:var(--clx-text-muted);display:flex;flex-wrap:wrap;gap:12px;">' +
                         '<span><strong>User:</strong> ' + escapeHtml(e.email || '(anon)') + '</span>' +
                         '<span><strong>Page:</strong> ' + escapeHtml(path) + '</span>' +
-                        (e.source ? '<span><strong>Source:</strong> ' + escapeHtml(e.source) + (e.line ? ':' + e.line : '') + '</span>' : '') +
+                        (e.source ? '<span><strong>Source:</strong> ' + escapeHtml(e.source) + (e.line ? ':' + escapeHtml(String(e.line)) : '') + '</span>' : '') +
                     '</div>' +
                     (e.stack ? '<details style="margin-top:6px;"><summary style="cursor:pointer;font-size:11px;color:var(--clx-text-muted);">Stack trace</summary><pre style="font-size:10px;background:var(--clx-bg-surface);padding:8px;border-radius:4px;overflow-x:auto;margin-top:4px;">' + escapeHtml(e.stack) + '</pre></details>' : '') +
-                    '<div style="margin-top:6px;text-align:right;"><button class="btn btn-sm" style="background:#dc3545;color:white;font-size:11px;padding:3px 8px;" onclick="deleteClientError(\'' + e.id + '\')">Delete</button></div>' +
+                    '<div style="margin-top:6px;text-align:right;"><button class="btn btn-sm btn-danger ce-del" data-id="' + escapeHtml(e.id) + '">Delete</button></div>' +
                 '</div>';
             }).join('');
         }
+
+        // Delegated delete: record ids are user-writable keys, so never splice them into inline JS.
+        (function () {
+            const list = document.getElementById('clientErrorsList');
+            if (list) list.addEventListener('click', function (ev) {
+                const btn = ev.target.closest('.ce-del');
+                if (btn && list.contains(btn)) deleteClientError(btn.dataset.id);
+            });
+        })();
 
         async function deleteClientError(id) {
             try {
@@ -2598,33 +2171,38 @@
             }
 
             try {
-                // Sanitize email for userDocuments path (replace . # $ [ ] with _)
-                const safeEmail = cleanEmail ? cleanEmail.replace(/[.#$\[\]\/]/g, '_') : '';
-
                 // Parallel reads — degrade gracefully if any fail (permissions etc.)
                 const tasks = [
                     userProfilesRef.child(cleanUid).once('value').catch(() => null),
-                    safeEmail ? database.ref('userDocuments/' + safeEmail).once('value').catch(() => null) : Promise.resolve(null),
+                    // Docs live under userDocuments/{uid} (owner-only read) — null here means "unavailable", not 0
+                    database.ref('userDocuments/' + cleanUid).once('value').catch(() => null),
                     database.ref('loginHistory').orderByChild('uid').equalTo(cleanUid).once('value').catch(() => null),
-                    cleanEmail ? database.ref('appTickets').orderByChild('userEmail').equalTo(cleanEmail).once('value').catch(() => null) : Promise.resolve(null),
+                    // Tickets store uid + email (shared/header.js); filter client-side below
+                    database.ref('appTickets').once('value').catch(() => null),
                     database.ref('userActions/' + cleanUid).once('value').catch(() => null)
                 ];
                 const [profileSnap, docsSnap, loginSnap, ticketsSnap, actionsSnap] = await Promise.all(tasks);
 
                 const profile = (profileSnap && profileSnap.val()) || {};
-                const docsCount = docsSnap ? docsSnap.numChildren() : 0;
+                const docsCount = docsSnap ? docsSnap.numChildren() : null;
                 const loginEntries = [];
                 if (loginSnap) loginSnap.forEach(c => loginEntries.push(c.val()));
                 loginEntries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 const ticketEntries = [];
-                if (ticketsSnap) ticketsSnap.forEach(c => ticketEntries.push({ id: c.key, ...c.val() }));
+                const lcEmail = cleanEmail.toLowerCase();
+                if (ticketsSnap) ticketsSnap.forEach(c => {
+                    const t = c.val() || {};
+                    if (t.uid === cleanUid || (lcEmail && String(t.email || '').trim().toLowerCase() === lcEmail)) ticketEntries.push({ id: c.key, ...t });
+                });
+                ticketEntries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const ticketsCount = ticketsSnap ? ticketEntries.length : null;
                 const pendingActions = (actionsSnap && actionsSnap.val()) || {};
 
                 // Update header with friendly name from profile if available
                 const displayName = profile.displayName || cleanEmail || 'Unknown';
                 document.getElementById('diagUserName').textContent = displayName;
 
-                body.innerHTML = renderDiagPanel(cleanUid, cleanEmail, profile, docsCount, loginEntries, ticketEntries, pendingActions);
+                body.innerHTML = renderDiagPanel(cleanUid, cleanEmail, profile, docsCount, loginEntries, ticketEntries, pendingActions, ticketsCount);
             } catch (e) {
                 console.error('openUserDiagnostics failed:', e);
                 body.innerHTML = '<div class="diag-section"><h4>Error</h4><p style="font-size:13px;color:var(--clx-danger);">Failed to load user data: ' + escapeHtml(e.message || 'unknown error') + '</p></div>';
@@ -2638,13 +2216,12 @@
             if (backdrop) backdrop.classList.remove('open');
         }
 
-        function renderDiagPanel(uid, email, profile, docsCount, loginEntries, ticketEntries, pendingActions) {
+        function renderDiagPanel(uid, email, profile, docsCount, loginEntries, ticketEntries, pendingActions, ticketsCount) {
             const phraseCount = profile.smartPhrases ? Object.keys(profile.smartPhrases).length : 0;
             const lastLogin = loginEntries[0];
             const roleDisplay = (profile.role_label || profile.role || '—') + (profile.role_year ? ' (' + profile.role_year + ')' : '');
             const fmtTs = ts => ts ? new Date(ts).toLocaleString() : '—';
-            const safeUid = (uid || '').replace(/'/g, '');
-            const safeEmail = (email || '').replace(/'/g, '');
+            const safeUid = (uid || '').replace(/[^A-Za-z0-9_-]/g, '');
 
             // Pending action warnings
             let pendingHtml = '';
@@ -2677,9 +2254,9 @@
                     <h4>Activity</h4>
                     <div class="diag-row"><strong>Last Login</strong><span>${fmtTs(lastLogin?.timestamp)}</span></div>
                     <div class="diag-row"><strong>Total Logins</strong><span>${loginEntries.length}</span></div>
-                    <div class="diag-row"><strong>Saved Documents</strong><span>${docsCount}</span></div>
+                    <div class="diag-row"><strong>Saved Documents</strong><span${docsCount == null ? ' title="Notes are owner-only; admins cannot read them"' : ''}>${docsCount == null ? 'unavailable' : docsCount}</span></div>
                     <div class="diag-row"><strong>Smart Phrases</strong><span>${phraseCount}</span></div>
-                    <div class="diag-row"><strong>Tickets Filed</strong><span>${ticketEntries.length}</span></div>
+                    <div class="diag-row"><strong>Tickets Filed</strong><span>${ticketsCount == null ? 'unavailable' : ticketsCount}</span></div>
                 </div>
 
                 ${loginEntries.length > 0 ? `
@@ -2694,7 +2271,7 @@
                 <div class="diag-section">
                     <h4>Tickets Filed (${ticketEntries.length})</h4>
                     <div style="font-size:12px;">
-                        ${ticketEntries.slice(0, 5).map(t => `<div style="padding:5px 0;border-bottom:1px solid var(--clx-border);"><strong>${escapeHtml(t.subject || '(no subject)')}</strong> &middot; <span style="color:var(--clx-text-muted);">${escapeHtml(t.status || 'open')}</span><br><span style="font-size:10px;color:var(--clx-text-muted);">${fmtTs(t.timestamp)}</span></div>`).join('')}
+                        ${ticketEntries.slice(0, 5).map(t => `<div style="padding:5px 0;border-bottom:1px solid var(--clx-border);"><strong>${escapeHtml(t.category || 'ticket')}</strong> &middot; ${escapeHtml(String(t.message || '').substring(0, 60))} &middot; <span style="color:var(--clx-text-muted);">${escapeHtml(t.status || 'open')}</span><br><span style="font-size:10px;color:var(--clx-text-muted);">${fmtTs(t.timestamp)}</span></div>`).join('')}
                     </div>
                 </div>` : ''}
 
@@ -2763,6 +2340,8 @@
 
         // ========== ADMIN SECTION NAVIGATION ==========
         function showAdminSection(name) {
+            if (name === 'community') name = 'dashboard'; // section retired
+            if (name === 'danger' && window._isTrueAdmin === false) name = 'dashboard'; // instructors: no Danger Zone
             document.querySelectorAll('.admin-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
             const sec = document.querySelector('.admin-section[data-section="' + name + '"]');
@@ -2776,33 +2355,23 @@
         // Restore last viewed section on load (skipped during admin auth)
         function restoreAdminSection() {
             try {
-                const last = localStorage.getItem('admin_active_section');
+                let last = localStorage.getItem('admin_active_section');
+                if (last === 'community') last = 'dashboard'; // section retired
                 if (last && document.querySelector('.admin-section[data-section="' + last + '"]')) {
                     showAdminSection(last);
                 }
             } catch(e) {}
         }
 
-        // Legacy: kept for callsites that still want to "open Danger Zone"
-        function toggleDangerZone() {
-            showAdminSection('danger');
-        }
-
-        // Kick all users
-        function kickAllUsers() {
-            showConfirmModal('Kick All Users', 'Kick ALL users from chat? They will need to refresh to reconnect.', function() {
-                presenceRef.remove()
-                    .then(() => showToast('All users have been kicked from chat', 'success'))
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Kick All', danger: true });
-        }
-
         // Ban user
         function banUser(idx) {
             const user = _userRowData[idx];
             if (!user) return;
-            const username = user.username || user.email || 'unknown';
-            showPromptModal('Ban User', `Ban ${escapeHtml(user.name || username)}? Enter reason (optional):`, function(reason) {
+            // Store the full email: app/home/resources compare banned.username to the signed-in email,
+            // so the synthesized local-part username would never match.
+            const username = user.email || user.username || 'unknown';
+            // showPromptModal/showConfirmModal/showToast escape their own text
+            showPromptModal('Ban User', `Ban ${user.name || username}? Enter reason (optional):`, function(reason) {
                 bannedRef.push({
                     username: username,
                     email: user.email || '',
@@ -2815,16 +2384,7 @@
                     if (user.uid) {
                         await userProfilesRef.child(user.uid).update({ status: 'banned' }).catch(() => {});
                     }
-                    showToast(`${escapeHtml(user.name || username)} has been banned`, 'success');
-                    // Kick from chat presence
-                    presenceRef.once('value', (snapshot) => {
-                        snapshot.forEach((child) => {
-                            const val = child.val();
-                            if (val.user === username || val.email === user.email || val.uid === user.uid) {
-                                child.ref.remove();
-                            }
-                        });
-                    });
+                    showToast(`${user.name || username} has been banned`, 'success');
                     loadRegisteredUsers();
                 }).catch((e) => showToast('Error: ' + e.message, 'error'));
             }, { submitText: 'Ban', defaultValue: 'Rule violation', placeholder: 'Enter reason...' });
@@ -2843,7 +2403,7 @@
         async function approveUser(idx) {
             const user = _userRowData[idx];
             if (!user) return;
-            const displayName = escapeHtml(user.name || user.email || 'this user');
+            const displayName = user.name || user.email || 'this user';
             showConfirmModal('Approve User', `Approve ${displayName}?`, async function() {
                 try {
                     if (!user.uid) {
@@ -2864,7 +2424,7 @@
             const user = _userRowData[idx];
             if (!user) return;
             const displayName = user.name || user.email || user.username || 'this user';
-            const confirmMsg = `PERMANENTLY DELETE "${escapeHtml(displayName)}"?\n\nThis will remove their Firebase profile and ban list entries.\n\nYou'll still need to delete their Auth account from Firebase Console.\n\nThis cannot be undone!`;
+            const confirmMsg = `PERMANENTLY DELETE "${displayName}"?\n\nThis will remove their Firebase profile and ban list entries.\n\nYou'll still need to delete their Auth account from Firebase Console.\n\nThis cannot be undone!`;
 
             showConfirmModal('Delete User', confirmMsg, function() {
                 showConfirmModal('Are You Sure?', 'Are you REALLY sure? This action is permanent.', async function() {
@@ -2879,136 +2439,9 @@
             }, { confirmText: 'Delete User', danger: true });
         }
 
-        // Delete message — channelId required since messages are under chat/messages/{channelId}/{msgKey}
-        function deleteMessage(channelId, messageKey) {
-            showConfirmModal('Delete Message', 'Delete this message?', function() {
-                chatRef.child(channelId).child(messageKey).remove()
-                    .then(() => loadMessages())
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Delete', danger: true });
-        }
-
-        // Clear all messages
-        function clearAllMessages() {
-            showConfirmModal('Clear All Messages', 'Delete ALL chat messages? This cannot be undone.', function() {
-                chatRef.remove()
-                    .then(() => {
-                        showToast('All messages have been deleted', 'success');
-                        loadMessages();
-                    })
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Delete All', danger: true });
-        }
-
-        // Clear chat presence (online users)
-        function clearChatPresence() {
-            showConfirmModal('Clear Presence', 'Remove all online presence entries? Users will reconnect on refresh.', function() {
-                presenceRef.remove()
-                    .then(() => {
-                        showToast('Presence cleared', 'success');
-                        loadOnlineUsers();
-                    })
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Clear Presence', danger: true });
-        }
-
-        // Purge DMs by search term (name/email/uid)
-        async function purgeDMsBySearch() {
-            const input = document.getElementById('dmPurgeSearch');
-            const term = (input?.value || '').trim().toLowerCase();
-            if (!term) {
-                showToast('Enter a name, email, or uid', 'error');
-                return;
-            }
-
-            let uidFromEmail = '';
-            if (term.includes('@')) {
-                const profile = userProfilesByEmail[term];
-                if (profile && profile.uid) uidFromEmail = profile.uid;
-            }
-
-            showConfirmModal('Purge DMs', `Delete DM threads matching "${term}"?`, async function() {
-                try {
-                    const snapshot = await directMessagesRef.once('value');
-                    if (!snapshot.exists()) {
-                        showToast('No DM threads found', 'info');
-                        return;
-                    }
-                    let removed = 0;
-                    snapshot.forEach((child) => {
-                        const data = child.val() || {};
-                        const p = data.participants || {};
-                        const name1 = (p.user1 || '').toLowerCase();
-                        const name2 = (p.user2 || '').toLowerCase();
-                        const uid1 = (p.user1_uid || '').toLowerCase();
-                        const uid2 = (p.user2_uid || '').toLowerCase();
-
-                        const match =
-                            name1.includes(term) ||
-                            name2.includes(term) ||
-                            uid1 === term ||
-                            uid2 === term ||
-                            (uidFromEmail && (uid1 === uidFromEmail || uid2 === uidFromEmail));
-
-                        if (match) {
-                            child.ref.remove();
-                            removed += 1;
-                        }
-                    });
-                    showToast(`Purged ${removed} DM thread(s)`, 'success');
-                } catch (e) {
-                    showToast('Error: ' + e.message, 'error');
-                }
-            }, { confirmText: 'Purge DMs', danger: true });
-        }
-
-        // Purge DM threads where participants no longer exist in userProfiles
-        async function purgeOrphanedDMs() {
-            if (!auth.currentUser) {
-                showToast('Firebase sign-in required', 'error');
-                return;
-            }
-
-            showConfirmModal('Purge Orphan DMs', 'Delete DM threads where both participants no longer exist?', async function() {
-                try {
-                    const profileSnap = await userProfilesRef.once('value');
-                    const validUids = new Set();
-                    if (profileSnap.exists()) {
-                        profileSnap.forEach((child) => {
-                            // child.key IS the uid in userProfiles/{uid}
-                            validUids.add(child.key);
-                        });
-                    }
-
-                    const snapshot = await directMessagesRef.once('value');
-                    if (!snapshot.exists()) {
-                        showToast('No DM threads found', 'info');
-                        return;
-                    }
-
-                    let removed = 0;
-                    snapshot.forEach((child) => {
-                        const data = child.val() || {};
-                        const p = data.participants || {};
-                        const uid1 = p.user1_uid || '';
-                        const uid2 = p.user2_uid || '';
-                        const keep1 = uid1 && validUids.has(uid1);
-                        const keep2 = uid2 && validUids.has(uid2);
-
-                        if (!keep1 && !keep2) {
-                            child.ref.remove();
-                            removed += 1;
-                        }
-                    });
-                    showToast(`Purged ${removed} orphan DM thread(s)`, 'success');
-                } catch (e) {
-                    showToast('Error: ' + e.message, 'error');
-                }
-            }, { confirmText: 'Purge Orphan DMs', danger: true });
-        }
-
         function resolveUserMatch(term) {
-            const t = (term || '').trim().toLowerCase();
+            const raw = (term || '').trim();
+            const t = raw.toLowerCase();
             if (!t) return null;
 
             // Match by email first
@@ -3019,14 +2452,14 @@
                 }
                 const cached = registeredUsersCache.find(u => (u.email || '').toLowerCase() === t);
                 if (cached) {
-                    return { uid: '', email: t, name: cached.name || '', username: cached.username || '' };
+                    return { uid: cached.uid || '', email: t, name: cached.name || '', username: cached.username || '' };
                 }
             }
 
-            // Match by UID
-            if (userProfilesByUid[t]) {
-                const profile = userProfilesByUid[t];
-                return { uid: t, email: (profile.email || '').toLowerCase(), name: profile.displayName || profile.firstName || '', username: '' };
+            // Match by UID (Firebase UIDs are case-sensitive — use the untouched term)
+            if (userProfilesByUid[raw]) {
+                const profile = userProfilesByUid[raw];
+                return { uid: raw, email: (profile.email || '').toLowerCase(), name: profile.displayName || profile.firstName || '', username: '' };
             }
 
             // Match by name/username
@@ -3036,7 +2469,7 @@
                 return name === t || username === t;
             });
             if (cached) {
-                return { uid: '', email: (cached.email || '').toLowerCase(), name: cached.name || '', username: cached.username || '' };
+                return { uid: cached.uid || '', email: (cached.email || '').toLowerCase(), name: cached.name || '', username: cached.username || '' };
             }
 
             // Match by displayName in profiles
@@ -3050,7 +2483,7 @@
                 return { uid: uid, email: (p.email || '').toLowerCase(), name: p.displayName || p.firstName || '', username: '' };
             }
 
-            return { uid: '', email: t.includes('@') ? t : '', name: term, username: term };
+            return null;
         }
 
         async function purgeUserEverywhere() {
@@ -3080,129 +2513,63 @@
             ].filter(Boolean).join(' | ');
 
             showConfirmModal('Purge User Everywhere', `Permanently purge user data?\n${summary}`, async function() {
-                let removed = 0;
+                const failures = [];
 
-                // userProfiles + userDocuments + presence
-                try {
-                    if (match.uid) {
-                        await userProfilesRef.child(match.uid).remove();
+                // userDocuments first, then userProfiles — if the notes can't be removed
+                // (the rules let an admin delete userDocuments/{uid} but not read it; a stale
+                // isAdmin flag or older rules deploy denies it), keep the profile so the
+                // notes aren't orphaned without a findable owner.
+                if (match.uid) {
+                    let docsRemoved = false;
+                    try {
                         await userDocumentsRef.child(match.uid).remove();
-                        await presenceRef.child(match.uid).remove();
-                        removed += 3;
+                        docsRemoved = true;
+                    } catch (e) {
+                        failures.push('saved notes (' + (e.code || e.message) + ') — profile kept so the notes stay traceable');
                     }
-                } catch (e) {
-                    showToast('Error removing profile/docs/presence: ' + e.message, 'warning');
+                    if (docsRemoved) {
+                        try {
+                            await userProfilesRef.child(match.uid).remove();
+                        } catch (e) {
+                            failures.push('profile (' + (e.code || e.message) + ')');
+                        }
+                    }
                 }
 
-                // banned list
+                // banned list — match on uid / email, plus the legacy username forms
                 try {
                     const bannedSnapshot = await bannedRef.once('value');
+                    const email = (match.email || '').toLowerCase();
+                    const uname = (match.username || '').toLowerCase();
+                    const removals = [];
                     bannedSnapshot.forEach((child) => {
                         const v = child.val() || {};
-                        const u = (v.username || '').toLowerCase();
-                        if (u === (match.email || '').toLowerCase() || u === (match.name || '').toLowerCase()) {
-                            child.ref.remove();
-                            removed += 1;
+                        const u = String(v.username || '').toLowerCase();
+                        if ((match.uid && v.uid === match.uid) ||
+                            (email && (String(v.email || '').toLowerCase() === email || u === email)) ||
+                            (!v.uid && !v.email && uname && u === uname)) {
+                            removals.push(child.ref.remove());
                         }
                     });
+                    await Promise.all(removals);
                 } catch (e) {
-                    showToast('Error removing ban entries: ' + e.message, 'warning');
+                    failures.push('ban entries (' + (e.code || e.message) + ')');
                 }
 
-                // community posts + replies
-                try {
-                    const postsSnap = await communityPostsRef.once('value');
-                    postsSnap.forEach((child) => {
-                        const post = child.val() || {};
-                        const authorEmail = (post.authorEmail || '').toLowerCase();
-                        const authorName = (post.authorName || '').toLowerCase();
-                        if (authorEmail && authorEmail === (match.email || '').toLowerCase()) {
-                            child.ref.remove();
-                            removed += 1;
-                            return;
-                        }
-                        if (authorName && match.name && authorName === match.name.toLowerCase()) {
-                            child.ref.remove();
-                            removed += 1;
-                            return;
-                        }
-                        if (post.replies) {
-                            Object.entries(post.replies).forEach(([replyId, reply]) => {
-                                const r = reply || {};
-                                const rEmail = (r.authorEmail || '').toLowerCase();
-                                const rName = (r.authorName || '').toLowerCase();
-                                if ((rEmail && rEmail === (match.email || '').toLowerCase()) ||
-                                    (match.name && rName === match.name.toLowerCase())) {
-                                    child.ref.child('replies').child(replyId).remove();
-                                    removed += 1;
-                                }
-                            });
-                        }
-                    });
-                } catch (e) {
-                    showToast('Error removing community posts: ' + e.message, 'warning');
-                }
-
-                // chat messages (all channels)
-                try {
-                    const chatSnap = await chatRef.once('value');
-                    chatSnap.forEach((channel) => {
-                        channel.forEach((msg) => {
-                            const v = msg.val() || {};
-                            const u = (v.username || '').toLowerCase();
-                            const name = (v.user || '').toLowerCase();
-                            if ((match.email && u === match.email.toLowerCase()) ||
-                                (match.name && name === match.name.toLowerCase()) ||
-                                (match.username && u === match.username.toLowerCase())) {
-                                msg.ref.remove();
-                                removed += 1;
-                            }
-                        });
-                    });
-                } catch (e) {
-                    showToast('Error removing chat messages: ' + e.message, 'warning');
-                }
-
-                // direct messages
-                try {
-                    const dmSnap = await directMessagesRef.once('value');
-                    dmSnap.forEach((child) => {
-                        const data = child.val() || {};
-                        const p = data.participants || {};
-                        const name1 = (p.user1 || '').toLowerCase();
-                        const name2 = (p.user2 || '').toLowerCase();
-                        const uid1 = (p.user1_uid || '').toLowerCase();
-                        const uid2 = (p.user2_uid || '').toLowerCase();
-
-                        const matchDm =
-                            (match.uid && (uid1 === match.uid.toLowerCase() || uid2 === match.uid.toLowerCase())) ||
-                            (match.email && (name1 === match.email.toLowerCase() || name2 === match.email.toLowerCase())) ||
-                            (match.name && (name1 === match.name.toLowerCase() || name2 === match.name.toLowerCase())) ||
-                            (match.username && (name1 === match.username.toLowerCase() || name2 === match.username.toLowerCase()));
-
-                        if (matchDm) {
-                            child.ref.remove();
-                            removed += 1;
-                        }
-                    });
-                } catch (e) {
-                    showToast('Error removing DMs: ' + e.message, 'warning');
-                }
-
-                localStorage.removeItem('bendbsn_userCache');
-                localStorage.removeItem('bendbsn_userCacheTime');
+                try { localStorage.removeItem('bendbsn_userCache'); localStorage.removeItem('bendbsn_userCacheTime'); } catch (e) {}
                 loadRegisteredUsers();
-                showToast('Purge complete', 'success');
+                if (failures.length) {
+                    showToast('Purge incomplete. Not removed: ' + failures.join('; '), 'warning', 12000);
+                } else {
+                    showToast('Purge complete', 'success');
+                }
             }, { confirmText: 'Purge User', danger: true });
         }
 
         // Refresh all data
         function refreshAll() {
-            loadOnlineUsers();
             loadBannedUsers();
             loadRegisteredUsers();
-            loadMessages();
-            loadCommunityPosts();
         }
 
         // Login History - use correct Firebase URL
@@ -3228,7 +2595,6 @@
             return `${sec}s`;
         }
 
-        let loginHistoryKeys = {}; // Map of index to Firebase key
         let _loginHistoryOldestTimestamp = null;
         let _loginHistoryAllLoaded = false;
 
@@ -3250,15 +2616,15 @@
             }
             const durationLabel = durationSeconds ? formatDuration(durationSeconds) : (login.success ? 'Active' : '—');
             const isInvalid = date === 'Invalid entry';
-            const rowStyle = isInvalid ? 'background: #fff5f5;' : '';
-            return `<tr style="border-bottom: 1px solid #eee; ${rowStyle}" data-key="${login.key}">
-                <td style="padding: 8px 10px; text-align: center;"><input type="checkbox" class="login-history-checkbox" data-key="${login.key}" onchange="updateSelectedCount()"></td>
-                <td style="padding: 8px 10px;">${date}${isInvalid ? ' <span style="color:#dc3545;font-size:10px;">(corrupted)</span>' : ''}</td>
+            const rowStyle = isInvalid ? 'background: var(--clx-danger-bg, #fef2f2);' : '';
+            return `<tr style="border-bottom: 1px solid #eee; ${rowStyle}" data-key="${escapeHtml(login.key)}">
+                <td style="padding: 8px 10px; text-align: center;"><input type="checkbox" class="login-history-checkbox" data-key="${escapeHtml(login.key)}" onchange="updateSelectedCount()"></td>
+                <td style="padding: 8px 10px;">${escapeHtml(date)}${isInvalid ? ' <span style="color:#dc3545;font-size:10px;">(corrupted)</span>' : ''}</td>
                 <td style="padding: 8px 10px; font-weight: 500;">${escapeHtml(login.username || 'N/A')}</td>
                 <td style="padding: 8px 10px;">${escapeHtml(login.displayName || 'N/A')}</td>
                 <td style="padding: 8px 10px; text-align: center;">${durationLabel}</td>
                 <td style="padding: 8px 10px; text-align: center;"><span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${statusText}</span></td>
-                <td style="padding: 8px 10px; text-align: center;"><button onclick="deleteLoginHistoryEntry('${login.key}')" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Delete entry" aria-label="Delete">🗑️</button></td>
+                <td style="padding: 8px 10px; text-align: center;"><button class="lh-del" data-key="${escapeHtml(login.key)}" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Delete entry" aria-label="Delete">🗑️</button></td>
             </tr>`;
         }
 
@@ -3271,7 +2637,6 @@
                 _loginHistoryOldestTimestamp = null;
                 _loginHistoryAllLoaded = false;
                 loginHistoryData = [];
-                loginHistoryKeys = {};
                 container.innerHTML = '<p>Loading...</p>';
                 if (loadMoreBtn) loadMoreBtn.style.display = 'none';
             }
@@ -3284,7 +2649,7 @@
             }
 
             if (!append) {
-                container.innerHTML = '<p>Loading as ' + currentUser.email + '...</p>';
+                container.innerHTML = '<p>Loading as ' + escapeHtml(currentUser.email) + '...</p>';
             }
 
             let query = loginHistoryRef.orderByChild('timestamp').limitToLast(200);
@@ -3351,8 +2716,8 @@
                 const userEmail = auth.currentUser ? auth.currentUser.email : 'not signed in';
                 container.innerHTML = `<div style="text-align: center; padding: 20px;">
                     <p style="color: #dc3545; font-weight: bold;">Permission denied</p>
-                    <p style="color: #666; margin: 10px 0;">Error: ${error.message || error.code || 'Unknown error'}</p>
-                    <p style="color: #666; margin: 10px 0;">Current Firebase user: <strong>${userEmail}</strong></p>
+                    <p style="color: #666; margin: 10px 0;">Error: ${escapeHtml(error.message || error.code || 'Unknown error')}</p>
+                    <p style="color: #666; margin: 10px 0;">Current Firebase user: <strong>${escapeHtml(userEmail)}</strong></p>
                     <button onclick="closeLoginHistory(); openFirebaseAuthModal();" class="btn btn-primary" style="margin-top: 10px;">Sign in to Firebase</button>
                 </div>`;
             });
@@ -3370,6 +2735,15 @@
                 }, { confirmText: 'Yes, Delete All', danger: true });
             }, { confirmText: 'Clear All', danger: true });
         }
+
+        // Delegated delete: entry keys are student-chosen, so never splice them into inline JS.
+        (function () {
+            const box = document.getElementById('loginHistoryContent');
+            if (box) box.addEventListener('click', function (ev) {
+                const btn = ev.target.closest('.lh-del');
+                if (btn && box.contains(btn)) deleteLoginHistoryEntry(btn.dataset.key);
+            });
+        })();
 
         function deleteLoginHistoryEntry(key) {
             showConfirmModal('Delete Entry', 'Delete this login history entry?', function() {
@@ -3484,18 +2858,20 @@
                 }
 
                 let html = '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
-                html += '<tr style="background: #fff3e0;"><th style="padding: 8px; text-align: left;">Shortcut</th><th style="padding: 8px; text-align: left;">Expansion</th><th style="padding: 8px; width: 60px;"></th></tr>';
+                html += '<thead><tr><th style="padding: 8px; text-align: left;">Shortcut</th><th style="padding: 8px; text-align: left;">Expansion</th><th style="padding: 8px; width: 60px;"></th></tr></thead><tbody>';
 
                 snapshot.forEach((child) => {
-                    const phrase = child.val();
+                    const phrase = child.val() || {};
                     const key = child.key;
-                    html += `<tr style="border-bottom: 1px solid #ffe0b2;">
-                        <td style="padding: 8px;"><code style="background: #e65100; color: white; padding: 2px 6px; border-radius: 4px;">${phrase.shortcut}</code></td>
-                        <td style="padding: 8px;">${phrase.text.substring(0, 50)}${phrase.text.length > 50 ? '...' : ''}</td>
-                        <td style="padding: 8px;"><button onclick="deleteGlobalPhrase('${key}')" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">X</button></td>
+                    const text = String(phrase.text || '');
+                    // Instructors can write globalPhrases — escape (truncate first so no entity is cut in half)
+                    html += `<tr style="border-bottom: 1px solid var(--clx-border);">
+                        <td style="padding: 8px;"><code style="background: var(--clx-accent-subtle); color: var(--clx-accent); padding: 2px 6px; border-radius: 4px;">${escapeHtml(phrase.shortcut)}</code></td>
+                        <td style="padding: 8px;">${escapeHtml(text.substring(0, 50))}${text.length > 50 ? '...' : ''}</td>
+                        <td style="padding: 8px;"><button class="btn btn-sm btn-danger gp-del" data-key="${escapeHtml(key)}" aria-label="Delete phrase">X</button></td>
                     </tr>`;
                 });
-                html += '</table>';
+                html += '</tbody></table>';
                 container.innerHTML = html;
             });
         }
@@ -3525,6 +2901,14 @@
                 showToast('Smart phrase added: ' + shortcut, 'success');
             }).catch((e) => showToast('Error: ' + e.message, 'error'));
         }
+
+        (function () {
+            const box = document.getElementById('globalPhrasesList');
+            if (box) box.addEventListener('click', function (ev) {
+                const btn = ev.target.closest('.gp-del');
+                if (btn && box.contains(btn)) deleteGlobalPhrase(btn.dataset.key);
+            });
+        })();
 
         function deleteGlobalPhrase(key) {
             showConfirmModal('Delete Smart Phrase', 'Delete this smart phrase?', function() {
@@ -3597,7 +2981,7 @@
                     const errorMsg = notif.error ? `<br><span style="font-size: 11px; color: #dc3545;">${escapeHtml(String(notif.error))}</span>` : '';
 
                     html += `<tr style="border-bottom: 1px solid #e9ecef;">
-                        <td style="padding: 10px;">${notif.date || new Date(notif.timestamp).toLocaleString()}</td>
+                        <td style="padding: 10px;">${escapeHtml(notif.date || new Date(notif.timestamp).toLocaleString())}</td>
                         <td style="padding: 10px; font-weight: 600;">${escapeHtml(notif.name || 'Unknown')}</td>
                         <td style="padding: 10px; font-family: monospace; font-size: 12px;">${escapeHtml(notif.email || notif.username || 'N/A')}</td>
                         <td style="padding: 10px;">${escapeHtml(notif.role || 'N/A')}</td>
@@ -3694,7 +3078,7 @@
                 // Populate user filter dropdown
                 filterSelect.innerHTML = '<option value="all">All Users</option>';
                 exportHistoryUsers.forEach((name, uid) => {
-                    filterSelect.innerHTML += `<option value="${uid}">${name}</option>`;
+                    filterSelect.add(new Option(name, uid)); // text node — student-written names can't inject markup
                 });
 
                 filterExportHistory();
@@ -3736,12 +3120,13 @@
                     ? '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">PDF</span>'
                     : '<span style="background: var(--clx-accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Word</span>';
 
+                // userExportHistory is written by the student's own client — escape every field
                 html += `<tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 8px 10px;">${date}</td>
-                    <td style="padding: 8px 10px; font-weight: 500;">${entry.displayName || entry.userEmail || 'Unknown'}</td>
+                    <td style="padding: 8px 10px;">${escapeHtml(date)}</td>
+                    <td style="padding: 8px 10px; font-weight: 500;">${escapeHtml(entry.displayName || entry.userEmail || 'Unknown')}</td>
                     <td style="padding: 8px 10px; text-align: center;">${formatBadge}</td>
-                    <td style="padding: 8px 10px;">${entry.noteType || 'N/A'}</td>
-                    <td style="padding: 8px 10px;">${entry.patientId || 'N/A'}</td>
+                    <td style="padding: 8px 10px;">${escapeHtml(entry.noteType || 'N/A')}</td>
+                    <td style="padding: 8px 10px;">${escapeHtml(entry.patientId || 'N/A')}</td>
                 </tr>`;
             });
 
@@ -3774,376 +3159,17 @@
             URL.revokeObjectURL(url);
         }
 
-        // ========== COMMUNITY POSTS MANAGEMENT ==========
-
-        function getCategoryLabel(cat) {
-            const labels = {
-                'announcements': 'Announcements',
-                'study-tips': 'Study Tips',
-                'career': 'Career',
-                'nclex': 'NCLEX',
-                'general': 'General'
-            };
-            return labels[cat] || cat;
-        }
-
-        function getCategoryColor(cat) {
-            const colors = {
-                'announcements': '#e94560',
-                'study-tips': '#28a745',
-                'career': '#007bff',
-                'nclex': '#ff9800',
-                'general': '#6c757d'
-            };
-            return colors[cat] || '#6c757d';
-        }
-
-        function formatTimeAgo(timestamp) {
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 60) return 'just now';
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return minutes + 'm ago';
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return hours + 'h ago';
-            const days = Math.floor(hours / 24);
-            if (days < 7) return days + 'd ago';
-            return new Date(timestamp).toLocaleDateString();
-        }
-
-        function loadCommunityPosts() {
-            const container = document.getElementById('communityPostsList');
-            const filter = document.getElementById('categoryFilter').value;
-
-            communityPostsRef.once('value', (snapshot) => {
-                updateLastUpdated('communityPostsUpdated');
-                if (!snapshot.exists()) {
-                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128221;</div><p>No community posts</p></div>';
-                    document.getElementById('statPosts').textContent = '0';
-                    allCommunityPosts = [];
-                    return;
-                }
-
-                allCommunityPosts = [];
-                snapshot.forEach((child) => {
-                    allCommunityPosts.push({ id: child.key, ...child.val() });
-                });
-
-                // Update stat
-                document.getElementById('statPosts').textContent = allCommunityPosts.length;
-
-                // Sort by pinned first, then by timestamp (newest first)
-                allCommunityPosts.sort((a, b) => {
-                    if (a.pinned && !b.pinned) return -1;
-                    if (!a.pinned && b.pinned) return 1;
-                    return (b.timestamp || 0) - (a.timestamp || 0);
-                });
-
-                // Filter by category
-                let filtered = allCommunityPosts;
-                if (filter !== 'all') {
-                    filtered = allCommunityPosts.filter(p => p.category === filter);
-                }
-
-                if (filtered.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="icon">&#128221;</div><p>No posts in this category</p></div>';
-                    return;
-                }
-
-                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
-                html += '<thead><tr style="background: var(--clx-bg-surface-2);">';
-                html += '<th style="padding: 8px; text-align: left;">Title</th>';
-                html += '<th style="padding: 8px; text-align: left;">Author</th>';
-                html += '<th style="padding: 8px; text-align: center;">Category</th>';
-                html += '<th style="padding: 8px; text-align: center;">Stats</th>';
-                html += '<th style="padding: 8px; text-align: center;">Actions</th>';
-                html += '</tr></thead><tbody>';
-
-                filtered.forEach((post) => {
-                    const pinIcon = post.pinned ? '📌 ' : '';
-                    const replyCount = post.replies ? Object.keys(post.replies).length : 0;
-                    const likeCount = post.likes || 0;
-                    const categoryColor = getCategoryColor(post.category);
-
-                    html += `<tr style="border-bottom: 1px solid var(--clx-border);">
-                        <td style="padding: 8px;">
-                            <div style="font-weight: 600; color: var(--clx-text-primary);">${pinIcon}${escapeHtml(post.title || 'Untitled')}</div>
-                            <div style="font-size: 11px; color: var(--clx-text-muted);">${formatTimeAgo(post.timestamp)}</div>
-                        </td>
-                        <td style="padding: 8px; color: var(--clx-text-secondary);">${escapeHtml(post.authorName || 'Unknown')}</td>
-                        <td style="padding: 8px; text-align: center;">
-                            <span style="background: ${categoryColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">${getCategoryLabel(post.category)}</span>
-                        </td>
-                        <td style="padding: 8px; text-align: center; font-size: 12px;">
-                            <span title="Likes">❤️ ${likeCount}</span>
-                            <span title="Replies" style="margin-left: 8px;">💬 ${replyCount}</span>
-                        </td>
-                        <td style="padding: 8px; text-align: center;">
-                            <button onclick="viewPostDetail('${post.id}')" class="btn btn-sm" style="background: #9c27b0; color: white; margin-right: 4px;">View</button>
-                            <button onclick="quickTogglePin('${post.id}', ${!!post.pinned})" class="btn btn-sm btn-warning" style="margin-right: 4px;">${post.pinned ? 'Unpin' : 'Pin'}</button>
-                            <button onclick="quickDeletePost('${post.id}', '${escapeHtml(post.title || 'this post')}')" class="btn btn-sm btn-danger">Delete</button>
-                        </td>
-                    </tr>`;
-                });
-
-                html += '</tbody></table>';
-                container.innerHTML = html;
-            });
-        }
-
+        // XSS guard for every user-controlled string rendered via innerHTML on this page
+        // (also used by the role/ticket script block below — function declarations are global).
+        // Do not weaken. Not safe inside a JS string in an inline handler — pass an index there instead.
         function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            return String(text == null ? '' : text)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
-
-        function viewPostDetail(postId) {
-            currentPostId = postId;
-            const post = allCommunityPosts.find(p => p.id === postId);
-            if (!post) {
-                showToast('Post not found', 'error');
-                return;
-            }
-
-            const container = document.getElementById('postDetailContent');
-            const pinBtn = document.getElementById('pinPostBtn');
-            pinBtn.textContent = post.pinned ? 'Unpin Post' : 'Pin Post';
-
-            const categoryColor = getCategoryColor(post.category);
-            container.innerHTML = `
-                <div style="margin-bottom: 15px;">
-                    <span style="background: ${categoryColor}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${getCategoryLabel(post.category)}</span>
-                    ${post.pinned ? '<span style="background: #ff9800; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-left: 8px;">📌 Pinned</span>' : ''}
-                </div>
-                <h3 style="margin: 0 0 10px; color: var(--clx-text-primary);">${escapeHtml(post.title || 'Untitled')}</h3>
-                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
-                    By <strong>${escapeHtml(post.authorName || 'Unknown')}</strong> • ${new Date(post.timestamp).toLocaleString()}
-                </p>
-                <div style="background: var(--clx-bg-surface-2); padding: 15px; border-radius: 8px; white-space: pre-wrap; font-size: 14px; color: var(--clx-text-primary); max-height: 200px; overflow-y: auto;">${escapeHtml(post.content || 'No content')}</div>
-                <div style="margin-top: 15px; display: flex; gap: 20px; color: #666; font-size: 13px;">
-                    <span>❤️ ${post.likes || 0} likes</span>
-                    <span>💬 ${post.replies ? Object.keys(post.replies).length : 0} replies</span>
-                </div>
-            `;
-
-            loadPostReplies(postId, post.replies);
-            document.getElementById('postDetailModal').style.display = 'block';
-        }
-
-        function loadPostReplies(postId, replies) {
-            const container = document.getElementById('postRepliesList');
-
-            if (!replies || Object.keys(replies).length === 0) {
-                container.innerHTML = '<p style="color: #888; margin: 0; text-align: center;">No replies yet</p>';
-                return;
-            }
-
-            const replyArray = Object.entries(replies).map(([key, val]) => ({ id: key, ...val }));
-            replyArray.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-            let html = '';
-            replyArray.forEach((reply) => {
-                html += `<div style="padding: 10px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; font-size: 12px; color: var(--clx-accent);">${escapeHtml(reply.authorName || 'Unknown')}</div>
-                        <div style="font-size: 13px; color: var(--clx-text-primary); margin: 4px 0;">${escapeHtml(reply.content || '')}</div>
-                        <div style="font-size: 11px; color: var(--clx-text-muted);">${formatTimeAgo(reply.timestamp)}</div>
-                    </div>
-                    <button onclick="deleteReply('${postId}', '${reply.id}')" class="btn btn-danger btn-sm" style="flex-shrink: 0;">Delete</button>
-                </div>`;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function closePostDetail() {
-            document.getElementById('postDetailModal').style.display = 'none';
-            currentPostId = null;
-        }
-
-        function deleteReply(postId, replyId) {
-            showConfirmModal('Delete Reply', 'Delete this reply?', function() {
-                communityPostsRef.child(postId).child('replies').child(replyId).remove()
-                    .then(() => {
-                        showToast('Reply deleted', 'success');
-                        // Reload the post detail
-                        communityPostsRef.child(postId).once('value', (snapshot) => {
-                            if (snapshot.exists()) {
-                                const post = snapshot.val();
-                                loadPostReplies(postId, post.replies);
-                            }
-                        });
-                        loadCommunityPosts();
-                    })
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Delete', danger: true });
-        }
-
-        function togglePostPin() {
-            if (!currentPostId) return;
-
-            const post = allCommunityPosts.find(p => p.id === currentPostId);
-            if (!post) return;
-
-            const newPinned = !post.pinned;
-            communityPostsRef.child(currentPostId).update({ pinned: newPinned })
-                .then(() => {
-                    showToast(newPinned ? 'Post pinned' : 'Post unpinned', 'success');
-                    document.getElementById('pinPostBtn').textContent = newPinned ? 'Unpin Post' : 'Pin Post';
-                    loadCommunityPosts();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
-        }
-
-        function quickTogglePin(postId, currentlyPinned) {
-            const newPinned = !currentlyPinned;
-            communityPostsRef.child(postId).update({ pinned: newPinned })
-                .then(() => {
-                    showToast(newPinned ? 'Post pinned' : 'Post unpinned', 'success');
-                    loadCommunityPosts();
-                })
-                .catch((e) => showToast('Error: ' + e.message, 'error'));
-        }
-
-        function deletePostAdmin() {
-            if (!currentPostId) return;
-
-            const post = allCommunityPosts.find(p => p.id === currentPostId);
-            const title = post ? post.title : 'this post';
-
-            showConfirmModal('Delete Post', `Delete "${title}"? This cannot be undone.`, function() {
-                communityPostsRef.child(currentPostId).remove()
-                    .then(() => {
-                        showToast('Post deleted', 'success');
-                        closePostDetail();
-                        loadCommunityPosts();
-                    })
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Delete', danger: true });
-        }
-
-        function quickDeletePost(postId, title) {
-            showConfirmModal('Delete Post', `Delete "${title}"? This cannot be undone.`, function() {
-                communityPostsRef.child(postId).remove()
-                    .then(() => {
-                        showToast('Post deleted', 'success');
-                        loadCommunityPosts();
-                    })
-                    .catch((e) => showToast('Error: ' + e.message, 'error'));
-            }, { confirmText: 'Delete', danger: true });
-        }
-
-        function clearAllPosts() {
-            showConfirmModal('Clear All Posts', 'Delete ALL community posts? This cannot be undone!', function() {
-                showConfirmModal('Are You Sure?', 'Are you REALLY sure? This will permanently delete all posts and replies.', function() {
-                    communityPostsRef.remove()
-                        .then(() => {
-                            showToast('All community posts deleted', 'success');
-                            loadCommunityPosts();
-                        })
-                        .catch((e) => showToast('Error: ' + e.message, 'error'));
-                }, { confirmText: 'Yes, Delete All', danger: true });
-            }, { confirmText: 'Clear All', danger: true });
-        }
-
-        function showCommunityStats() {
-            document.getElementById('communityStatsModal').style.display = 'block';
-            renderCommunityStats();
-        }
-
-        function closeCommunityStats() {
-            document.getElementById('communityStatsModal').style.display = 'none';
-        }
-
-        function renderCommunityStats() {
-            const container = document.getElementById('communityStatsContent');
-
-            if (allCommunityPosts.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #888;">No community posts to analyze</p>';
-                return;
-            }
-
-            const totalPosts = allCommunityPosts.length;
-            let totalReplies = 0;
-            let totalLikes = 0;
-            let pinnedCount = 0;
-            const authorCounts = {};
-            const categoryCounts = {};
-
-            allCommunityPosts.forEach((post) => {
-                if (post.replies) totalReplies += Object.keys(post.replies).length;
-                totalLikes += post.likes || 0;
-                if (post.pinned) pinnedCount++;
-
-                const author = post.authorName || 'Unknown';
-                authorCounts[author] = (authorCounts[author] || 0) + 1;
-
-                const cat = post.category || 'general';
-                categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-            });
-
-            // Find top contributor
-            let topContributor = 'N/A';
-            let maxPosts = 0;
-            Object.entries(authorCounts).forEach(([name, count]) => {
-                if (count > maxPosts) {
-                    maxPosts = count;
-                    topContributor = name;
-                }
-            });
-
-            let html = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                    <div class="stat-box">
-                        <div class="stat-number">${totalPosts}</div>
-                        <div class="stat-label">Total Posts</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number">${totalReplies}</div>
-                        <div class="stat-label">Total Replies</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number">${totalLikes}</div>
-                        <div class="stat-label">Total Likes</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number">${pinnedCount}</div>
-                        <div class="stat-label">Pinned Posts</div>
-                    </div>
-                </div>
-                <div style="background: var(--clx-bg-surface-2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <h4 style="margin: 0 0 10px; color: var(--clx-accent);">Top Contributor</h4>
-                    <p style="margin: 0; font-size: 16px; font-weight: 600;">${escapeHtml(topContributor)} <span style="color: var(--clx-text-muted); font-weight: normal;">(${maxPosts} posts)</span></p>
-                </div>
-                <div style="background: var(--clx-bg-surface-2); padding: 15px; border-radius: 8px;">
-                    <h4 style="margin: 0 0 10px; color: var(--clx-accent);">Posts by Category</h4>
-            `;
-
-            Object.entries(categoryCounts).forEach(([cat, count]) => {
-                const color = getCategoryColor(cat);
-                const percent = Math.round((count / totalPosts) * 100);
-                html += `<div style="margin-bottom: 8px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                        <span>${getCategoryLabel(cat)}</span>
-                        <span>${count} (${percent}%)</span>
-                    </div>
-                    <div style="height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                        <div style="height: 100%; width: ${percent}%; background: ${color};"></div>
-                    </div>
-                </div>`;
-            });
-
-            html += '</div>';
-            container.innerHTML = html;
-        }
-
-        // ========== END COMMUNITY POSTS MANAGEMENT ==========
 
         // ========== STUDENT SUBMISSIONS FOR REVIEW ==========
         let currentFeedbackDoc = null; // { sanitizedEmail, docId, studentName, noteType, savedAt, content }
-
-        function sanitizeEmailForPath(email) {
-            return (email || '').replace(/\./g, '_').replace(/@/g, '_at_');
-        }
 
         async function loadStudentSubmissions() {
             const container = document.getElementById('submissionsList');
@@ -4167,8 +3193,8 @@
                         allDocs.push({
                             sanitizedEmail,
                             docId: docSnap.key,
-                            studentName: escapeHtml(doc.displayName || doc.studentName || sanitizedEmail),
-                            noteType: escapeHtml(doc.noteType || doc.type || 'Note'),
+                            studentName: String(doc.displayName || doc.studentName || sanitizedEmail),
+                            noteType: String(doc.noteType || doc.type || 'Note'),
                             savedAt: doc.savedAt || doc.timestamp || doc.createdAt || 0,
                             content: doc.content || doc.noteContent || doc.text || ''
                         });
@@ -4207,8 +3233,9 @@
                         onmouseover="this.style.background='var(--clx-bg-surface-2)'"
                         onmouseout="this.style.background=''"
                         data-doc-idx="${idx}">`;
-                    html += `<td style="padding:9px 10px;">${doc.studentName}</td>`;
-                    html += `<td style="padding:9px 10px;">${doc.noteType}</td>`;
+                    // Stored raw (the review modal uses textContent); escape here for innerHTML
+                    html += `<td style="padding:9px 10px;">${escapeHtml(doc.studentName)}</td>`;
+                    html += `<td style="padding:9px 10px;">${escapeHtml(doc.noteType)}</td>`;
                     html += `<td style="padding:9px 10px;">${dateStr}</td>`;
                     html += `<td style="padding:9px 10px;">${status}</td>`;
                     html += '</tr>';
@@ -4353,7 +3380,7 @@
         function clearAppCache() {
             showConfirmModal(
                 'Clear App Cache',
-                'This will clear all cached files and reload the page. Users will get the latest version immediately. Continue?',
+                'This clears cached files in THIS browser only and reloads. To push an update to all users, bump CACHE_VERSION in sw.js and deploy. Continue?',
                 function() {
                     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                         navigator.serviceWorker.controller.postMessage({type: 'CLEAR_CACHE'});
@@ -4368,6 +3395,7 @@
         }
 
         // ========== SERVICE WORKER ==========
+        let _swReloadRequested = false;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
@@ -4387,14 +3415,26 @@
                             newWorker.addEventListener('statechange', () => {
                                 // If new SW is waiting and there's an active controller, show update prompt
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showToast(
-                                        'Update available! Click here to reload and get the latest version.',
-                                        0, // Don't auto-dismiss
-                                        () => {
-                                            // Tell the new SW to skip waiting
-                                            newWorker.postMessage({type: 'SKIP_WAITING'});
-                                        }
-                                    );
+                                    showToastAction({
+                                        title: 'Update available — tap to reload.',
+                                        type: 'info',
+                                        duration: 0,
+                                        actions: [{
+                                            label: 'Reload',
+                                            onClick: function() {
+                                                _swReloadRequested = true;
+                                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                                // sw.js skips waiting on install, so the new worker
+                                                // may already control this page: reload right away.
+                                                if (newWorker.state === 'activated' || newWorker.state === 'redundant' ||
+                                                    navigator.serviceWorker.controller === newWorker) {
+                                                    window.location.reload();
+                                                } else {
+                                                    setTimeout(function() { if (_swReloadRequested) window.location.reload(); }, 3000);
+                                                }
+                                            }
+                                        }]
+                                    });
                                 }
                             });
                         });
@@ -4404,29 +3444,41 @@
                     });
             });
 
-            // Listen for controller change (new SW activated)
+            // Listen for controller change (new SW activated). Only reload when
+            // the admin chose 'Reload': a background update (or the first
+            // install claiming this tab) must never reload over in-progress work.
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                // Reload the page to use the new service worker
+                if (!_swReloadRequested) return;
+                _swReloadRequested = false;
                 window.location.reload();
             });
         }
 
         // ========== PENDING WELCOME EMAILS ==========
 
-        async function updatePendingEmailsBadge() {
-            try {
-                const snapshot = await userProfilesRef.once('value');
-                const profiles = snapshot.val() || {};
-                const pendingCount = Object.values(profiles).filter(p => p && !p.welcomeEmailSent).length;
-                const btn = document.getElementById('pendingEmailsBtn');
-                if (btn) {
-                    btn.textContent = pendingCount > 0
-                        ? `📬 Pending Welcome Emails (${pendingCount})`
-                        : '📬 Pending Welcome Emails';
-                    btn.style.background = pendingCount > 0 ? '#e53e3e' : '#718096';
-                }
-            } catch (e) { /* silent */ }
+        // Callers pass the count they already have — this never reads userProfiles itself.
+        function updatePendingEmailsBadge(count) {
+            const badge = document.getElementById('pendingEmailsBadge');
+            if (!badge) return;
+            badge.textContent = count;
+            badge.style.display = count > 0 ? '' : 'none';
         }
+
+        function countPendingRows() {
+            return document.querySelectorAll('#pendingEmailsBody tr').length;
+        }
+
+        // Admin-added profiles have no Auth account yet and must register; self-registered users already set a password.
+        function welcomeMessageFor(p) {
+            const name = p.displayName || p.email.split('@')[0];
+            if (p.addedByAdmin) {
+                return `Hi ${name},\n\nYour BendBSN account is ready.\n\nTo get started:\n1. Go to https://bendbsn.com\n2. Click "Register" and sign up using this email address (${p.email})\n3. Create your password to activate your account\n\nOnce registered, you can log in anytime at https://bendbsn.com.`;
+            }
+            return `Your BendBSN account has been successfully created!\n\nPlease use your email address (${p.email}) and the password you created to log in.\n\nClick the link below to access your account.`;
+        }
+
+        // Rows reference this list by index, so no profile text is ever placed inside an inline handler
+        let _pendingWelcomeList = [];
 
         function showPendingWelcomeEmails() {
             document.getElementById('pendingWelcomeModal').style.display = 'block';
@@ -4462,12 +3514,14 @@
                         <p style="color:#666; margin-top:8px;">No pending emails found in Firebase.</p>
                         <p style="color:#999; font-size:12px; margin-top:8px;">Note: Only users registered after this feature was deployed are tracked here.</p>
                     </div>`;
-                    updatePendingEmailsBadge();
+                    _pendingWelcomeList = [];
+                    updatePendingEmailsBadge(0);
                     return;
                 }
 
                 // Sort oldest first
                 pending.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                _pendingWelcomeList = pending;
 
                 let html = `<div style="margin-bottom:16px; padding:12px; background:#fff3cd; border-radius:8px; font-size:13px; color:#856404;">
                     <strong>⚠️ ${pending.length} user${pending.length !== 1 ? 's' : ''} did not receive a welcome email.</strong>
@@ -4493,11 +3547,11 @@
                         <td style="padding:10px 12px;">${escapeHtml(p.role || '—')}</td>
                         <td style="padding:10px 12px;">${date}</td>
                         <td style="padding:10px 12px; white-space:nowrap; display:flex; gap:6px;">
-                            <button onclick="sendSingleWelcomeEmail('${p.uid}','${escapeHtml(p.displayName || '')}','${escapeHtml(p.email)}',this,'pending-row-${i}')"
+                            <button onclick="sendSingleWelcomeEmail(${i}, this, 'pending-row-${i}')"
                                 style="background:#1f4e79; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">
                                 📤 Send
                             </button>
-                            <button onclick="dismissPendingEmail('${p.uid}','pending-row-${i}')"
+                            <button onclick="dismissPendingEmail(${i}, 'pending-row-${i}')"
                                 style="background:#6c757d; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px;" title="Remove from pending list without sending" aria-label="Close">
                                 ✕
                             </button>
@@ -4507,48 +3561,53 @@
 
                 html += '</tbody></table>';
                 container.innerHTML = html;
-                updatePendingEmailsBadge();
+                updatePendingEmailsBadge(pending.length);
             }).catch((err) => {
                 container.innerHTML = `<p style="color:#dc3545;">Error loading profiles: ${err.message}</p>`;
             });
         }
 
-        async function sendSingleWelcomeEmail(uid, name, email, btn, rowId) {
+        async function sendSingleWelcomeEmail(idx, btn, rowId) {
+            const p = _pendingWelcomeList[idx];
+            if (!p) return;
+            const email = p.email;
             btn.disabled = true;
             btn.textContent = 'Sending...';
 
             try {
                 const templateParams = {
-                    to_name: name || email.split('@')[0],
+                    to_name: p.displayName || email.split('@')[0],
                     to_email: email,
                     reply_to: email,
                     login_link: 'https://bendbsn.com',
-                    message: `Hi ${name || email.split('@')[0]},\n\nYour BendBSN account is ready.\n\nTo get started:\n1. Go to https://bendbsn.com\n2. Click "Register" and sign up using this email address (${email})\n3. Create your password to activate your account\n\nOnce registered, you can log in anytime at https://bendbsn.com.`
+                    message: welcomeMessageFor(p)
                 };
                 await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
-                await userProfilesRef.child(uid).update({ welcomeEmailSent: true });
+                await userProfilesRef.child(p.uid).update({ welcomeEmailSent: true });
                 showToast('Welcome email sent to ' + email, 'success');
                 if (rowId) {
                     const row = document.getElementById(rowId);
                     if (row) row.remove();
                 }
-                updatePendingEmailsBadge();
+                updatePendingEmailsBadge(countPendingRows());
             } catch (e) {
                 console.error('Send failed:', e);
                 btn.disabled = false;
                 btn.textContent = '📤 Send';
-                showToast('Failed to send to ' + email + ': ' + e.message, 'error');
+                showToast('Failed to send to ' + email + ': ' + (e.message || e.text || e), 'error');
             }
         }
 
-        async function dismissPendingEmail(uid, rowId) {
+        async function dismissPendingEmail(idx, rowId) {
+            const p = _pendingWelcomeList[idx];
+            if (!p) return;
             try {
-                await userProfilesRef.child(uid).update({ welcomeEmailSent: true });
+                await userProfilesRef.child(p.uid).update({ welcomeEmailSent: true });
                 if (rowId) {
                     const row = document.getElementById(rowId);
                     if (row) row.remove();
                 }
-                updatePendingEmailsBadge();
+                updatePendingEmailsBadge(countPendingRows());
                 showToast('Removed from pending list', 'success');
             } catch (e) {
                 showToast('Error dismissing: ' + e.message, 'error');
@@ -4589,7 +3648,7 @@
                                 to_email: p.email,
                                 reply_to: p.email,
                                 login_link: 'https://bendbsn.com',
-                                message: `Your BendBSN account has been successfully created!\n\nPlease use your email address (${p.email}) and the password you created to log in.\n\nClick the link below to access your account.`
+                                message: welcomeMessageFor(p)
                             };
                             await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
                             await userProfilesRef.child(uid).update({ welcomeEmailSent: true });
@@ -4779,12 +3838,6 @@
         const appTicketsRef = database.ref('appTickets');
         let _currentTicketId = null;
 
-        function showTicketsPanel() {
-            // Now just navigates to the Tickets section (which is always rendered)
-            showAdminSection('tickets');
-            loadTickets();
-        }
-
         function loadTickets() {
             const container = document.getElementById('ticketsList');
             if (!container) return;
@@ -4834,14 +3887,14 @@
                     const priorityColor = priorityColors[t.priority] || '#999';
                     const preview = (t.message || '').substring(0, 60) + ((t.message || '').length > 60 ? '\u2026' : '');
                     const date = new Date(t.timestamp).toLocaleDateString();
-                    html += '<tr style="border-bottom:1px solid var(--clx-border);cursor:pointer;" onclick="viewTicket(\'' + t.id + '\')" onmouseover="this.style.background=\'var(--clx-bg-surface)\'" onmouseout="this.style.background=\'\'">'
+                    html += '<tr class="ticket-row" data-id="' + escapeHtml(t.id) + '" style="border-bottom:1px solid var(--clx-border);cursor:pointer;" onmouseover="this.style.background=\'var(--clx-bg-surface)\'" onmouseout="this.style.background=\'\'">'
                         + '<td style="padding:8px 10px;"><div style="font-weight:600;">' + escapeHtml(t.name || '\u2014') + '</div><div style="font-size:11px;color:var(--clx-text-muted);">' + date + '</div></td>'
                         + '<td style="padding:8px 10px;">' + escapeHtml(t.category || '\u2014') + '</td>'
                         + '<td style="padding:8px 10px;"><span style="color:' + priorityColor + ';font-weight:600;font-size:12px;">' + escapeHtml(t.priority || '\u2014') + '</span></td>'
                         + '<td style="padding:8px 10px;color:var(--clx-text-secondary);max-width:220px;">' + escapeHtml(preview) + '</td>'
-                        + '<td style="padding:8px 10px;font-size:12px;color:var(--clx-text-muted);">Phase ' + (t.phase || 1) + '</td>'
-                        + '<td style="padding:8px 10px;"><span style="background:' + statusColor + '22;color:' + statusColor + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">' + statusLabel + '</span></td>'
-                        + '<td style="padding:8px 10px;"><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();viewTicket(\'' + t.id + '\')">View</button></td>'
+                        + '<td style="padding:8px 10px;font-size:12px;color:var(--clx-text-muted);">Phase ' + escapeHtml(t.phase || 1) + '</td>'
+                        + '<td style="padding:8px 10px;"><span style="background:' + statusColor + '22;color:' + statusColor + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">' + escapeHtml(statusLabel || 'open') + '</span></td>'
+                        + '<td style="padding:8px 10px;"><button class="btn btn-secondary btn-sm">View</button></td>'
                         + '</tr>';
                 });
 
@@ -4851,6 +3904,15 @@
                 container.innerHTML = '<div class="empty-state"><p>Failed to load tickets.</p></div>';
             });
         }
+
+        // Delegated open: ticket keys are client-chosen, so never splice them into inline JS.
+        (function () {
+            const box = document.getElementById('ticketsList');
+            if (box) box.addEventListener('click', function (ev) {
+                const row = ev.target.closest('.ticket-row');
+                if (row && box.contains(row)) viewTicket(row.dataset.id);
+            });
+        })();
 
         function viewTicket(id) {
             _currentTicketId = id;
@@ -4868,7 +3930,7 @@
                 document.getElementById('ticketDetailPhase').value = String(t.phase || 1);
                 document.getElementById('ticketDetailNotes').value = t.adminNotes || '';
                 document.getElementById('itTicketDetailModal').style.display = 'flex';
-            });
+            }).catch(e => showToast('Could not open ticket: ' + (e.code || e.message), 'error'));
         }
 
         function closeTicketDetail() {
@@ -4886,7 +3948,8 @@
                     closeTicketDetail();
                     loadTickets();
                     if (typeof showToast === 'function') showToast('Ticket updated.', 'success');
-                });
+                })
+                .catch(e => showToast('Could not save ticket: ' + (e.code || e.message), 'error'));
         }
 
         function deleteTicket() {
@@ -4896,11 +3959,16 @@
                     closeTicketDetail();
                     loadTickets();
                     if (typeof showToast === 'function') showToast('Ticket deleted.', 'success');
-                });
+                }).catch(e => showToast('Could not delete ticket: ' + (e.code || e.message), 'error'));
             }, { danger: true, confirmText: 'Delete' });
         }
 
         // Listen for open tickets → update badge on dashboard + tickets tab
+        // Attach only once signed in: a listener sent before auth resolves is denied and never retried.
+        let _ticketBadgeAttached = false;
+        auth.onAuthStateChanged(u => {
+            if (!u || _ticketBadgeAttached) return;
+            _ticketBadgeAttached = true;
         appTicketsRef.orderByChild('status').equalTo('open').on('value', snap => {
             const count = snap.numChildren();
             const statEl = document.getElementById('statOpenTickets');
@@ -4913,6 +3981,7 @@
                 if (count > 0) { badge.style.display = ''; badge.textContent = count; }
                 else { badge.style.display = 'none'; }
             }
+        }, () => { _ticketBadgeAttached = false; });
         });
 
         // ESC key closes ticket detail modal
@@ -4928,9 +3997,4 @@
     <script src="/shared/header.js"></script>
 </body>
 </html>
-
-
-
-
-
 

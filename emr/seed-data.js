@@ -143,6 +143,8 @@ function daysAgoTS(n, hour) {
     const d = new Date();
     d.setDate(d.getDate() - n);
     d.setHours(hour || 8, 0, 0, 0);
+    // Seeding before a same-day hour would store a future timestamp; roll back a day instead.
+    if (d.getTime() > Date.now()) d.setDate(d.getDate() - 1);
     return d.getTime();
 }
 

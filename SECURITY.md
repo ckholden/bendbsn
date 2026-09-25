@@ -7,9 +7,15 @@ This document outlines security best practices for the BendBSN nursing documenta
 
 ## ✅ Current Security Status
 
+### 2026-09-24 Security Notes
+- ✅ Chat (`/chat/`), Community Hub (`/community/`) and AI assistant (`/ai/`) retired; the pages are redirect stubs to `/home/`.
+- ✅ Rules for `chat`, `directMessages`, `community`, `groupChats`, `userFCMTokens`, `userDMs` and `userLastSeen` removed from `database.rules.json` — those paths now fall under the root deny. Leftover data can be purged from the Firebase Console.
+- ✅ Cloud Functions `cleanupStalePresence`, `onDMSent` and `onChatMention` deleted (`firebase deploy --only functions` removes them from Firebase).
+- ⚠️ The Groq API key behind the retired Apps Script AI proxy should be revoked; the proxy handler is dead code.
+
 ### 2026-02-20 Security Notes
-- ✅ Realtime Database DM rule hardened to block participant-overwrite takeover on existing conversations.
-- ✅ Chat rendering hardened against stored XSS in user name surfaces (message headers, typing, DM list/sidebar, mentions, online panel).
+- ~~Realtime Database DM rule hardened to block participant-overwrite takeover on existing conversations.~~ Retired Sept 2026 — `directMessages` node removed.
+- ~~Chat rendering hardened against stored XSS in user name surfaces (message headers, typing, DM list/sidebar, mentions, online panel).~~ Retired Sept 2026 — chat removed.
 - ✅ CSP updated to allow EmailJS API requests (`https://api.emailjs.com`) required for client-side registration notifications.
 
 ### What's Already Secure
@@ -27,7 +33,7 @@ This document outlines security best practices for the BendBSN nursing documenta
 - ✅ Authentication required for all data access (`auth != null`)
 - ✅ Admin-only access for sensitive operations (`auth.token.email == "christiankholden@gmail.com"`)
 - ✅ User-scoped data access (users can only access their own documents)
-- ✅ Proper validation rules for chat messages and community posts
+- ✅ Validation rules block role self-escalation on `userProfiles` and destructive whole-node writes on `emr`
 
 **Location:** `database.rules.json`
 
@@ -101,18 +107,16 @@ Ensure Google can reach you during security incidents:
 
 ### Priority 4: Firebase Security Rules Audit
 
-**Current rules are secure**, but consider these enhancements:
+**Current rules are secure**, but consider these enhancements. (The examples use `userDocuments`; the earlier `chat/messages` examples were dropped when the chat was retired in Sept 2026.)
 
 #### Option A: Rate Limiting (Prevent Abuse)
 ```json
 {
   "rules": {
-    "chat": {
-      "messages": {
-        "$channelId": {
-          "$messageId": {
-            ".write": "auth != null && (!root.child('rateLimits').child(auth.uid).exists() || root.child('rateLimits').child(auth.uid).val() < now - 1000)"
-          }
+    "userDocuments": {
+      "$uid": {
+        "$docId": {
+          ".write": "auth != null && auth.uid == $uid && (!root.child('rateLimits').child(auth.uid).exists() || root.child('rateLimits').child(auth.uid).val() < now - 1000)"
         }
       }
     }
@@ -124,10 +128,10 @@ Ensure Google can reach you during security incidents:
 ```json
 {
   "rules": {
-    "chat": {
-      "messages": {
-        "$messageId": {
-          ".validate": "newData.hasChildren(['user', 'text', 'timestamp']) && newData.child('text').isString() && newData.child('text').val().length < 5000"
+    "userDocuments": {
+      "$uid": {
+        "$docId": {
+          ".validate": "newData.hasChildren(['noteType', 'content', 'createdAt']) && newData.child('noteType').isString() && newData.child('patientName').val().length < 200"
         }
       }
     }
@@ -402,5 +406,5 @@ firebase deploy --only database:rules
 
 ---
 
-**Last Updated:** February 19, 2026
-**Next Review:** May 19, 2026 (3 months)
+**Last Updated:** September 24, 2026
+**Next Review:** December 24, 2026 (3 months)

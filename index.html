@@ -2,17 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com https://www.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://api.emailjs.com https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:; frame-src https://www.google.com https://www.gstatic.com https://bendbsn-17377.firebaseapp.com https://accounts.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com https://www.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://api.emailjs.com wss://*.firebaseio.com; img-src 'self' data: blob: https:; frame-src https://www.google.com https://www.gstatic.com https://bendbsn-17377.firebaseapp.com https://accounts.google.com;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
-    <script>
-        // Do not redirect here; wait for Firebase Auth state to avoid redirect loops
-    </script>
+    <script>try{var t=localStorage.getItem('bendbsn_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="theme-color" content="#1f4e79">
+    <meta name="theme-color" content="#0d1f2d">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
@@ -79,7 +77,7 @@
             background: var(--clx-bg-surface, #fff);
             color: var(--clx-text-primary, #1a2532);
         }
-        input:focus { outline: none; border-color: var(--clx-accent, #0f7490); box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.12); background: var(--clx-bg-surface, #fff); }
+        input:focus { outline: none; border-color: var(--clx-accent, #0f7490); box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb, 15, 116, 144), 0.12); background: var(--clx-bg-surface, #fff); }
         .btn {
             width: 100%;
             padding: 14px 20px;
@@ -99,19 +97,17 @@
         .btn-secondary { background: var(--clx-bg-surface-2); color: var(--clx-text-primary); border: 1px solid var(--clx-border); margin-top: 8px; }
         .btn-secondary:hover { opacity: 0.8; }
         .error-message {
-            background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.25); color: #dc2626; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 10px;
+            background: var(--clx-danger-bg); border: 1px solid rgba(220,38,38,0.25); color: var(--clx-danger); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 10px;
             margin-bottom: 20px;
             display: none;
         }
         .error-message.show { display: block; animation: shake 0.5s ease; }
         .success-message {
-            background: rgba(22,163,74,0.08); border: 1px solid rgba(22,163,74,0.25); color: #16a34a; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 10px;
+            background: var(--clx-success-bg); border: 1px solid rgba(22,163,74,0.25); color: var(--clx-success); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 10px;
             margin-bottom: 20px;
             display: none;
         }
         .success-message.show { display: block; }
-        [data-theme="dark"] .error-message { background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.35); color: #f87171; }
-        [data-theme="dark"] .success-message { background: rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.35); color: #4ade80; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
@@ -158,7 +154,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .btn-google {
             background: var(--clx-bg-surface);
-            color: #444;
+            color: var(--clx-text-primary, #1a2532);
             border: 1px solid var(--clx-border, #d1dce8);
             display: flex;
             align-items: center;
@@ -168,7 +164,7 @@
             font-weight: 500;
             margin-top: 8px;
         }
-        .btn-google:hover { background: #f8f9fa; opacity: 1; }
+        .btn-google:hover { background: var(--clx-bg-surface-2, #f5f8fa); opacity: 1; }
         .btn-google svg { flex-shrink: 0; }
         .or-divider {
             display: flex;
@@ -234,7 +230,6 @@
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        [data-theme="dark"] #pwaBanner { background: #1e2a3a; border-top-color: #2d3f55; }
         [data-theme="dark"] #pwaBannerBtn { background: #f4f4f5; color: #18181b; }
 
         /* iOS Install Guide Modal */
@@ -280,7 +275,6 @@
             font-size: 15px; font-weight: 600; cursor: pointer;
         }
         #iosModalGotIt:hover { opacity: 0.88; }
-        [data-theme="dark"] .ios-modal-card { background: #1e2a3a; }
         [data-theme="dark"] .ios-step-num { background: #f4f4f5; color: #18181b; }
         [data-theme="dark"] #iosModalGotIt { background: #f4f4f5; color: #18181b; }
     </style>
@@ -391,37 +385,6 @@
         </div>
     </div>
 
-    <!-- Create Account Prompt Modal (for generic login users) -->
-    <!-- Pending Approval Modal (for unrecognized users) -->
-    <div class="modal" id="pendingModal">
-        <div class="modal-content">
-            <div class="modal-header" style="background: #d97706;">
-                <h2>Account Pending Approval</h2>
-            </div>
-            <div class="modal-body" style="text-align: center;">
-                <div style="font-size: 60px; margin-bottom: 20px;">⏳</div>
-                <p style="font-size: 16px; color: var(--clx-text-primary); margin-bottom: 15px;">
-                    Hello <strong id="pendingUserName"></strong>,
-                </p>
-                <p style="color: var(--clx-text-secondary); margin-bottom: 20px; line-height: 1.6;">
-                    You are not currently on our recognized users list. Your registration request has been submitted for <strong>approval and verification</strong>.
-                </p>
-                <div style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                    <p style="color: #e65100; font-weight: 600; margin-bottom: 10px;">What happens next?</p>
-                    <ul style="text-align: left; color: var(--clx-text-secondary); font-size: 14px; margin: 0; padding-left: 20px;">
-                        <li>The administrator has been notified</li>
-                        <li>Your request will be reviewed shortly</li>
-                        <li>You'll be able to log in once approved</li>
-                    </ul>
-                </div>
-                <p style="color: var(--clx-text-muted); font-size: 13px;">
-                    If you believe this is an error, please contact your instructor or cohort administrator.
-                </p>
-                <button onclick="closePendingModal()" class="btn" style="margin-top: 20px;">OK, Got It</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Forgot Password Modal -->
     <div class="modal" id="forgotPasswordModal">
         <div class="modal-content">
@@ -429,7 +392,7 @@
                 <h2>Reset Password</h2>
             </div>
             <div class="modal-body">
-                <p style="color: var(--clx-text-secondary); margin-bottom: 20px;">Enter your email address or username and we'll send a password reset request to the administrator.</p>
+                <p style="color: var(--clx-text-secondary); margin-bottom: 20px;">Enter the email on your account and we'll send you a link to reset your password.</p>
 
                 <div class="error-message" id="forgotErrorMsg"></div>
                 <div class="success-message" id="forgotSuccessMsg"></div>
@@ -440,7 +403,7 @@
                         <input type="email" id="forgotEmail" placeholder="Enter your email address" required>
                     </div>
 
-                    <button type="submit" class="btn" id="forgotBtn">Send Reset Request</button>
+                    <button type="submit" class="btn" id="forgotBtn">Send Reset Email</button>
                     <button type="button" class="btn btn-secondary" onclick="hideForgotPasswordModal()">Cancel</button>
                 </form>
             </div>
@@ -477,6 +440,7 @@
                 </div>
 
                 <button type="button" class="btn" id="googleRoleBtn" onclick="submitGoogleRole()">Get Started</button>
+                <button type="button" class="btn btn-secondary" id="googleRoleCancelBtn" onclick="cancelGoogleRole()">Use a different account</button>
             </div>
         </div>
     </div>
@@ -486,70 +450,7 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbwJZ_2LLB4omX9sGWy1HA_GZx71L_evx1UbKnnq0e4Hg4_-lHTN90iAcf0voB-lCbLd/exec?token=bsn_k7x9m2p4';
         // Encoded admin contact for notifications (not stored in plaintext)
         const _ae = atob('Y2hyaXN0aWFua2hvbGRlbkBnbWFpbC5jb20=');
-        // Pre-approved users list for auto-approval during registration
-        // Add objects with {name, email, phone} to auto-approve matching registrations
-        const PRE_APPROVED = [];
-
-        // Normalize phone number (remove all non-digits)
-        function normalizePhone(phone) {
-            if (!phone) return '';
-            return phone.replace(/\D/g, '').replace(/^1/, ''); // Remove non-digits and leading 1
-        }
-
-        // Check if a name fuzzy matches any pre-approved name
-        // Matches if ANY part of input name matches ANY part of approved name
-        // e.g., "Student Smith" matches "Student Test" (first name match)
-        // e.g., "John Butterfield" matches "Rylee Butterfield" (last name match)
-        function fuzzyNameMatch(inputName, approvedName) {
-            const input = inputName.toLowerCase().trim();
-            const approved = approvedName.toLowerCase();
-            const inputParts = input.split(/\s+/).filter(p => p.length >= 3);
-            const approvedParts = approved.split(/\s+/).filter(p => p.length >= 3);
-
-            // Check if ANY input part matches ANY approved part (first OR last name)
-            for (const inputPart of inputParts) {
-                for (const approvedPart of approvedParts) {
-                    // Exact match
-                    if (inputPart === approvedPart) return true;
-                    // Starts with match (for nicknames like "Chris" matching "Christopher")
-                    if (inputPart.startsWith(approvedPart) || approvedPart.startsWith(inputPart)) return true;
-                }
-            }
-
-            // Also check if full input matches any approved part or vice versa
-            for (const approvedPart of approvedParts) {
-                if (input === approvedPart || approvedPart.includes(input) || input.includes(approvedPart)) return true;
-            }
-
-            return false;
-        }
-
-        // Check if user should be auto-approved
-        function checkAutoApproval(name, email, phone) {
-            const normalizedPhone = normalizePhone(phone);
-            const normalizedEmail = email.toLowerCase().trim();
-            const normalizedName = name.toLowerCase().trim();
-
-            for (const approved of PRE_APPROVED) {
-                // Email match (exact, case-insensitive)
-                if (normalizedEmail && approved.email && normalizedEmail === approved.email.toLowerCase()) {
-                    return { matched: true, matchedOn: 'email', matchedPerson: approved.name };
-                }
-                // Phone match (normalized digits)
-                if (normalizedPhone && approved.phone && normalizedPhone === approved.phone) {
-                    return { matched: true, matchedOn: 'phone', matchedPerson: approved.name };
-                }
-                // Name fuzzy match
-                if (normalizedName && fuzzyNameMatch(normalizedName, approved.name)) {
-                    return { matched: true, matchedOn: 'name', matchedPerson: approved.name };
-                }
-            }
-            return { matched: false };
-        }
-
         let usersCache = null;
-
-        // Auth check moved to <head> for faster redirect
 
         // Fetch users from Google Sheet on load (with timeout)
         async function fetchUsers(timeoutMs = 5000) {
@@ -593,6 +494,9 @@
             errorMsg.classList.remove('show');
 
             try {
+                // Keep onAuthStateChanged from navigating while the login-history
+                // write (and its session key) is still in flight.
+                _preventAuthRedirect = true;
                 // Sign in with Firebase Auth
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
@@ -610,9 +514,21 @@
                 localStorage.setItem('bendbsn_login_at', String(Date.now()));
 
                 try { sessionStorage.setItem('bendbsn_show_affirmation', '1'); } catch (e) {}
+                // Sheet record: display-name fallback only. The Firebase profile owns
+                // the role and the name set on the Profile page.
+                const sheetRecord = usersCache ? usersCache.find(
+                    u => u.email && u.email.toLowerCase() === user.email.toLowerCase()
+                ) : null;
+
                 // Cache role from Firebase profile (fire-and-forget)
                 database.ref('userProfiles/' + user.uid).once('value').then(function(snap) {
                     const profile = snap.val() || {};
+                    if (profile.displayName) {
+                        localStorage.setItem('bendbsn_displayName', profile.displayName);
+                    } else {
+                        const fallbackName = (!user.displayName && sheetRecord && sheetRecord.name) ? sheetRecord.name : displayName;
+                        database.ref('userProfiles/' + user.uid).update({ displayName: fallbackName }).catch(() => {});
+                    }
                     if (profile.role_id) {
                         cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: !!profile.role_year, year: profile.role_year || null });
                     } else if (profile.role) {
@@ -623,41 +539,31 @@
                 }).catch(function(){});
 
                 // Ensure user profile exists/updates for existing accounts (fire-and-forget)
+                // displayName is filled in above only when the profile has none, and
+                // role is not copied from the sheet (it never sees /profile/ changes).
                 const profileUpdate = {
                     email: user.email,
-                    displayName: displayName,
                     updatedAt: Date.now(),
                     tenantId: 'bendbsn'
                 };
-                if (usersCache) {
-                    const userRecord = usersCache.find(
-                        u => u.email && u.email.toLowerCase() === user.email.toLowerCase()
-                    );
-                    if (userRecord && userRecord.role) {
-                        profileUpdate.role = userRecord.role;
-                    }
-                    if (userRecord && userRecord.name && !user.displayName) {
-                        profileUpdate.displayName = userRecord.name;
-                    }
-                }
                 database.ref('userProfiles/' + user.uid).update(profileUpdate).catch(() => {});
 
-                // Log successful login - await to ensure session key is saved before redirect
-                await logLoginEvent(user.email, displayName, true);
+                // Log successful login - await so the session key is saved before redirect,
+                // but never longer than 4s (an RTDB set() never settles while offline)
+                await Promise.race([logLoginEvent(user.email, displayName, true), new Promise(r => setTimeout(r, 4000))]);
 
                 // If no displayName in Firebase, try to get from Google Sheet in background
                 // This will update the profile for next login
-                if (!user.displayName && usersCache) {
-                    const userRecord = usersCache.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
-                    if (userRecord && userRecord.name) {
-                        // Update Firebase profile in background (don't await)
-                        user.updateProfile({ displayName: userRecord.name.split(' ')[0] }).catch(() => {});
-                    }
+                if (!user.displayName && sheetRecord && sheetRecord.name) {
+                    // Update Firebase profile in background (don't await)
+                    user.updateProfile({ displayName: sheetRecord.name.split(' ')[0] }).catch(() => {});
                 }
 
                 // Redirect immediately - don't wait for anything else
+                _preventAuthRedirect = false;
                 window.location.href = '/home/';
             } catch (error) {
+                _preventAuthRedirect = false;
                 // Log failed login attempt
                 logLoginEvent(email, '', false);
                 console.error('Login error:', error);
@@ -727,7 +633,7 @@
                 errorMsg.textContent = 'Password must be at least 6 characters.';
                 errorMsg.classList.add('show');
                 regBtn.disabled = false;
-                regBtn.innerHTML = 'Submit Registration';
+                regBtn.innerHTML = 'Create Account';
                 return false;
             }
 
@@ -738,6 +644,9 @@
                 // Create user with Firebase Auth
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
+                // A real sign-in: if the profile write below never lands, a reload
+                // offers the role modal (onAuthStateChanged) instead of signing out.
+                localStorage.setItem('bendbsn_login_at', String(Date.now()));
 
                 // Update display name in Firebase
                 await user.updateProfile({ displayName: name });
@@ -802,20 +711,6 @@
             return false;
         }
 
-        function showPendingModal(name) {
-            // Clear session so they can't access app
-            localStorage.removeItem('bendbsn_auth');
-            localStorage.removeItem('bendbsn_user');
-
-            // Show pending approval modal
-            document.getElementById('pendingModal').classList.add('show');
-            document.getElementById('pendingUserName').textContent = name;
-        }
-
-        function closePendingModal() {
-            document.getElementById('pendingModal').classList.remove('show');
-        }
-
         // Forgot password functions
         function showForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').classList.add('show');
@@ -867,26 +762,12 @@
         }
 
         async function sendEmailNotification(name, email, username, type, role) {
-            const adminUrl = 'https://bendbsn.com/app.html?admin=true';
+            const adminUrl = 'https://bendbsn.com/admin/';
             const timestamp = Date.now();
 
-            let subject;
-            if (type === 'auto_approved') {
-                subject = 'BendBSN: Auto-Approved - ' + name;
-            } else if (type === 'new_registration') {
-                subject = 'BendBSN: New Registration - ' + name;
-            } else if (type === 'account_creation') {
-                subject = 'BendBSN: New Registration - ' + name;
-            } else {
-                subject = 'BendBSN: Account Request - ' + name;
-            }
-
-            let message;
-            if (type === 'auto_approved') {
-                message = `✅ AUTO-APPROVED (matched pre-approved list)\n\nName: ${name}\nEmail: ${email}\nUsername: ${username}\nRole: ${role || 'N/A'}\n\nThis user was automatically approved. No action needed.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nView all users: ${adminUrl}`;
-            } else {
-                message = `✅ NEW USER REGISTERED\n\nName: ${name}\nEmail: ${email}\nRole: ${role || 'N/A'}\n\nThis user has been auto-approved and can now log in.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nReview users anytime: ${adminUrl}`;
-            }
+            // Only ever called with type 'new_registration'
+            const subject = 'BendBSN: New Registration - ' + name;
+            const message = `✅ NEW USER REGISTERED\n\nName: ${name}\nEmail: ${email}\nRole: ${role || 'N/A'}\n\nThis user has been auto-approved and can now log in.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nReview users anytime: ${adminUrl}`;
 
             // Log notification attempt to Firebase
             const notificationLog = {
@@ -1070,7 +951,7 @@
         // ====== END DYNAMIC ROLE SYSTEM ======
 
         // Load roles config from Firebase on page load
-        fetchRolesConfig();
+        const _rolesConfigReady = fetchRolesConfig();
 
         // ====== GOOGLE SIGN-IN ======
         // Uses signInWithPopup — works in all browsers regardless of third-party cookie settings.
@@ -1095,11 +976,13 @@
                     if (profile.role_id) {
                         cacheRoleLocally({ id: profile.role_id, label: profile.role_label || profile.role_id, requires_year: !!profile.role_year, year: profile.role_year || null });
                     }
-                    await logLoginEvent(user.email, user.displayName, true);
+                    await Promise.race([logLoginEvent(user.email, user.displayName, true), new Promise(r => setTimeout(r, 4000))]);
                     _preventAuthRedirect = false;
                     window.location.href = '/home/';
                 } else {
-                    // New Google user — show role modal (keep _preventAuthRedirect = true until submitGoogleRole)
+                    // New Google user — show role modal (keep _preventAuthRedirect = true until submitGoogleRole).
+                    // Stamp the sign-in so a reload re-opens this modal (onAuthStateChanged) instead of signing out.
+                    localStorage.setItem('bendbsn_login_at', String(Date.now()));
                     showGoogleRoleModal(user);
                 }
             } catch (error) {
@@ -1121,6 +1004,11 @@
         // ====== END GOOGLE SIGN-IN ======
 
         function showGoogleRoleModal(user) {
+            // fetchRolesConfig always ends with a non-empty config (fallback included)
+            if (!Object.keys(_rolesConfig).length) {
+                _rolesConfigReady.then(() => showGoogleRoleModal(user));
+                return;
+            }
             const sorted = selfSignupRoleEntries();
             const optHtml = "<option value=\"\" disabled selected>Select your role</option>" +
                 sorted.map(([id, r]) => "<option value=\"" + id + "\">" + r.label + "</option>").join("");
@@ -1148,6 +1036,7 @@
                 return;
             }
 
+            const isGoogleUser = (user.providerData || []).some(p => p && p.providerId === 'google.com');
             const btn = document.getElementById("googleRoleBtn");
             btn.disabled = true;
             btn.innerHTML = "<span class=\"loading\"></span>Setting up...";
@@ -1164,14 +1053,16 @@
                     role_year: roleData.year || null,
                     createdAt: Date.now(),
                     welcomeEmailSent: false,
-                    provider: "google",
+                    // This modal also completes email accounts whose profile write never
+                    // happened (see onAuthStateChanged), so record the real provider.
+                    provider: isGoogleUser ? "google" : "password",
                     tenantId: "bendbsn"
                 });
 
                 const params = new URLSearchParams({
                     action: "addUser",
                     username: user.email,
-                    password: "[Google Auth]",
+                    password: isGoogleUser ? "[Google Auth]" : "[Firebase Auth]",
                     status: "approved",
                     name: user.displayName || user.email.split("@")[0],
                     email: user.email,
@@ -1180,9 +1071,11 @@
                 fetch(API_URL + "&" + params.toString(), { mode: "no-cors" }).catch(() => {});
 
                 const name = user.displayName || user.email.split("@")[0];
-                sendWelcomeEmail(name, user.email).then(sent => {
-                    database.ref("userProfiles/" + user.uid).update({ welcomeEmailSent: sent }).catch(() => {});
-                });
+                // Await (bounded) so the flag is written before the page unloads.
+                try {
+                    const sent = await Promise.race([sendWelcomeEmail(name, user.email), new Promise(r => setTimeout(() => r(false), 4000))]);
+                    if (sent) await database.ref("userProfiles/" + user.uid).update({ welcomeEmailSent: true });
+                } catch (e) {}
                 sendEmailNotification(name, user.email, user.email, "new_registration", roleData.label).catch(() => {});
                 // Remove any admin-created manual_ profile for this email (fire-and-forget)
                 cleanupManualProfile(user.email).catch(() => {});
@@ -1195,7 +1088,7 @@
                 localStorage.setItem("bendbsn_login_at", String(Date.now()));
 
                 try { sessionStorage.setItem("bendbsn_show_affirmation", "1"); } catch (e) {}
-                await logLoginEvent(user.email, name, true);
+                await Promise.race([logLoginEvent(user.email, name, true), new Promise(r => setTimeout(r, 4000))]);
 
                 modal.classList.remove("show");
                 _preventAuthRedirect = false;
@@ -1208,19 +1101,70 @@
                 btn.innerHTML = "Get Started";
             }
         }
+
+        // Back out of role setup: sign out so a reload does not reopen the modal.
+        function cancelGoogleRole() {
+            const modal = document.getElementById("googleRoleModal");
+            if (!modal || !modal.classList.contains("show")) return;
+            const btn = document.getElementById("googleRoleBtn");
+            if (btn && btn.disabled) return; // profile write in progress
+            ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid','bendbsn_login_at'].forEach(k => localStorage.removeItem(k));
+            modal._googleUser = null;
+            modal.classList.remove("show");
+            document.getElementById("googleRoleErrorMsg").classList.remove("show");
+            _preventAuthRedirect = false;
+            auth.signOut().catch(() => {});
+        }
         // ====== END GOOGLE SIGN-IN ======
 
         // Redirect only after Firebase confirms auth; clear stale local session if needed
+        // Keep in sync with FORCE_LOGOUT_BEFORE in shared/header.js (which loads after
+        // this script, so its value is not available when this listener first fires).
+        const FORCE_LOGOUT_BEFORE_LOGIN_PAGE = 1714010000000;
         auth.onAuthStateChanged((user) => {
             if (_preventAuthRedirect) return;
             if (user) {
-                localStorage.setItem('bendbsn_auth', 'true');
-                localStorage.setItem('bendbsn_user', user.email || '');
-                localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
-                localStorage.setItem('bendbsn_uid', user.uid || '');
-                localStorage.setItem('bendbsn_login_at', String(Date.now()));
-                try { sessionStorage.setItem('bendbsn_show_affirmation', '1'); } catch (e) {}
-                window.location.href = '/home/';
+                // A persisted session is not a new sign-in: do not stamp a fresh
+                // bendbsn_login_at, and honour header.js's forced re-login.
+                const loginAt = parseInt(localStorage.getItem('bendbsn_login_at') || '0', 10);
+                if (!loginAt || loginAt < FORCE_LOGOUT_BEFORE_LOGIN_PAGE) {
+                    ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid','bendbsn_role_v2','bendbsn_login_at'].forEach(k => localStorage.removeItem(k));
+                    auth.signOut().catch(() => {});
+                    return;
+                }
+                const goHome = () => {
+                    if (_preventAuthRedirect) return;
+                    localStorage.setItem('bendbsn_auth', 'true');
+                    localStorage.setItem('bendbsn_user', user.email || '');
+                    if (!localStorage.getItem('bendbsn_displayName')) {
+                        localStorage.setItem('bendbsn_displayName', user.displayName || (user.email ? user.email.split('@')[0] : ''));
+                    }
+                    localStorage.setItem('bendbsn_uid', user.uid || '');
+                    try { sessionStorage.setItem('bendbsn_show_affirmation', '1'); } catch (e) {}
+                    window.location.href = '/home/';
+                };
+                // A signed-in account with no profile at all (Google role modal
+                // abandoned, or the registration profile write never landed) must
+                // finish setup instead of reaching /home/ with no role. If the read
+                // fails or stalls, redirect anyway so an RTDB outage never blocks login.
+                let settled = false;
+                const stall = setTimeout(() => { if (!settled) { settled = true; goHome(); } }, 4000);
+                database.ref('userProfiles/' + user.uid).once('value').then((snap) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(stall);
+                    if (!snap.exists() && !_preventAuthRedirect) {
+                        _preventAuthRedirect = true;
+                        showGoogleRoleModal(user);
+                        return;
+                    }
+                    goHome();
+                }).catch(() => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(stall);
+                    goHome();
+                });
             } else if (localStorage.getItem('bendbsn_auth') === 'true') {
                 localStorage.removeItem('bendbsn_auth');
                 localStorage.removeItem('bendbsn_user');
@@ -1271,24 +1215,10 @@
                 return true;
             } catch (error) {
                 console.error('Failed to send welcome email:', error);
-                // Fallback via FormSubmit if EmailJS is unavailable or blocked
-                try {
-                    const formData = new FormData();
-                    formData.append('name', 'BendBSN Welcome Bot');
-                    formData.append('email', _ae);
-                    formData.append('_subject', 'Welcome to BendBSN');
-                    formData.append('message', `Hi ${name}, your BendBSN account is ready.\n\nLogin: https://bendbsn.com\nEmail: ${email}\n\nWelcome!`);
-
-                    const resp = await fetch('https://formsubmit.co/ajax/' + email, {
-                        method: 'POST',
-                        headers: { 'Accept': 'application/json' },
-                        body: formData
-                    });
-                    return resp.ok;
-                } catch (fallbackError) {
-                    console.error('Welcome email fallback failed:', fallbackError);
-                    return false;
-                }
+                // No FormSubmit fallback: it only delivers to addresses that confirmed
+                // its activation email, which a new user's address never has. Returning
+                // false leaves welcomeEmailSent false so sendDailyWelcomeEmails retries.
+                return false;
             }
         }
 
@@ -1336,12 +1266,10 @@
                 } catch (err) {
                     console.error('Failed to save login history:', err);
                 }
-            } else {
-                // Failed login - fire and forget
-                loginRef.push(payload)
-                    .then(() => console.log('Failed login recorded'))
-                    .catch((err) => console.error('Failed to record login attempt:', err));
             }
+            // Failed attempts are not written to Firebase: loginHistory rules need an
+            // authenticated owner, which a failed sign-in never has. The Sheet call
+            // below still records them.
 
             // Also log to Google Sheet LoginHistory tab
             try {
@@ -1363,12 +1291,15 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 // Close any open modal
+                // The Google role modal is dismissed by signing out (cancelGoogleRole),
+                // never by just hiding it, or the signed-in user would have no profile.
                 const modals = document.querySelectorAll('.modal.show');
-                modals.forEach(modal => modal.classList.remove('show'));
+                modals.forEach(modal => { if (modal.id === 'googleRoleModal') { cancelGoogleRole(); return; } modal.classList.remove('show'); });
             }
         });
 
         // Register Service Worker for PWA
+        let _swReloadRequested = false;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
@@ -1388,14 +1319,26 @@
                             newWorker.addEventListener('statechange', () => {
                                 // If new SW is waiting and there's an active controller, show update prompt
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showToast(
-                                        'Update available! Click here to reload and get the latest version.',
-                                        0, // Don't auto-dismiss
-                                        () => {
-                                            // Tell the new SW to skip waiting
-                                            newWorker.postMessage({type: 'SKIP_WAITING'});
-                                        }
-                                    );
+                                    showToastAction({
+                                        title: 'Update available — tap to reload.',
+                                        type: 'info',
+                                        duration: 0, // Don't auto-dismiss
+                                        actions: [{
+                                            label: 'Reload',
+                                            onClick: function () {
+                                                _swReloadRequested = true;
+                                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                                // sw.js skips waiting on install, so the new worker
+                                                // may already control this page: reload right away.
+                                                if (newWorker.state === 'activated' || newWorker.state === 'redundant' ||
+                                                    navigator.serviceWorker.controller === newWorker) {
+                                                    window.location.reload();
+                                                } else {
+                                                    setTimeout(function() { if (_swReloadRequested) window.location.reload(); }, 3000);
+                                                }
+                                            }
+                                        }]
+                                    });
                                 }
                             });
                         });
@@ -1405,9 +1348,13 @@
                     });
             });
 
-            // Listen for controller change (new SW activated)
+            // Listen for controller change (new SW activated). sw.js skips waiting and
+            // claims clients, so this also fires on a first visit and after every
+            // deploy. Only reload when the user chose 'Reload': a background update
+            // must never reload the login page mid-sign-in.
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                // Reload the page to use the new service worker
+                if (!_swReloadRequested) return;
+                _swReloadRequested = false;
                 window.location.reload();
             });
         }

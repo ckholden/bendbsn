@@ -12,6 +12,7 @@
     --clx-bg-surface:     #ffffff;
     --clx-bg-surface-2:   #f5f8fa;
     --clx-bg-surface-3:   #eef2f6;
+    --clx-bg-hover:       #e6edf5;
     --clx-border:         #d1dce8;
     --clx-border-strong:  #b0bec5;
     --clx-text-primary:   #1a2532;
@@ -91,6 +92,7 @@
     --clx-bg-surface:     #161b22;
     --clx-bg-surface-2:   #1c2333;
     --clx-bg-surface-3:   #212d3d;
+    --clx-bg-hover:       var(--clx-bg-surface-3);
     --clx-border:         #2d3a4a;
     --clx-border-strong:  #3d4e5e;
     --clx-text-primary:   #e2e8f0;
@@ -310,57 +312,16 @@ body {
 }
 
 /* =========================================================
-   BOTTOM TOOLBAR — Recolor, Keep Structure + Z-index
+   BOTTOM CLEARANCE
+   The .bottom-toolbar / .more-menu nav this was written for was
+   removed in Feb 2026. The padding stays for now: /app/'s fixed
+   mobile action bar relies on it, so remove it only together with
+   a page-level replacement there.
    ========================================================= */
-.bottom-toolbar {
-    background: var(--clx-bg-surface) !important;
-    border-top: 1px solid var(--clx-border) !important;
-    /* height: 60px and z-index: 1000 preserved via existing CSS */
-}
-
-/* Safe area insets for notched phones (iPhone X+, Dynamic Island) */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-    .bottom-toolbar {
-        padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important;
-        height: calc(60px + env(safe-area-inset-bottom)) !important;
-    }
-}
-
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     body {
         padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
     }
-}
-
-.toolbar-item {
-    color: var(--clx-text-secondary) !important;
-    transition: color 0.15s !important;
-}
-
-.toolbar-item:hover,
-.toolbar-item.active {
-    color: var(--clx-accent) !important;
-}
-
-.toolbar-item .toolbar-icon {
-    color: inherit !important;
-}
-
-/* More menu overlay */
-.more-menu {
-    background: var(--clx-bg-surface) !important;
-    border: 1px solid var(--clx-border) !important;
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.12) !important;
-    border-radius: 12px 12px 0 0 !important;
-}
-
-.more-menu-item {
-    color: var(--clx-text-primary) !important;
-}
-
-.more-menu-item:hover {
-    background: var(--clx-accent-subtle) !important;
-    color: var(--clx-accent) !important;
 }
 
 /* =========================================================
@@ -829,36 +790,16 @@ h3.section-title,
     border-radius: 6px !important;
 }
 
+/* Neutral focus border (the !important border above would otherwise
+   beat header.css's :focus border); header.css adds the gray ring. */
 .bsn-confirm-modal .bsn-modal-input:focus {
-    border-color: var(--clx-accent) !important;
-    box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.12) !important;
-    outline: none !important;
+    border-color: var(--clx-text-muted) !important;
 }
 
-.bsn-modal-btns .bsn-btn-cancel {
-    background: var(--clx-bg-surface-2) !important;
-    border: 1px solid var(--clx-border) !important;
-    color: var(--clx-text-primary) !important;
-    border-radius: 6px !important;
-}
-
-.bsn-modal-btns .bsn-btn-cancel:hover {
-    background: var(--clx-bg-surface-3) !important;
-}
-
-.bsn-modal-btns .bsn-btn-confirm {
-    background: var(--clx-accent) !important;
-    border-radius: 6px !important;
-}
-
-.bsn-modal-btns .bsn-btn-confirm:hover {
-    background: var(--clx-accent-hover) !important;
-}
-
-.bsn-modal-btns .bsn-btn-danger {
-    background: var(--clx-danger) !important;
-    border-radius: 6px !important;
-}
+/* Modal buttons are styled only in shared/header.css (charcoal primary,
+   ghost-outline cancel, #dc2626 danger). The !important accent overrides
+   that used to sit here hid that spec on every page and put white text on
+   the light dark-mode danger red. Removed 2026-09-25. */
 
 [data-theme="dark"] .bsn-confirm-modal {
     background: var(--clx-bg-surface) !important;
@@ -1033,7 +974,7 @@ label {
     }
 
     .clx-sidebar,
-    .bottom-toolbar,
+    .clx-mobile-nav,
     .site-header {
         display: none !important;
     }

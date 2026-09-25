@@ -115,6 +115,12 @@
 
     const STORAGE_KEY = 'bendbsn_custom_phrases';
     const SEED_FLAG   = 'bendbsn_phrases_seeded_v1';
+    // uid the cached phrases belong to (a shared lab computer must not hand
+    // one student's phrases to the next), and the exact JSON string last
+    // read from / written to Firebase. Local differing from that snapshot
+    // means it holds edits Firebase has not seen yet.
+    const OWNER_KEY   = 'bendbsn_custom_phrases_uid';
+    const SYNCED_KEY  = 'bendbsn_phrases_synced';
 
     /**
      * Seed the 69 built-ins into localStorage on first call for this
@@ -206,19 +212,46 @@
     // shortcuts start with a dot). Write-the-whole-thing is fine — 69
     // phrases × ~80 chars = ~5KB payload.
     let _syncToFirebaseTimer = null;
+    let _pendingSync = null;
+    function pushNow(db, uid) {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY) || '{}';
+            const p = db.ref('userProfiles/' + uid + '/smartPhrases').set(raw);
+            if (p && p.then) {
+                p.then(function () {
+                    try { localStorage.setItem(SYNCED_KEY, raw); } catch (e) {}
+                }).catch(function (e) {
+                    console.warn('[smart-phrases] syncToFirebase failed', e);
+                });
+            }
+        } catch (e) {
+            console.warn('[smart-phrases] syncToFirebase failed', e);
+        }
+    }
     function syncToFirebase(db, uid) {
         if (!db || !uid) return;
         // Debounce 500ms so rapid edits don't hammer the database
         if (_syncToFirebaseTimer) clearTimeout(_syncToFirebaseTimer);
+        _pendingSync = { db: db, uid: uid };
         _syncToFirebaseTimer = setTimeout(function () {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY) || '{}';
-                db.ref('userProfiles/' + uid + '/smartPhrases').set(raw);
-            } catch (e) {
-                console.warn('[smart-phrases] syncToFirebase failed', e);
-            }
+            _syncToFirebaseTimer = null;
+            const s = _pendingSync; _pendingSync = null;
+            if (s) pushNow(s.db, s.uid);
         }, 500);
     }
+    // Leaving the page inside the 500ms window must not drop the write
+    // (a deleted phrase would come back from Firebase on the next load).
+    function flushPendingSync() {
+        if (!_syncToFirebaseTimer) return;
+        clearTimeout(_syncToFirebaseTimer);
+        _syncToFirebaseTimer = null;
+        const s = _pendingSync; _pendingSync = null;
+        if (s) pushNow(s.db, s.uid);
+    }
+    window.addEventListener('pagehide', flushPendingSync);
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') flushPendingSync();
+    });
 
     /**
      * Pull the user's phrases from their Firebase profile and merge into
@@ -238,15 +271,55 @@
         try {
             db.ref('userProfiles/' + uid + '/smartPhrases').once('value', function (snap) {
                 const val = snap.val();
-                if (val && typeof val === 'string') {
-                    // Profile has phrases — merge into local cache. Firebase
-                    // is the source of truth; local additions (if any) layer
-                    // on top so offline edits aren't lost.
+                // The cache belongs to someone else: drop it so it is neither
+                // shown to this user nor pushed into their profile. A cache
+                // from before ownership tracking has no owner key; adopt it
+                // when the signed-in uid on this browser is this user.
+                let legacyCache = false;
+                try {
+                    const owner = localStorage.getItem(OWNER_KEY);
+                    if (owner == null && localStorage.getItem(STORAGE_KEY) != null &&
+                            localStorage.getItem('bendbsn_uid') === uid) {
+                        legacyCache = true;
+                    } else if (owner !== uid) {
+                        [STORAGE_KEY, SEED_FLAG, SYNCED_KEY].forEach(function (k) {
+                            localStorage.removeItem(k);
+                        });
+                    }
+                } catch (e) {}
+                if (legacyCache && val && typeof val === 'string') {
+                    // One-time migration, same result the old build showed:
+                    // remote wins on conflicts, local-only phrases are kept.
+                    // Recording the remote as the synced snapshot marks any
+                    // local-only phrases as unsynced, so a failed push is
+                    // retried on the next load instead of being overwritten.
                     try {
                         const remote = JSON.parse(val) || {};
-                        const local = getAllSmartPhrases();
-                        const merged = Object.assign({}, local, remote);
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+                        const merged = JSON.stringify(Object.assign({}, getAllSmartPhrases(), remote));
+                        localStorage.setItem(STORAGE_KEY, merged);
+                        localStorage.setItem(SYNCED_KEY, val);
+                        localStorage.setItem(SEED_FLAG, '1');
+                        if (merged !== val) syncToFirebase(db, uid);
+                    } catch (e) {
+                        console.warn('[smart-phrases] remote parse failed', e);
+                    }
+                } else if (val && typeof val === 'string') {
+                    // Firebase is the source of truth, so deletions made on
+                    // another device stay deleted. The exception is a local
+                    // cache holding edits Firebase has not seen (offline, or
+                    // written straight to localStorage): the whole-set write
+                    // makes local the newest state, so push it instead.
+                    try {
+                        JSON.parse(val);
+                        const localRaw = localStorage.getItem(STORAGE_KEY);
+                        const syncedRaw = localStorage.getItem(SYNCED_KEY);
+                        const localUnsynced = localRaw != null && syncedRaw != null && localRaw !== syncedRaw;
+                        if (localUnsynced) {
+                            syncToFirebase(db, uid);
+                        } else {
+                            localStorage.setItem(STORAGE_KEY, val);
+                            localStorage.setItem(SYNCED_KEY, val);
+                        }
                         localStorage.setItem(SEED_FLAG, '1');  // treat as seeded
                     } catch (e) {
                         console.warn('[smart-phrases] remote parse failed', e);
@@ -256,6 +329,7 @@
                     seedDefaultSmartPhrases();
                     syncToFirebase(db, uid);
                 }
+                try { localStorage.setItem(OWNER_KEY, uid); } catch (e) {}
                 if (cb) cb(getAllSmartPhrases());
             }, function (err) {
                 console.warn('[smart-phrases] syncFromFirebase failed', err);

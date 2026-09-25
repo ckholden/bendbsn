@@ -216,6 +216,8 @@ Requires:
 
 ## Firebase Database Rules (Critical)
 
+**Note (Sept 2026):** the `chat`, `directMessages`, and `community` nodes that earlier drafts of this plan included were retired along with those features and are intentionally absent below — those paths fall under the root deny.
+
 **MUST UPDATE YOUR RULES TO:**
 
 ```json
@@ -229,38 +231,6 @@ Requires:
       ".write": false
     },
 
-    "chat": {
-      "messages": {
-        "$channelId": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        }
-      },
-      "presence": {
-        ".read": "auth != null",
-        ".write": "auth != null && $uid == auth.uid",
-        "$uid": {
-          ".validate": "newData.hasChild('user') && newData.hasChild('uid')"
-        }
-      },
-      "typing": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
-
-    "directMessages": {
-      "$conversationId": {
-        ".read": "auth != null && (
-          data.child('participants/user1_uid').val() == auth.uid ||
-          data.child('participants/user2_uid').val() == auth.uid ||
-          data.child('participants/user1').val() == root.child('userProfiles').child(auth.uid).child('displayName').val() ||
-          data.child('participants/user2').val() == root.child('userProfiles').child(auth.uid).child('displayName').val()
-        )",
-        ".write": "auth != null"
-      }
-    },
-
     "userProfiles": {
       "$uid": {
         ".read": "auth != null",
@@ -272,13 +242,6 @@ Requires:
       "$userEmail": {
         ".read": "auth != null && auth.token.email.replace('.', '_') == $userEmail",
         ".write": "auth != null && auth.token.email.replace('.', '_') == $userEmail"
-      }
-    },
-
-    "community": {
-      "posts": {
-        ".read": "auth != null",
-        ".write": "auth != null"
       }
     },
 
@@ -327,11 +290,8 @@ Requires:
 3. ✅ Try accessing `/admin/` without login → should redirect to login
 4. ✅ Try modifying `adminUsers` in console → should fail (write: false)
 
-### Test DM Security
-1. ✅ Alice can read her own DMs
-2. ❌ Alice cannot read Bob's DMs with Charlie
-3. ✅ Bob can read DMs with Alice
-4. ❌ Guest (not logged in) cannot read any DMs
+### ~~Test DM Security~~ (retired Sept 2026)
+Direct messages were removed with the chat and the `directMessages` node no longer exists in the rules, so there is nothing to test here.
 
 ### Test Apps Script Security (if implemented)
 1. ❌ Call API without token → 401 Unauthorized

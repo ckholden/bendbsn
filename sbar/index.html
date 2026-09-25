@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
     <script>
         if (localStorage.getItem('bendbsn_auth') !== 'true') { window.location.href = '/'; }
@@ -87,7 +87,7 @@
             height: 32px;
             border-radius: 50%;
             background: var(--clx-accent);
-            color: #fff;
+            color: var(--clx-accent-text);
             font-size: 16px;
             font-weight: 700;
             display: flex;
@@ -112,7 +112,6 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
-        .sbar-form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
         .sbar-field { display: flex; flex-direction: column; gap: 4px; }
         .sbar-field.full { grid-column: 1 / -1; }
         .sbar-label {
@@ -170,12 +169,14 @@
         }
 
         /* ---- Vitals row ---- */
+        /* Wraps to as many 2-3 line rows as it needs; each cell fits its longest
+           normal value (BP 120/80, Temp 100.4) without clipping. */
         .vitals-row {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+            gap: 8px 10px;
         }
-        .vitals-field { display: flex; flex-direction: column; gap: 3px; }
+        .vitals-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
         .vitals-label {
             font-size: 10px;
             font-weight: 700;
@@ -191,8 +192,14 @@
             background: var(--clx-bg-surface);
             color: var(--clx-text-primary);
             font-family: inherit;
+            font-variant-numeric: tabular-nums;
             width: 100%;
+            min-width: 8ch;
         }
+        /* Spinner arrows ate a third of the box and clipped "120" to "12" */
+        .vitals-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+        .vitals-input[type="number"]::-webkit-inner-spin-button,
+        .vitals-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .vitals-input:focus {
             outline: none;
             border-color: var(--clx-accent);
@@ -245,7 +252,7 @@
             transition: background 0.15s, border-color 0.15s;
         }
         .sbar-btn:hover { background: var(--clx-bg-surface-2); border-color: var(--clx-border-strong); }
-        .sbar-btn.primary { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
+        .sbar-btn.primary { background: var(--clx-accent); color: var(--clx-accent-text); border-color: var(--clx-accent); }
         .sbar-btn.primary:hover { background: var(--clx-accent-hover); border-color: var(--clx-accent-hover); }
 
         /* ---- Previous reports list ---- */
@@ -280,7 +287,7 @@
             border-radius: 4px;
             font-family: inherit;
         }
-        .report-item-del:hover { color: #dc2626; background: #fee2e2; }
+        .report-item-del:hover { color: var(--clx-danger); background: var(--clx-danger-bg); }
         .report-edit-pill, .report-text-pill {
             display: inline-block;
             padding: 1px 7px;
@@ -321,32 +328,50 @@
         }
 
         .edu-notice {
-            background: #fffbeb;
-            border: 1px solid #f59e0b;
+            background: var(--clx-warning-bg);
+            border: 1px solid var(--clx-warning);
             border-radius: 6px;
             padding: 8px 12px;
             font-size: 12px;
-            color: #92400e;
+            color: var(--clx-warning-text);
             margin-bottom: 14px;
         }
-        [data-theme="dark"] .edu-notice {
-            background: #1c1a0e;
-            border-color: #78350f;
-            color: #fcd34d;
+
+        /* Push the page below the fixed alert/FYI banners while they show */
+        body.has-alert .site-header, body.has-fyi .site-header { margin-top: 50px; }
+        body.has-alert.has-fyi .site-header { margin-top: 100px; }
+
+        /* Privacy lock: covers the page without signing out or dropping the form */
+        #lockScreenOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #0d1f2d;
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
         }
 
         @media (max-width: 600px) {
             .sbar-form-grid { grid-template-columns: 1fr; }
-            .sbar-form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .sbar-page { padding: 12px 16px; }
+            .sbar-card { padding: 14px; }
+            .vitals-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .sbar-actions .sbar-btn { flex: 1 1 auto; justify-content: center; }
+        }
+        @media (pointer: coarse) {
+            .sbar-input, .sbar-select, .vitals-input, .sbar-btn, .sbar-tab { min-height: 44px; }
+            .checkbox-chip { min-height: 44px; padding: 6px 12px; }
+            .report-item-del { min-width: 44px; min-height: 44px; }
         }
     </style>
 </head>
 <body>
     <header class="site-header">
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
-        <div class="header-actions">
-            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
-        </div>
     </header>
 
     <div class="clx-shell">
@@ -379,35 +404,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
         <a href="/apa/" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -432,7 +443,6 @@
             <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
-    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
     <main class="clx-main" role="main">
 
@@ -472,7 +482,7 @@
                     </div>
                     <div class="sbar-field">
                         <label class="sbar-label" for="sPatientAge">Age</label>
-                        <input type="number" id="sPatientAge" class="sbar-input" placeholder="e.g., 68" min="0" max="130">
+                        <input type="number" id="sPatientAge" class="sbar-input" inputmode="numeric" placeholder="e.g., 68" min="0" max="130">
                     </div>
                     <div class="sbar-field">
                         <label class="sbar-label" for="sPatientSex">Sex</label>
@@ -602,11 +612,11 @@
                     <div class="sbar-label" style="margin-bottom:6px;">Current Vitals</div>
                     <div class="vitals-row">
                         <div class="vitals-field"><span class="vitals-label">BP</span><input type="text" id="aVsBp" class="vitals-input" placeholder="120/80"></div>
-                        <div class="vitals-field"><span class="vitals-label">HR</span><input type="number" id="aVsHr" class="vitals-input" placeholder="72" min="20" max="250"></div>
-                        <div class="vitals-field"><span class="vitals-label">RR</span><input type="number" id="aVsRr" class="vitals-input" placeholder="16" min="4" max="60"></div>
-                        <div class="vitals-field"><span class="vitals-label">Temp °F</span><input type="number" id="aVsTemp" class="vitals-input" placeholder="98.6" step="0.1" min="90" max="110"></div>
-                        <div class="vitals-field"><span class="vitals-label">SpO2 %</span><input type="number" id="aVsO2" class="vitals-input" placeholder="98" min="50" max="100"></div>
-                        <div class="vitals-field"><span class="vitals-label">Pain 0-10</span><input type="number" id="aVsPain" class="vitals-input" placeholder="3" min="0" max="10"></div>
+                        <div class="vitals-field"><span class="vitals-label">HR</span><input type="number" id="aVsHr" class="vitals-input" inputmode="numeric" placeholder="72" min="20" max="250"></div>
+                        <div class="vitals-field"><span class="vitals-label">RR</span><input type="number" id="aVsRr" class="vitals-input" inputmode="numeric" placeholder="16" min="4" max="60"></div>
+                        <div class="vitals-field"><span class="vitals-label">Temp °F</span><input type="number" id="aVsTemp" class="vitals-input" inputmode="decimal" placeholder="98.6" step="0.1" min="90" max="110"></div>
+                        <div class="vitals-field"><span class="vitals-label">SpO2 %</span><input type="number" id="aVsO2" class="vitals-input" inputmode="numeric" placeholder="98" min="50" max="100"></div>
+                        <div class="vitals-field"><span class="vitals-label">Pain 0-10</span><input type="number" id="aVsPain" class="vitals-input" inputmode="numeric" placeholder="3" min="0" max="10"></div>
                     </div>
                 </div>
                 <div class="sbar-form-grid">
@@ -702,7 +712,7 @@
         <div class="sbar-panel" id="sbar-tab-output">
             <div class="sbar-card">
                 <div class="sbar-section-header" style="margin-bottom:8px;">
-                    <div class="sbar-letter" style="background:#16a34a;">✓</div>
+                    <div class="sbar-letter" style="background:var(--clx-success);">✓</div>
                     <div>
                         <div class="sbar-section-title">Generated SBAR Report</div>
                         <div class="sbar-section-sub">Review, copy, export, or save this handoff report</div>
@@ -714,7 +724,7 @@
                 <div class="sbar-actions">
                     <button class="sbar-btn primary" onclick="generateSbarReport()">Regenerate</button>
                     <button class="sbar-btn" onclick="copySbarToClipboard()">Copy to Clipboard</button>
-                    <button class="sbar-btn" onclick="exportSbarDocx()">Export to Word</button>
+                    <button class="sbar-btn" onclick="exportSbarDocx(this)">Export to Word</button>
                     <button class="sbar-btn" onclick="saveSbarToFirebase()">💾 Save to Account</button>
                     <button class="sbar-btn" onclick="startNewSbarReport()">+ New SBAR</button>
                 </div>
@@ -725,7 +735,7 @@
         <div class="sbar-panel" id="sbar-tab-history">
             <div class="sbar-card">
                 <div class="sbar-section-header" style="margin-bottom:8px;">
-                    <div class="sbar-letter" style="background:#7c3aed;">H</div>
+                    <div class="sbar-letter">H</div>
                     <div>
                         <div class="sbar-section-title">Previous Reports</div>
                         <div class="sbar-section-sub">Saved SBAR handoffs from your account</div>
@@ -741,12 +751,21 @@
     </main>
     </div><!-- /clx-shell -->
 
+    <!-- Lock screen (privacy overlay; the session and the form stay intact) -->
+    <div id="lockScreenOverlay" role="dialog" aria-modal="true" aria-label="Portal locked">
+        <div style="text-align:center;color:#fff;">
+            <div style="font-size:60px;margin-bottom:16px;">&#128274;</div>
+            <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
+            <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
+            <button type="button" id="unlockScreenBtn" onclick="unlockScreen()" style="background:var(--clx-accent);color:var(--clx-accent-text);border:none;padding:14px 40px;min-height:44px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">&#128275; Unlock</button>
+        </div>
+    </div>
+
     <!-- Mobile bottom nav -->
         <nav class="clx-mobile-nav" aria-label="Mobile navigation">
         <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
         <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
         <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
-        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat"><span class="clx-mobile-nav-icon">&#128172;</span><span>Chat</span></a>
         <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
     </nav>
 
@@ -787,20 +806,45 @@
         }
         initTheme();
 
-        // Sidebar
-        let sidebarOpen = false;
-        function toggleSidebar() {
-            sidebarOpen = !sidebarOpen;
+        // Sidebar — desktop collapse/expand, same as /app/. The mobile drawer
+        // (hamburger + backdrop) is injected by shared/header.js.
+        (function initSidebar() {
+            document.body.classList.add('has-sidebar');
             const sidebar = document.getElementById('appSidebar');
-            const backdrop = document.getElementById('sidebarBackdrop');
-            if (sidebar) sidebar.classList.toggle('mobile-open', sidebarOpen);
-            if (backdrop) backdrop.classList.toggle('visible', sidebarOpen);
+            if (!sidebar) return;
+            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
+                sidebar.classList.add('collapsed');
+            } else {
+                const icon = document.getElementById('sidebarToggleIcon');
+                if (icon) icon.textContent = '◀';
+                const label = document.querySelector('.clx-sidebar-toggle-label');
+                if (label) label.textContent = 'Collapse';
+            }
+        })();
+        function toggleSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
 
         // Lock / Logout
+        // Lock is a privacy overlay (same as /app/ and /home/): it keeps the session
+        // and the in-progress SBAR. Idle auto-logout (shared/header.js) still applies.
         function lockScreen() {
-            localStorage.removeItem('bendbsn_auth');
-            window.location.href = '/';
+            const o = document.getElementById('lockScreenOverlay');
+            if (!o) return;
+            o.style.display = 'flex';
+            const b = document.getElementById('unlockScreenBtn');
+            if (b) b.focus();
+        }
+        function unlockScreen() {
+            const o = document.getElementById('lockScreenOverlay');
+            if (o) o.style.display = 'none';
         }
         function logout() {
             showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
@@ -831,6 +875,16 @@
             const tabOrder = ['situation','background','assessment','recommendation','output','history'];
             const idx = tabOrder.indexOf(tab);
             if (idx >= 0 && tabs[idx]) { tabs[idx].classList.add('active'); tabs[idx].setAttribute('aria-selected','true'); }
+            // Centre the active tab in the scrolling strip, and bring the strip back
+            // into view when a bottom "Next" button switched panels.
+            const strip = document.querySelector('.sbar-tabs');
+            if (strip && idx >= 0 && tabs[idx]) {
+                const behavior = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+                const sr = strip.getBoundingClientRect(), tr = tabs[idx].getBoundingClientRect();
+                strip.scrollTo({ left: strip.scrollLeft + tr.left - sr.left - (sr.width - tr.width) / 2, behavior: behavior });
+                if (sr.top < 0) window.scrollBy({ top: sr.top - 8, behavior: behavior });
+            }
+            if (tab === 'output') refreshSbarOutputIfForm();
             if (tab === 'history') loadSbarHistory();
         }
 
@@ -889,14 +943,13 @@
             lines.push('=== SBAR HANDOFF REPORT ===');
             lines.push('Generated: ' + now);
             lines.push('Clinician: ' + displayName + ' (' + currentUser + ')');
-            lines.push('[EDUCATIONAL USE ONLY — NOT FOR REAL CLINICAL USE]');
             lines.push('');
             lines.push('--- SITUATION ---');
             let sitLine = 'Patient: ' + pName;
             if (pAge) sitLine += ', ' + pAge + ' y/o';
             if (pSex) sitLine += ' ' + pSex;
             if (room) sitLine += ' in room ' + room;
-            if (md) sitLine += ', attending Dr. ' + md.replace(/^Dr\.?\s*/i,'');
+            if (md) sitLine += ', attending Dr. ' + md.replace(/^dr(?:\.\s*|\s+)/i, ''); // keeps "Drew" intact
             lines.push(sitLine);
             if (dx) lines.push('Admitting Diagnosis: ' + dx);
             if (reason) lines.push('Reason for Handoff: ' + reason);
@@ -938,13 +991,30 @@
             return lines.join('\n');
         }
 
+        // True while #sbarOutputText was built from the form (Generate, or a
+        // loaded/restored editable report). Copy / Export / Save / the Report tab
+        // then rebuild it, so edits made after "Generate" are never left out.
+        // False for a legacy text-only report, whose text is all there is.
+        let sbarOutputFromForm = false;
+        function refreshSbarOutputIfForm() {
+            if (!sbarOutputFromForm) return;
+            const el = document.getElementById('sbarOutputText');
+            const next = buildSbarText();
+            // Ignore the "Generated:" stamp so an unchanged report keeps its time
+            const body = t => String(t || '').replace(/^Generated: .*$/m, '');
+            if (body(next) !== body(el.textContent)) el.textContent = next;
+        }
+
         function generateSbarReport() {
             const text = buildSbarText();
             document.getElementById('sbarOutputText').textContent = text;
+            sbarOutputFromForm = true;
             showSbarTab('output');
+            saveSbarDraft();
         }
 
         function copySbarToClipboard() {
+            refreshSbarOutputIfForm();
             const text = document.getElementById('sbarOutputText').textContent;
             if (!text || text.includes('Click "Generate Report"')) {
                 showToast('Generate a report first.', 'warning'); return;
@@ -954,44 +1024,90 @@
             }).catch(() => showToast('Copy failed — try selecting and copying manually.', 'warning'));
         }
 
-        function exportSbarDocx() {
+        // Load each export library once. A failed load is forgotten so the next
+        // click retries (offline, blocked CDN) instead of doing nothing.
+        const _exportLibs = {};
+        function loadScriptOnce(src) {
+            if (!_exportLibs[src]) {
+                _exportLibs[src] = new Promise(function (resolve, reject) {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = resolve;
+                    s.onerror = function () {
+                        delete _exportLibs[src];
+                        s.remove();
+                        reject(new Error('could not load the Word export library. Check your connection and try again.'));
+                    };
+                    document.head.appendChild(s);
+                });
+            }
+            return _exportLibs[src];
+        }
+
+        function exportSbarDocx(btn) {
+            refreshSbarOutputIfForm();
             const text = document.getElementById('sbarOutputText').textContent;
             if (!text || text.includes('Click "Generate Report"')) {
                 showToast('Generate a report first.', 'warning'); return;
             }
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/docx@8.2.2/build/index.umd.js';
-            script.onload = function() {
-                const fsSrc = document.createElement('script');
-                fsSrc.src = 'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
-                fsSrc.onload = function() { doExportSbarDocx(text); };
-                document.head.appendChild(fsSrc);
-            };
-            document.head.appendChild(script);
+            if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+            Promise.all([
+                loadScriptOnce('https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js'),
+                loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js')
+            ]).then(function () { return doExportSbarDocx(text); })
+              .catch(function (e) { showToast('Export failed: ' + (e && e.message ? e.message : e), 'error'); })
+              .then(function () { if (btn) { btn.disabled = false; btn.textContent = 'Export to Word'; } });
         }
+
+        // "Label: value" lines that buildSbarText() emits — bold label in Word.
+        const SBAR_DOCX_LABELS = new Set(['Patient','Admitting Diagnosis','Reason for Handoff','Code Status',
+            'Admitted','PMH','Allergies','Current Medications','Significant Labs/Imaging','Vitals','Overall Status',
+            'Primary Concern','Active Problems','IV Access','Drips/Infusions','Anticipated Orders/Interventions',
+            'Pending Results to Follow Up','Tasks for Oncoming Nurse','Safety Concerns','Family/Communication','Watch For']);
         function doExportSbarDocx(text) {
-            try {
-                const paragraphs = text.split('\n').map(line => {
-                    const isHeader = line.startsWith('---') || line.startsWith('===');
-                    return new docx.Paragraph({
-                        children: [new docx.TextRun({ text: line, bold: isHeader, size: 22 })],
-                        spacing: { after: isHeader ? 200 : 100 }
-                    });
-                });
-                const doc = new docx.Document({
-                    sections: [{ properties: {}, children: paragraphs }]
-                });
-                docx.Packer.toBlob(doc).then(blob => {
-                    const pName = document.getElementById('sPatientName').value.trim().replace(/\s+/g,'_') || 'SBAR';
-                    saveAs(blob, 'SBAR_' + pName + '_' + new Date().toISOString().split('T')[0] + '.docx');
-                    showToast('Word document exported.', 'success');
-                });
-            } catch(e) { showToast('Export failed: ' + e.message, 'error'); }
+            const BLUE = '1f4e79';
+            const paragraphs = [];
+            let inHeader = true;  // "Generated:" / "Clinician:" lines before the first section
+            let inBlock = false;  // lines under a multi-line label ("Current Medications:") get indented
+            text.split('\n').forEach(line => {
+                let m;
+                if (!line.trim() || line.trim() === '=== END OF REPORT ===') return;
+                if ((m = line.match(/^=== (.+) ===$/))) {
+                    paragraphs.push(new docx.Paragraph({ children: [new docx.TextRun({ text: m[1], bold: true, size: 32, color: BLUE })], alignment: docx.AlignmentType.CENTER, spacing: { after: 100 } }));
+                } else if (inHeader && /^(Generated|Clinician): /.test(line)) {
+                    paragraphs.push(new docx.Paragraph({ children: [new docx.TextRun({ text: line, size: 20, color: '6b7280' })], alignment: docx.AlignmentType.CENTER, spacing: { after: 40 } }));
+                } else if ((m = line.match(/^--- (.+) ---$/))) {
+                    inHeader = false; inBlock = false;
+                    paragraphs.push(new docx.Paragraph({ children: [new docx.TextRun({ text: m[1], bold: true, size: 24, color: BLUE })], spacing: { before: 240, after: 80 }, border: { bottom: { color: 'd1dce8', size: 6, space: 1, style: docx.BorderStyle.SINGLE } } }));
+                } else if ((m = line.match(/^([^:]{1,40}):\s?(.*)$/)) && SBAR_DOCX_LABELS.has(m[1])) {
+                    inBlock = !m[2];
+                    const runs = [new docx.TextRun({ text: m[1] + ':' + (m[2] ? ' ' : ''), bold: true, size: 22 })];
+                    if (m[2]) runs.push(new docx.TextRun({ text: m[2], size: 22 }));
+                    paragraphs.push(new docx.Paragraph({ children: runs, spacing: { after: 60 } }));
+                } else {
+                    const opts = { children: [new docx.TextRun({ text: line, size: 22 })], spacing: { after: 60 } };
+                    if (inBlock) opts.indent = { left: 360 };
+                    paragraphs.push(new docx.Paragraph(opts));
+                }
+            });
+            const doc = new docx.Document({
+                sections: [{ properties: {}, children: paragraphs }]
+            });
+            return docx.Packer.toBlob(doc).then(blob => {
+                const pName = document.getElementById('sPatientName').value.trim().replace(/\s+/g,'_') || 'SBAR';
+                const d = new Date(); // local date, not UTC (evening exports were dated tomorrow)
+                const ymd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                saveAs(blob, 'SBAR_' + pName + '_' + ymd + '.docx');
+                showToast('Word document exported.', 'success');
+            });
         }
 
         // Track which saved report we're currently editing (null = new). Used so
         // hitting "Save" again updates the same record instead of forking a copy.
         let currentSbarReportKey = null;
+        // Form state as last saved or loaded, to tell whether loading another
+        // report would throw away unsaved edits.
+        let _sbarCleanSnapshot = null;
 
         // Snapshot every input/select/textarea on the page (plus the chip checkboxes)
         // into a plain object — so loaded reports can be re-edited, regenerated,
@@ -1022,8 +1138,66 @@
             });
         }
 
+        // Local draft autosave: keeps an in-progress SBAR through a refresh, a
+        // closed tab or a service-worker update. The key starts with
+        // bendbsn_draft_ so shared/header.js wipes it on a forced logout, and
+        // the uid check stops a draft on a shared computer reaching another student.
+        const SBAR_DRAFT_KEY = 'bendbsn_draft_sbar';
+        let _sbarDraftTimer = null;
+        function writeSbarDraft(clean) {
+            clearTimeout(_sbarDraftTimer);
+            _sbarDraftTimer = null;
+            try {
+                const state = captureSbarFormState();
+                const output = document.getElementById('sbarOutputText').textContent;
+                const hasOutput = !!output && !output.includes('Click "Generate Report"');
+                const hasContent = state.chips.length > 0 || Object.values(state.fields).some(v => v && String(v).trim());
+                if (!hasContent && !hasOutput && !currentSbarReportKey) { localStorage.removeItem(SBAR_DRAFT_KEY); return; }
+                localStorage.setItem(SBAR_DRAFT_KEY, JSON.stringify({
+                    uid: currentUid, key: currentSbarReportKey, state: state,
+                    output: hasOutput ? output : '', fromForm: sbarOutputFromForm, dirty: !clean, savedAt: Date.now()
+                }));
+            } catch (e) {}
+        }
+        function saveSbarDraft() {
+            clearTimeout(_sbarDraftTimer);
+            _sbarDraftTimer = setTimeout(() => writeSbarDraft(), 400);
+        }
+        function clearSbarDraft() {
+            clearTimeout(_sbarDraftTimer);
+            _sbarDraftTimer = null;
+            try { localStorage.removeItem(SBAR_DRAFT_KEY); } catch (e) {}
+        }
+        document.addEventListener('input', e => { if (e.target.closest && e.target.closest('.sbar-page')) saveSbarDraft(); });
+        document.addEventListener('change', e => { if (e.target.closest && e.target.closest('.sbar-page')) saveSbarDraft(); });
+        // Flush a pending debounced save when the tab is hidden or unloaded
+        window.addEventListener('pagehide', () => { if (_sbarDraftTimer) writeSbarDraft(); });
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && _sbarDraftTimer) writeSbarDraft(); });
+        (function restoreSbarDraft() {
+            let d = null;
+            try { d = JSON.parse(localStorage.getItem(SBAR_DRAFT_KEY) || 'null'); } catch (e) {}
+            if (!d || !d.state) return;
+            if (d.uid !== currentUid) { clearSbarDraft(); return; }
+            applySbarFormState(d.state);
+            if (d.output) document.getElementById('sbarOutputText').textContent = d.output;
+            sbarOutputFromForm = !!d.output && d.fromForm !== false;
+            currentSbarReportKey = d.key ? String(d.key) : null;
+            if (d.dirty === false) _sbarCleanSnapshot = JSON.stringify(captureSbarFormState());
+            const when = d.savedAt ? new Date(d.savedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+            if (typeof showToastAction === 'function') {
+                showToastAction({
+                    type: 'info',
+                    title: d.dirty === false ? 'Reopened your last saved SBAR' : 'Restored your unsaved SBAR',
+                    message: when ? 'Last edited ' + when : '',
+                    duration: 8000,
+                    actions: [{ label: 'Start new', onClick: function () { startNewSbarReport(); } }]
+                });
+            }
+        })();
+
         function saveSbarToFirebase() {
             if (!currentUid) { showToast('Sign in to save reports.', 'warning'); return; }
+            refreshSbarOutputIfForm(); // never store reportText older than formState
             const text = document.getElementById('sbarOutputText').textContent;
             if (!text || text.includes('Click "Generate Report"')) {
                 showToast('Generate a report first.', 'warning'); return;
@@ -1031,20 +1205,24 @@
             const pName = document.getElementById('sPatientName').value.trim() || 'Unknown';
             const concern = document.getElementById('aPrimaryConcern').value.trim();
             // Re-use the existing key on update; create a fresh one for a new save.
-            const key = currentSbarReportKey || Date.now();
+            // Keys stay strings everywhere so the delete check and Save agree.
+            const key = currentSbarReportKey ? String(currentSbarReportKey) : String(Date.now());
             const ref = database.ref('sbarReports/' + currentUid + '/' + key);
             const isUpdate = !!currentSbarReportKey;
+            const formState = captureSbarFormState();
             ref.set({
                 patientName: pName,
                 primaryConcern: concern,
                 reportText: text,
-                formState: captureSbarFormState(),
-                createdAt: isUpdate ? key : key,
+                formState: formState,
+                createdAt: Number(key),
                 updatedAt: Date.now(),
                 createdBy: displayName,
                 schemaVersion: 2
             }).then(() => {
                 currentSbarReportKey = key;
+                _sbarCleanSnapshot = JSON.stringify(formState);
+                writeSbarDraft(true); // so a reload keeps updating this record instead of forking a copy
                 showToast(isUpdate ? 'Report updated.' : 'Saved — appears in Previous Reports.', 'success');
             }).catch(e => showToast('Save failed: ' + e.message, 'error'));
         }
@@ -1056,7 +1234,12 @@
                 document.querySelectorAll('.sbar-input, .sbar-select, .sbar-textarea, .vitals-input').forEach(el => el.value = '');
                 document.querySelectorAll('.checkbox-chip input').forEach(cb => { cb.checked = false; cb.closest('.checkbox-chip').classList.remove('checked'); });
                 document.getElementById('sbarOutputText').textContent = 'Click "Generate Report" from the Recommendation tab to build your SBAR.';
+                sbarOutputFromForm = false;
                 currentSbarReportKey = null;
+                _sbarCleanSnapshot = null;
+                const hint = document.getElementById('sbarPrefillHint');
+                if (hint) hint.remove();
+                clearSbarDraft();
                 showSbarTab('situation');
                 showToast('Started new SBAR. Previous one stays in your saved reports.', 'info');
             };
@@ -1091,51 +1274,74 @@
                             ? '<div class="report-item-meta">' + escapeHtml(data.primaryConcern.slice(0, 100)) + (data.primaryConcern.length > 100 ? '…' : '') + '</div>'
                             : '';
                         const editable = data.formState ? '<span class="report-edit-pill" title="Editable on load">✎ Editable</span>' : '<span class="report-text-pill" title="Text-only — predates form-state save">📄 Text only</span>';
-                        return '<div class="report-item" onclick="loadSbarReport(\'' + key + '\')">' +
+                        return '<div class="report-item" data-key="' + escapeHtml(key) + '">' +
                             '<div class="report-item-title">' + escapeHtml(data.patientName || 'Untitled') + '</div>' +
                             concernLine +
                             '<div class="report-item-date">' + date + ' · ' + time + ' ' + editable + '</div>' +
-                            '<button class="report-item-del" onclick="event.stopPropagation();deleteSbarReport(\'' + key + '\')" title="Delete" aria-label="Delete report">&#128465;</button>' +
+                            '<button type="button" class="report-item-del" title="Delete" aria-label="Delete report">&#128465;</button>' +
                         '</div>';
                     }).join('');
             }).catch(e => {
                 listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Error loading reports.</div>';
+                showToast('Could not load reports: ' + (e && e.message ? e.message : e), 'error');
             });
         }
+        // One delegated handler for the history cards (keys come from the
+        // database, so they are never spliced into inline onclick JS).
+        document.getElementById('sbarHistoryList').addEventListener('click', function (e) {
+            const item = e.target.closest('.report-item');
+            if (!item) return;
+            const key = item.getAttribute('data-key');
+            if (e.target.closest('.report-item-del')) { e.stopPropagation(); deleteSbarReport(key); return; }
+            loadSbarReport(key);
+        });
 
         function loadSbarReport(key) {
-            database.ref('sbarReports/' + currentUid + '/' + key).once('value').then(snap => {
+            key = String(key);
+            const go = () => database.ref('sbarReports/' + currentUid + '/' + key).once('value').then(snap => {
                 const data = snap.val();
-                if (!data) return;
+                if (!data) { showToast('That report no longer exists.', 'warning'); loadSbarHistory(); return; }
+                const hint = document.getElementById('sbarPrefillHint');
+                if (hint) hint.remove();
                 if (data.formState) {
                     applySbarFormState(data.formState);
                     document.getElementById('sbarOutputText').textContent = data.reportText || '';
+                    sbarOutputFromForm = true;
                     currentSbarReportKey = key;
+                    _sbarCleanSnapshot = JSON.stringify(captureSbarFormState());
                     showSbarTab('situation');
                     showToast('Loaded — edit any tab, then "Save to Account" updates this report.', 'success');
                 } else {
                     // Legacy text-only record (schemaVersion 1)
                     document.getElementById('sbarOutputText').textContent = data.reportText || '';
+                    sbarOutputFromForm = false;
                     currentSbarReportKey = null;
+                    _sbarCleanSnapshot = null;
                     showSbarTab('output');
                     showToast('Loaded (text only — older save format).', 'info');
                 }
-            });
+                writeSbarDraft(!!data.formState);
+            }).catch(e => showToast('Load failed: ' + (e && e.message ? e.message : e), 'error'));
+            // Ask before replacing unsaved edits (a form that matches the last
+            // save/load, or reopening the same report, loads straight away)
+            const state = captureSbarFormState();
+            const hasContent = state.chips.length > 0 || Object.values(state.fields).some(v => v && String(v).trim());
+            const dirty = hasContent && JSON.stringify(state) !== _sbarCleanSnapshot;
+            if (dirty && String(currentSbarReportKey) !== key) {
+                showConfirmModal('Load Report', 'Replace the current form with this saved report? Unsaved changes will be lost.', go, { confirmText: 'Load' });
+            } else {
+                go();
+            }
         }
 
         function deleteSbarReport(key) {
             showConfirmModal('Delete Report', 'Delete this saved SBAR report?', function() {
                 database.ref('sbarReports/' + currentUid + '/' + key).remove().then(() => {
-                    if (currentSbarReportKey === key) currentSbarReportKey = null;
+                    if (String(currentSbarReportKey) === String(key)) { currentSbarReportKey = null; _sbarCleanSnapshot = null; writeSbarDraft(); }
                     showToast('Report deleted.', 'success');
                     loadSbarHistory();
-                });
+                }).catch(e => showToast('Delete failed: ' + (e && e.message ? e.message : e), 'error'));
             }, { confirmText: 'Delete', danger: true });
-        }
-
-        function clearSbarForm() {
-            // Same effect as "+ New SBAR" — just keep the legacy clear name for compatibility
-            startNewSbarReport();
         }
 
         // ============================================================
@@ -1148,8 +1354,11 @@
             // patientDemo is freeform — common forms: "42yom", "68 F", "55yof",
             // "M 22", "Female 78". Extract first 2-3 digit number + first M/F.
             if (!demo) return { age: '', sex: '' };
-            const ageMatch = String(demo).match(/\b(\d{1,3})\b/);
-            const sexMatch = String(demo).match(/\b(M|F|Male|Female|Man|Woman|Boy|Girl)\b/i);
+            // No \b around the digits or the M/F: "42yom" has no word boundary there.
+            const str = String(demo);
+            const ageMatch = str.match(/(?:^|\D)(\d{1,3})(?!\d)/);
+            const sexMatch = str.match(/\d\s*(?:y\/?o|yrs?|y)\s*([mf])(?![a-z])/i) ||
+                             str.match(/\b(male|female|man|woman|boy|girl|m|f)\b/i);
             let sex = '';
             if (sexMatch) {
                 const s = sexMatch[1].toLowerCase();
@@ -1174,7 +1383,8 @@
                     const last = docs[docs.length - 1];
                     const c = (last && last.content) || {};
                     const pName = c.patientId || last.patientName || '';
-                    if (!pName || (nameEl && nameEl.value.trim())) return;
+                    // 'N/A' / 'Unknown Patient' are RN Note placeholders, not names
+                    if (!pName || pName === 'N/A' || pName === 'Unknown Patient' || (nameEl && nameEl.value.trim())) return;
                     nameEl.value = pName;
                     // Parse age + sex from patientDemo
                     const parsed = _parseAgeSexFromDemo(c.patientDemo);
@@ -1199,10 +1409,39 @@
                 });
         }
 
+        // Site-wide alert / FYI banners (announcements node, set by admins)
+        function renderAnnouncements(snap) {
+            const d = snap.val() || {};
+            const ab = document.getElementById('alertBanner'), fb = document.getElementById('fyiBanner');
+            const hasAlert = !!(d.alert && d.alert.message), hasFyi = !!(d.fyi && d.fyi.message);
+            if (ab) {
+                ab.style.display = hasAlert ? 'block' : 'none';
+                if (hasAlert) document.getElementById('alertText').textContent = d.alert.message;
+            }
+            if (fb) {
+                fb.style.display = hasFyi ? 'block' : 'none';
+                fb.style.top = hasAlert ? '50px' : '0';
+                if (hasFyi) document.getElementById('fyiText').textContent = d.fyi.message;
+            }
+            document.body.classList.toggle('has-alert', hasAlert && !!ab);
+            document.body.classList.toggle('has-fyi', hasFyi && !!fb);
+        }
+        let _announcementsWired = false;
+
         // Fire after auth resolves. Use Firebase Auth state since currentUid
         // is read from localStorage at script load — may be stale.
         firebase.auth().onAuthStateChanged(function (user) {
-            if (user && user.uid) prefillSbarFromLastRnNote();
+            if (!user || !user.uid) {
+                if (_announcementsWired) { database.ref('announcements').off('value', renderAnnouncements); _announcementsWired = false; }
+                return;
+            }
+            // Pull the account's saved theme and let theme changes here sync back
+            if (window.initThemeSync) window.initThemeSync(database, user.uid);
+            if (!_announcementsWired) {
+                _announcementsWired = true;
+                database.ref('announcements').on('value', renderAnnouncements, function () { _announcementsWired = false; });
+            }
+            prefillSbarFromLastRnNote();
         });
     </script>
 </body>

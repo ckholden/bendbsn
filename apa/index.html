@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <script>
         // Auth check - must be logged in
@@ -12,7 +12,7 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#1f4e79">
+    <meta name="theme-color" content="#0d1f2d">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
@@ -91,11 +91,11 @@
         }
 
         .form-section h3 {
-            color: var(--clx-accent);
+            color: var(--clx-text-primary);
             font-size: 16px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid var(--clx-accent);
+            border-bottom: 1px solid var(--clx-border);
         }
 
         .form-row {
@@ -113,6 +113,13 @@
         .form-group.full-width {
             flex: 100%;
             min-width: 100%;
+        }
+
+        /* Short values (year, volume/issue, pages, edition): stop them taking half
+           the row, but keep room for "pp. 100-150" / "2nd ed." without clipping */
+        .form-group.short {
+            flex: 0 1 150px;
+            min-width: 128px;
         }
 
         .form-group label {
@@ -142,14 +149,6 @@
             line-height: 1.6;
         }
 
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--clx-accent);
-            box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.12);
-        }
-
         .btn {
             padding: 10px 20px;
             border: none;
@@ -160,35 +159,6 @@
             transition: all 0.2s;
             font-family: inherit;
         }
-
-        .btn-primary {
-            background: var(--clx-accent);
-            color: white;
-        }
-
-        .btn-primary:hover { opacity: 0.88; }
-
-        .btn-success {
-            background: #16a34a;
-            color: white;
-        }
-
-        .btn-success:hover { background: #15803d; }
-
-        .btn-secondary {
-            background: var(--clx-bg-surface-2);
-            color: var(--clx-text-primary);
-            border: 1px solid var(--clx-border);
-        }
-
-        .btn-secondary:hover { opacity: 0.8; }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover { background: #c82333; }
 
         .btn:disabled {
             opacity: 0.7;
@@ -232,8 +202,8 @@
 
         .ref-type-btn.active {
             border-color: var(--clx-accent);
-            background: var(--clx-accent);
-            color: white;
+            background: var(--clx-accent-subtle);
+            color: var(--clx-text-primary);
         }
 
         .ref-type-btn .icon { font-size: 24px; display: block; margin-bottom: 5px; }
@@ -280,8 +250,8 @@
         }
 
         .delete-ref {
-            background: #dc3545;
-            color: white;
+            background: var(--clx-danger);
+            color: #fff;
             border: none;
             padding: 5px 10px;
             border-radius: 4px;
@@ -290,7 +260,15 @@
             flex-shrink: 0;
         }
 
-        .delete-ref:hover { background: #c82333; }
+        .delete-ref:hover { filter: brightness(0.92); }
+
+        [data-theme="dark"] .delete-ref {
+            background: var(--clx-danger-bg);
+            color: var(--clx-danger-text);
+            border: 1px solid var(--clx-danger);
+        }
+
+        [data-theme="dark"] .delete-ref:hover { filter: brightness(1.2); }
 
         /* Preview — intentionally paper-white for accurate APA preview */
         .preview-container {
@@ -337,6 +315,13 @@
             text-indent: 0.5in;
         }
 
+        /* APA 7: paper title repeated, bold + centered, atop the first body page */
+        .preview-body .preview-body-title {
+            text-align: center;
+            font-weight: bold;
+            text-indent: 0;
+        }
+
         .preview-references {
             padding-top: 24pt;
         }
@@ -357,6 +342,7 @@
         @media (max-width: 768px) {
             .form-row { flex-direction: column; }
             .form-group { min-width: 100%; }
+            .form-group.short { flex: 1; min-width: 100%; }
             .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
             .tab { padding: 10px 16px; font-size: 13px; white-space: nowrap; }
             .preview-container { padding: 20px 30px; }
@@ -376,11 +362,29 @@
             .form-section { border-radius: 0 !important; }
         }
 
+        /* 44px touch targets on touch devices */
+        @media (pointer: coarse) {
+            .btn, .tab, .ref-type-btn, .delete-ref { min-height: 44px; }
+            .delete-ref { min-width: 64px; }
+            .form-group input, .form-group select { min-height: 44px; }
+        }
+
         /* Helper text */
         .helper-text {
             font-size: 11px;
             color: var(--clx-text-secondary);
             margin-top: 4px;
+        }
+
+        .helper-text-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .word-count {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .info-box {
@@ -433,35 +437,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
         <a href="/apa/" class="clx-sidebar-item active" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -572,8 +562,8 @@ Your content will be exported with:
 - Double spacing
 - 1-inch margins
 - 0.5-inch first-line indent for each paragraph
-- Running head with page numbers"></textarea>
-                        <div class="helper-text">Separate paragraphs with a blank line. Indentation will be added automatically.</div>
+- Page numbers on every page"></textarea>
+                        <div class="helper-text helper-text-row"><span>Separate paragraphs with a blank line. Indentation will be added automatically.</span><span class="word-count" id="bodyWordCount">0 words</span></div>
                     </div>
                 </div>
             </div>
@@ -592,7 +582,7 @@ Your content will be exported with:
                     <div class="form-row" style="align-items: flex-end;">
                         <div class="form-group" style="flex: 3;">
                             <label>URL or DOI</label>
-                            <input type="text" id="citationUrl" placeholder="https://doi.org/... or https://pubmed.ncbi.nlm.nih.gov/... or any article URL">
+                            <input type="text" id="citationUrl" placeholder="https://doi.org/... or https://pubmed.ncbi.nlm.nih.gov/... or any article URL" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();document.getElementById('fetchCitationBtn').click();}">
                         </div>
                         <div class="form-group" style="flex: 0 0 auto;">
                             <button class="btn btn-primary" onclick="fetchCitationFromUrl()" id="fetchCitationBtn">
@@ -634,7 +624,7 @@ Your content will be exported with:
                                 <input type="text" id="journalAuthors" placeholder="Last, F. M., & Last, F. M.">
                                 <div class="helper-text">Format: Last, F. M. Use & before last author</div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group short">
                                 <label>Publication Year</label>
                                 <input type="text" id="journalYear" placeholder="2024">
                             </div>
@@ -648,13 +638,13 @@ Your content will be exported with:
                                 <label>Journal Name</label>
                                 <input type="text" id="journalName" placeholder="Journal Name in Title Case (italicized)">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group short">
                                 <label>Volume(Issue)</label>
                                 <input type="text" id="journalVolume" placeholder="12(3)">
                             </div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group">
+                            <div class="form-group short">
                                 <label>Page Range</label>
                                 <input type="text" id="journalPages" placeholder="45-67">
                             </div>
@@ -673,7 +663,7 @@ Your content will be exported with:
                                 <label>Author(s)</label>
                                 <input type="text" id="bookAuthors" placeholder="Last, F. M., & Last, F. M.">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group short">
                                 <label>Publication Year</label>
                                 <input type="text" id="bookYear" placeholder="2024">
                             </div>
@@ -683,7 +673,7 @@ Your content will be exported with:
                             <input type="text" id="bookTitle" placeholder="Book title in sentence case (italicized)">
                         </div>
                         <div class="form-row">
-                            <div class="form-group">
+                            <div class="form-group short">
                                 <label>Edition (if not first)</label>
                                 <input type="text" id="bookEdition" placeholder="2nd ed.">
                             </div>
@@ -733,7 +723,7 @@ Your content will be exported with:
                                 <label>Chapter Author(s)</label>
                                 <input type="text" id="chapterAuthors" placeholder="Last, F. M., & Last, F. M.">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group short">
                                 <label>Publication Year</label>
                                 <input type="text" id="chapterYear" placeholder="2024">
                             </div>
@@ -753,7 +743,7 @@ Your content will be exported with:
                             </div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group">
+                            <div class="form-group short">
                                 <label>Page Range</label>
                                 <input type="text" id="chapterPages" placeholder="pp. 100-150">
                             </div>
@@ -771,7 +761,7 @@ Your content will be exported with:
                     <div class="reference-list" id="referenceList">
                         <p style="color: var(--clx-text-secondary); text-align: center; padding: 20px;">No references added yet. Use the form above to add references.</p>
                     </div>
-                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn btn-secondary" onclick="sortReferences()">Sort Alphabetically</button>
                         <button class="btn btn-danger" onclick="clearReferences()">Clear All</button>
                     </div>
@@ -812,14 +802,22 @@ Your content will be exported with:
 
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="updatePreview()">Update Preview</button>
-                <button class="btn btn-success" onclick="exportToWord()">Export to Word (.docx)</button>
+                <button class="btn btn-secondary" onclick="updatePreview()">Update Preview</button>
+                <button class="btn btn-primary" onclick="exportToWord()">Export to Word (.docx)</button>
                 <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
             </div>
         </div>
     </div>
 </main><!-- /clx-main -->
 </div><!-- /clx-shell -->
+
+    <!-- Mobile bottom nav -->
+    <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+        <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
+        <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
+        <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
+        <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
+    </nav>
 
     <!-- Load docx library for Word export -->
     <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
@@ -873,34 +871,113 @@ Your content will be exported with:
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            initTheme();
-            document.getElementById('dueDate').valueAsDate = new Date();
+            document.getElementById('dueDate').value = todayLocalISO();
+            restoreDraft();
+            DRAFT_FIELDS.forEach(id => document.getElementById(id).addEventListener('input', saveDraft));
+            document.getElementById('bodyContent').addEventListener('input', updateWordCount);
+            updateWordCount();
             updatePreview();
         });
 
+        // Today's date as YYYY-MM-DD in local time (valueAsDate = new Date() writes
+        // the UTC date, which is already tomorrow on Pacific-time evenings)
+        function todayLocalISO() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        // Live word count for the paper body
+        function updateWordCount() {
+            const n = (document.getElementById('bodyContent').value.match(/\S+/g) || []).length;
+            document.getElementById('bodyWordCount').textContent = n.toLocaleString('en-US') + (n === 1 ? ' word' : ' words');
+        }
+
         // Theme Management
+        // Must run synchronously, before /shared/header.js loads: header.js calls
+        // setTheme(getTheme()) at load, which would otherwise persist 'light'.
         function initTheme() {
             const saved = localStorage.getItem('bendbsn_theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
-            updateThemeIcon();
         }
+        initTheme();
 
+        // Fallback only — header.js replaces this with its theme picker
         function toggleDarkMode() {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const newTheme = isDark ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('bendbsn_theme', newTheme);
-            updateThemeIcon();
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            if (window.setTheme) { window.setTheme(next); return; }
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('bendbsn_theme', next);
         }
 
-        function updateThemeIcon() {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const themeMenuIcon = document.getElementById('themeMenuIcon');
-            const themeMenuText = document.getElementById('themeMenuText');
-            if (themeMenuIcon) themeMenuIcon.innerHTML = isDark ? '&#9728;' : '&#127769;';
-            if (themeMenuText) themeMenuText.textContent = 'Theme';
-                    const sidebarIcon = document.getElementById('sidebarThemeIcon');
-            if (sidebarIcon) sidebarIcon.textContent = isDark ? '☀️' : '🌙';
+        // ========== DRAFT AUTOSAVE ==========
+        // Paper fields + reference list persist locally so a reload, PWA restart or
+        // idle logout doesn't wipe the paper. Tagged with the owner's uid so the next
+        // student on a shared computer never gets it restored.
+        const DRAFT_KEY = 'bendbsn_draft_apa';
+        const DRAFT_FIELDS = ['paperTitle', 'authorName', 'institution', 'courseName', 'instructorName', 'dueDate', 'bodyContent'];
+        let draftTimer = null;
+
+        function saveDraftNow() {
+            clearTimeout(draftTimer);
+            draftTimer = null;
+            try {
+                const fields = {};
+                DRAFT_FIELDS.forEach(id => { fields[id] = document.getElementById(id).value; });
+                localStorage.setItem(DRAFT_KEY, JSON.stringify({
+                    uid: localStorage.getItem('bendbsn_uid') || '',
+                    savedAt: Date.now(),
+                    fields: fields,
+                    references: references
+                }));
+            } catch (e) { /* storage full or blocked — nothing to do */ }
+        }
+
+        function saveDraft() {
+            clearTimeout(draftTimer);
+            draftTimer = setTimeout(saveDraftNow, 800);
+        }
+
+        function discardDraft() {
+            clearTimeout(draftTimer);
+            draftTimer = null;
+            try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        }
+
+        function flushDraft() {
+            if (draftTimer) saveDraftNow();
+        }
+        window.addEventListener('pagehide', flushDraft);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') flushDraft();
+        });
+
+        function restoreDraft() {
+            let draft;
+            try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { return; }
+            if (!draft || typeof draft !== 'object') return;
+            const uid = localStorage.getItem('bendbsn_uid') || '';
+            if (draft.uid && draft.uid !== uid) return;
+
+            let restored = false;
+            if (draft.fields && typeof draft.fields === 'object') {
+                DRAFT_FIELDS.forEach(id => {
+                    const v = draft.fields[id];
+                    if (typeof v !== 'string') return;
+                    document.getElementById(id).value = v;
+                    if (v && id !== 'dueDate') restored = true;
+                });
+            }
+            if (Array.isArray(draft.references)) {
+                // ref.text is rendered via innerHTML. It was escaped when built, so the
+                // only markup it can legitimately contain is <i>…</i> — reject anything else.
+                references = draft.references
+                    .filter(r => r && typeof r.text === 'string' && typeof r.sortKey === 'string' && !/<(?!\/?i>)/.test(r.text))
+                    .map(r => ({ text: r.text, sortKey: r.sortKey, plainText: typeof r.plainText === 'string' ? r.plainText : '' }));
+                if (references.length) restored = true;
+                renderReferences();
+            }
+            if (restored) showToast('Restored your unsaved APA draft.', 'info');
         }
 
         // Tab Navigation
@@ -945,7 +1022,12 @@ Your content will be exported with:
 
                 sortKey = authors.split(',')[0].toLowerCase();
                 refText = `${escapeHtml(authors)} (${escapeHtml(year)}). ${escapeHtml(title)}. <i>${escapeHtml(journal)}</i>`;
-                if (volume) refText += `, <i>${escapeHtml(volume)}</i>`;
+                if (volume) {
+                    // APA 7: volume is italic, issue is not — "12(3)" → <i>12</i>(3)
+                    const vm = volume.match(/^([^(]*)(\(.*\))?$/) || [volume, volume, ''];
+                    const vol = vm[1].trim();
+                    refText += `, ${vol ? `<i>${escapeHtml(vol)}</i>` : ''}${vm[2] ? escapeHtml(vm[2]) : ''}`;
+                }
                 if (pages) refText += `, ${escapeHtml(pages)}`;
                 refText += '.';
                 if (doi) refText += ` ${escapeHtml(doi)}`;
@@ -1025,13 +1107,14 @@ Your content will be exported with:
                 });
             }
 
-            references.push({ text: refText, sortKey: sortKey, plainText: refText.replace(/<[^>]*>/g, '') });
+            references.push({ text: refText, sortKey: sortKey, plainText: decodeEntities(refText.replace(/<[^>]*>/g, '')) });
             renderReferences();
             showToast('Reference added successfully!', 'success');
         }
 
         // Render References List
         function renderReferences() {
+            saveDraft(); // every add/delete/sort/clear re-renders — before the empty early-return
             const list = document.getElementById('referenceList');
             if (references.length === 0) {
                 list.innerHTML = '<p style="color: var(--clx-text-secondary); text-align: center; padding: 20px;">No references added yet.</p>';
@@ -1088,9 +1171,11 @@ Your content will be exported with:
             document.getElementById('previewInstructor').textContent = instructor;
             document.getElementById('previewDate').textContent = date;
 
-            // Format body - split into paragraphs
-            const paragraphs = body.split(/\n\s*\n/).filter(p => p.trim());
-            document.getElementById('previewBody').innerHTML = paragraphs.map(p =>
+            // Format body - split into paragraphs; APA 7 repeats the title (bold, centered)
+            // at the top of the first body page (replacing a typed-in copy, as the export does)
+            let paragraphs = body.split(/\n\s*\n/).filter(p => p.trim());
+            if (isSameTitle(paragraphs[0], title)) paragraphs = paragraphs.slice(1);
+            document.getElementById('previewBody').innerHTML = `<p class="preview-body-title">${escapeHtml(title)}</p>` + paragraphs.map(p =>
                 `<p>${escapeHtml(p.trim())}</p>`
             ).join('');
 
@@ -1111,6 +1196,21 @@ Your content will be exported with:
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Inverse of escapeHtml, for plain-text sinks (docx TextRun escapes on its own).
+        // A detached <textarea> parses as RCDATA, so no markup or scripts are created.
+        function decodeEntities(text) {
+            const t = document.createElement('textarea');
+            t.innerHTML = text;
+            return t.value;
+        }
+
+        // True when a body paragraph is just the paper title (some students type it there,
+        // which predates the generator adding the title itself)
+        function isSameTitle(paragraph, title) {
+            const norm = s => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+            return !!paragraph && norm(paragraph) === norm(title);
         }
 
         // Fetch Citation from URL using Citoid API
@@ -1182,24 +1282,40 @@ Your content will be exported with:
             }
         }
 
+        // Split a Citoid person into { first, last }. The mediawiki format sends
+        // [given, family] arrays (["John P. A.", "Ioannidis"]; orgs as ["", "WHO"]);
+        // a lone ["Org"] is treated as a surname/organization, never as initials.
+        function citoidNameParts(person) {
+            if (Array.isArray(person)) {
+                if (person.length === 1) return { first: '', last: String(person[0] || '').trim() };
+                return { first: String(person[0] || '').trim(), last: String(person[1] || '').trim() };
+            }
+            return { first: String(person.firstName || '').trim(), last: String(person.lastName || '').trim() };
+        }
+
+        // "John P. A." → "J. P. A."
+        function initialsOf(first) {
+            return first.split(/[\s-]+/)
+                .filter(n => n)
+                .map(n => n.charAt(0).toUpperCase() + '.')
+                .join(' ');
+        }
+
         // Format authors for APA (Last, F. M., & Last, F. M.)
         function formatAuthorsAPA(authors) {
             if (!authors || authors.length === 0) return '';
 
             const formatted = authors.map(author => {
                 if (typeof author === 'string') return author;
+                if (!author) return '';
 
-                const last = author.lastName || author[0] || '';
-                const first = author.firstName || author[1] || '';
+                const { first, last } = citoidNameParts(author);
 
                 if (!last && !first) return '';
 
-                // Get initials from first name
-                const initials = first.split(/[\s-]+/)
-                    .map(n => n.charAt(0).toUpperCase() + '.')
-                    .join(' ');
+                const initials = initialsOf(first);
 
-                return last + (initials ? ', ' + initials : '');
+                return last ? last + (initials ? ', ' + initials : '') : initials;
             }).filter(a => a);
 
             if (formatted.length === 0) return '';
@@ -1211,6 +1327,26 @@ Your content will be exported with:
             return allButLast + ', & ' + formatted[formatted.length - 1];
         }
 
+        // Format book editors for APA 7: initials first, "(Ed.)" / "(Eds.)"
+        // e.g. "F. M. Last (Ed.)", "A. Smith & B. Jones (Eds.)", "A. Smith, B. Jones, & C. Lee (Eds.)"
+        function formatEditorsAPA(editors) {
+            if (!Array.isArray(editors) || editors.length === 0) return '';
+
+            const names = editors.map(editor => {
+                if (typeof editor === 'string') return editor.trim();
+                if (!editor) return '';
+                const { first, last } = citoidNameParts(editor);
+                return [initialsOf(first), last].filter(s => s).join(' ');
+            }).filter(n => n);
+
+            if (names.length === 0) return '';
+            let joined;
+            if (names.length === 1) joined = names[0];
+            else if (names.length === 2) joined = names.join(' & ');
+            else joined = names.slice(0, -1).join(', ') + ', & ' + names[names.length - 1];
+            return joined + (names.length === 1 ? ' (Ed.)' : ' (Eds.)');
+        }
+
         // Format date for APA (Year, Month Day or just Year)
         function formatDateAPA(date, includeMonthDay = false) {
             if (!date) return '';
@@ -1218,8 +1354,21 @@ Your content will be exported with:
             // Try to parse the date
             let parsed;
             if (typeof date === 'string') {
-                // Handle formats like "2024-01-15" or "January 15, 2024"
-                parsed = new Date(date);
+                // Handle formats like "2024-01-15" or "January 15, 2024".
+                // Date-only ISO strings ("2024", "2024-01", "2024-01-15") parse as UTC
+                // midnight — the previous day/year west of UTC — so build them locally.
+                const iso = date.trim().match(/^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$/);
+                if (iso) {
+                    // APA 7: don't invent a month/day the source doesn't give
+                    if (includeMonthDay && !iso[3]) {
+                        if (!iso[2] || +iso[2] < 1 || +iso[2] > 12) return iso[1];
+                        const monthName = new Date(+iso[1], +iso[2] - 1, 1).toLocaleString('en-US', { month: 'long' });
+                        return `${iso[1]}, ${monthName}`;
+                    }
+                    parsed = new Date(+iso[1], (+iso[2] || 1) - 1, +iso[3] || 1);
+                } else {
+                    parsed = new Date(date);
+                }
             } else if (Array.isArray(date) && date[0]) {
                 // Citoid format: [[year, month, day]]
                 const parts = date[0];
@@ -1296,7 +1445,7 @@ Your content will be exported with:
             const publisher = citation.publisher || '';
 
             // Format editors
-            const editors = citation.editor ? formatAuthorsAPA(citation.editor).replace(/,\s*&/, ' &') + ' (Eds.)' : '';
+            const editors = citation.editor ? formatEditorsAPA(citation.editor) : '';
 
             document.getElementById('chapterAuthors').value = authors;
             document.getElementById('chapterYear').value = year;
@@ -1327,7 +1476,9 @@ Your content will be exported with:
                 }
             }
 
-            const date = formatDateAPA(citation.date || citation.issued || citation.accessDate, true);
+            // Not accessDate: Citoid sets it to today, so an undated page would be
+            // cited as published today instead of (n.d.)
+            const date = formatDateAPA(citation.date || citation.issued, true);
             const title = citation.title || '';
             const siteName = citation.websiteTitle || citation.publicationTitle || citation.publisher || '';
             const url = citation.url || originalUrl;
@@ -1356,17 +1507,35 @@ Your content will be exported with:
             }
 
             try {
-                const { Document, Packer, Paragraph, TextRun, AlignmentType, Header, PageNumber, NumberFormat, convertInchesToTwip } = docx;
+                const { Document, Packer, Paragraph, TextRun, AlignmentType, Header, PageNumber, convertInchesToTwip } = docx;
+
+                // APA 7 student papers: page number top-right on every page, title page
+                // included. A factory, not a shared instance — docx gives each Header
+                // object its own part/relationship, so don't reuse one across sections.
+                const pageNumberHeader = () => new Header({
+                    children: [
+                        new Paragraph({
+                            alignment: AlignmentType.RIGHT,
+                            children: [
+                                new TextRun({
+                                    font: 'Times New Roman',
+                                    size: 24,
+                                    children: [PageNumber.CURRENT],
+                                }),
+                            ],
+                        }),
+                    ],
+                });
 
                 // Create title page content
                 const titlePageChildren = [
-                    // Add spacing at top (approximately 3 inches down)
-                    ...Array(8).fill(null).map(() => new Paragraph({ spacing: { after: 480 } })),
+                    // APA 7: title sits 3-4 double-spaced lines below the top margin
+                    ...Array(3).fill(null).map(() => new Paragraph({ spacing: { after: 0, line: 480 }, children: [new TextRun({ text: '', font: 'Times New Roman', size: 24 })] })),
 
                     // Title (bold, centered)
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 480, line: 480 }, // Double spacing = 480
+                        spacing: { after: 0, line: 480 }, // Double spacing = 480; no extra gap (APA 7)
                         children: [
                             new TextRun({
                                 text: title,
@@ -1378,12 +1547,12 @@ Your content will be exported with:
                     }),
 
                     // Blank line
-                    new Paragraph({ spacing: { after: 480, line: 480 } }),
+                    new Paragraph({ spacing: { after: 0, line: 480 }, children: [new TextRun({ text: '', font: 'Times New Roman', size: 24 })] }),
 
                     // Author
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 480, line: 480 },
+                        spacing: { after: 0, line: 480 },
                         children: [
                             new TextRun({
                                 text: author || 'Author Name',
@@ -1396,7 +1565,7 @@ Your content will be exported with:
                     // Institution
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 480, line: 480 },
+                        spacing: { after: 0, line: 480 },
                         children: [
                             new TextRun({
                                 text: institution || 'Institution',
@@ -1409,7 +1578,7 @@ Your content will be exported with:
                     // Course
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 480, line: 480 },
+                        spacing: { after: 0, line: 480 },
                         children: [
                             new TextRun({
                                 text: course || 'Course',
@@ -1422,7 +1591,7 @@ Your content will be exported with:
                     // Instructor
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 480, line: 480 },
+                        spacing: { after: 0, line: 480 },
                         children: [
                             new TextRun({
                                 text: instructor || 'Instructor',
@@ -1435,7 +1604,7 @@ Your content will be exported with:
                     // Date
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 480, line: 480 },
+                        spacing: { after: 0, line: 480 },
                         children: [
                             new TextRun({
                                 text: date || 'Date',
@@ -1447,7 +1616,8 @@ Your content will be exported with:
                 ];
 
                 // Create body content paragraphs
-                const bodyParagraphs = bodyContent.split(/\n\s*\n/).filter(p => p.trim()).map(paragraph =>
+                const bodyTexts = bodyContent.split(/\n\s*\n/).filter(p => p.trim());
+                const bodyParagraphs = bodyTexts.map(paragraph =>
                     new Paragraph({
                         alignment: AlignmentType.LEFT,
                         spacing: { after: 0, line: 480 }, // Double spacing
@@ -1480,12 +1650,31 @@ Your content will be exported with:
                     );
                 }
 
+                // APA 7: repeat the paper title (bold, centered) atop the first body page.
+                // If the student already typed it as the first paragraph, replace that
+                // indented copy rather than printing the title twice.
+                if (isSameTitle(bodyTexts[0], title)) bodyParagraphs.shift();
+                bodyParagraphs.unshift(
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 0, line: 480 },
+                        children: [
+                            new TextRun({
+                                text: title,
+                                bold: true,
+                                font: 'Times New Roman',
+                                size: 24,
+                            }),
+                        ],
+                    })
+                );
+
                 // Create references content
                 const referencesChildren = [
                     // "References" heading (centered, bold)
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 480, line: 480 },
+                        spacing: { after: 0, line: 480 },
                         children: [
                             new TextRun({
                                 text: 'References',
@@ -1517,9 +1706,10 @@ Your content will be exported with:
                     );
                 } else {
                     sortedRefs.forEach(ref => {
-                        // Parse the reference text to handle italics
+                        // Parse the reference text to handle italics. ref.text is HTML-escaped,
+                        // so decode each segment AFTER the <i> split (TextRun escapes itself;
+                        // undecoded, "&" would reach Word as a literal "&amp;").
                         const parts = [];
-                        let remaining = ref.text;
                         const italicRegex = /<i>([^<]*)<\/i>/g;
                         let lastIndex = 0;
                         let match;
@@ -1528,14 +1718,14 @@ Your content will be exported with:
                             // Add text before italic
                             if (match.index > lastIndex) {
                                 parts.push(new TextRun({
-                                    text: ref.text.substring(lastIndex, match.index),
+                                    text: decodeEntities(ref.text.substring(lastIndex, match.index)),
                                     font: 'Times New Roman',
                                     size: 24,
                                 }));
                             }
                             // Add italic text
                             parts.push(new TextRun({
-                                text: match[1],
+                                text: decodeEntities(match[1]),
                                 font: 'Times New Roman',
                                 size: 24,
                                 italics: true,
@@ -1546,7 +1736,7 @@ Your content will be exported with:
                         // Add remaining text
                         if (lastIndex < ref.text.length) {
                             parts.push(new TextRun({
-                                text: ref.text.substring(lastIndex).replace(/<[^>]*>/g, ''),
+                                text: decodeEntities(ref.text.substring(lastIndex).replace(/<[^>]*>/g, '')),
                                 font: 'Times New Roman',
                                 size: 24,
                             }));
@@ -1574,7 +1764,7 @@ Your content will be exported with:
                 // Create the document
                 const doc = new Document({
                     sections: [
-                        // Title page (no header)
+                        // Title page (numbered page 1)
                         {
                             properties: {
                                 page: {
@@ -1586,6 +1776,7 @@ Your content will be exported with:
                                     },
                                 },
                             },
+                            headers: { default: pageNumberHeader() },
                             children: titlePageChildren,
                         },
                         // Body pages with page numbers
@@ -1600,22 +1791,7 @@ Your content will be exported with:
                                     },
                                 },
                             },
-                            headers: {
-                                default: new Header({
-                                    children: [
-                                        new Paragraph({
-                                            alignment: AlignmentType.RIGHT,
-                                            children: [
-                                                new TextRun({
-                                                    font: 'Times New Roman',
-                                                    size: 24,
-                                                    children: [PageNumber.CURRENT],
-                                                }),
-                                            ],
-                                        }),
-                                    ],
-                                }),
-                            },
+                            headers: { default: pageNumberHeader() },
                             children: bodyParagraphs,
                         },
                         // References page
@@ -1630,22 +1806,7 @@ Your content will be exported with:
                                     },
                                 },
                             },
-                            headers: {
-                                default: new Header({
-                                    children: [
-                                        new Paragraph({
-                                            alignment: AlignmentType.RIGHT,
-                                            children: [
-                                                new TextRun({
-                                                    font: 'Times New Roman',
-                                                    size: 24,
-                                                    children: [PageNumber.CURRENT],
-                                                }),
-                                            ],
-                                        }),
-                                    ],
-                                }),
-                            },
+                            headers: { default: pageNumberHeader() },
                             children: referencesChildren,
                         },
                     ],
@@ -1673,17 +1834,43 @@ Your content will be exported with:
                 });
 
                 // Reset date to today
-                document.getElementById('dueDate').valueAsDate = new Date();
+                document.getElementById('dueDate').value = todayLocalISO();
 
                 // Clear references
                 references = [];
                 renderReferences();
 
+                // Drop the saved draft (after renderReferences, which queues a save)
+                discardDraft();
+
                 // Update preview
                 updatePreview();
+                updateWordCount();
 
                 showToast('All data cleared', 'info');
             }, { danger: true });
+        }
+
+        // ========== LOCK / LOGOUT ==========
+        function lockScreen() {
+            flushDraft();
+            localStorage.removeItem('bendbsn_auth');
+            window.location.href = '/';
+        }
+
+        function logout() {
+            showConfirmModal('Logout', 'Are you sure you want to logout?', function () {
+                flushDraft();
+                const finish = function () {
+                    ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid',
+                     'bendbsn_role_v2', 'bendbsn_login_at'].forEach(k => {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                    });
+                    window.location.href = '/';
+                };
+                // End the Firebase session first, then clear local auth and redirect
+                try { auth.signOut().then(finish, finish); } catch (e) { finish(); }
+            }, { confirmText: 'Logout', danger: true });
         }
 
         // ========== SIDEBAR ==========
@@ -1716,9 +1903,4 @@ Your content will be exported with:
     <script src="/shared/header.js"></script>
 </body>
 </html>
-
-
-
-
-
 

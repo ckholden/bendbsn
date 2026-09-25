@@ -92,13 +92,27 @@
             const val = decls[i].slice(colon + 1).trim();
             if (prop !== 'color' && prop !== 'background-color') continue;
             const norm = normalizeColor(val);
+            // White highlight = the old 'Clear' swatch's placeholder; it shows
+            // as a white bar in dark mode, so drop it from saved notes.
+            if (prop === 'background-color' && norm === '#ffffff') continue;
             if (norm) out.push(prop + ':' + norm);
         }
         return out.join(';');
     }
 
+    // Parse HTML into a detached <div> owned by an inert document: no browsing
+    // context, so <img onerror>, <script> etc. never load or run while we
+    // sanitize or read it. Nodes are created in el.ownerDocument below so
+    // they never cross documents.
+    function parseInert(html) {
+        const doc = document.implementation.createHTMLDocument('');
+        const div = doc.createElement('div');
+        div.innerHTML = html || '';
+        return div;
+    }
+
     function renameEl(el, newTag) {
-        const replacement = document.createElement(newTag);
+        const replacement = el.ownerDocument.createElement(newTag);
         while (el.firstChild) replacement.appendChild(el.firstChild);
         el.parentNode.replaceChild(replacement, el);
         return replacement;
@@ -107,7 +121,7 @@
     // Convert legacy <font color="..."> / <font style="..."> emitted by some
     // browsers into <span style="color:..."> so we have one normalized form.
     function normalizeFont(el) {
-        const span = document.createElement('span');
+        const span = el.ownerDocument.createElement('span');
         const styles = [];
         const colorAttr = el.getAttribute('color');
         if (colorAttr) {
@@ -139,8 +153,11 @@
                     tag = c.tagName; // SPAN now
                 }
                 if (!ALLOWED_TAGS.has(tag)) {
-                    // Unwrap: replace element with its children
-                    const frag = document.createDocumentFragment();
+                    // Unwrap: replace element with its children. Clean the
+                    // children first — once hoisted they sit at indices >= i,
+                    // which this reverse loop has already passed.
+                    walkClean(c);
+                    const frag = c.ownerDocument.createDocumentFragment();
                     while (c.firstChild) frag.appendChild(c.firstChild);
                     c.parentNode.replaceChild(frag, c);
                     continue;
@@ -169,8 +186,7 @@
     }
 
     function sanitizeHtml(html) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = html || '';
+        const tmp = parseInert(html);
         walkClean(tmp);
         return tmp.innerHTML;
     }
@@ -181,8 +197,7 @@
     // own lines.
     function stripToPlain(html) {
         if (html == null || html === '') return '';
-        const tmp = document.createElement('div');
-        tmp.innerHTML = html;
+        const tmp = parseInert(html);
         return extractText(tmp).replace(/\n{3,}/g, '\n\n').trim();
     }
     function extractText(node) {
@@ -204,6 +219,10 @@
                 } else if (tag === 'UL' || tag === 'OL') {
                     out += extractText(c) + '\n';
                 } else if (tag === 'P' || tag === 'DIV' || tag === 'H1' || tag === 'H2' || tag === 'H3') {
+                    // A block starts its own line: Chrome keeps line 1 as a bare
+                    // text node and wraps later lines in <div>, so without this
+                    // 'Pt alert<div>Denies pain</div>' became 'Pt alertDenies pain'.
+                    if (out && !out.endsWith('\n')) out += '\n';
                     out += extractText(c) + '\n';
                 } else {
                     out += extractText(c);
@@ -240,15 +259,23 @@
     // --- Editor <-> textarea sync ---------------------------------------
     function editorToTextarea(editor, ta) {
         const html = sanitizeHtml(editor.innerHTML);
-        // If the HTML is just an empty <br> or empty paragraph, store empty string
-        const clean = html.replace(/<br\s*\/?>/gi, '').replace(/<(p|div)>\s*<\/\1>/gi, '');
-        setTextareaRaw(ta, clean ? html : '');
+        // Markup with no visible text (an empty <br>, empty paragraph, or an
+        // empty list shell like <ul><li><br></li></ul>) is stored as ''.
+        const empty = !parseInert(html).textContent.replace(/\u00a0/g, ' ').trim();
+        setTextareaRaw(ta, empty ? '' : html);
     }
     function textareaToEditor(editor, val) {
         if (val == null) val = '';
-        const looksLikeHtml = /<(?:strong|b|em|i|s|del|ul|ol|li|h[1-3]|br|p|div|span)\b/i.test(val);
-        if (looksLikeHtml) {
+        // Stored values are serialized HTML, so a text-only value can still be
+        // entity-encoded ('A&amp;O x4.', '&lt;3s', a trailing '&nbsp;'). Treat
+        // those as HTML too so they decode once instead of double-encoding.
+        const hasTags = /<(?:strong|b|em|i|s|del|ul|ol|li|h[1-3]|br|p|div|span)\b/i.test(val);
+        const hasEntities = /&(?:amp|lt|gt|nbsp|quot|#\d+|#x[0-9a-f]+);/i.test(val);
+        if (hasTags) {
             editor.innerHTML = sanitizeHtml(val);
+        } else if (hasEntities) {
+            // Text-only but entity-encoded; appended lines ('\n') still break.
+            editor.innerHTML = sanitizeHtml(val.replace(/\n/g, '<br>'));
         } else {
             // Plain text → preserve newlines by converting to <br>
             editor.innerHTML = val
@@ -343,7 +370,8 @@
         { hex: '#f97316', label: 'Orange', hint: 'Caution' },
         { hex: '#16a34a', label: 'Green',  hint: 'Normal / WDL' },
         { hex: '#2563eb', label: 'Blue',   hint: 'Info' },
-        { hex: '#111827', label: 'Black',  hint: 'Default (reset)' }
+        // Dark mode renders this colour as the normal text colour (rich-textarea.css)
+        { hex: '#111827', label: 'Default', hint: 'Normal text colour', cls: 'rt-swatch-default' }
     ];
     const HIGHLIGHT_SWATCHES = [
         { hex: '#fef08a', label: 'Yellow' },
@@ -359,7 +387,7 @@
         swatches.forEach(function (s) {
             const sw = document.createElement('button');
             sw.type = 'button';
-            sw.className = 'rt-swatch' + (s.clear ? ' rt-swatch-clear' : '');
+            sw.className = 'rt-swatch' + (s.clear ? ' rt-swatch-clear' : '') + (s.cls ? ' ' + s.cls : '');
             sw.title = s.label + (s.hint ? ' — ' + s.hint : '');
             sw.setAttribute('aria-label', s.label);
             sw.style.background = s.hex;
@@ -403,16 +431,10 @@
         const hlBtn = mkBtn('rt-btn-highlight', 'Highlight', '<span class="rt-color-glyph rt-color-glyph-hl">A</span>',
             function () {
                 const palette = buildSwatchPalette(HIGHLIGHT_SWATCHES, function (s) {
-                    if (s.clear) {
-                        // execCommand 'hiliteColor' with 'transparent' / no value
-                        // doesn't work on all browsers. Fall back to removeFormat
-                        // for the highlight specifically by setting bg to white,
-                        // then we strip white later. Cleanest is to set a no-op
-                        // and rely on user toggle. For now: setBg to inherit-ish.
-                        exec(editor, 'hiliteColor', '#ffffff');
-                    } else {
-                        exec(editor, 'hiliteColor', s.hex);
-                    }
+                    // 'Clear' applies 'transparent': the browser splits the
+                    // selection out of the highlighted span, and the sanitizer
+                    // drops the transparent value (normalizeColor → null).
+                    exec(editor, 'hiliteColor', s.hex);
                     pop.close();
                 });
                 const pop = createPopover(hlBtn, palette, { className: 'rt-popover-palette' });
@@ -471,6 +493,36 @@
         });
     }
 
+    // --- Toolbar active state ---------------------------------------------
+    // Light up B / I / S / list buttons for the formatting at the caret of the
+    // focused editor. One document-level selectionchange listener serves every
+    // editor; the previously lit toolbar is cleared when focus moves on.
+    const STATE_BUTTONS = [
+        ['bold', '.rt-btn-bold'], ['italic', '.rt-btn-italic'],
+        ['strikeThrough', '.rt-btn-strike'],
+        ['insertUnorderedList', '.rt-btn-ul'], ['insertOrderedList', '.rt-btn-ol']
+    ];
+    let _litToolbar = null;
+    function paintToolbarState(toolbar, live) {
+        STATE_BUTTONS.forEach(function (pair) {
+            const btn = toolbar.querySelector(pair[1]);
+            if (!btn) return;
+            let on = false;
+            if (live) { try { on = document.queryCommandState(pair[0]); } catch (e) {} }
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+    function syncToolbarState() {
+        const ae = document.activeElement;
+        const editor = ae && ae.classList && ae.classList.contains('rt-editor') ? ae : null;
+        const toolbar = editor && editor.parentNode ? editor.parentNode.querySelector('.rt-toolbar') : null;
+        if (_litToolbar && _litToolbar !== toolbar) paintToolbarState(_litToolbar, false);
+        _litToolbar = toolbar;
+        if (toolbar) paintToolbarState(toolbar, true);
+    }
+    document.addEventListener('selectionchange', syncToolbarState);
+
     // --- Attach ----------------------------------------------------------
     function attach(ta, opts) {
         if (!ta || ta.tagName !== 'TEXTAREA') return null;
@@ -501,6 +553,7 @@
         } catch (e) { editor.style.minHeight = '4.5em'; }
 
         const toolbar = buildToolbar(editor, ta, opts);
+        paintToolbarState(toolbar, false); // toggle buttons start aria-pressed="false"
 
         // Hide original textarea (keep it in the DOM for form-value access)
         ta.style.display = 'none';
@@ -515,8 +568,8 @@
         textareaToEditor(editor, ta.value);
 
         // Editor → textarea on every edit
-        editor.addEventListener('input', function () { editorToTextarea(editor, ta); });
-        editor.addEventListener('blur', function () { editorToTextarea(editor, ta); });
+        editor.addEventListener('input', function () { editorToTextarea(editor, ta); syncToolbarState(); });
+        editor.addEventListener('blur', function () { editorToTextarea(editor, ta); syncToolbarState(); });
 
         // Paste as plain text (no <span style>, no pasted images)
         editor.addEventListener('paste', function (ev) {
@@ -613,8 +666,7 @@
     // Empty input returns [].
     function parseForExport(html) {
         if (html == null || html === '') return [];
-        const tmp = document.createElement('div');
-        tmp.innerHTML = sanitizeHtml(html);
+        const tmp = parseInert(sanitizeHtml(html));
         const blocks = [];
         walkBlocks(tmp, blocks);
         return blocks;

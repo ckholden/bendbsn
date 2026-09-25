@@ -464,7 +464,11 @@
                     '<div class="cap-braden-opts cols-' + f.opts.length + '">' + optsHtml + '</div>' +
                 '</div>';
             }).join('');
-            const risk = bradenRiskLabel(total);
+            // A partial sum reads as a falsely severe tier (one "4" = "Severe"),
+            // so only interpret the total once every factor is scored.
+            const nScored = BRADEN_FACTORS.filter(function (f) { return state.choices[f.id] != null; }).length;
+            const risk = nScored === BRADEN_FACTORS.length ? bradenRiskLabel(total)
+                : (nScored ? { label: 'Incomplete (' + nScored + '/' + BRADEN_FACTORS.length + ' scored)', cls: '' } : bradenRiskLabel(0));
             rootEl.innerHTML = panelHint(
                 'Braden Scale — Pressure Sore Risk',
                 'Select one option per factor. Total auto-calculates. ≤12 = HIGH RISK.',
@@ -617,7 +621,7 @@
             '</section>' +
             // A
             '<section class="cap-sbar-block"><h4><span class="cap-sbar-letter">A</span>Assessment</h4>' +
-                '<div class="cap-grid g5">' +
+                '<div class="cap-grid cap-vitals">' +
                     field('BP', 'bp', { tag: 'input' }) +
                     field('HR', 'hr', { tag: 'input' }) +
                     field('RR', 'rr', { tag: 'input' }) +

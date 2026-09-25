@@ -2,7 +2,8 @@
 
 ## Current Status
 - **Version:** 1.1 (SaaS transformation in planning — Feb 2026)
-- **Last Updated:** February 2026
+- **Last Updated:** September 2026
+- **Sept 24, 2026:** Chat, Community Hub, and AI assistant retired (see `UPDATES.md`). Struck-through items below belonged to those features.
 - **Live URL:** https://bendbsn.com (COCC cohort 9B)
 - **New Platform Domain:** rnotes.app (pending registration) — multi-tenant SaaS for nursing programs
 
@@ -16,9 +17,9 @@
 ### Core Features
 - [x] User authentication (Firebase Auth)
 - [x] Nursing documentation generator (DAR, SOAP, etc.)
-- [x] Group chat with @mentions
-- [x] Direct messages with read receipts
-- [x] AI Nursing Assistant
+- ~~[x] Group chat with @mentions~~ (retired Sept 2026)
+- ~~[x] Direct messages with read receipts~~ (retired Sept 2026)
+- ~~[x] AI Nursing Assistant~~ (retired Sept 2026)
 - [x] Dark mode
 - [x] Lock screen (privacy)
 - [x] Document history (save/load notes)
@@ -27,9 +28,9 @@
 - [x] Welcome emails for new users (EmailJS)
 - [x] Persistent login sessions
 - [x] Homepage with navigation
-- [x] Community hub with posts
+- ~~[x] Community hub with posts~~ (retired Sept 2026)
 - [x] UID-based private document storage
-- [x] UID-based direct messages with secure rules
+- ~~[x] UID-based direct messages with secure rules~~ (retired Sept 2026)
 
 ### Performance Optimizations (Jan 2026)
 - [x] Script loading with `defer` attribute
@@ -37,7 +38,7 @@
 - [x] Lazy loading for export libraries (jsPDF, docx, FileSaver)
 - [x] Firebase listener cleanup on page unload
 - [x] User list caching (10-minute localStorage)
-- [x] Chat message limiting (50 messages max in DOM)
+- ~~[x] Chat message limiting (50 messages max in DOM)~~ (retired Sept 2026)
 - [x] Debounced NANDA search (300ms)
 - [x] Service worker with versioned caching
 
@@ -45,7 +46,7 @@
 - [x] Bottom toolbar navigation (replaced side buttons)
 - [x] Toast notifications (replaced alert())
 - [x] Loading states for async buttons
-- [x] Dark mode fixes for chat widget
+- ~~[x] Dark mode fixes for chat widget~~ (retired Sept 2026)
 - [x] Keyboard navigation (ESC to close)
 
 ### Accessibility (Jan 2026)
@@ -61,17 +62,17 @@
 
 ### Phase 2: Mobile Optimization (Priority: HIGH)
 - [x] Responsive breakpoints refinement (tablet 768-1024px, phone breakpoints)
-- [x] Swipe gestures for panels (swipe right/down to close chat, swipe left/down for AI)
+- ~~[x] Swipe gestures for panels (swipe right/down to close chat, swipe left/down for AI)~~ (retired Sept 2026)
 - [x] Improved form inputs for mobile (44px touch targets, 16px font for iOS)
 - [x] Safe area insets for notched phones
 - [x] Full-screen mode option (in More menu on all pages)
 
-### Phase 4: Community Enhancements (Priority: MEDIUM)
-- [x] Comment threads on posts (reply functionality with Firebase)
-- [x] All categories available (Announcements, Study Tips, Career, NCLEX, Questions, General)
-- [x] Post editing/deletion (author only, with confirmation)
-- [x] Search bar for filtering posts by title/content/author
-- [ ] User profiles
+### ~~Phase 4: Community Enhancements~~ (retired Sept 2026 — Community Hub removed)
+- ~~[x] Comment threads on posts (reply functionality with Firebase)~~
+- ~~[x] All categories available (Announcements, Study Tips, Career, NCLEX, Questions, General)~~
+- ~~[x] Post editing/deletion (author only, with confirmation)~~
+- ~~[x] Search bar for filtering posts by title/content/author~~
+- ~~[ ] User profiles~~ (a standalone `/profile/` page exists independently of the hub)
 
 ### Phase 5: Clinical Toolkit Expansion (Priority: MEDIUM)
 - [x] SBAR shift handoff generator (interactive form with copy to clipboard)
@@ -79,9 +80,9 @@
 - [x] Med pass timer with browser notifications and sound alerts
 
 ### Phase 6: PWA Enhancement (Priority: MEDIUM)
-- [ ] Push notifications
+- ~~[ ] Push notifications~~ (retired Sept 2026 with the chat)
 - [ ] Offline document editing
-- [ ] Background sync for messages
+- ~~[ ] Background sync for messages~~ (retired Sept 2026 with the chat)
 
 ---
 
@@ -97,8 +98,6 @@ DOMAIN:  rnotes.app (marketing) + {school}.rnotes.app per tenant
 
 FIREBASE RTDB (new structure):
 /tenants/{tenantId}/
-  chat/messages, presence, typing, threads
-  community/posts
   announcements, banned, globalPhrases, loginHistory
 
 /userProfiles/{uid}           ← stays at root (rules lookups)
@@ -188,6 +187,7 @@ Replace crowded side buttons with a clean bottom bar:
                                           - Feedback
                                           - Logout
 ```
+*Sept 2026: the Chat tab, its unread badge, and the AI Bot menu entry were retired with those features.*
 
 ### Color Palette
 - Primary: #1f4e79 (Navy blue)
@@ -273,10 +273,10 @@ feature flag to re-enable.
 - New product domain: rnotes.app (pending registration) → Firebase Hosting
 - Google Workspace: christian@rnotes.app (pending setup)
 - EmailJS configured for welcome emails (needs tenant-aware update)
-- AI powered by Google Apps Script proxy (Groq / Llama 3.3 70B)
+- ~~AI powered by Google Apps Script proxy (Groq / Llama 3.3 70B)~~ (retired Sept 2026 — proxy is dead code; revoke the Groq key)
 - Stripe: Payment Links for school licensing (not yet set up)
 - FERPA: DPA template needed before first paid school (EDUCAUSE template)
 
 ---
 
-*Last updated: February 2026 — SaaS transformation planning session*
+*Last updated: September 24, 2026 — chat, community, and AI retirement (previous revision: February 2026 SaaS planning session)*

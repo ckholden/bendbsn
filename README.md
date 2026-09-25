@@ -1,8 +1,8 @@
-# BENDBSN - Nursing Documentation & Collaboration Platform
+# BENDBSN - Nursing Documentation Platform
 
 **Created by Christian Holden**
 
-A comprehensive web-based nursing documentation tool with real-time collaboration features designed for nursing students.
+A comprehensive web-based nursing documentation tool designed for nursing students.
 
 **Live URL:** [bendbsn.com](https://bendbsn.com)
 
@@ -19,23 +19,6 @@ A comprehensive web-based nursing documentation tool with real-time collaboratio
 - **PIE** - Problem, Intervention, Evaluation
 - **Narrative** - Free-form narrative notes
 - **Head-to-Toe (H2T)** - Comprehensive assessment with quick-fill buttons
-
-### AI Nursing Companion
-- Intelligent chatbot for nursing education support
-- Quick action buttons:
-  - Drug Info lookup
-  - Care Plan assistance
-  - NCLEX-style questions
-  - Lab values reference
-- Powered by Groq API (Llama 3.3 70B model)
-- Accessible via teal chat widget (bottom-left corner)
-
-### Real-Time Chat & Collaboration
-- Live chat with classmates and instructors
-- Display names (first names) shown instead of usernames
-- Online presence indicator
-- 48-hour message retention with auto-cleanup
-- Firebase Realtime Database backend
 
 ### Quick Vitals Entry Panel
 - Individual input fields for BP, HR, RR, Temp, O2%, Pain
@@ -107,37 +90,31 @@ Pre-built phrases for rapid documentation:
 
 Access at [bendbsn.com/admin/](https://bendbsn.com/admin/)
 
-**Password:** `admin1374`
+**Access:** there is no shared password — sign in with a Firebase account that holds the `isAdmin` custom claim (granted by the `setAdminClaim` Cloud Function) or has `isAdmin: true` or the instructor role in `userProfiles/{uid}`, and the database rules enforce the same `userProfiles` check server-side.
 
 ### Features
 - **Login History** - View all login attempts (success/failed) with CSV export
 - **Registered Users** - User list with ban controls (link to Firebase Console for full deletion)
-- **Online Users** - Real-time presence monitoring with kick/ban options
 - **Banned Users** - Manage bans with unban capability
-- **Chat Messages** - View and delete recent messages
 - **Manage Smart Phrases** - Add global smart phrases for all users
 
 **Note:** "Add User" removed - users self-register via Firebase Auth
 
 ### Quick Actions
-- Kick All from Chat
-- Clear All Messages
 - Refresh All Data
 - Export Login History to CSV
 
-### Chat Commands (Admin only - christiankholden@gmail.com)
-Type these commands in the chat box to manage site-wide announcements:
+### Site-Wide Announcement Banners (Admin only)
+The alert/FYI banners are driven by two Realtime Database values:
 
-| Command | Description |
-|---------|-------------|
-| `alert/Your message` | Shows flashing red banner at top of all pages |
-| `fyi/Your message` | Shows yellow info banner at top of all pages |
-| `alert/clear` | Removes the alert banner |
-| `fyi/clear` | Removes the fyi banner |
-| `chat/clear` | Clears all chat history |
+| Path | Effect |
+|------|--------|
+| `announcements/alert/message` | Shows flashing red banner at top of all pages |
+| `announcements/fyi/message` | Shows yellow info banner at top of all pages |
+
+Set a message to show a banner and delete the value to clear it, using the admin panel's Firebase explorer or the Firebase Console. The old `alert/`, `fyi/`, and `chat/clear` chat-box commands were retired with the chat in September 2026.
 
 **Notes:**
-- Commands are intercepted and don't appear in chat
 - Banners sync in real-time across all logged-in users
 - Both banners can be active simultaneously (alert stacks above fyi)
 
@@ -177,10 +154,9 @@ Previous username/password system (Google Sheets) has been replaced. Old account
 
 ### Backend Services
 - **Firebase Authentication** - Secure email/password login with bcrypt hashing
-- **Firebase Realtime Database** - Chat, presence, bans, login history, global phrases, announcements
-- **Google Apps Script** - User profile storage, AI proxy
+- **Firebase Realtime Database** - Saved documents, user profiles, bans, login history, global phrases, announcements
+- **Google Apps Script** - User profile storage
 - **Google Sheets** - User directory (name, email only - passwords handled by Firebase)
-- **Groq API** - AI chat (free tier, Llama 3.3 70B)
 - **RxNav API** - Drug name autocomplete
 - **FormSubmit** - Email notifications for new registrations
 - **GitHub Pages** - Static hosting with custom domain
@@ -190,8 +166,8 @@ Previous username/password system (Google Sheets) has been replaced. Old account
 
 ### Realtime Database Rules
 - Rules file: `database.rules.json` (apply in Firebase Console or via Firebase CLI)
-- `userDocuments` and `directMessages` now key by UID for privacy
-- First login after this update writes `userProfiles/{uid}` used for DM lookup
+- `userDocuments` is keyed by UID for privacy
+- First login writes `userProfiles/{uid}`, used for role lookups and admin tooling
 
 ### File Structure
 ```
@@ -204,7 +180,6 @@ bendbsn/
 ├── resources/
 │   └── index.html          # Resources redirect
 ├── complete-apps-script.js # Google Apps Script code (gitignored)
-├── ai-proxy-script.js      # AI proxy reference
 ├── approved-contacts.csv   # Authorized users list
 ├── CNAME                   # Custom domain config
 ├── robots.txt              # Search engine config
@@ -212,7 +187,7 @@ bendbsn/
 ```
 
 ### Data Storage
-- **Firebase:** Chat messages, online presence, banned users, login history, global smart phrases
+- **Firebase:** Saved documents, user profiles, banned users, login history, global smart phrases, announcements
 - **Google Sheets:** User accounts (name, email, username, password, status, date)
 - **Session:** Login state (sessionStorage)
 - **Local:** Custom smart phrases (localStorage)
@@ -241,7 +216,7 @@ bendbsn/
 ### Deployment
 1. Push to `main` branch on GitHub
 2. GitHub Pages auto-deploys to bendbsn.com
-3. For AI/user management changes, redeploy Google Apps Script:
+3. For user management changes, redeploy Google Apps Script:
    - Deploy > Manage deployments > Edit > New version > Deploy
 
 ### DNS Configuration (Porkbun)
@@ -257,17 +232,25 @@ bendbsn/
 
 ### Google Apps Script Functions
 - `doGet(e)` - Handle GET requests (getUsers)
-- `doPost(e)` - Handle POST requests (addUser, updateStatus, updatePassword, AI chat)
+- `doPost(e)` - Handle POST requests (addUser, updateStatus, updatePassword)
 - `getUsers()` - Fetch all users from sheet
 - `addUser(params)` - Add new user profile to sheet (passwords now in Firebase)
 - `updateStatus(params)` - Update user status
 - `updatePassword(params)` - Update password field (legacy support)
-- `handleAIRequest(data)` - Proxy AI requests to Groq
 - `setupUsersSheet()` - One-time setup to create Users tab
+
+**Retired:** the `handleAIRequest` Groq proxy that served the AI assistant is dead code as of September 2026. Remove it from the deployed script when it is next touched and revoke the Groq API key.
 
 ---
 
 ## Changelog
+
+### September 24, 2026 - Retired Chat, Community Hub, and AI Assistant
+- `/chat/`, `/community/`, and `/ai/` replaced with redirect stubs to `/home/`
+- Navigation links, service worker precache entries, and shared header chat/presence code removed
+- Cloud Functions `cleanupStalePresence`, `onDMSent`, `onChatMention` deleted (remove from Firebase with `firebase deploy --only functions`)
+- Database rules for `chat`, `directMessages`, `community`, `groupChats`, `userFCMTokens`, `userDMs`, `userLastSeen` removed; leftover data can be purged from the Firebase Console
+- Push notifications (FCM) retired with the chat; the Apps Script AI proxy is dead code and the Groq key should be revoked
 
 ### January 30, 2025 - Firebase Authentication Upgrade
 - **MAJOR:** Migrated from Google Sheets passwords to Firebase Authentication
@@ -340,4 +323,4 @@ If you find this tool helpful, consider supporting its development:
 
 ---
 
-*Last Updated: January 2025*
+*Last Updated: September 24, 2026*

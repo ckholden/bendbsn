@@ -16,7 +16,7 @@ Codex security audit identified 5 areas of concern. This document provides analy
 
 **Location:** `bendbsn-repo/admin/index.html:568`
 ```javascript
-const ADMIN_PASSWORD = 'admin1374';
+const ADMIN_PASSWORD = '<redacted>';  // historical — gate removed; if this password was reused anywhere, rotate it
 ```
 
 **Risk Level:** **CRITICAL**
@@ -60,9 +60,9 @@ Use Firebase Auth Custom Claims + Database Rules
    ```json
    {
      "rules": {
-       "chat": {
+       "announcements": {
          ".read": "auth != null",
-         ".write": "auth != null && root.child('userProfiles').child(auth.uid).child('role').val() == 'admin'"
+         ".write": "auth != null && (root.child('userProfiles').child(auth.uid).child('isAdmin').val() === true || root.child('userProfiles').child(auth.uid).child('role_id').val() === 'instructor')"
        }
      }
    }
@@ -256,49 +256,29 @@ auth.onAuthStateChanged((user) => {
 
 ## Firebase Database Rules (Current State)
 
-**CRITICAL:** Verify your Firebase Database Rules enforce access control:
+The source of truth is `database.rules.json` (deploy with `firebase deploy --only database`). This summary was checked against it on Sept 25, 2026.
 
-```json
-{
-  "rules": {
-    ".read": false,
-    ".write": false,
+- The root `.read` / `.write` are `false`, so any node not listed below is denied.
+- "Admin" means `userProfiles/{auth.uid}/isAdmin === true`. "Admin/instructor" also accepts `userProfiles/{auth.uid}/role_id === 'instructor'`. The rules read these RTDB fields, not the `isAdmin` custom claim that `setAdminClaim` sets; the claim is only a fast path for the admin page UI.
 
-    "chat": {
-      "messages": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      },
-      "presence": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
+| Node | Read | Write |
+|------|------|-------|
+| `userDocuments/{uid}` | Owner | Owner |
+| `userProfiles` (whole list; indexed on `isAdmin`, `tenantId`, `email`) | Admin/instructor | Admin/instructor |
+| `userProfiles/{uid}` | Owner or admin/instructor | Owner or admin/instructor. `.validate` lets only admins write `isAdmin`, and only admins/instructors set `role_id: 'instructor'` or `role: 'Instructor'` |
+| `announcements` | Any signed-in user | Admin/instructor |
+| `banned` | Any signed-in user | Admin/instructor |
+| `globalPhrases` | Any signed-in user | Admin/instructor |
+| `loginHistory` | Admin/instructor | Admin/instructor (including deletes). Per `{entry}`, a signed-in user may create an entry whose `uid` is their own and update only entries they own; non-admins cannot delete entries (tightened 2026-09-25 — previously any signed-in user could delete any entry or overwrite another user's) |
+| `userExportHistory` | Admin/instructor | `{uid}`: owner |
+| `notificationLog` | Admin/instructor | Admin/instructor |
+| `userActions/{uid}` | Owner or admin/instructor | Owner or admin/instructor |
+| `clientErrors` (indexed on `timestamp`, `uid`) | Admin/instructor | Any signed-in user |
+| `appConfig` | `roles`: public (no auth). Other children: any signed-in user | Admin only (instructors excluded) |
+| `emr` | Any signed-in user | Top level: admin/instructor. Each `{section}`: any signed-in user, non-deleting writes only (`newData.exists()`) |
+| `emr-clinical/packets/{uid}` (indexed on `updatedAt`) | Owner | Owner |
 
-    "userProfiles": {
-      "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.uid == $uid"
-      }
-    },
-
-    "directMessages": {
-      "$conversationId": {
-        ".read": "auth != null && (
-          data.child('participants/user1_uid').val() == auth.uid ||
-          data.child('participants/user2_uid').val() == auth.uid
-        )",
-        ".write": "auth != null"
-      }
-    },
-
-    "bannedUsers": {
-      ".read": "auth != null",
-      ".write": "auth != null && root.child('adminUsers').child(auth.uid).exists()"
-    }
-  }
-}
-```
+**Historical:** chat/DM/community nodes removed Sept 2026 (`chat`, `directMessages`, `community`, `groupChats`, `userFCMTokens`, `userDMs`, `userLastSeen`); they now fall under the root deny, and leftover data can be purged from the Firebase Console.
 
 **To Check:** Go to Firebase Console → Realtime Database → Rules tab
 
@@ -329,7 +309,7 @@ After implementing fixes:
 1. **Test admin access:**
    - Try accessing `/admin/` without auth → should redirect
    - Try accessing with non-admin account → should show "Unauthorized"
-   - Verify admin functions (ban user, clear messages) work with proper auth
+   - Verify admin functions (ban/unban user, clear cache, purge user) work with proper auth
 
 2. **Test Firebase Rules:**
    - Use Firebase Console → Realtime Database → Rules Simulator

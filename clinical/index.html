@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
     <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
+    <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('bendbsn_theme')||'light');}catch(e){}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#0f7490">
+    <meta name="theme-color" content="#0d1f2d">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
@@ -62,8 +63,8 @@
             color: #fff; border-color: var(--clx-accent, #0f7490);
         }
         .cap-btn.primary:hover { filter: brightness(1.08); }
-        .cap-btn.danger { color: #b91c1c; }
-        .cap-btn.danger:hover { background: #fbebeb; border-color: #b91c1c; }
+        .cap-btn.danger { color: var(--clx-danger, #b91c1c); }
+        .cap-btn.danger:hover { background: var(--clx-danger-bg, #fbebeb); border-color: var(--clx-danger, #b91c1c); }
 
         .cap-subtitle {
             font-size: 13px; color: var(--clx-text-muted, #718096);
@@ -115,7 +116,7 @@
             color: var(--clx-text-muted, #718096);
         }
         .cap-icon-btn:hover { background: rgba(0,0,0,0.06); color: var(--clx-text-primary, #1a3a5c); }
-        .cap-icon-btn.danger:hover { color: #b91c1c; background: #fbebeb; }
+        .cap-icon-btn.danger:hover { color: var(--clx-danger, #b91c1c); background: var(--clx-danger-bg, #fbebeb); }
 
         /* Empty state */
         .cap-empty {
@@ -258,6 +259,14 @@
             .cap-modal-row { grid-template-columns: 1fr; }
         }
 
+        /* Touch targets ≥44px on touch screens */
+        @media (pointer: coarse) {
+            .cap-btn, .cap-preset-pill { min-height: 44px; }
+            .cap-icon-btn { min-width: 44px; min-height: 44px; }
+            .cap-modal input, .cap-modal select { min-height: 44px; }
+            .cap-pick-row { min-height: 44px; }
+        }
+
         [data-theme="dark"] .cap-list { background: var(--clx-bg-surface, #1a202c); }
         [data-theme="dark"] .cap-row:hover { background: rgba(255,255,255,0.04); }
         [data-theme="dark"] .cap-row-head { background: rgba(255,255,255,0.02); }
@@ -267,9 +276,6 @@
 <body>
     <header class="site-header">
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
-        <div class="header-actions">
-            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
-        </div>
     </header>
 
     <div class="clx-shell">
@@ -302,35 +308,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item active" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
         <a href="/apa/" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -355,7 +347,6 @@
             <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
-    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
     <main class="clx-main" role="main">
         <div class="cap-page">
@@ -420,7 +411,7 @@
 
             <div class="cap-modal-actions">
                 <button class="cap-btn" onclick="closeNewPacketModal()">Cancel</button>
-                <button class="cap-btn primary" onclick="createPacket()">Create</button>
+                <button class="cap-btn primary" id="np_createBtn" onclick="createPacket()">Create</button>
             </div>
         </div>
     </div>
@@ -429,7 +420,6 @@
         <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
         <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
         <a href="/clinical/" class="clx-mobile-nav-item active" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
-        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat"><span class="clx-mobile-nav-icon">&#128172;</span><span>Chat</span></a>
         <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
     </nav>
 
@@ -441,29 +431,55 @@
     <script src="/shared/toast.js"></script>
     <script src="/clinical/cap-modules.js"></script>
     <script>
-        // ─── Theme + sidebar (matched to other BendBSN pages) ───
-        function initTheme() {
-            const t = localStorage.getItem('bendbsn_theme') || 'light';
-            document.documentElement.setAttribute('data-theme', t);
-        }
-        function toggleDarkMode() {
-            const current = document.documentElement.getAttribute('data-theme') || 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('bendbsn_theme', next);
-        }
-        let sidebarOpen = false;
+        // ─── Theme ───
+        // data-theme is applied from localStorage in <head>, before shared/header.js
+        // runs, so header.js's theme picker (the sidebar Theme button) reads the saved
+        // theme instead of resetting it to light.
+
+        // ─── Sidebar — desktop collapse/expand, same as /app/. The mobile drawer
+        // (hamburger + backdrop) is injected by shared/header.js.
+        (function initSidebar() {
+            document.body.classList.add('has-sidebar');
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
+                sidebar.classList.add('collapsed');
+            } else {
+                const icon = document.getElementById('sidebarToggleIcon');
+                if (icon) icon.textContent = '◀';
+                const label = document.querySelector('.clx-sidebar-toggle-label');
+                if (label) label.textContent = 'Collapse';
+            }
+        })();
         function toggleSidebar() {
-            sidebarOpen = !sidebarOpen;
-            document.getElementById('appSidebar').classList.toggle('mobile-open', sidebarOpen);
-            document.getElementById('sidebarBackdrop').classList.toggle('visible', sidebarOpen);
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
-        function lockScreen() { localStorage.removeItem('bendbsn_auth'); window.location.href = '/'; }
+        // Privacy lock: cover the page without signing out (shared/header.js overlay).
+        function lockScreen() {
+            if (typeof window.bsnShowLockOverlay === 'function') window.bsnShowLockOverlay();
+        }
+        // Logout ends the Firebase session first (as /app/ does) — otherwise the
+        // persisted Auth user signs straight back in on the login page.
+        let _loggingOut = false;
         function logout() {
-            ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
-            window.location.href = '/';
+            if (_loggingOut) return;
+            _loggingOut = true;
+            try { if (packetsRef) packetsRef.off(); } catch (e) {}
+            const keys = ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid',
+                          'bendbsn_role_v2', 'bendbsn_login_at'];
+            auth.signOut().catch(function () {}).then(function () {
+                keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+                try { if (typeof window.bsnPurgeLocalUserData === 'function') window.bsnPurgeLocalUserData(); } catch (e) {}
+                window.location.href = '/';
+            });
         }
-        initTheme();
 
         // ─── Firebase init (mirrors other BendBSN pages) ───
         const firebaseConfig = {
@@ -491,6 +507,7 @@
         // ─── Auth state → load packets ───
         auth.onAuthStateChanged(function (user) {
             if (!user) {
+                if (_loggingOut) return; // logout() is already redirecting
                 // Not signed into Firebase Auth — but the localStorage gate
                 // already redirected us if not authed at the BendBSN level.
                 // If we land here without Firebase Auth, prompt re-login.
@@ -499,6 +516,7 @@
                 return;
             }
             currentUid = user.uid;
+            if (window.initThemeSync) window.initThemeSync(database, user.uid);
             packetsRef = database.ref('emr-clinical/packets/' + currentUid);
 
             // Safety net: if the Firebase listener doesn't fire within 5s
@@ -509,9 +527,10 @@
             let _firstRenderFired = false;
             const _spinnerWatchdog = setTimeout(function () {
                 if (_firstRenderFired) return;
-                console.warn('[CAP] packets listener timeout — falling back to empty state');
-                allPackets = [];
-                renderList();
+                console.warn('[CAP] packets listener timeout — showing connecting state');
+                // Don't show the real "No packets yet" CTA (and don't blank
+                // allPackets): the list may simply still be loading.
+                renderListStatus('Still connecting…', 'Your packets will appear as soon as the connection finishes.');
             }, 5000);
 
             // Real-time listener — keep list in sync if user opens packets in another tab
@@ -539,6 +558,9 @@
                 renderList();
             }, function (err) {
                 console.error('[CAP] packets read failed:', err);
+                _firstRenderFired = true;
+                clearTimeout(_spinnerWatchdog);
+                renderListStatus('Could not load packets', 'Check your connection, then retry.');
                 showToast('Could not load packets: ' + (err.message || err), 'error');
             });
         });
@@ -550,6 +572,12 @@
             const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
             if (!m) return iso;
             return m[2] + '/' + m[3] + '/' + m[1].slice(2);
+        }
+        // Local calendar date (YYYY-MM-DD). toISOString() is UTC, which is
+        // already tomorrow after ~5 pm Pacific.
+        function todayISO() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
         function fmtRelative(ts) {
             if (!ts) return '—';
@@ -572,6 +600,20 @@
             return parts.join(' · ') || 'Untitled packet';
         }
 
+        // Static loading / error state with a Retry button (no user data).
+        function renderListStatus(heading, text) {
+            const container = document.getElementById('capListContainer');
+            container.innerHTML =
+                '<div class="cap-empty">' +
+                    '<div class="cap-empty-icon">⏳</div>' +
+                    '<h3>' + esc(heading) + '</h3>' +
+                    '<p>' + esc(text) + '</p>' +
+                    '<button type="button" class="cap-btn" data-cap-retry>Retry</button>' +
+                '</div>';
+            const retry = container.querySelector('[data-cap-retry]');
+            if (retry) retry.addEventListener('click', function () { location.reload(); });
+        }
+
         function renderList() {
             const container = document.getElementById('capListContainer');
             const countEl = document.getElementById('capCount');
@@ -589,7 +631,7 @@
             }
 
             const rowsHtml = allPackets.map(function (p) {
-                return '<div class="cap-row" onclick="openPacket(\'' + p.id + '\')">' +
+                return '<div class="cap-row" data-packet-id="' + esc(p.id) + '">' +
                     '<div class="cap-row-title">' +
                         '<strong>' + esc(packetDisplayTitle(p)) + '</strong>' +
                         '<small>' + esc(p.course || '') + (p.course && p.site ? ' · ' : '') + esc(p.site || '') + '</small>' +
@@ -598,8 +640,8 @@
                     '<div class="cap-row-cell">' + esc(p.site || '—') + '</div>' +
                     '<div class="cap-row-cell">' + esc(fmtRelative(p.updatedAt)) + '</div>' +
                     '<div class="cap-row-actions">' +
-                        '<button class="cap-icon-btn" title="Duplicate" onclick="event.stopPropagation(); duplicatePacket(\'' + p.id + '\')">📋</button>' +
-                        '<button class="cap-icon-btn danger" title="Delete" onclick="event.stopPropagation(); deletePacket(\'' + p.id + '\')" aria-label="Delete">🗑</button>' +
+                        '<button type="button" class="cap-icon-btn" title="Duplicate" aria-label="Duplicate" data-row-action="duplicate">📋</button>' +
+                        '<button type="button" class="cap-icon-btn danger" title="Delete" aria-label="Delete" data-row-action="delete">🗑</button>' +
                     '</div>' +
                 '</div>';
             }).join('');
@@ -617,13 +659,31 @@
                 '</div>';
         }
 
+        // Row clicks are delegated (packet ids never go into inline JS strings).
+        document.getElementById('capListContainer').addEventListener('click', function (ev) {
+            const row = ev.target.closest('.cap-row[data-packet-id]');
+            if (!row) return;
+            const id = row.getAttribute('data-packet-id');
+            const btn = ev.target.closest('[data-row-action]');
+            if (btn) {
+                ev.stopPropagation();
+                if (btn.getAttribute('data-row-action') === 'duplicate') window.duplicatePacket(id);
+                else window.deletePacket(id);
+                return;
+            }
+            window.openPacket(id);
+        });
+
         // ─── New packet modal ───
         function openNewPacketModal() {
             document.getElementById('np_title').value = '';
             document.getElementById('np_initials').value = '';
-            document.getElementById('np_date').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('np_date').value = todayISO();
             document.getElementById('np_site').value = '';
             document.getElementById('np_course').value = '';
+            _creatingPacket = false;
+            const createBtn = document.getElementById('np_createBtn');
+            if (createBtn) createBtn.disabled = false;
             renderPresetPills();
             renderModulePicker(['info', 'notes']); // start with just always-on
             document.getElementById('newPacketOverlay').classList.add('visible');
@@ -699,6 +759,7 @@
             }
         });
 
+        let _creatingPacket = false;
         function createPacket() {
             if (!currentUid || !packetsRef) {
                 showToast('Not signed in. Please reload.', 'error');
@@ -706,7 +767,7 @@
             }
             const title = document.getElementById('np_title').value.trim();
             const initials = document.getElementById('np_initials').value.trim().toUpperCase();
-            const date = document.getElementById('np_date').value || new Date().toISOString().slice(0, 10);
+            const date = document.getElementById('np_date').value || todayISO();
             const site = document.getElementById('np_site').value.trim();
             const course = document.getElementById('np_course').value.trim();
             // Read enabled modules from the picker checkboxes (always-on are
@@ -719,6 +780,11 @@
                 return;
             }
             const templateId = null; // user picked modules manually — no preset to record
+            // In-flight guard: a double-tap would otherwise push two packets.
+            if (_creatingPacket) return;
+            _creatingPacket = true;
+            const createBtn = document.getElementById('np_createBtn');
+            if (createBtn) createBtn.disabled = true;
 
             const now = Date.now();
             const newRef = packetsRef.push();
@@ -740,6 +806,8 @@
                 window.location.href = '/clinical/packet/?id=' + encodeURIComponent(packetId);
             }).catch(function (err) {
                 console.error('[CAP] create failed:', err);
+                _creatingPacket = false;
+                if (createBtn) createBtn.disabled = false;
                 showToast('Could not create packet: ' + (err.message || err), 'error');
             });
         }
@@ -756,12 +824,18 @@
                 const data = snap.val() || {};
                 const meta = Object.assign({}, data.meta || {});
                 const now = Date.now();
-                meta.title = (meta.title || packetDisplayTitle(src)) + ' (copy)';
+                // Untitled packets keep the dynamic fallback title, so the copy's
+                // title follows its own (reset) date instead of freezing the old one.
+                if (meta.title) meta.title = meta.title + ' (copy)';
                 meta.createdAt = now;
                 meta.updatedAt = now;
-                meta.date = new Date().toISOString().slice(0, 10);
+                meta.date = todayISO();
+                const state = data.state || {};
+                // Keep the Patient Info date in step with the copy's new date (the
+                // editor mirrors Info fields into meta on save).
+                if (state.info && state.info.date) state.info.date = meta.date;
                 const newRef = packetsRef.push();
-                return newRef.set({ meta: meta, state: data.state || {} }).then(function () {
+                return newRef.set({ meta: meta, state: state }).then(function () {
                     showToast('Packet duplicated.', 'success');
                 });
             }).catch(function (err) {

@@ -1,5 +1,14 @@
 # Updates Log
 
+## 2026-09-24
+
+### Feature Retirement: Chat, Community Hub, AI Assistant
+- Retired the Slack-style chat (`/chat/`), Community Hub (`/community/`), and AI nursing assistant (`/ai/`). The three pages are now redirect stubs to `/home/`; their sidebar/mobile-nav links, `sw.js` precache entries, and `shared/header.js` / `header.css` chat/presence code were removed.
+- Deleted Cloud Functions `cleanupStalePresence`, `onDMSent`, and `onChatMention` from `functions/index.js`. Run `firebase deploy --only functions` to remove them from Firebase. `sendDailyWelcomeEmails`, `setAdminClaim`, `bootstrapAdminClaims`, and `backfillTenantId` remain.
+- Removed the `chat`, `directMessages`, `community`, `groupChats`, `userFCMTokens`, `userDMs`, and `userLastSeen` rules from `database.rules.json` (those paths now fall under the root deny). Existing data under them was not deleted and can be purged from the Firebase Console. `banned`, `announcements`, and `notificationLog` are unchanged.
+- Push notifications (FCM) went with the chat: no page requests an FCM token and `sw.js` has no messaging handlers. (The Med Timer on `/resources/` still uses the local browser Notification API, unrelated to push.)
+- Bumped `sw.js` `CACHE_VERSION` to `v221`. The Google Apps Script Groq AI proxy is now dead code; revoke the Groq API key.
+
 ## 2026-02-20
 
 ### Chat + Admin Reliability

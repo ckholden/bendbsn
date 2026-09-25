@@ -14,6 +14,8 @@
     --line-strong: #a8b0bc;
     --accent: #2c5282;
     --accent-soft: #ebf2fb;
+    --accent-strong: #1d3d63;
+    --warn-soft: #fbebeb;
     --warn: #a94442;
     --ok: #2f7a3a;
     --shadow: 0 1px 3px rgba(0,0,0,0.08);
@@ -81,9 +83,9 @@
     color: white;
     border-color: var(--accent);
   }
-  button.btn.primary:hover { background: #1d3d63; }
+  button.btn.primary:hover { background: var(--accent-strong); }
   button.btn.danger { color: var(--warn); }
-  button.btn.danger:hover { background: #fbebeb; border-color: var(--warn); }
+  button.btn.danger:hover { background: var(--warn-soft); border-color: var(--warn); }
 
   nav.tabs {
     max-width: 1180px;
@@ -356,7 +358,7 @@
   }
   .braden-options {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
     gap: 8px;
   }
   @media (max-width: 800px) {
@@ -423,11 +425,25 @@
 
   .vitals-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    /* wraps to a 2nd line instead of squeezing "120/80" / "98.6" out of view */
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
     gap: 8px;
     margin: 10px 0;
   }
-  @media (max-width: 700px) { .vitals-row { grid-template-columns: repeat(2, 1fr); } }
+  .vitals-row input { min-width: 0; }
+  /* Progress-note Date + Time pair: side by side when there's room, else stacked */
+  .dt-pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+    gap: 6px;
+  }
+  /* Full text of each textarea, shown only while printing (see beforeprint) */
+  .print-mirror { display: none; }
+  @media (pointer: coarse) {
+    button.btn, nav.tabs button, .add-row-btn { min-height: 44px; }
+    .row-del { min-width: 44px; min-height: 44px; }
+    input[type="text"], input[type="date"], input[type="time"], input[type="number"], select { min-height: 44px; }
+  }
 
   /* FOCUS notes */
   .focus-note {
@@ -634,7 +650,32 @@
       min-height: 34px;
       font-size: 10.5px;
       color: #1a2332;
+      field-sizing: content; /* fallback if beforeprint doesn't run */
     }
+    /* A textarea prints at its on-screen size and clips the rest; while
+       printing, each one is swapped for a full-height copy of its text. */
+    textarea.has-print-mirror { display: none !important; }
+    .print-mirror {
+      display: block;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border: 1px solid #bbb;
+      border-radius: 2px;
+      padding: 4px 6px;
+      min-height: 34px;
+      font-size: 10.5px;
+      color: #1a2332;
+    }
+    table.form-table .print-mirror, table.med-table .print-mirror {
+      border: none;
+      padding: 0;
+      min-height: 0;
+    }
+
+    /* Medications: fit the page width instead of clipping the last column */
+    .med-table-wrap { overflow: visible; }
+    table.med-table { min-width: 0; width: 100%; table-layout: fixed; }
+    table.med-table th.del-col, table.med-table td.del-col { display: none; }
 
     /* Tables */
     table.form-table, table.med-table { border-collapse: collapse; }
@@ -1364,7 +1405,44 @@ function setSaveStatus(status) {
 function queueSave() {
   setSaveStatus('saving');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(save, 400);
+  saveTimer = setTimeout(() => { saveTimer = null; save(); }, 400);
+}
+// Flush a pending debounced save when the page is hidden or closed, so the
+// last fraction of a second of typing isn't lost.
+function flushSave() {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; save(); }
+}
+window.addEventListener('pagehide', flushSave);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
+
+// Fill in any missing / malformed sections (old exports, older saved state) so
+// a partial packet can't break rendering.
+function normalizeState(raw) {
+  const base = defaultState();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return base;
+  const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  const arr = (v, d) => {
+    const rows = Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
+    return rows.length ? rows : d;
+  };
+  return Object.assign({}, base, raw, {
+    fields: obj(raw.fields),
+    omega: Object.assign({}, base.omega, obj(raw.omega)),
+    ncsbn: Object.assign({}, base.ncsbn, (raw.ncsbn && typeof raw.ncsbn === 'object') ? raw.ncsbn : {}),
+    meds: arr(raw.meds, base.meds),
+    focus: arr(raw.focus, base.focus),
+    behavior: arr(raw.behavior, base.behavior),
+    fall: obj(raw.fall),
+    morse: obj(raw.morse),
+    hendrich: obj(raw.hendrich),
+    braden: obj(raw.braden)
+  });
+}
+
+// Local calendar date (YYYY-MM-DD); toISOString() is UTC.
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function emptyMed() {
@@ -1649,10 +1727,14 @@ document.querySelectorAll('nav.tabs button').forEach(btn => {
 function bindFields() {
   document.querySelectorAll('[data-field]').forEach(el => {
     const key = el.dataset.field;
-    if (state.fields[key] !== undefined) {
-      if (el.type === 'checkbox') el.checked = !!state.fields[key];
-      else el.value = state.fields[key];
-    }
+    // Always write the value (blank when the key is missing), so Clear All and
+    // Import don't leave the previous resident's text on screen and in print.
+    const v = state.fields[key];
+    if (el.type === 'checkbox') el.checked = !!v;
+    else el.value = (v === undefined || v === null) ? '' : v;
+    // Listeners are attached once; they read the current global `state`.
+    if (el.dataset.bound) return;
+    el.dataset.bound = '1';
     el.addEventListener('input', () => {
       state.fields[key] = el.type === 'checkbox' ? el.checked : el.value;
       updatePrintHeader();
@@ -1709,7 +1791,7 @@ function renderMeds() {
       <td><textarea data-med-field="indication" data-med-idx="${idx}">${escapeHtml(med.indication)}</textarea></td>
       <td><textarea data-med-field="sideEffects" data-med-idx="${idx}">${escapeHtml(med.sideEffects)}</textarea></td>
       <td><textarea data-med-field="implications" data-med-idx="${idx}">${escapeHtml(med.implications)}</textarea></td>
-      <td class="del-col"><button class="row-del" title="Delete row" onclick="deleteMedRow(${idx})" aria-label="Close">✕</button></td>
+      <td class="del-col"><button class="row-del" title="Delete row" onclick="deleteMedRow(${idx})" aria-label="Delete medication row ${idx + 1}">✕</button></td>
     `;
     body.appendChild(tr);
   });
@@ -1781,7 +1863,7 @@ function renderBraden() {
     div.innerHTML = `
       <h4>${escapeHtml(factor.name)}</h4>
       <p class="defn">${escapeHtml(factor.defn)}</p>
-      <div class="braden-options">
+      <div class="braden-options" style="--cols:${factor.opts.filter(o => !o.disabled).length};">
         ${factor.opts.map(opt => opt.disabled ? '' : `
           <label class="braden-option ${state.braden[factor.id] == opt.val ? 'selected' : ''}">
             <input type="radio" name="braden_${factor.id}" value="${opt.val}" data-braden-id="${factor.id}" ${state.braden[factor.id] == opt.val ? 'checked' : ''}>
@@ -1796,8 +1878,9 @@ function renderBraden() {
   body.querySelectorAll('[data-braden-id]').forEach(el => {
     el.addEventListener('change', () => {
       state.braden[el.dataset.bradenId] = parseInt(el.value);
-      // re-render to update .selected class
-      renderBraden();
+      // Update .selected in place: re-rendering would drop keyboard focus
+      el.closest('.braden-options').querySelectorAll('.braden-option')
+        .forEach(l => l.classList.toggle('selected', l.contains(el)));
       updateBradenScore();
       queueSave();
     });
@@ -1812,6 +1895,8 @@ function updateBradenScore() {
   document.getElementById('bradenScore').textContent = total;
   const rl = document.getElementById('bradenRiskLevel');
   if (scored === 0) { rl.className = 'risk-level'; rl.textContent = 'Not scored'; }
+  // A partial sum reads as a falsely severe tier, so wait for all factors
+  else if (scored < BRADEN_FACTORS.length) { rl.className = 'risk-level'; rl.textContent = `Incomplete (${scored}/${BRADEN_FACTORS.length} scored)`; }
   else if (total <= 9) { rl.className = 'risk-level risk-high'; rl.textContent = 'Severe Risk (≤9)'; }
   else if (total <= 12) { rl.className = 'risk-level risk-high'; rl.textContent = 'High Risk (10–12)'; }
   else if (total <= 14) { rl.className = 'risk-level risk-moderate'; rl.textContent = 'Moderate Risk (13–14)'; }
@@ -1861,7 +1946,7 @@ function renderFocus() {
     div.innerHTML = `
       <div class="focus-note-header">
         <h4>Progress Note #${idx + 1}</h4>
-        <button class="row-del" onclick="deleteFocusNote(${idx})" title="Delete note" aria-label="Close">✕</button>
+        <button class="row-del" onclick="deleteFocusNote(${idx})" title="Delete note" aria-label="Delete progress note ${idx + 1}">✕</button>
       </div>
       <div class="grid g4" style="margin-bottom:10px;">
         <div>
@@ -1878,7 +1963,7 @@ function renderFocus() {
             <input type="text" data-focus-field="focus" data-focus-idx="${idx}" value="${escapeHtml(note.focus)}" placeholder="e.g., Post-op pain management">
           </div>
         ` : `<div style="grid-column:span 2;"></div>`}
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div class="dt-pair">
           <div>
             <label>Date</label>
             <input type="date" data-focus-field="date" data-focus-idx="${idx}" value="${escapeHtml(note.date)}">
@@ -1902,24 +1987,19 @@ function renderFocus() {
     body.appendChild(div);
   });
   body.querySelectorAll('[data-focus-field]').forEach(el => {
-    el.addEventListener('input', () => {
+    // Selects listen to 'change' only (one re-render per pick); text fields to 'input'
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
       const idx = parseInt(el.dataset.focusIdx);
       const field = el.dataset.focusField;
       state.focus[idx][field] = el.value;
+      queueSave();
       if (field === 'format') {
         renderFocus();  // re-render to swap the field layout
+        // ...and give keyboard focus back to the rebuilt select
+        const sel = document.querySelector(`select[data-focus-field="format"][data-focus-idx="${idx}"]`);
+        if (sel) sel.focus();
       }
-      queueSave();
     });
-    // Also handle 'change' for the select so it triggers even if user clicks options
-    if (el.tagName === 'SELECT') {
-      el.addEventListener('change', () => {
-        const idx = parseInt(el.dataset.focusIdx);
-        state.focus[idx][el.dataset.focusField] = el.value;
-        renderFocus();
-        queueSave();
-      });
-    }
   });
 }
 function addFocusNote() {
@@ -1939,7 +2019,7 @@ function deleteFocusNote(idx) {
 // =================================================================
 function exportJSON() {
   const name = (state.fields.res_initials || 'packet').replace(/[^a-zA-Z0-9]/g, '');
-  const date = state.fields.date || new Date().toISOString().slice(0,10);
+  const date = state.fields.date || todayISO();
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1955,10 +2035,13 @@ function importJSON(e) {
   reader.onload = (ev) => {
     try {
       const imported = JSON.parse(ev.target.result);
-      if (!imported.fields) throw new Error('Not a valid packet file');
-      state = imported;
+      if (!imported || typeof imported !== 'object' || !imported.fields) throw new Error('Not a valid packet file');
+      // Merge onto defaults and render BEFORE saving, so a bad file can't be
+      // persisted and break the page on every reload.
+      const prev = state;
+      state = normalizeState(imported);
+      try { renderAll(); } catch (renderErr) { state = prev; renderAll(); throw renderErr; }
       save();
-      renderAll();
       alert('Imported successfully.');
     } catch (err) {
       alert('Import failed: ' + err.message);
@@ -1993,7 +2076,7 @@ function renderMorse() {
     div.className = 'braden-factor';
     div.innerHTML = `
       <h4>${escapeHtml(v.name)}</h4>
-      <div class="braden-options" style="grid-template-columns:repeat(${v.opts.length},1fr);">
+      <div class="braden-options" style="--cols:${v.opts.length};">
         ${v.opts.map(opt => `
           <label class="braden-option ${state.morse[v.id] == opt.val ? 'selected' : ''}">
             <input type="radio" name="morse_${v.id}" value="${opt.val}" data-morse-id="${v.id}" ${state.morse[v.id] == opt.val ? 'checked' : ''}>
@@ -2008,7 +2091,9 @@ function renderMorse() {
   body.querySelectorAll('[data-morse-id]').forEach(el => {
     el.addEventListener('change', () => {
       state.morse[el.dataset.morseId] = parseInt(el.value);
-      renderMorse();
+      // Update .selected in place: re-rendering would drop keyboard focus
+      el.closest('.braden-options').querySelectorAll('.braden-option')
+        .forEach(l => l.classList.toggle('selected', l.contains(el)));
       updateMorseScore();
       queueSave();
     });
@@ -2135,6 +2220,10 @@ function initClockCanvas() {
     img.src = state.fields.minicog_clock_drawing;
   }
 
+  // Drawing listeners are attached once (renderAll runs again on Clear / Import)
+  if (canvas.dataset.bound) return;
+  canvas.dataset.bound = '1';
+
   const getPos = (e) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -2196,7 +2285,7 @@ function renderBehavior() {
     div.innerHTML = `
       <div class="focus-note-header">
         <h4>Behavioral Event #${idx + 1}</h4>
-        <button class="row-del" onclick="deleteBehaviorEvent(${idx})" title="Delete event" aria-label="Close">✕</button>
+        <button class="row-del" onclick="deleteBehaviorEvent(${idx})" title="Delete event" aria-label="Delete behavioral event ${idx + 1}">✕</button>
       </div>
       <div class="grid g3" style="margin-bottom:10px;">
         <div>
@@ -2280,8 +2369,28 @@ function renderAll() {
   updateMinicogScore();
 }
 
+// Print / Save PDF: a textarea prints at its on-screen box size and clips the
+// rest, so while printing each one gets a full-height copy of its text.
+function addPrintMirrors() {
+  removePrintMirrors();
+  document.querySelectorAll('main textarea').forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'print-mirror';
+    d.textContent = t.value;
+    t.classList.add('has-print-mirror');
+    t.insertAdjacentElement('afterend', d);
+  });
+}
+function removePrintMirrors() {
+  document.querySelectorAll('.print-mirror').forEach(d => d.remove());
+  document.querySelectorAll('textarea.has-print-mirror').forEach(t => t.classList.remove('has-print-mirror'));
+}
+window.addEventListener('beforeprint', addPrintMirrors);
+window.addEventListener('afterprint', removePrintMirrors);
+
 // Initialize state now that all data constants are declared
-state = load() || defaultState();
+// (normalizeState fills sections missing from older saved packets)
+state = normalizeState(load());
 renderAll();
 </script>
 </body>

@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org https://rxnav.nlm.nih.gov wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org https://rxnav.nlm.nih.gov https://api.emailjs.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="theme-color" content="#0f7490">
+    <meta name="theme-color" content="#0d1f2d">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
@@ -50,19 +50,6 @@
             --border: var(--clx-border);
         }
 
-        /* Status indicator colors for presence */
-        .status-online { background: #22c55e; }  /* Green */
-        .status-away { background: #eab308; }    /* Yellow */
-        .status-offline { background: #6b7280; } /* Gray */
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            flex-shrink: 0;
-        }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -96,9 +83,17 @@
             border-radius: 10px;
             padding: 16px;
             margin-bottom: 20px;
-            position: sticky;
-            top: 56px;
-            z-index: 100;
+            /* Sticky only on tablet+ — see the @media (min-width: 720px) block. */
+        }
+        /* The shared shell gives .clx-main overflow-y:auto, but .clx-main never
+           actually scrolls (the document does), so it silently became the
+           sticky navigator's scroll container and the navigator scrolled away.
+           overflow-x:clip still contains wide content without creating a
+           scroll container; browsers without clip keep the old behaviour. */
+        .clx-main {
+            overflow-y: visible;
+            overflow-x: hidden;
+            overflow-x: clip;
         }
         .resource-meta {
             display: flex;
@@ -135,7 +130,6 @@
             background: var(--clx-accent, #0f7490);
             color: #ffffff;
             border-color: var(--clx-accent, #0f7490);
-            box-shadow: 0 2px 8px rgba(15,116,144,0.25);
         }
         .resource-card.hidden { display: none !important; }
 
@@ -200,7 +194,7 @@
         /* Hero cards (Drug Info + Lab Values) — subtle accent only, no pill. */
         .resource-card.resource-card-hero {
             border-top-width: 4px !important;
-            box-shadow: 0 3px 14px rgba(15,116,144,0.12) !important;
+            box-shadow: var(--clx-shadow-sm) !important;
         }
         .resource-card.resource-card-hero .card-header h2 {
             font-size: 17px !important;
@@ -391,6 +385,28 @@
         .resource-card.collapsible.expanded.fully-open .card-content {
             max-height: none;
         }
+        /* The drug-search autocomplete is absolutely positioned and taller than
+           what sits below the input, so the drug card (only) must not clip it
+           once fully open. .fully-open is dropped before the collapse animation,
+           so clipping still applies while animating. */
+        #section-drug-lookup.expanded.fully-open,
+        #section-drug-lookup.expanded.fully-open .card-content {
+            overflow: visible;
+        }
+        #section-drug-lookup.expanded.fully-open {
+            position: relative;
+            z-index: 2;
+        }
+        /* Without overflow clipping, round the children to the card's corners
+           (cards are square at <=480px, see the phone block). */
+        @media (min-width: 481px) {
+            #section-drug-lookup.expanded.fully-open > .card-header {
+                border-radius: 9px 9px 0 0;
+            }
+            #section-drug-lookup.expanded.fully-open > .card-content {
+                border-radius: 0 0 11px 11px;
+            }
+        }
         /* Dark mode styles — inherited from --clx-* tokens automatically */
         [data-theme="dark"] .resource-navigator {
             background: var(--clx-bg-surface-2, #1c2333);
@@ -413,14 +429,14 @@
             padding: 20px;
         }
         .card h2 {
-            color: #1f4e79;
+            color: var(--clx-accent);
             font-size: 18px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #1f4e79;
+            border-bottom: 2px solid var(--clx-accent);
         }
         .card h3 {
-            color: #334155;
+            color: var(--clx-text-secondary);
             font-size: 14px;
             margin: 15px 0 8px 0;
         }
@@ -438,7 +454,7 @@
         }
         .search-box button, .btn {
             padding: 10px 16px;
-            background: #1f4e79;
+            background: var(--clx-accent);
             color: white;
             border: none;
             border-radius: 8px;
@@ -447,7 +463,7 @@
             font-size: 13px;
             transition: background 0.2s;
         }
-        .search-box button:hover, .btn:hover { background: #2d5a87; }
+        .search-box button:hover, .btn:hover { background: var(--clx-accent-hover); }
         .btn-secondary {
             background: #64748b;
         }
@@ -459,7 +475,7 @@
             margin-bottom: 8px;
         }
         .link-list a {
-            color: #1f4e79;
+            color: var(--clx-accent);
             text-decoration: none;
             font-size: 14px;
             display: flex;
@@ -476,14 +492,15 @@
         th, td {
             padding: 8px 10px;
             text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--clx-border);
         }
+        /* Neutral headers, matching the shared thead th / .clx-table style */
         th {
-            background: #1f4e79;
-            color: white;
+            background: var(--clx-bg-surface-2);
+            color: var(--clx-text-secondary);
             font-weight: 600;
         }
-        tr:hover { background: #f1f5f9; }
+        tr:hover { background: var(--clx-bg-surface-2); }
         .abbrev-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -550,10 +567,10 @@
         .calc-result {
             margin-top: 10px;
             padding: 12px;
-            background: #e8f4fc;
+            background: var(--clx-accent-subtle);
             border-radius: 8px;
             font-weight: 600;
-            color: #1f4e79;
+            color: var(--clx-text-primary);
             display: none;
         }
         .planner-grid {
@@ -595,8 +612,8 @@
             transition: all 0.2s;
         }
         .drug-search-wrapper input:focus {
-            border-color: #1f4e79;
-            box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.15);
+            border-color: var(--clx-accent);
+            box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.15);
             outline: none;
         }
         .drug-autocomplete {
@@ -645,21 +662,53 @@
             font-size: 11px;
             border-bottom: 1px solid #fcd34d;
         }
+        /* Calculator rows: label on its own line, then value + unit on one row
+           that never splits. The old one-line flex (100px label + 100px input
+           + unit) overflowed the narrow 2/3-column cards and clipped values. */
         .input-group {
-            display: flex;
-            gap: 8px;
+            display: grid;
+            grid-template-columns: minmax(96px, 1fr) auto;
+            gap: 4px 8px;
             margin-bottom: 10px;
             align-items: center;
         }
         .input-group label {
-            min-width: 100px;
+            grid-column: 1 / -1;
             font-size: 13px;
         }
         .input-group input {
-            width: 100px;
+            width: 100%;
+            min-width: 96px;
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--clx-border);
             border-radius: 6px;
+        }
+        /* A select that IS the value (e.g. drop factor) takes the whole row */
+        .input-group > select:nth-child(2) { grid-column: 1 / -1; width: 100%; }
+        .input-group > select:nth-child(n+3) { min-width: 64px; width: auto !important; }
+
+        /* ABG inputs: 3 across when there is room, never narrower than "7.40" */
+        .cap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 96px), 1fr));
+            gap: 0 var(--clx-space-3, 12px);
+        }
+        .cap-grid .clx-input { min-width: 0; }
+
+        /* APGAR selects: two across only when each can show its longest option */
+        .apgar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+            gap: 0 var(--clx-space-3, 12px);
+        }
+
+        /* Lab trend add row: wraps to 2+ lines instead of clipping "+ Add";
+           every cell is wide enough for a datetime-local value. */
+        .lt-add-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+            gap: 8px;
+            align-items: end;
         }
         .input-group span {
             font-size: 12px;
@@ -668,7 +717,7 @@
         footer {
             text-align: center;
             padding: 20px;
-            color: rgba(255,255,255,0.6);
+            color: var(--clx-text-muted);
             font-size: 12px;
         }
         .nanda-list {
@@ -678,14 +727,14 @@
         }
         .nanda-category {
             font-weight: 600;
-            color: #1f4e79;
+            color: var(--clx-accent);
             margin-top: 10px;
             margin-bottom: 5px;
         }
         .nanda-item {
             padding: 4px 8px;
             margin: 2px 0;
-            background: #f1f5f9;
+            background: var(--clx-bg-surface-2);
             border-radius: 4px;
         }
         /* Generic small-collapsible widget. Scoped with :not(.resource-card)
@@ -730,7 +779,7 @@
             line-height: 1.4;
         }
         .checklist-item:hover {
-            background: var(--accent-hover);
+            background: var(--clx-accent-subtle);
         }
         .checklist-item input[type="checkbox"] {
             width: 18px;
@@ -823,13 +872,9 @@
         /* Dark mode support */
         [data-theme="dark"] .content { background: transparent; }
         [data-theme="dark"] .card { background: var(--bg-secondary); border-color: var(--border); }
-        [data-theme="dark"] .card h2 { color: var(--accent); border-color: var(--accent); }
-        [data-theme="dark"] .link-list a { color: var(--accent); }
         [data-theme="dark"] table { color: var(--text-primary); }
-        [data-theme="dark"] th { background: var(--bg-secondary); color: var(--text-primary); }
         [data-theme="dark"] td { border-color: var(--border); }
         [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea { background: var(--bg-input); color: var(--text-primary); border-color: var(--border); }
-        [data-theme="dark"] footer { color: rgba(255,255,255,0.6); }
         [data-theme="dark"] .resource-chip { background: var(--clx-bg-surface-2); border-color: var(--clx-border); color: var(--clx-text-secondary); }
         [data-theme="dark"] .resource-chip.active { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
         [data-theme="dark"] .planner-input { background: #0f172a; border-color: #1f2937; color: var(--text-primary); }
@@ -852,6 +897,11 @@
         /* Minimum touch target size */
         @media (pointer: coarse) {
             button, .btn, .resource-btn, .tab-btn {
+                min-height: 44px;
+            }
+            .input-group input, .input-group select,
+            .cap-grid .clx-input, .apgar-grid select,
+            .lt-add-row input, .lt-add-row select, #ltFilter {
                 min-height: 44px;
             }
         }
@@ -891,6 +941,8 @@
             .container { padding: 0 !important; max-width: 100% !important; }
             .content { border-radius: 0 !important; padding: 12px !important; }
             .resource-card { border-radius: 0 !important; }
+            /* Keep the footer clear of the fixed .clx-mobile-nav */
+            footer { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
         }
 
         /* ---- Commit 5: Mobile polish (phones, <720px) ---- */
@@ -1025,8 +1077,8 @@
             font-size: 12px;
         }
         .lab-table th {
-            background: var(--clx-accent, #0f7490);
-            color: #fff;
+            background: var(--clx-bg-surface-2, #f5f8fa);
+            color: var(--clx-text-secondary, #4a5568);
             padding: 6px 8px;
             font-weight: 600;
             text-align: left;
@@ -1067,7 +1119,6 @@
             color: var(--clx-text-primary);
             border-color: var(--clx-border);
         }
-
 
         /* ========== RESOURCES PAGE REDESIGN ========== */
 
@@ -1191,7 +1242,6 @@
             background: var(--clx-accent) !important;
             color: white !important;
             border-color: var(--clx-accent) !important;
-            box-shadow: 0 2px 8px rgba(15, 116, 144, 0.25) !important;
             font-weight: 600 !important;
         }
 
@@ -1293,11 +1343,6 @@
             border-bottom-color: var(--clx-border);
         }
         [data-theme="dark"] .drug-autocomplete-item:hover { background: var(--clx-accent-subtle); }
-        [data-theme="dark"] #drugInfo {
-            background: var(--clx-bg-surface-2);
-            border-color: var(--clx-border);
-        }
-        [data-theme="dark"] #drugInfoName { color: var(--clx-accent); }
         [data-theme="dark"] #sbar-output { background: var(--clx-bg-surface-2); border-color: var(--clx-border); }
         [data-theme="dark"] .planner-input {
             background: var(--clx-bg-surface-2);
@@ -1367,35 +1412,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item active" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
-        <a href="/apa/" class="clx-sidebar-item" data-page="apa">
+        <a href="/apa/" class="clx-sidebar-item" data-page="apa" id="apaMenuLink">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -1454,13 +1485,13 @@
                 </div>
                 <div class="resource-filters">
                     <button type="button" class="resource-chip active" onclick="setCategoryFilter('all', this)">All <span class="chip-count" data-count-for="all"></span></button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('pinned', this)" style="--chip-color:#f59e0b;">⭐ Pinned <span class="chip-count" data-count-for="pinned"></span></button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('drug-pharm', this)" style="--chip-color:#7b1fa2;">💊 Drug &amp; Pharm <span class="chip-count" data-count-for="drug-pharm"></span></button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('labs-vitals', this)" style="--chip-color:#0277bd;">🧪 Labs &amp; Vitals <span class="chip-count" data-count-for="labs-vitals"></span></button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('assessments', this)" style="--chip-color:#1565c0;">🩺 Assessments <span class="chip-count" data-count-for="assessments"></span></button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('procedures', this)" style="--chip-color:#00796b;">📋 Procedures <span class="chip-count" data-count-for="procedures"></span></button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('calculators', this)" style="--chip-color:#e65100;">🧮 Calculators <span class="chip-count" data-count-for="calculators"></span></button>
-                    <button type="button" class="resource-chip" onclick="setCategoryFilter('conditions-dx', this)" style="--chip-color:#c62828;">🏥 Conditions &amp; Dx <span class="chip-count" data-count-for="conditions-dx"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('pinned', this)">⭐ Pinned <span class="chip-count" data-count-for="pinned"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('drug-pharm', this)">💊 Drug &amp; Pharm <span class="chip-count" data-count-for="drug-pharm"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('labs-vitals', this)">🧪 Labs &amp; Vitals <span class="chip-count" data-count-for="labs-vitals"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('assessments', this)">🩺 Assessments <span class="chip-count" data-count-for="assessments"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('procedures', this)">📋 Procedures <span class="chip-count" data-count-for="procedures"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('calculators', this)">🧮 Calculators <span class="chip-count" data-count-for="calculators"></span></button>
+                    <button type="button" class="resource-chip" onclick="setCategoryFilter('conditions-dx', this)">🏥 Conditions &amp; Dx <span class="chip-count" data-count-for="conditions-dx"></span></button>
                 </div>
             </div>
 
@@ -1496,12 +1527,12 @@
                         <input type="text" id="drugSearch" placeholder="Type drug name (e.g., met, lisi, ator)..." autocomplete="off">
                         <div id="drugSearchDropdown" class="drug-autocomplete"></div>
                     </div>
-                    <div id="drugInfo" style="display:none; padding: 12px; background: #e8f4fc; border-radius: 8px; margin-bottom: 15px;">
-                        <h4 id="drugInfoName" style="color: #1f4e79; margin-bottom: 8px;"></h4>
+                    <div id="drugInfo" style="display:none; padding: 12px; background: var(--clx-accent-subtle); border-radius: 8px; margin-bottom: 15px;">
+                        <h4 id="drugInfoName" style="color: var(--clx-accent); margin-bottom: 8px;"></h4>
                         <div id="drugInfoDetails" style="font-size: 13px;"></div>
                         <div style="margin-top: 10px; font-size: 12px;">
-                            <a id="drugLinkDailyMed" href="#" target="_blank" style="color: #1f4e79; margin-right: 10px;">📄 Full Label (DailyMed)</a>
-                            <a id="drugLinkDrugs" href="#" target="_blank" style="color: #1f4e79;">💊 Drugs.com</a>
+                            <a id="drugLinkDailyMed" href="#" target="_blank" style="color: var(--clx-accent); margin-right: 10px;">📄 Full Label (DailyMed)</a>
+                            <a id="drugLinkDrugs" href="#" target="_blank" style="color: var(--clx-accent);">💊 Drugs.com</a>
                         </div>
                     </div>
                     <p style="font-size: 11px; color: #888; margin-top: 10px;">Recommended Resources:</p>
@@ -1538,6 +1569,7 @@
                         </div>
                         <div id="labTableContainer"></div>
                     </div>
+                </div>
 
                 <!-- ABG Tic-Tac-Toe Interpreter -->
                 <div id="section-abg-interpreter" class="card resource-card collapsible collapsed" data-tags="abg arterial blood gas interpretation respiratory tic-tac-toe acid base" data-category="calculators">
@@ -1568,24 +1600,24 @@
                         <div class="cap-grid g3" style="margin-bottom: var(--clx-space-3);">
                             <div class="clx-field">
                                 <label class="clx-field-label">pH</label>
-                                <input type="number" id="abgPH" class="clx-input" placeholder="7.40" step="0.01" min="6.8" max="7.8" style="text-align:center;font-weight:600;" oninput="interpretABG()">
+                                <input type="number" id="abgPH" class="clx-input" placeholder="7.40" step="0.01" min="6.8" max="7.8" style="text-align:center;font-weight:600;" oninput="interpretABG({silent:true})">
                                 <span class="clx-field-hint" style="text-align:center;">Normal: 7.35–7.45</span>
                             </div>
                             <div class="clx-field">
                                 <label class="clx-field-label">PaCO₂ <span style="font-weight:400;color:var(--clx-text-muted);">mmHg</span></label>
-                                <input type="number" id="abgCO2" class="clx-input" placeholder="40" step="1" min="10" max="120" style="text-align:center;font-weight:600;" oninput="interpretABG()">
+                                <input type="number" id="abgCO2" class="clx-input" placeholder="40" step="1" min="10" max="120" style="text-align:center;font-weight:600;" oninput="interpretABG({silent:true})">
                                 <span class="clx-field-hint" style="text-align:center;">Normal: 35–45</span>
                             </div>
                             <div class="clx-field">
                                 <label class="clx-field-label">HCO₃⁻ <span style="font-weight:400;color:var(--clx-text-muted);">mEq/L</span></label>
-                                <input type="number" id="abgHCO3" class="clx-input" placeholder="24" step="1" min="5" max="50" style="text-align:center;font-weight:600;" oninput="interpretABG()">
+                                <input type="number" id="abgHCO3" class="clx-input" placeholder="24" step="1" min="5" max="50" style="text-align:center;font-weight:600;" oninput="interpretABG({silent:true})">
                                 <span class="clx-field-hint" style="text-align:center;">Normal: 22–26</span>
                             </div>
                         </div>
 
                         <div style="display:flex;gap:var(--clx-space-2);margin-bottom:var(--clx-space-4);">
                             <button onclick="interpretABG()" class="btn btn-primary" style="flex:1;">Interpret ABG</button>
-                            <button onclick="resetABG()" class="btn">Reset</button>
+                            <button onclick="resetABG()" class="btn btn-outline">Reset</button>
                         </div>
 
                         <!-- Tic-Tac-Toe Grid -->
@@ -1684,7 +1716,7 @@
                             <option value="60">60 gtt/mL (Microdrip/Peds)</option>
                         </select>
                     </div>
-                    <button onclick="calculateDripRate()" style="width: 100%;">Calculate Drip Rate</button>
+                    <button onclick="calculateDripRate()" class="btn btn-primary" style="width: 100%; justify-content: center;">Calculate Drip Rate</button>
                     <div id="dripResult" class="calc-result"></div>
 
                     <h3 style="margin-top: 20px;">Quick Reference</h3>
@@ -1727,7 +1759,7 @@
                             <option value="capsule">capsule</option>
                         </select>
                     </div>
-                    <button onclick="calculateDosage()" style="width: 100%;">Calculate</button>
+                    <button onclick="calculateDosage()" class="btn btn-primary" style="width: 100%; justify-content: center;">Calculate</button>
                     <div id="dosageResult" class="calc-result"></div>
 
                     <h3 style="margin-top: 20px;">Weight-Based Dosing</h3>
@@ -1745,7 +1777,7 @@
                             <option value="lb">lb</option>
                         </select>
                     </div>
-                    <button onclick="calculateWeightDose()" style="width: 100%;">Calculate Weight-Based Dose</button>
+                    <button onclick="calculateWeightDose()" class="btn btn-primary" style="width: 100%; justify-content: center;">Calculate Weight-Based Dose</button>
                     <div id="weightDoseResult" class="calc-result"></div>
                     </div>
                 </div>
@@ -1835,7 +1867,7 @@
                         <span class="expand-icon">▼</span>
                     </div>
                     <div class="card-content">
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--clx-space-3); margin-bottom: var(--clx-space-3);">
+                        <div class="apgar-grid" style="margin-bottom: var(--clx-space-3);">
                             <div class="clx-field">
                                 <label class="clx-field-label">Appearance (Color)</label>
                                 <select id="apgar-appearance" onchange="calculateAPGAR()" class="clx-select clx-select-sm">
@@ -1985,7 +2017,7 @@
                             <label class="checklist-item"><input type="checkbox"> Position bag below bladder level</label>
                             <label class="checklist-item"><input type="checkbox"> Document: catheter size, balloon volume, urine output, patient tolerance</label>
                         </div>
-                        <button onclick="clearChecklist('foley-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
+                        <button onclick="clearChecklist('foley-checklist')" class="btn btn-outline" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
                 </div>
 
@@ -2017,7 +2049,7 @@
                             <label class="checklist-item"><input type="checkbox"> Label dressing with date, time, initials, gauge</label>
                             <label class="checklist-item"><input type="checkbox"> Document: site, catheter gauge, number of attempts, patient tolerance</label>
                         </div>
-                        <button onclick="clearChecklist('iv-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
+                        <button onclick="clearChecklist('iv-checklist')" class="btn btn-outline" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
                 </div>
 
@@ -2044,7 +2076,7 @@
                             <label class="checklist-item"><input type="checkbox"> Label dressing with date, time, initials</label>
                             <label class="checklist-item"><input type="checkbox"> Document: wound assessment, treatment, patient response</label>
                         </div>
-                        <button onclick="clearChecklist('wound-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
+                        <button onclick="clearChecklist('wound-checklist')" class="btn btn-outline" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
                 </div>
 
@@ -2070,7 +2102,7 @@
                             <label class="checklist-item"><input type="checkbox"> Stay with patient for PO meds to ensure swallowed</label>
                             <label class="checklist-item"><input type="checkbox"> Document immediately after administration</label>
                         </div>
-                        <button onclick="clearChecklist('med-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
+                        <button onclick="clearChecklist('med-checklist')" class="btn btn-outline" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
                 </div>
 
@@ -2097,10 +2129,9 @@
                             <label class="checklist-item"><input type="checkbox"> Ensure ties allow 1-2 finger breadth</label>
                             <label class="checklist-item"><input type="checkbox"> Document: stoma condition, secretions, patient tolerance</label>
                         </div>
-                        <button onclick="clearChecklist('trach-checklist')" class="btn btn-ghost" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
+                        <button onclick="clearChecklist('trach-checklist')" class="btn btn-outline" style="margin-top: var(--clx-space-2);">Reset Checklist</button>
                     </div>
                 </div>
-
 
                 <!-- ======================================================
                      PHARMACOLOGY QUICK CARDS
@@ -2240,7 +2271,7 @@
                 <!-- ======================================================
                      LAB VALUE TREND TRACKER
                 ====================================================== -->
-                <div id="section-lab-trend" class="card resource-card collapsible collapsed" data-tags="labs laboratory trend tracker values electrolytes CBC BMP" data-category="labs-vitals">
+                <div id="section-lab-trend" class="card resource-card collapsible collapsed full-width" data-tags="labs laboratory trend tracker values electrolytes CBC BMP" data-category="labs-vitals">
                     <div class="card-header" onclick="toggleResourceCard(this)">
                         <h2>📈 Lab Value Trend Tracker</h2>
                         <span class="expand-icon">▼</span>
@@ -2248,7 +2279,7 @@
                     <div class="card-content">
                         <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Session-based tracker (not saved to account). Add lab values across time points to spot trends. Export to CSV when done.</p>
                         <!-- Add entry row -->
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 120px 1fr auto;gap:8px;align-items:end;margin-bottom:10px;flex-wrap:wrap;" id="labTrendAddRow">
+                        <div class="lt-add-row" style="margin-bottom:10px;" id="labTrendAddRow">
                             <div>
                                 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">Lab Name</div>
                                 <select id="ltLabName" style="width:100%;padding:7px 8px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
@@ -2284,14 +2315,14 @@
                             </div>
                             <div>
                                 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);margin-bottom:3px;">&nbsp;</div>
-                                <button onclick="addLabTrendEntry()" style="padding:7px 14px;background:var(--clx-accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">+ Add</button>
+                                <button onclick="addLabTrendEntry()" style="width:100%;padding:7px 14px;background:var(--clx-accent);color:var(--clx-accent-text, #fff);border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">+ Add</button>
                             </div>
                         </div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                            <input type="text" id="ltFilter" placeholder="Filter by lab name…" oninput="renderLabTrendTable()" style="padding:6px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;width:200px;">
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <input type="text" id="ltFilter" placeholder="Filter by lab name…" oninput="renderLabTrendTable()" style="padding:6px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:12px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;flex:1 1 180px;max-width:260px;min-width:0;">
                             <div style="display:flex;gap:8px;">
                                 <button onclick="exportLabTrendCsv()" style="padding:6px 12px;font-size:12px;font-weight:600;border:1px solid var(--clx-border);background:var(--clx-bg-surface);color:var(--clx-text-primary);border-radius:6px;cursor:pointer;font-family:inherit;">Export CSV</button>
-                                <button onclick="clearLabTrend()" style="padding:6px 12px;font-size:12px;font-weight:600;border:1px solid #fca5a5;background:var(--clx-bg-surface);color:#dc2626;border-radius:6px;cursor:pointer;font-family:inherit;">Clear All</button>
+                                <button onclick="clearLabTrend()" style="padding:6px 12px;font-size:12px;font-weight:600;border:1px solid var(--clx-danger, #dc2626);background:var(--clx-bg-surface);color:var(--clx-danger, #dc2626);border-radius:6px;cursor:pointer;font-family:inherit;">Clear All</button>
                             </div>
                         </div>
                         <div style="overflow-x:auto;">
@@ -2365,27 +2396,27 @@
                 </div>
 
                 <!-- Cited Sources Button -->
-                <div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
-                    <button onclick="openCitedSources()" class="btn" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
+                <div style="grid-column: 1 / -1; text-align: center; margin-top: 20px; padding: 15px; background: var(--clx-bg-surface-2); border-radius: 8px;">
+                    <button onclick="openCitedSources()" class="btn btn-outline">
                         📚 View Cited Sources (APA Format)
                     </button>
-                    <p style="font-size: 10px; color: #666; margin-top: 8px;">Academic citations for all clinical reference content</p>
+                    <p style="font-size: 10px; color: var(--clx-text-muted); margin-top: 8px;">Academic citations for all clinical reference content</p>
                 </div>
-            </div>
-        </div>
-    </div>
+            </div><!-- /resourceGrid -->
+        </div><!-- /content -->
+    </div><!-- /container -->
 
     <!-- Cited Sources Modal -->
     <div id="citedSourcesModal" class="modal-overlay hidden" onclick="if(event.target === this) closeCitedSources()">
         <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; background: white; padding-bottom: 10px; border-bottom: 2px solid #1f4e79;">
-                <h2 style="color: #1f4e79; font-size: 20px;">📚 Cited Sources</h2>
-                <button onclick="closeCitedSources()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #666;">&times;</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; background: var(--bg-primary); padding-bottom: 10px; border-bottom: 2px solid var(--clx-border);">
+                <h2 style="color: var(--clx-accent); font-size: 20px;">📚 Cited Sources</h2>
+                <button onclick="closeCitedSources()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--clx-text-muted);">&times;</button>
             </div>
 
             <p style="font-size: 12px; color: #666; margin-bottom: 20px;">All clinical reference content on this page is based on the following academic sources, formatted in APA 7th edition.</p>
 
-            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Assessment Tools</h3>
+            <h3 style="color: var(--clx-accent); font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid var(--clx-border); padding-bottom: 5px;">Assessment Tools</h3>
 
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
                 Apgar, V. (1953). A proposal for a new method of evaluation of the newborn infant. <em>Current Researches in Anesthesia & Analgesia, 32</em>(4), 260-267.
@@ -2403,7 +2434,7 @@
                 Teasdale, G., & Jennett, B. (1974). Assessment of coma and impaired consciousness: A practical scale. <em>The Lancet, 304</em>(7872), 81-84. https://doi.org/10.1016/S0140-6736(74)91639-0
             </p>
 
-            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Vital Signs & Clinical Guidelines</h3>
+            <h3 style="color: var(--clx-accent); font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid var(--clx-border); padding-bottom: 5px;">Vital Signs & Clinical Guidelines</h3>
 
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
                 American Heart Association. (2020). <em>Pediatric Advanced Life Support (PALS) provider manual</em>. American Heart Association.
@@ -2413,13 +2444,13 @@
                 Whelton, P. K., Carey, R. M., Aronow, W. S., Casey, D. E., Collins, K. J., Himmelfarb, C. D., ... & Wright, J. T. (2018). 2017 ACC/AHA/AAPA/ABC/ACPM/AGS/APhA/ASH/ASPC/NMA/PCNA guideline for the prevention, detection, evaluation, and management of high blood pressure in adults. <em>Hypertension, 71</em>(6), e13-e115.
             </p>
 
-            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Laboratory Values</h3>
+            <h3 style="color: var(--clx-accent); font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid var(--clx-border); padding-bottom: 5px;">Laboratory Values</h3>
 
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
                 Pagana, K. D., Pagana, T. J., & Pagana, T. N. (2022). <em>Mosby's manual of diagnostic and laboratory tests</em> (7th ed.). Elsevier.
             </p>
 
-            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Communication & Safety</h3>
+            <h3 style="color: var(--clx-accent); font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid var(--clx-border); padding-bottom: 5px;">Communication & Safety</h3>
 
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
                 Haig, K. M., Sutton, S., & Whittington, J. (2006). SBAR: A shared mental model for improving communication between clinicians. <em>The Joint Commission Journal on Quality and Patient Safety, 32</em>(3), 167-175.
@@ -2429,13 +2460,13 @@
                 Institute for Safe Medication Practices. (2021). <em>ISMP guidelines for safe medication practices</em>. https://www.ismp.org
             </p>
 
-            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Nursing Diagnoses</h3>
+            <h3 style="color: var(--clx-accent); font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid var(--clx-border); padding-bottom: 5px;">Nursing Diagnoses</h3>
 
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
                 Herdman, T. H., Kamitsuru, S., & Lopes, C. T. (Eds.). (2021). <em>NANDA International nursing diagnoses: Definitions and classification 2021-2023</em> (12th ed.). Thieme.
             </p>
 
-            <h3 style="color: #1f4e79; font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Cardiac/EKG Reference</h3>
+            <h3 style="color: var(--clx-accent); font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid var(--clx-border); padding-bottom: 5px;">Cardiac/EKG Reference</h3>
 
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
                 McGee, J. E. (2024). <em>EKG essentials: A student handbook</em>. University of Arkansas. CC BY-NC 4.0. https://uark.pressbooks.pub/ekgmanual/
@@ -2445,12 +2476,20 @@
                 University of Utah Health. (n.d.). <em>ECG learning center</em>. https://ecg.utah.edu/
             </p>
 
-            <div style="margin-top: 25px; padding: 12px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #1f4e79;">
-                <p style="font-size: 11px; color: #333; margin: 0;"><strong>Note:</strong> This resource is intended for educational purposes only. Always verify clinical information with current institutional protocols and authoritative sources. Content is updated periodically to reflect current evidence-based practice.</p>
+            <div style="margin-top: 25px; padding: 12px; background: var(--clx-accent-subtle); border-radius: 8px; border-left: 4px solid var(--clx-accent);">
+                <p style="font-size: 11px; color: var(--clx-text-secondary); margin: 0;"><strong>Note:</strong> This resource is intended for educational purposes only. Always verify clinical information with current institutional protocols and authoritative sources. Content is updated periodically to reflect current evidence-based practice.</p>
             </div>
         </div>
-        </div><!-- /container -->
+        </div><!-- /citedSourcesModal -->
     </main><!-- /clx-main -->
+
+    <!-- Mobile bottom nav — visible only on small screens via app-shell.css -->
+    <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+        <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
+        <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
+        <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
+        <a href="/resources/" class="clx-mobile-nav-item active" aria-label="Resources" aria-current="page"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
+    </nav>
     </div><!-- /clx-shell -->
 
     <!-- Lock Screen Overlay -->
@@ -2464,68 +2503,34 @@
         </div>
     </div>
 
-    <!-- Feedback Modal -->
-    <div id="feedbackModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="font-size: 20px;">💡 Send Feedback</h2>
-                <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</button>
-            </div>
-            <form action="https://formsubmit.co/christiankholden@gmail.com" method="POST">
-                <input type="hidden" name="_subject" value="BendBSN Feedback">
-                <input type="hidden" name="_captcha" value="false">
-                <input type="hidden" name="_template" value="table">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Type</label>
-                <select name="type" required>
-                    <option value="bug">🐛 Bug Report</option>
-                    <option value="feature">✨ Feature Request</option>
-                    <option value="feedback" selected>📝 General Feedback</option>
-                </select>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Your Name</label>
-                <input type="text" name="name" required placeholder="Enter your name">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Message</label>
-                <textarea name="message" required placeholder="Describe your feedback..."></textarea>
-                <button type="submit" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Send Feedback</button>
-            </form>
-        </div>
-    </div>
-
-
     <footer>
         BendBSN Nursing Resources
     </footer>
 
     <script>
-        // Display current user
-        const currentUsername = localStorage.getItem('bendbsn_user');
-        const userDisplayEl = document.getElementById('userDisplay');
-        if (currentUsername && userDisplayEl) {
-            userDisplayEl.textContent = 'Logged in as: ' + currentUsername;
-        }
-
-        // Logout function
-        function logout() {
-            endSessionTracking('logout');
+        // Logout function. reason 'idle' comes only from the inactivity timer:
+        // it shows the "signed out due to inactivity" notice on the login page.
+        function logout(reason) {
+            const idle = reason === 'idle';
+            if (idle) { try { sessionStorage.setItem('bendbsn_idle_logout', '1'); } catch (e) {} }
+            endSessionTracking(idle ? 'idle' : 'logout');
             cleanupFirebaseListeners();
-            // Clean presence before signing out
-            if (typeof presenceRef !== 'undefined' && typeof getCurrentUserUid === 'function') {
-                const uid = getCurrentUserUid();
-                if (uid) {
-                    presenceRef.child(uid).remove().catch(() => {});
-                }
-            }
-            // Clear idle/logout/warning timers (if initialized)
-            if (typeof idleTimer !== 'undefined') clearTimeout(idleTimer);
+            // Clear logout/warning timers (if initialized)
             if (typeof logoutTimer !== 'undefined') clearTimeout(logoutTimer);
             if (typeof logoutWarningTimer !== 'undefined') clearTimeout(logoutWarningTimer);
-            if (typeof activityDebounceTimer !== 'undefined') clearTimeout(activityDebounceTimer);
 
-            localStorage.removeItem('bendbsn_auth');
-            localStorage.removeItem('bendbsn_user');
-            localStorage.removeItem('bendbsn_displayName');
-            localStorage.removeItem('bendbsn_uid');
-            clearSessionTracking();
-            window.location.href = '/';
+            const finish = () => {
+                localStorage.removeItem('bendbsn_auth');
+                localStorage.removeItem('bendbsn_user');
+                localStorage.removeItem('bendbsn_displayName');
+                localStorage.removeItem('bendbsn_uid');
+                clearSessionTracking();
+                window.location.href = '/';
+            };
+            // Actually end the Firebase session too. Without this, Logout on this page only
+            // cleared localStorage and the next visit silently re-authenticated (home/app already
+            // call auth.signOut(); this page never did).
+            firebase.auth().signOut().then(finish, finish);
         }
 
         // Theme functions
@@ -2556,11 +2561,7 @@
         }
         function updateThemeIcon() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const themeMenuIcon = document.getElementById('themeMenuIcon');
-            const themeMenuText = document.getElementById('themeMenuText');
             const sidebarThemeIcon = document.getElementById('sidebarThemeIcon');
-            if (themeMenuIcon) themeMenuIcon.textContent = isDark ? '☀️' : '🌙';
-            if (themeMenuText) themeMenuText.textContent = 'Theme';
             if (sidebarThemeIcon) sidebarThemeIcon.textContent = isDark ? '☀️' : '🌙';
         }
 
@@ -2576,10 +2577,14 @@
 
         // Drug lookup state
         let drugSearchTimeout = null;
+        // Incremented per search; a response whose seq is no longer current
+        // is stale (the user kept typing) and must not overwrite the dropdown.
+        let _drugSearchSeq = 0;
 
         // Smart Drug Search - combines spelling suggestions + approximate matching
         async function smartDrugSearch(query, dropdownId, onSelect) {
             const dropdown = document.getElementById(dropdownId);
+            const seq = ++_drugSearchSeq;
 
             if (query.length < 2) {
                 dropdown.classList.remove('show');
@@ -2592,29 +2597,41 @@
             try {
                 // Use multiple search strategies for better results
                 const results = new Map(); // Use Map to deduplicate by rxcui
+                const RXNAV = 'https://rxnav.nlm.nih.gov/REST/';
+                const getJson = url => fetch(url).then(r => r.json());
 
+                // All lookups run in parallel (was up to 8 serial round-trips).
+                // The per-suggestion RxCUI lookups chain off the spelling
+                // response, so they overlap with the approximate/drugs requests.
                 // 1. Spelling suggestions (helps with typos like "metforman" -> "metformin")
-                const spellResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=${encodeURIComponent(query)}`);
-                const spellData = await spellResponse.json();
+                const spellP = getJson(`${RXNAV}spellingsuggestions.json?name=${encodeURIComponent(query)}`);
+                const rxcuiP = spellP.then(d => Promise.all(
+                    (d.suggestionGroup?.suggestionList?.suggestion || []).slice(0, 5).map(suggestion =>
+                        getJson(`${RXNAV}rxcui.json?name=${encodeURIComponent(suggestion)}`)
+                            .then(r => ({ name: suggestion, rxcui: r.idGroup?.rxnormId?.[0] }))
+                            .catch(() => null)   // one failed lookup shouldn't sink the search
+                    )
+                ));
+                const [spellData, rxcuiHits, approxData, drugData] = await Promise.all([
+                    spellP,
+                    rxcuiP,
+                    // 2. Approximate term matching (fuzzy search)
+                    getJson(`${RXNAV}approximateTerm.json?term=${encodeURIComponent(query)}&maxEntries=15`),
+                    // 3. Direct drug search as fallback
+                    getJson(`${RXNAV}drugs.json?name=${encodeURIComponent(query)}`)
+                ]);
+                if (seq !== _drugSearchSeq) return; // superseded by a newer query
 
-                if (spellData.suggestionGroup?.suggestionList?.suggestion) {
-                    // Get RxCUI for each spelling suggestion
-                    for (const suggestion of spellData.suggestionGroup.suggestionList.suggestion.slice(0, 5)) {
-                        const rxcuiResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(suggestion)}`);
-                        const rxcuiData = await rxcuiResponse.json();
-                        if (rxcuiData.idGroup?.rxnormId?.[0]) {
-                            results.set(rxcuiData.idGroup.rxnormId[0], {
-                                rxcui: rxcuiData.idGroup.rxnormId[0],
-                                name: suggestion,
-                                type: 'exact'
-                            });
-                        }
+                // Merge in the original priority order: spelling, approximate, drugs.json
+                rxcuiHits.forEach(hit => {
+                    if (hit && hit.rxcui) {
+                        results.set(hit.rxcui, {
+                            rxcui: hit.rxcui,
+                            name: hit.name,
+                            type: 'exact'
+                        });
                     }
-                }
-
-                // 2. Approximate term matching (fuzzy search)
-                const approxResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(query)}&maxEntries=15`);
-                const approxData = await approxResponse.json();
+                });
 
                 if (approxData.approximateGroup?.candidate) {
                     approxData.approximateGroup.candidate.forEach(c => {
@@ -2627,10 +2644,6 @@
                         }
                     });
                 }
-
-                // 3. Direct drug search as fallback
-                const drugResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(query)}`);
-                const drugData = await drugResponse.json();
 
                 if (drugData.drugGroup?.conceptGroup) {
                     drugData.drugGroup.conceptGroup.forEach(group => {
@@ -2658,16 +2671,25 @@
                     if (query.length >= 2 && spellData.suggestionGroup?.suggestionList?.suggestion?.[0] !== query) {
                         const topSuggestion = spellData.suggestionGroup?.suggestionList?.suggestion?.[0];
                         if (topSuggestion && topSuggestion.toLowerCase() !== query.toLowerCase()) {
-                            html += `<div class="drug-autocomplete-hint">Did you mean: <strong>${topSuggestion}</strong>?</div>`;
+                            html += `<div class="drug-autocomplete-hint">Did you mean: <strong>${escapeHtml(topSuggestion)}</strong>?</div>`;
                         }
                     }
-                    resultArray.forEach(drug => {
-                        const escapedName = drug.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        html += `<div class="drug-autocomplete-item" onclick="${onSelect}('${drug.rxcui}', '${escapedName}')">${drug.name}</div>`;
-                    });
                     dropdown.innerHTML = html;
+                    // Build rows with DOM APIs: drug names come from the network,
+                    // so they must never be spliced into an inline onclick string.
+                    const selectFn = typeof onSelect === 'function' ? onSelect : window[onSelect];
+                    resultArray.forEach(drug => {
+                        const item = document.createElement('div');
+                        item.className = 'drug-autocomplete-item';
+                        item.textContent = drug.name;
+                        item.addEventListener('click', () => {
+                            if (typeof selectFn === 'function') selectFn(String(drug.rxcui), drug.name);
+                        });
+                        dropdown.appendChild(item);
+                    });
                 }
             } catch (error) {
+                if (seq !== _drugSearchSeq) return; // a newer query owns the dropdown now
                 console.error('Drug search error:', error);
                 dropdown.innerHTML = '<div class="drug-autocomplete-loading">Search error. Try again.</div>';
             }
@@ -2772,13 +2794,13 @@
             const result = document.getElementById('dripResult');
 
             if (!volume || !time || !dropFactor) {
-                result.innerHTML = '<span style="color: #c00;">Please enter all values</span>';
+                result.innerHTML = '<span style="color: var(--clx-danger-text);">Please enter all values</span>';
                 result.style.display = 'block';
                 return;
             }
 
             if (volume <= 0 || time <= 0 || dropFactor <= 0) {
-                result.innerHTML = '<span style="color: #c00;">All values must be greater than 0</span>';
+                result.innerHTML = '<span style="color: var(--clx-danger-text);">All values must be greater than 0</span>';
                 result.style.display = 'block';
                 return;
             }
@@ -2790,7 +2812,7 @@
             result.innerHTML = `
                 <strong>Flow Rate:</strong> ${mlPerHour.toFixed(1)} mL/hr<br>
                 <strong>Drip Rate:</strong> ${Math.round(gttsPerMin)} gtt/min<br>
-                <span style="font-size: 11px; color: #666;">Formula: (${volume} mL × ${dropFactor} gtt/mL) ÷ (${time} hr × 60 min)</span>
+                <span style="font-size: 11px; color: var(--clx-text-secondary);">Formula: (${volume} mL × ${dropFactor} gtt/mL) ÷ (${time} hr × 60 min)</span>
             `;
             result.style.display = 'block';
         }
@@ -2803,13 +2825,13 @@
             const result = document.getElementById('dosageResult');
 
             if (!desired || !have || !qty) {
-                result.innerHTML = '<span style="color: #c00;">Please enter all values</span>';
+                result.innerHTML = '<span style="color: var(--clx-danger-text);">Please enter all values</span>';
                 result.style.display = 'block';
                 return;
             }
 
             if (desired <= 0 || have <= 0 || qty <= 0) {
-                result.innerHTML = '<span style="color: #c00;">All values must be greater than 0</span>';
+                result.innerHTML = '<span style="color: var(--clx-danger-text);">All values must be greater than 0</span>';
                 result.style.display = 'block';
                 return;
             }
@@ -2819,7 +2841,7 @@
 
             result.innerHTML = `
                 <strong>Administer:</strong> ${give.toFixed(2)} ${unit}(s)<br>
-                <span style="font-size: 11px; color: #666;">Formula: (${desired} mg ÷ ${have} mg) × ${qty} ${unit}</span>
+                <span style="font-size: 11px; color: var(--clx-text-secondary);">Formula: (${desired} mg ÷ ${have} mg) × ${qty} ${unit}</span>
             `;
             result.style.display = 'block';
         }
@@ -2831,13 +2853,13 @@
             const result = document.getElementById('weightDoseResult');
 
             if (!mgPerKg || !weight) {
-                result.innerHTML = '<span style="color: #c00;">Please enter all values</span>';
+                result.innerHTML = '<span style="color: var(--clx-danger-text);">Please enter all values</span>';
                 result.style.display = 'block';
                 return;
             }
 
             if (mgPerKg <= 0 || weight <= 0) {
-                result.innerHTML = '<span style="color: #c00;">All values must be greater than 0</span>';
+                result.innerHTML = '<span style="color: var(--clx-danger-text);">All values must be greater than 0</span>';
                 result.style.display = 'block';
                 return;
             }
@@ -2852,16 +2874,10 @@
 
             result.innerHTML = `
                 <strong>Total Dose:</strong> ${totalDose.toFixed(1)} mg<br>
-                ${weightUnit === 'lb' ? `<span style="font-size: 11px; color: #666;">Patient weight: ${weightInKg.toFixed(1)} kg (${weight} lb)</span><br>` : ''}
-                <span style="font-size: 11px; color: #666;">Formula: ${mgPerKg} mg/kg × ${weightInKg.toFixed(1)} kg</span>
+                ${weightUnit === 'lb' ? `<span style="font-size: 11px; color: var(--clx-text-secondary);">Patient weight: ${weightInKg.toFixed(1)} kg (${weight} lb)</span><br>` : ''}
+                <span style="font-size: 11px; color: var(--clx-text-secondary);">Formula: ${mgPerKg} mg/kg × ${weightInKg.toFixed(1)} kg</span>
             `;
             result.style.display = 'block';
-        }
-
-        function toggleCollapse(element) {
-            element.classList.toggle('collapsed');
-            const content = element.nextElementSibling;
-            content.classList.toggle('hidden');
         }
 
         // Toggle collapsible resource cards.
@@ -2919,7 +2935,6 @@
             document.getElementById('citedSourcesModal').classList.add('hidden');
         }
 
-        let activeResourceFilter = 'all';
         let activeCategoryFilter = 'all';
         let filterDebounceTimer = null;
 
@@ -3185,7 +3200,7 @@
                 const rect = card.getBoundingClientRect();
                 // Sticky navigator is ~140-200px tall; only scroll if the card
                 // is below it AND below the viewport top.
-                const navHeight = (document.querySelector('.resource-navigator')?.getBoundingClientRect().bottom) || 0;
+                const navHeight = Math.max(0, (document.querySelector('.resource-navigator')?.getBoundingClientRect().bottom) || 0);
                 if (rect.top < navHeight || rect.top > window.innerHeight) {
                     const targetY = window.scrollY + rect.top - navHeight - 16;
                     window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
@@ -3214,7 +3229,15 @@
                 const header = card.querySelector('.card-header');
                 if (header) toggleResourceCard(header);
             }
-            setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+            setTimeout(() => {
+                // Land the card just below the sticky navigator (tablet+) so its
+                // header isn't hidden underneath it. On phones the navigator
+                // isn't sticky, so only a small gap is kept.
+                const nav = document.querySelector('.resource-navigator');
+                const offset = (nav && getComputedStyle(nav).position === 'sticky' ? nav.offsetHeight : 0) + 16;
+                const targetY = window.scrollY + card.getBoundingClientRect().top - offset;
+                window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+            }, 50);
         }
 
         // Populate count badges on category chips (runs on load + after pin toggle)
@@ -3230,19 +3253,6 @@
                 const key = el.dataset.countFor;
                 el.textContent = counts[key] != null ? counts[key] : '';
             });
-        }
-
-        function setResourceFilter(tag, button) {
-            activeResourceFilter = tag;
-            document.querySelectorAll('.resource-chip').forEach(chip => {
-                chip.classList.remove('active');
-                chip.setAttribute('aria-pressed', 'false');
-            });
-            if (button) {
-                button.classList.add('active');
-                button.setAttribute('aria-pressed', 'true');
-            }
-            filterResources();
         }
 
         function setCategoryFilter(category, button) {
@@ -3518,29 +3528,53 @@
             interpretABG();
         }
 
+        // Reset every tic-tac-toe cell to its reference text and un-highlighted
+        // style. markCell() overwrites a cell's text with the patient value, so
+        // the original reference text (e.g. "↓ < 7.35") is captured from the
+        // markup on the first pass — this always runs before any markCell().
+        function clearABGCells() {
+            document.querySelectorAll('[id^="abgCell-"]').forEach(cell => {
+                if (cell.dataset.ref == null) cell.dataset.ref = cell.textContent;
+                else cell.textContent = cell.dataset.ref;
+                cell.style.background = '';
+                cell.style.fontWeight = '';
+                cell.style.color = '';
+                cell.style.fontSize = '';
+            });
+        }
+
         function resetABG() {
             document.getElementById('abgPH').value = '';
             document.getElementById('abgCO2').value = '';
             document.getElementById('abgHCO3').value = '';
             document.getElementById('abgGrid').style.display = 'none';
             document.getElementById('abgResult').style.display = 'none';
-            // Clear cell highlights
-            document.querySelectorAll('[id^="abgCell-"]').forEach(cell => {
-                cell.style.background = '';
-                cell.style.fontWeight = '';
-                cell.style.color = '';
-            });
+            clearABGCells();
         }
 
-        function interpretABG() {
+        // opts.silent — used by the inputs' oninput: interpret live while typing,
+        // but don't toast range warnings for partially typed values (typing the
+        // "2" of HCO₃ 24 is briefly "out of range"). The Interpret button and
+        // scenario loader call it without opts, so they still warn.
+        function interpretABG(opts) {
+            const silent = !!(opts && opts.silent);
             const ph = parseFloat(document.getElementById('abgPH').value);
             const co2 = parseFloat(document.getElementById('abgCO2').value);
             const hco3 = parseFloat(document.getElementById('abgHCO3').value);
 
             if (isNaN(ph) || isNaN(co2) || isNaN(hco3)) return;
-            if (ph < 6.8 || ph > 7.8) { showToast('pH should be 6.8–7.8', 'warning'); return; }
-            if (co2 < 10 || co2 > 120) { showToast('PaCO₂ should be 10–120', 'warning'); return; }
-            if (hco3 < 5 || hco3 > 50) { showToast('HCO₃ should be 5–50', 'warning'); return; }
+            let rangeMsg = '';
+            if (ph < 6.8 || ph > 7.8) rangeMsg = 'pH should be 6.8–7.8';
+            else if (co2 < 10 || co2 > 120) rangeMsg = 'PaCO₂ should be 10–120';
+            else if (hco3 < 5 || hco3 > 50) rangeMsg = 'HCO₃ should be 5–50';
+            if (rangeMsg) {
+                // Hide the previous interpretation — it no longer matches the inputs.
+                document.getElementById('abgGrid').style.display = 'none';
+                document.getElementById('abgResult').style.display = 'none';
+                clearABGCells();
+                if (!silent) showToast(rangeMsg, 'warning');
+                return;
+            }
 
             // Classify each value
             const phDir = ph < 7.35 ? 'acid' : ph > 7.45 ? 'alk' : 'norm';
@@ -3553,12 +3587,7 @@
             const highlight = dk ? { acid: '#7f1d1d', norm: '#064e3b', alk: '#1e3a5f' } : { acid: '#fecaca', norm: '#bbf7d0', alk: '#bfdbfe' };
             const textColor = dk ? { acid: '#fca5a5', norm: '#6ee7b7', alk: '#93c5fd' } : { acid: '#991b1b', norm: '#166534', alk: '#1e40af' };
 
-            document.querySelectorAll('[id^="abgCell-"]').forEach(cell => {
-                cell.style.background = '';
-                cell.style.fontWeight = '';
-                cell.style.color = '';
-                cell.style.fontSize = '';
-            });
+            clearABGCells();
 
             function markCell(row, dir, value) {
                 const cell = document.getElementById('abgCell-' + row + '-' + dir);
@@ -3832,31 +3861,8 @@ Generated: ${new Date().toLocaleString()}`;
         }
     </script>
 
-    <!-- Chat and AI floating widgets removed - now at /chat/ and /ai/ -->
 
     <script>
-        // ========== FULLSCREEN MODE ==========
-        function toggleFullscreen() {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                const elem = document.documentElement;
-                if (elem.requestFullscreen) elem.requestFullscreen();
-                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-                updateFullscreenUI(true);
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-                updateFullscreenUI(false);
-            }
-        }
-        function updateFullscreenUI(isFullscreen) {
-            const text = document.getElementById('fullscreenText');
-            if (text) text.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
-        }
-        document.addEventListener('fullscreenchange', () => updateFullscreenUI(!!document.fullscreenElement));
-        document.addEventListener('webkitfullscreenchange', () => updateFullscreenUI(!!document.webkitFullscreenElement));
-
-        // ========== TOAST NOTIFICATION SYSTEM ==========
-
         const firebaseConfig = {
             apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
             authDomain: "bendbsn-17377.firebaseapp.com",
@@ -3876,18 +3882,11 @@ Generated: ${new Date().toLocaleString()}`;
         let sessionHeartbeatTimer = null;
         let sessionValidated = false;
 
-        // Presence/Activity timeout constants
-        const IDLE_TIMEOUT = 10 * 60 * 1000;   // 10 minutes → Away
+        // Idle auto-logout timeout constants
         const LOGOUT_TIMEOUT = 30 * 60 * 1000; // 30 minutes → Logout
         const LOGOUT_WARNING_TIMEOUT = 25 * 60 * 1000; // 25 minutes → Show warning
-        const ACTIVITY_DEBOUNCE = 30000;       // Debounce Firebase updates
-        let idleTimer = null;
         let logoutTimer = null;
         let logoutWarningTimer = null;
-        let activityDebounceTimer = null;
-        let lastActivityTime = Date.now();
-        let currentPresenceStatus = 'online';
-        let myPresenceRef = null;
 
         function updateSessionHeartbeat() {
             const sessionKey = localStorage.getItem(SESSION_KEY);
@@ -3904,6 +3903,8 @@ Generated: ${new Date().toLocaleString()}`;
             database.ref('loginHistory/' + sessionKey).once('value', (snapshot) => {
                 if (snapshot.exists() && snapshot.val().timestamp) {
                     sessionValidated = true;
+                    // Re-arm the end marker on every page load of a live session
+                    try { localStorage.removeItem('bendbsn_session_end_sent'); } catch (e) {}
                     updateSessionHeartbeat();
                     if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
                     sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
@@ -3936,6 +3937,14 @@ Generated: ${new Date().toLocaleString()}`;
             localStorage.removeItem(SESSION_START_KEY);
             localStorage.removeItem('bendbsn_session_end_sent');
         }
+
+        // Leaving the page (tab close, reload, or just navigating to /home/)
+        // only refreshes lastSeen. Writing sessionEnd here marked the session
+        // ended at the first in-site navigation and blocked the real logout
+        // record; the admin view derives the end of a closed tab from lastSeen.
+        window.addEventListener('pagehide', function() {
+            updateSessionHeartbeat();
+        });
 
         // ========== LAB VALUES REFERENCE ==========
         const LAB_PANELS = [
@@ -4126,8 +4135,6 @@ Generated: ${new Date().toLocaleString()}`;
         window.addEventListener('load', function() { renderLabs(); });
 
         // ========== FIREBASE REFS & ESSENTIAL SERVICES ==========
-        // (Chat/AI widgets removed - now at /chat/ and /ai/)
-        const presenceRef = database.ref('chat/presence');
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
         const userProfilesRef = database.ref('userProfiles');
@@ -4216,9 +4223,6 @@ Generated: ${new Date().toLocaleString()}`;
             return chatCurrentUsername || auth.currentUser?.email || localStorage.getItem('bendbsn_user') || '';
         }
 
-        function getCurrentUserUid() {
-            return chatCurrentUserUid || auth.currentUser?.uid || localStorage.getItem('bendbsn_uid') || '';
-        }
 
         function syncUserProfile(user) {
             if (!user) return;
@@ -4242,22 +4246,28 @@ Generated: ${new Date().toLocaleString()}`;
                 chatCurrentUserUid = user.uid;
                 if (window.initThemeSync) window.initThemeSync(database, user.uid);
                 chatCurrentUsername = user.email || chatCurrentUsername;
-                if (user.displayName) {
-                    chatDisplayName = user.displayName;
-                }
+                // The Profile page renames via userProfiles/{uid}.displayName, not the
+                // Auth profile, so Auth's name is only a fallback for a first visit.
+                if (user.displayName && !localStorage.getItem('bendbsn_displayName')) chatDisplayName = user.displayName;
                 localStorage.setItem('bendbsn_uid', chatCurrentUserUid);
                 localStorage.setItem('bendbsn_user', chatCurrentUsername);
                 localStorage.setItem('bendbsn_displayName', chatDisplayName);
-                syncUserProfile(user);
 
                 // Check user role and hide APA link for instructors
                 userProfilesRef.child(user.uid).once('value').then((snap) => {
                     const profile = snap.val();
-                    if (profile && profile.role === 'Instructor') {
+                    // The RTDB profile is the source of truth for the display name.
+                    if (profile && profile.displayName && profile.displayName !== chatDisplayName) {
+                        chatDisplayName = profile.displayName;
+                        localStorage.setItem('bendbsn_displayName', chatDisplayName);
+                    }
+                    syncUserProfile(user);
+                    if (profile && (profile.role_id === 'instructor' || profile.role === 'Instructor' || profile.role_label === 'Instructor')) {
                         const apaLink = document.getElementById('apaMenuLink');
                         if (apaLink) apaLink.style.display = 'none';
                     }
-                });
+                }).catch(() => {});
+                startBanWatch();
             } else {
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
                 if (localStorage.getItem('bendbsn_auth') === 'true') {
@@ -4266,30 +4276,45 @@ Generated: ${new Date().toLocaleString()}`;
             }
         });
 
-        // Check if current user is banned
-        function checkIfBanned() {
-            bannedRef.once('value', (snapshot) => {
-                snapshot.forEach((child) => {
-                    const banned = child.val();
-                    if (banned.username === chatCurrentUsername || banned.username === chatDisplayName) {
-                        showToast('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'), 'error', 5000);
-                        localStorage.removeItem('bendbsn_auth'); localStorage.removeItem('bendbsn_user'); localStorage.removeItem('bendbsn_displayName'); localStorage.removeItem('bendbsn_uid');
-                        setTimeout(() => { window.location.href = '/'; }, 2000);
-                    }
-                });
+        // Does this ban record target the signed-in user? Admin ban entries carry
+        // uid + email; username is compared only for legacy entries that lack both.
+        function isMeBanned(b) {
+            const u = auth.currentUser;
+            if (!b || !u) return false;
+            if (b.uid || b.email) {
+                return !!((b.uid && b.uid === u.uid) ||
+                    (b.email && u.email && String(b.email).toLowerCase() === u.email.toLowerCase()));
+            }
+            return !!b.username && (b.username === chatCurrentUsername || b.username === chatDisplayName);
+        }
+
+        // Sign the banned user out for real. Clearing localStorage alone left the
+        // Firebase session alive, so the login page bounced them straight back in.
+        function kickBanned(b) {
+            if (window._bsnKicked) return;
+            window._bsnKicked = true;
+            showToast('Your account has been suspended. Reason: ' + ((b && b.reason) || 'Rule violation'), 'error', 5000);
+            try { endSessionTracking('banned'); } catch (e) {}
+            cleanupFirebaseListeners();
+            const go = () => {
+                ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid', 'bendbsn_role_v2', 'bendbsn_login_at'].forEach(k => localStorage.removeItem(k));
+                clearSessionTracking();
+                setTimeout(() => { window.location.replace('/'); }, 2000);
+            };
+            auth.signOut().then(go, go);
+        }
+
+        // Started once auth is ready (the predicate needs auth.currentUser).
+        // child_added fires for every existing entry first, then for new bans.
+        let _banWatchStarted = false;
+        function startBanWatch() {
+            if (_banWatchStarted) return;
+            _banWatchStarted = true;
+            bannedRef.on('child_added', (snapshot) => {
+                const banned = snapshot.val();
+                if (isMeBanned(banned)) kickBanned(banned);
             });
         }
-        checkIfBanned();
-
-        // Listen for bans in real-time
-        bannedRef.on('child_added', (snapshot) => {
-            const banned = snapshot.val();
-            if (banned.username === chatCurrentUsername || banned.username === chatDisplayName) {
-                showToast('Your account has been suspended. Reason: ' + (banned.reason || 'Rule violation'), 'error', 5000);
-                localStorage.removeItem('bendbsn_auth'); localStorage.removeItem('bendbsn_user'); localStorage.removeItem('bendbsn_displayName'); localStorage.removeItem('bendbsn_uid');
-                setTimeout(() => { window.location.href = '/'; }, 2000);
-            }
-        });
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -4310,6 +4335,9 @@ Generated: ${new Date().toLocaleString()}`;
                 header.setAttribute('role', 'button');
                 header.setAttribute('aria-expanded', header.closest('.collapsible').classList.contains('expanded') ? 'true' : 'false');
                 header.addEventListener('keydown', function(e) {
+                    // Only when the header itself has focus: Enter/Space on the
+                    // nested pin button must keep its native activation.
+                    if (e.target !== this) return;
                     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleResourceCard(this); }
                 });
             });
@@ -4320,77 +4348,50 @@ Generated: ${new Date().toLocaleString()}`;
             });
         });
 
-        // ========== PRESENCE SYSTEM ==========
-        // Set presence using UID as key (prevents duplicates across tabs)
-        function setPresence(status = 'online') {
-            const uid = getCurrentUserUid();
-            if (!uid) return;
-
-            myPresenceRef = presenceRef.child(uid);
-            myPresenceRef.set({
-                user: chatDisplayName,
-                username: chatCurrentUsername,
-                uid: uid,
-                status: status,
-                lastActive: firebase.database.ServerValue.TIMESTAMP
-            });
-            myPresenceRef.onDisconnect().remove();
-            currentPresenceStatus = status;
+        // ========== IDLE AUTO-LOGOUT ==========
+        // Activity is shared across tabs through localStorage, so an idle
+        // background tab never signs out a user who is working in another tab
+        // (auth.signOut() ends the session in every tab). When a timer fires it
+        // re-checks the newest activity from any tab and re-arms if needed.
+        // Without localStorage it falls back to this tab's own activity.
+        const LAST_ACTIVITY_KEY = 'bendbsn_last_activity';
+        let _localLastActivity = Date.now();
+        let _lastActivityWrite = 0;
+        function noteActivity() {
+            _localLastActivity = Date.now();
+            if (_localLastActivity - _lastActivityWrite < 15000) return; // throttle writes
+            _lastActivityWrite = _localLastActivity;
+            try { localStorage.setItem(LAST_ACTIVITY_KEY, String(_localLastActivity)); } catch (e) {}
         }
-
-        // Update status without full rewrite
-        function updatePresenceStatus(status) {
-            const uid = getCurrentUserUid();
-            if (!uid) return;
-            presenceRef.child(uid).update({
-                status: status,
-                lastActive: firebase.database.ServerValue.TIMESTAMP
-            }).catch(() => {});
-            currentPresenceStatus = status;
+        function lastActivityAnyTab() {
+            let shared = 0;
+            try { shared = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10) || 0; } catch (e) {}
+            // Ignore a timestamp from the future (clock change) beyond this tab's own
+            return Math.max(_localLastActivity, Math.min(shared, Date.now()));
         }
-
-        // Activity detection - reset idle timers (debounced)
-        function recordActivity() {
-            lastActivityTime = Date.now();
-
-            // Reset idle/logout/warning timers immediately (local)
-            clearTimeout(idleTimer);
+        function armIdleTimers(idleSoFar) {
             clearTimeout(logoutTimer);
             clearTimeout(logoutWarningTimer);
-
-            // Set idle timer (10 min)
-            idleTimer = setTimeout(() => {
-                updatePresenceStatus('away');
-
-                // Set logout timer (additional 20 min = 30 min total)
-                logoutTimer = setTimeout(() => {
-                    logout(); // Full logout
-                }, LOGOUT_TIMEOUT - IDLE_TIMEOUT);
-            }, IDLE_TIMEOUT);
-
+            const warnIn = LOGOUT_WARNING_TIMEOUT - idleSoFar;
             // Set warning timer (25 min = 5 min before logout)
-            logoutWarningTimer = setTimeout(() => {
-                showToast('You will be logged out in 5 minutes due to inactivity. Move your mouse or press a key to stay logged in.', 'warning', 10000);
-            }, LOGOUT_WARNING_TIMEOUT);
-
-            // Debounce Firebase updates (don't spam on every mouse move)
-            if (activityDebounceTimer) return;
-
-            // If was away, go back online immediately
-            if (currentPresenceStatus === 'away') {
-                updatePresenceStatus('online');
+            if (warnIn > 0) {
+                logoutWarningTimer = setTimeout(() => {
+                    const idle = Date.now() - lastActivityAnyTab();
+                    if (idle < LOGOUT_WARNING_TIMEOUT) { armIdleTimers(idle); return; }
+                    showToast('You will be logged out in 5 minutes due to inactivity. Move your mouse or press a key to stay logged in.', 'warning', 10000);
+                }, warnIn);
             }
-
-            activityDebounceTimer = setTimeout(() => {
-                activityDebounceTimer = null;
-                // Update lastActive timestamp periodically while active
-                const uid = getCurrentUserUid();
-                if (currentPresenceStatus === 'online' && uid) {
-                    presenceRef.child(uid).update({
-                        lastActive: firebase.database.ServerValue.TIMESTAMP
-                    }).catch(() => {});
-                }
-            }, ACTIVITY_DEBOUNCE);
+            // Set logout timer (30 min)
+            logoutTimer = setTimeout(() => {
+                const idle = Date.now() - lastActivityAnyTab();
+                if (idle < LOGOUT_TIMEOUT) { armIdleTimers(idle); return; } // active in another tab
+                logout('idle'); // Full logout
+            }, Math.max(0, LOGOUT_TIMEOUT - idleSoFar));
+        }
+        // Activity detection - reset logout/warning timers
+        function recordActivity() {
+            noteActivity();
+            armIdleTimers(0);
         }
 
         // Initialize activity listeners
@@ -4411,35 +4412,14 @@ Generated: ${new Date().toLocaleString()}`;
             recordActivity();
         }
 
-        // Initialize presence (called after auth check)
-        setPresence('online');
+        // Start idle auto-logout tracking
         initActivityTracking();
-
-        // Monitor Firebase connection state
-        const connectedRef = database.ref('.info/connected');
-        connectedRef.on('value', (snap) => {
-            const connected = snap.val() === true;
-            if (connected) {
-                // Re-establish presence on reconnect (handles multi-tab onDisconnect conflicts)
-                if (chatCurrentUsername) setPresence(currentPresenceStatus || 'online');
-            }
-        });
-
-        // Update header online count
-        presenceRef.on('value', (snap) => {
-            const users = Object.values(snap.val() || {});
-            const count = users.filter(u => u.status === 'online' || u.status === 'away').length;
-            const names = users.map(u => u.user || '').filter(Boolean);
-            if (typeof window.updateOnlineCount === 'function') window.updateOnlineCount(count, names);
-        });
 
         // ========== FIREBASE LISTENER CLEANUP ==========
         function cleanupFirebaseListeners() {
             try {
                 if (typeof announcementsRef !== 'undefined') announcementsRef.off();
                 if (typeof bannedRef !== 'undefined') bannedRef.off();
-                if (typeof connectedRef !== 'undefined') connectedRef.off();
-                if (typeof presenceRef !== 'undefined') presenceRef.off();
                 console.log('Firebase listeners cleaned up');
             } catch (e) {
                 console.log('Error cleaning up listeners:', e);
@@ -4450,6 +4430,8 @@ Generated: ${new Date().toLocaleString()}`;
         window.addEventListener('pagehide', cleanupFirebaseListeners);
 
         // Register Service Worker for PWA
+        let _swUserRequestedUpdate = false;
+        let _swRefreshing = false;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
@@ -4469,14 +4451,27 @@ Generated: ${new Date().toLocaleString()}`;
                             newWorker.addEventListener('statechange', () => {
                                 // If new SW is waiting and there's an active controller, show update prompt
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showToast(
-                                        'Update available! Click here to reload and get the latest version.',
-                                        0, // Don't auto-dismiss
-                                        () => {
-                                            // Tell the new SW to skip waiting
-                                            newWorker.postMessage({type: 'SKIP_WAITING'});
-                                        }
-                                    );
+                                    // showToast(msg, type, duration) has no action slot, so the old
+                                    // call's callback never ran. Use the action toast (as app/ does).
+                                    showToastAction({
+                                        title: 'Update available — tap to reload.',
+                                        type: 'info',
+                                        duration: 0,
+                                        actions: [{
+                                            label: 'Reload',
+                                            onClick: function() {
+                                                _swUserRequestedUpdate = true;
+                                                if (newWorker.state === 'installed') {
+                                                    // Still waiting: activate it; controllerchange reloads.
+                                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                                } else if (!_swRefreshing) {
+                                                    // Already activated on its own: just reload.
+                                                    _swRefreshing = true;
+                                                    window.location.reload();
+                                                }
+                                            }
+                                        }]
+                                    });
                                 }
                             });
                         });
@@ -4486,9 +4481,13 @@ Generated: ${new Date().toLocaleString()}`;
                     });
             });
 
-            // Listen for controller change (new SW activated)
+            // Listen for controller change (new SW activated). Reload only when the
+            // user asked for the update: sw.js activates new versions on its own,
+            // and an unconditional reload wiped in-progress calculator/ABG/drug
+            // input on every deploy (and on a first-visit clients.claim()).
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                // Reload the page to use the new service worker
+                if (!_swUserRequestedUpdate || _swRefreshing) return;
+                _swRefreshing = true;
                 window.location.reload();
             });
         }
@@ -4519,9 +4518,6 @@ Generated: ${new Date().toLocaleString()}`;
             if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
     </script>
-
-    <script src="/shared/toast.js"></script>
-    <script src="/shared/header.js"></script>
 
     <!-- ================================================================
          NEW RESOURCE CARDS — Pharm, Disease, Mnemonics, Procedure, ECG, Lab Trend
@@ -4911,7 +4907,7 @@ Generated: ${new Date().toLocaleString()}`;
     function exportLabTrendCsv() {
         if (!labTrendEntries.length) { if (typeof showToast === 'function') showToast('No entries to export.','warning'); return; }
         const header = ['Lab Name','Value','Status','DateTime','Note'];
-        const rows = labTrendEntries.map(e => [e.labName,e.value,e.status,e.dateTime,e.note].map(v => '"' + String(v||'').replace(/"/g,'""') + '"'));
+        const rows = labTrendEntries.map(e => [e.labName,e.value,e.status,e.dateTime,e.note].map(v => '"' + String(v ?? '').replace(/"/g,'""') + '"'));
         const csv = [header,...rows].map(r => r.join(',')).join('\n');
         const blob = new Blob([csv],{type:'text/csv'});
         const url = URL.createObjectURL(blob);
@@ -4928,9 +4924,4 @@ Generated: ${new Date().toLocaleString()}`;
     <script src="/shared/header.js"></script>
 </body>
 </html>
-
-
-
-
-
 

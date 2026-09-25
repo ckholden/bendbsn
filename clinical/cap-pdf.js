@@ -12,6 +12,30 @@
     if (window.CAP_PDF) return;
 
     // ------------------------------------------------------------------
+    // Text sanitizer — jsPDF's built-in Helvetica is WinAnsi-only. A single
+    // character outside WinAnsi (≥, ≤, SpO₂, ⚠, ✓, emoji…) makes jsPDF
+    // re-encode the WHOLE string as UTF-16, so the entire line prints as
+    // garbage. Map common clinical symbols to ASCII and replace anything
+    // else unsupported with '?'. Applied to every string the layout draws,
+    // so it covers both the literals below and students' free text.
+    // ------------------------------------------------------------------
+    const PDF_CHAR_MAP = {
+        '\u2265': '>=', '\u2264': '<=', '\u2260': '!=', '\u2212': '-',
+        '\u2082': '2', '\u2083': '3',
+        '\u26A0': '!', '\u2713': 'OK', '\u2714': 'OK', '\u2717': 'X', '\u2718': 'X',
+        '\u2192': '->', '\u2190': '<-', '\u2191': '(up)', '\u2193': '(down)',
+        '\u2153': '1/3', '\u2154': '2/3', '\uFE0F': ''
+    };
+    const PDF_MAP_RE = new RegExp('[' + Object.keys(PDF_CHAR_MAP).join('') + ']', 'g');
+    // Latin-1 plus the CP1252 extras WinAnsi adds in 0x80-0x9F
+    const PDF_UNSUPPORTED_RE = /[^\u0000-\u00FF\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u0192\u02C6\u02DC\u2013\u2014\u2018-\u201A\u201C-\u201E\u2020-\u2022\u2026\u2030\u2039\u203A\u20AC\u2122]/gu;
+    function pdfSafe(s) {
+        return String(s == null ? '' : s)
+            .replace(PDF_MAP_RE, function (ch) { return PDF_CHAR_MAP[ch]; })
+            .replace(PDF_UNSUPPORTED_RE, '?');
+    }
+
+    // ------------------------------------------------------------------
     // Layout helpers — scope-local to one generate() call via makeLayout
     // ------------------------------------------------------------------
     function makeLayout(doc) {
@@ -41,17 +65,25 @@
                 doc.setTextColor(rgb[0], rgb[1], rgb[2]);
                 if (size) doc.setFontSize(size);
                 if (style) doc.setFont('helvetica', style);
+                // Remember the current text style so addPage() can restore it
+                const prev = this._txt || {};
+                this._txt = { rgb: rgb, size: size || prev.size, style: style || prev.style };
             },
 
             pageBreakIfNeeded: function (reserve) {
                 if (this.y + (reserve || 0) > ph - 18) this.addPage();
             },
             addPage: function () {
+                // The footer and header strip change the text style (the strip
+                // leaves white bold). Callers that break mid-paragraph keep calling
+                // doc.text, so restore their style or the rest prints invisibly.
+                const prev = this._txt;
                 this.addFooter();
                 doc.addPage();
                 this.pageNum += 1;
                 this.y = 18;
                 this.addHeaderStrip();
+                if (prev) this.setText(prev.rgb, prev.size, prev.style);
             },
             addHeaderStrip: function () {
                 // Small branding strip on subsequent pages
@@ -60,7 +92,7 @@
                 this.setText([255, 255, 255], 9, 'bold');
                 doc.text('Clinical Assessment Packet', m, 5.5);
                 if (this.resident) {
-                    doc.text(this.resident, pw - m, 5.5, { align: 'right' });
+                    doc.text(pdfSafe(this.resident), pw - m, 5.5, { align: 'right' });
                 }
                 this.y = 18;
             },
@@ -74,7 +106,7 @@
                 this.pageBreakIfNeeded(14);
                 this.y += 2;
                 this.setText(ACCENT, 14, 'bold');
-                doc.text(text, m, this.y);
+                doc.text(pdfSafe(text), m, this.y);
                 this.y += 2;
                 doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]);
                 doc.setLineWidth(0.4);
@@ -84,13 +116,21 @@
             h2: function (text) {
                 this.pageBreakIfNeeded(10);
                 this.setText(ACCENT, 11, 'bold');
-                doc.text(text, m, this.y);
+                // Wrap: some h2s carry student text (concept-map problem names)
+                const lines = doc.splitTextToSize(pdfSafe(text), cw);
+                lines.forEach(function (ln, ix) {
+                    if (ix) {
+                        L.y += 5;
+                        if (L.y > ph - 18) L.addPage();
+                    }
+                    doc.text(ln, m, L.y);
+                });
                 this.y += 6;
             },
             h3: function (text) {
                 this.pageBreakIfNeeded(8);
                 this.setText(TEXT, 10, 'bold');
-                doc.text(text, m, this.y);
+                doc.text(pdfSafe(text), m, this.y);
                 this.y += 5;
             },
 
@@ -98,14 +138,14 @@
             label: function (text) {
                 this.pageBreakIfNeeded(5);
                 this.setText(MUTED, 8, 'bold');
-                doc.text(String(text || '').toUpperCase(), m, this.y);
+                doc.text(pdfSafe(String(text || '').toUpperCase()), m, this.y);
                 this.y += 4;
             },
 
             // Wrapped body paragraph
             para: function (text, opts) {
                 opts = opts || {};
-                const t = String(text == null ? '' : text).trim();
+                const t = pdfSafe(text).trim();
                 if (!t) return;
                 this.setText(opts.color || TEXT, opts.size || 9.5, opts.style || 'normal');
                 const lines = doc.splitTextToSize(t, opts.width || cw);
@@ -130,11 +170,12 @@
                 if (!value && value !== 0) return;
                 this.pageBreakIfNeeded(5);
                 const x = m + (indent || 0);
+                label = pdfSafe(label);
                 this.setText(MUTED, 9, 'bold');
                 doc.text(label + ':', x, this.y);
                 const labelW = doc.getTextWidth(label + ':');
                 this.setText(TEXT, 9, 'normal');
-                const lines = doc.splitTextToSize(String(value), cw - labelW - 4);
+                const lines = doc.splitTextToSize(pdfSafe(value), cw - labelW - 4);
                 doc.text(lines[0] || '', x + labelW + 2, this.y);
                 for (let i = 1; i < lines.length; i++) {
                     this.y += 4;
@@ -152,11 +193,11 @@
                 doc.setLineWidth(0.3);
                 doc.roundedRect(m, this.y, cw, 12, 2, 2, 'FD');
                 this.setText(ACCENT, 18, 'bold');
-                doc.text(String(num), m + 5, this.y + 8.5);
+                doc.text(pdfSafe(num), m + 5, this.y + 8.5);
                 this.setText(TEXT, 9.5, 'bold');
-                doc.text(label, m + 24, this.y + 7.5);
+                doc.text(pdfSafe(label), m + 24, this.y + 7.5);
                 this.setText(MUTED, 9, 'normal');
-                if (risk) doc.text(risk, pw - m - 4, this.y + 7.5, { align: 'right' });
+                if (risk) doc.text(pdfSafe(risk), pw - m - 4, this.y + 7.5, { align: 'right' });
                 this.y += 14;
             },
 
@@ -175,18 +216,25 @@
                 const padY = 2.5;
                 const padX = 1.5;
 
-                function drawRow(cells, y, bold, fill) {
-                    // Compute row height by wrapping each cell
-                    let maxLines = 1;
-                    const wrapped = cells.map(function (cell, i) {
-                        doc.setFont('helvetica', bold ? 'bold' : 'normal');
-                        doc.setFontSize(8.5);
-                        const w = colWidths[i] - padX * 2;
-                        const lines = doc.splitTextToSize(String(cell || ''), w);
-                        if (lines.length > maxLines) maxLines = lines.length;
-                        return lines;
+                function wrapCells(cells, bold) {
+                    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+                    doc.setFontSize(8.5);
+                    return cells.map(function (cell, i) {
+                        return doc.splitTextToSize(pdfSafe(cell || ''), colWidths[i] - padX * 2);
                     });
-                    const rowH = padY * 2 + maxLines * lineH;
+                }
+                function rowHeight(wrapped) {
+                    let maxLines = 1;
+                    wrapped.forEach(function (lines) { if (lines.length > maxLines) maxLines = lines.length; });
+                    return padY * 2 + maxLines * lineH;
+                }
+                function drawRow(cells, y, bold, fill) {
+                    return paintRow(wrapCells(cells, bold), y, bold, fill);
+                }
+                // Draws already-wrapped cells (one array of lines per column)
+                function paintRow(wrapped, y, bold, fill) {
+                    const cells = wrapped;
+                    const rowH = rowHeight(wrapped);
                     if (fill) {
                         doc.setFillColor(241, 245, 249);
                         let xCur = m;
@@ -215,17 +263,26 @@
                 this.pageBreakIfNeeded(12);
                 const hdrH = drawRow(headers, this.y, true, true);
                 this.y += hdrH;
-                // Rows
+                // Rows — measured before drawing. A row that doesn't fit moves to
+                // a new page; a row taller than a whole page is split across pages.
+                const bottom = ph - 18;
+                function newTablePage() {
+                    L.addPage();
+                    L.y += drawRow(headers, L.y, true, true); // re-draw header
+                }
                 rows.forEach(function (row) {
-                    // estimate minimum row height as 1 line × n cols for break check
-                    if (L.y + 8 > ph - 18) {
-                        L.addPage();
-                        // Re-draw header on new page
-                        const h2 = drawRow(headers, L.y, true, true);
-                        L.y += h2;
+                    let wrapped = wrapCells(row, false);
+                    for (let guard = 0; guard < 50; guard++) {
+                        const need = rowHeight(wrapped);
+                        const avail = bottom - L.y;
+                        if (need <= avail) { L.y += paintRow(wrapped, L.y, false, false); return; }
+                        const fullPage = bottom - 18 - hdrH;
+                        const fit = Math.floor((avail - padY * 2) / lineH);
+                        if (need <= fullPage || fit < 3) { newTablePage(); continue; }
+                        L.y += paintRow(wrapped.map(function (c) { return c.slice(0, fit); }), L.y, false, false);
+                        wrapped = wrapped.map(function (c) { return c.slice(fit); });
+                        newTablePage();
                     }
-                    const rh = drawRow(row, L.y, false, false);
-                    L.y += rh;
                 });
                 this.y += 3;
             },
@@ -263,24 +320,43 @@
         L.setText([255, 255, 255], 18, 'bold');
         L.doc.text('Clinical Assessment Packet', L.pw / 2, 16, { align: 'center' });
         L.setText([255, 255, 255], 11, 'normal');
-        L.doc.text(title, L.pw / 2, 24, { align: 'center' });
+        // Up to two lines inside the 34 mm banner; longer titles are cut short
+        const titleLines = L.doc.splitTextToSize(pdfSafe(title), L.cw);
+        L.doc.text(titleLines[0] || '', L.pw / 2, 24, { align: 'center' });
+        if (titleLines[1]) {
+            L.doc.text(titleLines[1] + (titleLines.length > 2 ? '...' : ''), L.pw / 2, 29.5, { align: 'center' });
+        }
 
         L.y = 44;
 
-        // Info box
+        // Info box — sized to its rows. They are measured first because the
+        // filled box has to be drawn before the text (it would cover it after).
+        const coverRows = [
+            ['Student', info.student_name || ''],
+            ['Date', info.date || meta.date || ''],
+            ['Course', info.course || meta.course || ''],
+            ['Site', info.site || meta.site || ''],
+            ['Instructor', info.instructor || ''],
+            ['Resident Initials', info.res_initials || meta.residentInitials || '']
+        ];
+        let rowsH = 0;
+        coverRows.forEach(function (r) {
+            if (!r[1] && r[1] !== 0) return;
+            L.setText(L.MUTED, 9, 'bold');
+            const lw = L.doc.getTextWidth(pdfSafe(r[0]) + ':');
+            L.setText(L.TEXT, 9, 'normal');
+            const n = L.doc.splitTextToSize(pdfSafe(r[1]), L.cw - lw - 4).length || 1;
+            rowsH += 5 + (n - 1) * 4; // same advance as inlineKv
+        });
+        const boxH = Math.max(30, rowsH + 6);
         L.doc.setFillColor(248, 250, 252);
         L.doc.setDrawColor(L.ACCENT[0], L.ACCENT[1], L.ACCENT[2]);
         L.doc.setLineWidth(0.3);
-        L.doc.roundedRect(L.m, L.y, L.cw, 30, 2, 2, 'FD');
+        L.doc.roundedRect(L.m, L.y, L.cw, boxH, 2, 2, 'FD');
         const startY = L.y;
         L.y += 6;
-        L.inlineKv('Student', info.student_name || '');
-        L.inlineKv('Date', info.date || meta.date || '');
-        L.inlineKv('Course', info.course || meta.course || '');
-        L.inlineKv('Site', info.site || meta.site || '');
-        L.inlineKv('Instructor', info.instructor || '');
-        L.inlineKv('Resident Initials', info.res_initials || meta.residentInitials || '');
-        L.y = startY + 34;
+        coverRows.forEach(function (r) { L.inlineKv(r[0], r[1]); });
+        L.y = startY + boxH + 4;
     }
 
     function packetFallbackTitle(p) {
@@ -299,18 +375,12 @@
     const CAP = window.CAP_MODULES;
 
     R_PDF.info = function (L, s) {
-        // Cover page already has the most important fields; on a dedicated
-        // Patient Info page, include the rest.
+        // Student, Date, Course, Site, Instructor and Resident Initials are
+        // already in the cover box printed directly above — only add the rest.
         L.h1('Patient Info');
-        L.inlineKv('Student', s.student_name);
-        L.inlineKv('Date', s.date);
-        L.inlineKv('Course', s.course);
-        L.inlineKv('Instructor', s.instructor);
-        L.inlineKv('Clinical Site', s.site);
         L.inlineKv('Shift', s.shift);
         L.spacer(4);
         L.h3('Resident');
-        L.inlineKv('Initials', s.res_initials);
         L.inlineKv('Age', s.res_age);
         L.inlineKv('DOB', s.res_dob);
         L.inlineKv('Room', s.res_room);
@@ -392,13 +462,17 @@
             ['mobility','Mobility'], ['nutrition','Nutrition'], ['friction','Friction and Shear']
         ];
         let total = 0;
+        let nScored = 0;
         BRADEN_FACTORS.forEach(function (f) {
             const val = choices[f[0]];
-            if (val != null) total += val;
+            if (val != null) { total += val; nScored++; }
             L.inlineKv(f[1], val != null ? String(val) : '—');
         });
         let risk = 'Not scored';
-        if (total) {
+        // Only interpret a complete scale: a partial sum reads as falsely severe
+        if (nScored && nScored < BRADEN_FACTORS.length) {
+            risk = 'Incomplete (' + nScored + '/' + BRADEN_FACTORS.length + ' scored)';
+        } else if (total) {
             if (total <= 9) risk = 'Severe Risk (≤9)';
             else if (total <= 12) risk = 'High Risk (10–12)';
             else if (total <= 14) risk = 'Moderate Risk (13–14)';
@@ -705,7 +779,7 @@
         if (opts.footnote) {
             L.spacer(2);
             L.setText([180, 30, 30], 8, 'bold');
-            L.doc.text(opts.footnote, L.m, L.y);
+            L.doc.text(pdfSafe(opts.footnote), L.m, L.y);
             L.y += 5;
         }
         if (s.date)  L.inlineKv('Date', s.date);
@@ -732,7 +806,7 @@
             subtitle: 'Over the last 2 weeks, how often bothered by:',
             questions: PHQ9_Q_PDF,
             severityFn: phq9SevPdf,
-            footnote: '⚠ Item 9 (suicidal ideation): if scored ≥1, immediate safety assessment + provider notification.'
+            footnote: 'ALERT: Item 9 (suicidal ideation): if scored >= 1, immediate safety assessment + provider notification.'
         });
     };
 
@@ -768,7 +842,7 @@
         else if (ans.q1 === 'yes') triage = 'POSITIVE IDEATION — ongoing assessment';
         else if (Object.keys(ans).length) triage = 'Negative screen';
         L.spacer(2);
-        L.scoreBox('⚠', 'Triage Level', triage);
+        L.scoreBox(triage === 'Not scored' || triage === 'Negative screen' ? '-' : '!', 'Triage Level', triage);
         if (s.date)   L.inlineKv('Date', s.date);
         if (s.action) { L.spacer(1); L.fieldBlock('Action / Notification', s.action); }
     };
@@ -821,10 +895,33 @@
         if (f1 && f2 && (f3 || f4)) result = 'POSITIVE — delirium likely. Notify provider.';
         else if (Object.keys(f).length) result = 'Negative — delirium unlikely';
         L.spacer(2);
-        L.scoreBox(result.startsWith('POSITIVE') ? '⚠' : '✓', 'Algorithm Result', result);
+        L.scoreBox(result.startsWith('POSITIVE') ? '!' : (result === 'Not scored' ? '-' : 'OK'), 'Algorithm Result', result);
         if (s.date)  L.inlineKv('Date / Time', s.date);
         if (s.cause) { L.spacer(1); L.fieldBlock('Suspected Cause(s)', s.cause); }
     };
+
+    // Has the student entered anything in this module? Collections hold either
+    // row objects (meds, notes…) or bare values — RTDB returns integer-keyed
+    // objects such as PHQ-9/GAD-7 `choices` as arrays of numbers — so values
+    // are tested directly (a 0 score counts; '', null and an unticked
+    // checkbox don't). A row's `format` alone (Progress Notes default) doesn't
+    // count either.
+    function moduleHasData(modState) {
+        function filled(y) { return y != null && y !== false && String(y).trim() !== ''; }
+        return Object.keys(modState || {}).some(function (k) {
+            const v = modState[k];
+            if (v && typeof v === 'object') {
+                return Object.keys(v).some(function (kk) {
+                    const x = v[kk];
+                    if (x && typeof x === 'object') {
+                        return Object.keys(x).some(function (f) { return f !== 'format' && filled(x[f]); });
+                    }
+                    return filled(x);
+                });
+            }
+            return filled(v);
+        });
+    }
 
     // ------------------------------------------------------------------
     // Main generate()
@@ -841,8 +938,8 @@
 
         // Sumner attribution (tiny footer on cover page)
         L.setText(L.MUTED, 7.5, 'italic');
-        const attrib = 'Framework adapted from Sumner College NUR curriculum materials. For educational use only.';
-        doc.text(attrib, L.pw / 2, L.ph - 8, { align: 'center' });
+        const attrib = 'Framework adapted from Sumner College NUR curriculum materials.';
+        doc.text(attrib, L.pw / 2, L.ph - 13, { align: 'center' }); // above the 'Page 1' footer (ph - 8)
 
         // Walk enabled modules in order
         const enabled = (packet.meta && packet.meta.enabledModules) || [];
@@ -851,6 +948,17 @@
             const renderer = R_PDF[modId];
             if (!renderer) continue;
             const modState = (packet.state && packet.state[modId]) || {};
+            // A module the student left blank gets a one-line stub on the current
+            // page instead of its own page — no blank "(none)" pages and no
+            // misleading "Total 0 / Low Risk" score boxes — while still showing
+            // the instructor that the section was enabled.
+            if (modId !== 'info' && !moduleHasData(modState)) {
+                const mod = CAP && CAP.MODULE_BY_ID && CAP.MODULE_BY_ID[modId];
+                L.spacer(4);
+                L.h1((mod && mod.label) || modId);
+                L.para('(left blank)', { color: L.MUTED, style: 'italic' });
+                continue;
+            }
             // Start each module on a new page for clean section breaks
             if (i > 0 || L.y > 90) L.addPage();
             try {
@@ -867,11 +975,15 @@
         const info = (packet.state && packet.state.info) || {};
         const meta = packet.meta || {};
         const initials = sanitizeForFilename(info.res_initials || meta.residentInitials || 'UNK');
-        const date = sanitizeForFilename(info.date || meta.date || new Date().toISOString().slice(0, 10));
+        const date = sanitizeForFilename(info.date || meta.date || localISODate());
         const lastName = sanitizeForFilename(lastNameOf(info.student_name) || 'student');
         doc.save('CAP_' + initials + '_' + date + '_' + lastName + '.pdf');
     }
 
+    function localISODate() {
+        const d = new Date(); // local calendar date, not UTC
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
     function lastNameOf(full) {
         if (!full) return '';
         const parts = String(full).trim().split(/\s+/);

@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
     <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
+    <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('bendbsn_theme')||'light');}catch(e){}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0d1f2d">
@@ -77,7 +78,7 @@
         }
 
         /* Edit name */
-        .prof-name-edit { display: flex; align-items: center; gap: 8px; }
+        .prof-name-edit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .prof-name-input {
             padding: 5px 10px;
             border: 1px solid var(--clx-border);
@@ -87,11 +88,16 @@
             background: var(--clx-bg-surface);
             color: var(--clx-text-primary);
             font-family: inherit;
-            width: 220px;
+            flex: 1 1 180px;
+            min-width: 0;
+            max-width: 280px;
         }
         .prof-name-input:focus { outline: none; border-color: var(--clx-accent); box-shadow: 0 0 0 2px var(--clx-accent-subtle); }
         .prof-edit-btn { background: none; border: 1px solid var(--clx-border); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--clx-accent); font-family: inherit; font-weight: 600; }
         .prof-edit-btn:hover { background: var(--clx-accent-subtle); }
+        .prof-edit-btn.danger { color: var(--clx-danger); border-color: var(--clx-danger); border-color: color-mix(in srgb, var(--clx-danger) 45%, transparent); }
+        .prof-edit-btn.danger:hover { background: var(--clx-danger-bg); }
+        .phrases-toggle:focus-visible { outline: 2px solid var(--clx-focus); outline-offset: -2px; }
 
         /* Stats grid */
         .prof-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -123,7 +129,8 @@
         .prof-link-icon { font-size: 18px; }
 
         /* Setting row */
-        .prof-setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--clx-border); }
+        .prof-setting-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--clx-border); }
+        .prof-select { padding: 5px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); font-family: inherit; cursor: pointer; min-width: 150px; max-width: 100%; }
         .prof-setting-row:last-child { border-bottom: none; padding-bottom: 0; }
         .prof-setting-label { font-size: 13px; font-weight: 500; color: var(--clx-text-primary); }
         .prof-setting-sub { font-size: 11px; color: var(--clx-text-muted); margin-top: 1px; }
@@ -200,19 +207,43 @@
         .phrase-row:hover .prof-edit-btn,
         .phrase-row:focus-within .prof-edit-btn { opacity: 1; }
 
+        /* Add-phrase form: fields wrap onto a second line instead of squeezing */
+        .phrase-add-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; padding: 10px; background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-radius: 8px; margin-bottom: 14px; }
+        .phrase-add-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .phrase-add-field.shortcut { flex: 0 1 150px; min-width: 120px; }
+        .phrase-add-field.text { flex: 1 1 220px; }
+        .phrase-add-field label { font-size: 10px; font-weight: 600; color: var(--clx-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .phrase-add-input { width: 100%; padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); font-family: inherit; }
+        .phrase-add-input.mono { font-family: monospace; }
+        .phrase-add-input:focus, .prof-select:focus { outline: none; border-color: var(--clx-accent); box-shadow: 0 0 0 2px var(--clx-accent-subtle); }
+        .phrase-add-btn { padding: 6px 14px; font-size: 13px; min-height: 32px; align-self: flex-end; }
+
+        /* Lock screen: privacy overlay — the session stays signed in (same as /home/, /app/, /sbar/) */
+        #lockScreenOverlay { display: none; position: fixed; inset: 0; background: #0d1f2d; z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
+
+        /* Touch: 44px targets, and row actions can't rely on hover */
+        @media (pointer: coarse) {
+            .prof-edit-btn, .prof-select, .prof-name-input, .phrase-add-input, .phrase-add-btn { min-height: 44px; }
+            .phrase-row .prof-edit-btn { opacity: 1; min-height: 44px; min-width: 44px; }
+        }
+
         @media (max-width: 500px) {
             .prof-hero { flex-direction: column; text-align: center; }
+            .prof-name-edit { justify-content: center; }
+            .prof-name-input { flex-basis: 100%; max-width: none; }
             .prof-stats-grid { grid-template-columns: 1fr 1fr; }
             .prof-link-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .phrase-add-field.shortcut, .phrase-add-field.text { flex: 1 1 100%; }
+            .phrase-add-btn { width: 100%; justify-content: center; }
+            .prof-select { width: 100%; }
         }
     </style>
 </head>
 <body>
     <header class="site-header">
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
-        <div class="header-actions">
-            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
-        </div>
     </header>
 
     <div class="clx-shell">
@@ -245,35 +276,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
         <a href="/apa/" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -298,7 +315,6 @@
             <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
-    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
     <main class="clx-main" role="main">
     <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;"><span id="alertText"></span></div>
@@ -356,7 +372,6 @@
                     <a href="/sbar/" class="prof-link-item"><span class="prof-link-icon">📋</span>SBAR Handoff</a>
                     <a href="/rotationlog/" class="prof-link-item"><span class="prof-link-icon">🕐</span>Rotation Log</a>
                     <a href="/resources/" class="prof-link-item"><span class="prof-link-icon">📚</span>Resources</a>
-                    <a href="/ai/" class="prof-link-item" target="_blank"><span class="prof-link-icon">🤖</span>AI Assistant</a>
                 </div>
             </div>
         </div>
@@ -370,14 +385,15 @@
                         <div class="prof-setting-label">Student Year / Role</div>
                         <div class="prof-setting-sub">Updates your credential badge throughout the app</div>
                     </div>
-                    <select id="roleSelect" onchange="saveRole(this.value)" style="padding:5px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;cursor:pointer;">
+                    <select id="roleSelect" class="prof-select" onchange="saveRole(this.value)" aria-label="Student year or role">
                         <option value="Student Nurse Year 1">SN1 — Year 1</option>
                         <option value="Student Nurse Year 2">SN2 — Year 2</option>
                         <option value="Student Nurse Year 3">SN3 — Year 3</option>
                         <option value="Student Nurse Year 4">SN4 — Year 4</option>
                         <option value="RN">RN</option>
                         <option value="BSN RN">BSN RN</option>
-                        <option value="Instructor">Instructor</option>
+                        <option value="LPN">LPN</option>
+                        <!-- Instructor is admin-assigned; loadProfile() adds it only for users who already hold it -->
                     </select>
                 </div>
                 <div class="prof-setting-row">
@@ -411,32 +427,32 @@
                         <div class="prof-setting-label">Logout</div>
                         <div class="prof-setting-sub">End your session and return to login</div>
                     </div>
-                    <button class="prof-edit-btn" style="color:#dc2626;border-color:#fca5a5;" onclick="logout()">Logout</button>
+                    <button class="prof-edit-btn danger" onclick="logout()">Logout</button>
                 </div>
             </div>
         </div>
 
         <!-- Smart Phrases -->
         <div class="prof-card">
-            <div class="prof-card-hd phrases-toggle" onclick="toggleMyPhrases()" style="cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none;">
+            <div class="prof-card-hd phrases-toggle" id="phrasesToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="myPhrasesBody" onclick="toggleMyPhrases()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMyPhrases();}" style="cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none;">
                 <span style="flex:1;">My Smart Phrases</span>
                 <span id="phrasesCount" style="font-size:11px;font-weight:500;color:var(--clx-text-muted);text-transform:none;letter-spacing:0;"></span>
-                <span id="phrasesToggleIcon" style="font-size:13px;color:var(--clx-text-muted);transition:transform 0.2s;">▶</span>
+                <span id="phrasesToggleIcon" aria-hidden="true" style="font-size:13px;color:var(--clx-text-muted);transition:transform 0.2s;">▶</span>
             </div>
             <div class="prof-card-bd" id="myPhrasesBody" style="display:none;">
                 <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Type a shortcut (e.g. <code style="background:var(--clx-bg-surface-2);padding:1px 5px;border-radius:4px;">.vs</code>) in any note field and it auto-expands. Global phrases from your instructor are always available.</p>
 
                 <!-- Add form on top so it's always one click away -->
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;padding:10px;background:var(--clx-bg-surface-2);border:1px solid var(--clx-border);border-radius:8px;margin-bottom:14px;">
-                    <div style="display:flex;flex-direction:column;gap:3px;">
-                        <label style="font-size:10px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Shortcut</label>
-                        <input id="newPhraseShortcut" type="text" placeholder=".myshortcut" style="width:140px;padding:6px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:monospace;">
+                <div class="phrase-add-form">
+                    <div class="phrase-add-field shortcut">
+                        <label for="newPhraseShortcut">Shortcut</label>
+                        <input id="newPhraseShortcut" type="text" class="phrase-add-input mono" placeholder=".myshortcut">
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:160px;">
-                        <label style="font-size:10px;font-weight:600;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Expansion text</label>
-                        <input id="newPhraseText" type="text" placeholder="Text that replaces the shortcut" style="width:100%;padding:6px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);font-family:inherit;">
+                    <div class="phrase-add-field text">
+                        <label for="newPhraseText">Expansion text</label>
+                        <input id="newPhraseText" type="text" class="phrase-add-input" placeholder="Text that replaces the shortcut">
                     </div>
-                    <button class="prof-edit-btn" onclick="addMyPhrase()" style="padding:6px 14px;font-size:13px;height:32px;align-self:flex-end;">+ Add</button>
+                    <button class="prof-edit-btn phrase-add-btn" onclick="addMyPhrase()">+ Add</button>
                 </div>
 
                 <div id="myPhrasesList"></div>
@@ -447,11 +463,20 @@
     </main>
     </div><!-- /clx-shell -->
 
+    <!-- Lock screen (privacy overlay; the session stays signed in) -->
+    <div id="lockScreenOverlay" role="dialog" aria-modal="true" aria-label="Portal locked">
+        <div style="text-align:center;color:#fff;">
+            <div style="font-size:60px;margin-bottom:16px;">&#128274;</div>
+            <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
+            <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
+            <button type="button" id="unlockScreenBtn" onclick="unlockScreen()" style="background:var(--clx-accent);color:var(--clx-accent-text);border:none;padding:14px 40px;min-height:44px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">&#128275; Unlock</button>
+        </div>
+    </div>
+
         <nav class="clx-mobile-nav" aria-label="Mobile navigation">
         <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
         <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
         <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
-        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat"><span class="clx-mobile-nav-icon">&#128172;</span><span>Chat</span></a>
         <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
     </nav>
 
@@ -459,7 +484,7 @@
     <script src="/shared/toast.js"></script>
     <script>
         const currentUser = localStorage.getItem('bendbsn_user') || '';
-        const displayName = localStorage.getItem('bendbsn_displayName') || 'User';
+        let displayName = localStorage.getItem('bendbsn_displayName') || 'User'; // reassigned by saveDisplayName
         const currentUid = localStorage.getItem('bendbsn_uid') || '';
 
         const firebaseConfig = {
@@ -475,38 +500,38 @@
         const database = firebase.database();
 
         const THEME_KEY = 'bendbsn_theme'; // matches shared/header.js
+        // The sidebar "Theme" button uses shared/header.js's toggleDarkMode (7-theme
+        // picker), and window.setTheme owns the sidebar icon + the Firebase sync.
+        function syncDarkModeToggle() {
+            const toggle = document.getElementById('darkModeToggle');
+            if (toggle) toggle.checked = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+        }
         function initTheme() {
             const t = localStorage.getItem(THEME_KEY) || 'light';
             document.documentElement.setAttribute('data-theme', t);
-            const icon = document.getElementById('sidebarThemeIcon');
-            if (icon) icon.textContent = t === 'dark' ? '☀️' : '🌙';
-            const toggle = document.getElementById('darkModeToggle');
-            if (toggle) toggle.checked = t === 'dark';
-        }
-        function toggleDarkMode() {
-            const current = document.documentElement.getAttribute('data-theme') || 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem(THEME_KEY, next);
-            const icon = document.getElementById('sidebarThemeIcon');
-            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
-            const toggle = document.getElementById('darkModeToggle');
-            if (toggle) toggle.checked = next === 'dark';
+            syncDarkModeToggle();
         }
         function toggleDarkModeFromProfile(checked) {
             const next = checked ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem(THEME_KEY, next);
-            const icon = document.getElementById('sidebarThemeIcon');
-            if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+            if (window.setTheme) {
+                window.setTheme(next);
+            } else {
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem(THEME_KEY, next);
+            }
+            syncDarkModeToggle();
         }
         initTheme();
+        // Keep the switch in step with the theme picker and initThemeSync (Firebase wins)
+        new MutationObserver(syncDarkModeToggle).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
         // ── Auth state — resolved before any click is possible ──
         let _profileAuthUser = null;
         let _profileLoaded = false;
         firebase.auth().onAuthStateChanged(function(user) {
             _profileAuthUser = user;
+            // Sync theme with userProfiles/{uid}/theme like the other pages do
+            if (user && window.initThemeSync && window._bsnUid !== user.uid) window.initThemeSync(database, user.uid);
             // Load profile once auth is resolved (ensures UID is available for Firebase reads)
             if (!_profileLoaded) {
                 _profileLoaded = true;
@@ -515,18 +540,64 @@
             }
         });
 
-        let sidebarOpen = false;
+        // Desktop collapse/expand — same key and default (collapsed) as /app/.
+        // The tablet drawer + hamburger are injected by shared/header.js.
+        (function initSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            let collapsed = true;
+            try { collapsed = localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false'; } catch (e) {}
+            sidebar.classList.toggle('collapsed', collapsed);
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
+        })();
         function toggleSidebar() {
-            sidebarOpen = !sidebarOpen;
-            document.getElementById('appSidebar').classList.toggle('mobile-open', sidebarOpen);
-            document.getElementById('sidebarBackdrop').classList.toggle('visible', sidebarOpen);
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            try { localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed)); } catch (e) {}
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
-        function lockScreen() { localStorage.removeItem('bendbsn_auth'); window.location.href = '/'; }
+        // Lock is a privacy overlay (same as /home/, /app/, /sbar/): it keeps the
+        // session. Removing bendbsn_auth did nothing — the login page saw the live
+        // Firebase session and bounced straight back to /home/.
+        function lockScreen() {
+            const o = document.getElementById('lockScreenOverlay');
+            if (!o) return;
+            o.style.display = 'flex';
+            const b = document.getElementById('unlockScreenBtn');
+            if (b) b.focus();
+        }
+        function unlockScreen() {
+            const o = document.getElementById('lockScreenOverlay');
+            if (o) o.style.display = 'none';
+        }
         function logout() {
             showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
-                try { firebase.auth().signOut(); } catch(e) {}
-                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
-                window.location.href = '/';
+                // Push any pending inline phrase edit first (the phrase cache is cleared below)
+                // Bounded like login's history write: an offline RTDB set() never settles
+                let flushPhrases;
+                try { flushPhrases = flushPendingPhraseEdits(); } catch (e) {}
+                Promise.race([Promise.resolve(flushPhrases), new Promise(r => setTimeout(r, 3000))]).catch(() => {}).then(() => {
+                    // End the Firebase session, then clear the local session and leave
+                    let signOut;
+                    try { signOut = firebase.auth().signOut(); } catch(e) {}
+                    return Promise.resolve(signOut).catch(() => {});
+                }).then(() => {
+                    // Phrase cache + seed flag and the role cache aren't uid-keyed; on a shared
+                    // computer they would be merged into the next user's profile.
+                    ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid',
+                     'bendbsn_role_v2','bendbsn_login_at',PHRASES_KEY,'bendbsn_phrases_seeded_v1'].forEach(k => {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                    });
+                    try { if (typeof window.bsnPurgeLocalUserData === 'function') window.bsnPurgeLocalUserData(); } catch (e) {}
+                    window.location.href = '/';
+                });
             }, { confirmText: 'Logout', danger: true });
         }
 
@@ -550,21 +621,23 @@
 
         // Load profile
         function loadProfile() {
-            const nameEl = document.getElementById('profDisplayName');
             const emailEl = document.getElementById('profEmail');
-            const avatarEl = document.getElementById('profAvatar');
             const roleEl = document.getElementById('profRoleBadge');
             const sinceEl = document.getElementById('profMemberSince');
 
-            nameEl.textContent = displayName;
+            // Same precedence as /home/: the Auth name is only a first-visit fallback;
+            // the RTDB profile (read below) is the source of truth.
+            let hasStoredName = true;
+            try { hasStoredName = !!localStorage.getItem('bendbsn_displayName'); } catch (e) {}
+            if (!hasStoredName && _profileAuthUser && _profileAuthUser.displayName) applyDisplayName(_profileAuthUser.displayName);
+            else showDisplayName(displayName);
             emailEl.textContent = currentUser;
-            avatarEl.style.background = getAvatarColor(displayName);
-            avatarEl.textContent = getInitials(displayName);
 
             const profileUid = (_profileAuthUser && _profileAuthUser.uid) || currentUid;
             if (!profileUid) { roleEl.textContent = 'Unknown'; return; }
             database.ref('userProfiles/' + profileUid).once('value').then(snap => {
                 const profile = snap.val() || {};
+                if (!_savingName && profile.displayName && profile.displayName !== displayName) applyDisplayName(profile.displayName);
                 // Build display role string from whatever fields are set
                 let role = profile.role;
                 if (!role && profile.role_id === 'student_nurse' && profile.role_year) {
@@ -573,13 +646,20 @@
                 if (!role && profile.role_label) {
                     role = profile.role_year ? profile.role_label + ' ' + profile.role_year : profile.role_label;
                 }
-                role = role || 'Student Nurse Year 1';
+                // Prefer role_id (+ year) — /app/ updates those without touching `role`
+                const roleKey = getRoleKey(profile);
+                role = roleKey || role || 'Student Nurse Year 1';
                 roleEl.textContent = role;
                 // Set dropdown to current role
                 const sel = document.getElementById('roleSelect');
                 if (sel) {
-                    const match = Array.from(sel.options).find(o => o.value === role);
-                    if (match) sel.value = role;
+                    // Instructor is admin-assigned (rules reject self-promotion) — only
+                    // offer it to users who already hold it, so they can re-save.
+                    if ((profile.role_id === 'instructor' || profile.isAdmin === true) && !sel.querySelector('option[value="Instructor"]')) {
+                        sel.add(new Option('Instructor', 'Instructor'));
+                    }
+                    if (roleKey && sel.querySelector('option[value="' + roleKey + '"]')) sel.value = roleKey;
+                    sel.dataset.prev = sel.value;
                 }
                 if (profile.createdAt) {
                     const d = new Date(profile.createdAt);
@@ -587,13 +667,10 @@
                 }
             }).catch(() => {});
 
-            // Count notes
-            if (currentUser) {
-                const sanitized = currentUser.replace(/\./g,'_').replace(/@/g,'_at_');
-                database.ref('userDocuments/' + sanitized).once('value').then(snap => {
-                    document.getElementById('statNotes').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
-                }).catch(() => { document.getElementById('statNotes').textContent = '—'; });
-            }
+            // Count notes — /app/ saves them under userDocuments/{uid}
+            database.ref('userDocuments/' + profileUid).once('value').then(snap => {
+                document.getElementById('statNotes').textContent = snap.numChildren();
+            }).catch(() => { document.getElementById('statNotes').textContent = '—'; });
 
             // Count care plans
             database.ref('carePlans/' + currentUid).once('value').then(snap => {
@@ -627,22 +704,46 @@
             document.getElementById('profNameEdit').style.display = 'none';
             document.getElementById('profDisplayName').closest('.prof-name').style.display = '';
         }
+        function showDisplayName(name) {
+            document.getElementById('profDisplayName').textContent = name;
+            const avatarEl = document.getElementById('profAvatar');
+            avatarEl.style.background = getAvatarColor(name);
+            avatarEl.textContent = getInitials(name);
+        }
+        function applyDisplayName(name) {
+            displayName = name;
+            try { localStorage.setItem('bendbsn_displayName', name); } catch (e) {}
+            showDisplayName(name);
+        }
+        let _savingName = false;
         function saveDisplayName() {
+            if (_savingName) return;
             const input = document.getElementById('profNameInput');
             const newName = input.value.trim();
             if (!newName) { showToast('Name cannot be empty.', 'warning'); return; }
             if (newName === displayName) { cancelEditName(); return; }
+            // Home/App re-read the Firebase Auth displayName on every load, so the
+            // rename has to land there too or it reverts on the next visit.
+            const user = _profileAuthUser || firebase.auth().currentUser;
+            if (!user) { showToast('Your session is still loading — try again in a moment.', 'warning'); return; }
 
-            localStorage.setItem('bendbsn_displayName', newName);
-            document.getElementById('profDisplayName').textContent = newName;
-            document.getElementById('profAvatar').style.background = getAvatarColor(newName);
-            document.getElementById('profAvatar').textContent = getInitials(newName);
+            const prevName = displayName;
+            const profileRef = database.ref('userProfiles/' + user.uid);
+            let profileSaved = false;
+            _savingName = true;
+            applyDisplayName(newName);
             cancelEditName();
-
-            // Update Firebase using already-resolved auth user
-            const uid = (_profileAuthUser && _profileAuthUser.uid) || currentUid;
-            if (uid) database.ref('userProfiles/' + uid).update({ displayName: newName }).catch(() => {});
-            showToast('Display name updated.', 'success');
+            profileRef.update({ displayName: newName, firstName: newName.split(' ')[0] || newName }).then(() => {
+                profileSaved = true;
+                return user.updateProfile({ displayName: newName });
+            }).then(() => {
+                showToast('Display name updated.', 'success');
+            }).catch(err => {
+                console.error('saveDisplayName failed:', err && err.code, err && err.message);
+                applyDisplayName(prevName);
+                if (profileSaved) profileRef.update({ displayName: prevName, firstName: prevName.split(' ')[0] || prevName }).catch(() => {});
+                showToast('Could not save your name (' + ((err && err.code) || 'error') + ').', 'error');
+            }).finally(() => { _savingName = false; });
         }
 
         const ROLE_MAP = {
@@ -652,14 +753,40 @@
             'Student Nurse Year 4': { role_id: 'student_nurse', role_label: 'Student Nurse', role_year: 'Year 4' },
             'RN':         { role_id: 'rn',         role_label: 'RN',          role_year: null },
             'BSN RN':     { role_id: 'bsn_rn',     role_label: 'BSN, RN',     role_year: null },
+            'LPN':        { role_id: 'lpn',        role_label: 'LPN',         role_year: null },
             'Instructor': { role_id: 'instructor',  role_label: 'Instructor',  role_year: null }
         };
 
-        function saveRole(role) {
+        // Map a profile to its ROLE_MAP key: role_id (+ year number for students)
+        // first, then the legacy `role` string. '' when nothing matches.
+        function getRoleKey(profile) {
+            if (profile.role_id === 'student_nurse') {
+                const y = (String(profile.role_year || '').match(/\d+/) || [])[0];
+                if (y && ROLE_MAP['Student Nurse Year ' + y]) return 'Student Nurse Year ' + y;
+            } else if (profile.role_id) {
+                const k = Object.keys(ROLE_MAP).find(key => ROLE_MAP[key].role_id === profile.role_id);
+                if (k) return k;
+            }
+            return (profile.role && ROLE_MAP[profile.role]) ? profile.role : '';
+        }
+
+        function saveRole(role, confirmed) {
+            const sel = document.getElementById('roleSelect');
+            const prev = sel ? sel.dataset.prev : '';
             const mapped = ROLE_MAP[role];
-            if (!mapped) { showToast('Unknown role.', 'warning'); return; }
+            if (!mapped) { if (sel && prev) sel.value = prev; showToast('Unknown role.', 'warning'); return; }
             const uid = (_profileAuthUser && _profileAuthUser.uid) || currentUid;
-            if (!uid) { showToast('Not logged in — please refresh.', 'warning'); return; }
+            if (!uid) { if (sel && prev) sel.value = prev; showToast('Not logged in — please refresh.', 'warning'); return; }
+            // An instructor who switches away can't switch back (the rules only let
+            // admins/instructors write role_id 'instructor'), so confirm first.
+            if (!confirmed && prev === 'Instructor' && role !== 'Instructor') {
+                if (sel) sel.value = prev; // the modal has no cancel callback — only move it on confirm
+                showConfirmModal('Change role',
+                    'You will lose instructor access, and only an administrator can restore it. Change your role to ' + role + '?',
+                    function () { if (sel) sel.value = role; saveRole(role, true); },
+                    { confirmText: 'Change role', danger: true });
+                return;
+            }
             database.ref('userProfiles/' + uid).update({
                 role: role,
                 role_id: mapped.role_id,
@@ -677,10 +804,15 @@
                     }));
                 } catch(e) {}
                 document.getElementById('profRoleBadge').textContent = role;
+                if (sel) sel.dataset.prev = role;
                 showToast('Role updated to ' + role + '.', 'success');
             }).catch(err => {
-                console.error('saveRole failed:', err.code, err.message);
-                showToast('Save failed (' + (err.code || 'unknown') + '). Check console.', 'error');
+                console.error('saveRole failed:', err && err.code, err && err.message);
+                if (sel && prev) sel.value = prev; // don't leave the select showing an unsaved role
+                const denied = /permission.denied/i.test(String((err && (err.code || err.message)) || ''));
+                showToast(denied
+                    ? (role === 'Instructor' ? 'Instructor role is assigned by an administrator.' : 'You don\'t have permission to change to that role.')
+                    : 'Could not save your role — check your connection and try again.', 'error');
             });
         }
 
@@ -726,6 +858,8 @@
             const opening = body.style.display === 'none';
             body.style.display = opening ? 'block' : 'none';
             if (icon) icon.textContent = opening ? '▼' : '▶';
+            const header = document.getElementById('phrasesToggle');
+            if (header) header.setAttribute('aria-expanded', String(opening));
             try { localStorage.setItem(PHRASES_OPEN_KEY, opening ? '1' : '0'); } catch (e) {}
         }
         // Restore preference on first paint (default = collapsed).
@@ -734,8 +868,10 @@
                 if (localStorage.getItem(PHRASES_OPEN_KEY) === '1') {
                     const body = document.getElementById('myPhrasesBody');
                     const icon = document.getElementById('phrasesToggleIcon');
+                    const header = document.getElementById('phrasesToggle');
                     if (body) body.style.display = 'block';
                     if (icon) icon.textContent = '▼';
+                    if (header) header.setAttribute('aria-expanded', 'true');
                 }
             } catch (e) {}
         })();
@@ -768,7 +904,7 @@
                 <div class="phrase-row">
                     <code class="phrase-shortcut">${escapeHtml(k)}</code>
                     <span class="phrase-expansion" contenteditable="true" spellcheck="false" data-shortcut="${escapeHtml(k)}" oninput="onPhraseEditInline(this)" title="${escapeHtml(phrases[k])}">${escapeHtml(phrases[k])}</span>
-                    <button class="prof-edit-btn" style="color:#dc2626;border-color:#fca5a5;" onclick="deleteMyPhrase('${escapeHtml(k).replace(/'/g,"\\'")}')" title="Delete phrase">\u00d7</button>
+                    <button type="button" class="prof-edit-btn danger phrase-del" data-shortcut="${escapeHtml(k)}" title="Delete phrase" aria-label="Delete phrase ${escapeHtml(k)}">\u00d7</button>
                 </div>`;
 
             // Compact 2-col grid; categories span full width as chip-style headers.
@@ -793,19 +929,58 @@
             list.innerHTML = html;
         }
 
-        // Inline edit on the expansion text — debounced per-shortcut.
-        let _phraseEditTimer = null;
+        // Delete buttons: one delegated listener reading data-shortcut, so the
+        // shortcut text never ends up inside an inline onclick JS string.
+        document.getElementById('myPhrasesList').addEventListener('click', function (e) {
+            const b = e.target.closest('.phrase-del');
+            if (b && this.contains(b)) deleteMyPhrase(b.getAttribute('data-shortcut'));
+        });
+
+        // Inline edit on the expansion text — debounced per shortcut, so typing in
+        // another row doesn't cancel this row's pending save.
+        const _phraseEditTimers = {}; // shortcut -> { timer, text }
         function onPhraseEditInline(el) {
             const shortcut = el.getAttribute('data-shortcut');
+            if (!shortcut) return;
             const text = el.textContent.trim();
-            if (!shortcut || !text) return;
-            if (_phraseEditTimer) clearTimeout(_phraseEditTimer);
-            _phraseEditTimer = setTimeout(function () {
-                const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
-                if (window.writeSmartPhrase) {
-                    window.writeSmartPhrase(shortcut, text, db, currentUid);
-                }
-            }, 600);
+            const pending = _phraseEditTimers[shortcut];
+            if (pending) clearTimeout(pending.timer);
+            if (!text) { delete _phraseEditTimers[shortcut]; return; }
+            _phraseEditTimers[shortcut] = {
+                text: text,
+                timer: setTimeout(function () {
+                    delete _phraseEditTimers[shortcut];
+                    _phrasesChanged = true;
+                    const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
+                    if (window.writeSmartPhrase) {
+                        window.writeSmartPhrase(shortcut, text, db, currentUid);
+                    }
+                }, 600)
+            };
+        }
+        // Write pending inline edits now (used by logout, which clears the phrase cache).
+        // Resolves once Firebase has them. Also covers an add/delete whose 500 ms
+        // shared-module sync hasn't fired yet.
+        let _phrasesChanged = false;
+        function flushPendingPhraseEdits() {
+            const keys = Object.keys(_phraseEditTimers);
+            if (!keys.length && !_phrasesChanged) return Promise.resolve();
+            keys.forEach(function (k) {
+                const p = _phraseEditTimers[k];
+                clearTimeout(p.timer);
+                delete _phraseEditTimers[k];
+                if (window.writeSmartPhrase) window.writeSmartPhrase(k, p.text, null, ''); // local cache only
+            });
+            const uid = (_profileAuthUser && _profileAuthUser.uid) || currentUid;
+            if (!uid) return Promise.resolve();
+            let raw = '{}';
+            try { raw = localStorage.getItem(PHRASES_KEY) || '{}'; } catch (e) {}
+            return database.ref('userProfiles/' + uid + '/smartPhrases').set(raw).then(function () {
+                // Synced; clear the flag unless another edit landed while the write was in flight
+                let now = '{}';
+                try { now = localStorage.getItem(PHRASES_KEY) || '{}'; } catch (e) {}
+                if (now === raw) _phrasesChanged = false;
+            });
         }
 
         function addMyPhrase() {
@@ -816,6 +991,10 @@
             if (!shortcut || !text) { showToast('Both shortcut and expansion are required.', 'warning'); return; }
             if (!shortcut.startsWith('.')) shortcut = '.' + shortcut;
             if (shortcut.length < 2) { showToast('Shortcut must be at least 2 characters (e.g. .vs)', 'warning'); return; }
+            // Same rule as the /app/ phrase manager (new shortcuts only — existing ones still work)
+            shortcut = shortcut.toLowerCase();
+            if (!/^\.[a-z0-9]+$/.test(shortcut)) { showToast('Use letters/numbers only after the dot (e.g. .myphrase)', 'warning'); return; }
+            _phrasesChanged = true;
             const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
             if (window.writeSmartPhrase) {
                 window.writeSmartPhrase(shortcut, text, db, currentUid);
@@ -830,9 +1009,11 @@
             renderPhraseList();
             updatePhrasesCount();
             showToast('Phrase "' + shortcut + '" saved.', 'success');
+            shortcutEl.focus(); // ready for the next phrase
         }
 
         function deleteMyPhrase(shortcut) {
+            _phrasesChanged = true;
             const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
             if (window.deleteSmartPhrase) {
                 window.deleteSmartPhrase(shortcut, db, currentUid);
@@ -853,6 +1034,7 @@
                 'Add back any built-in phrases you have deleted? Your custom phrases stay untouched.',
                 function () {
                     const added = window.restoreDefaultSmartPhrases ? window.restoreDefaultSmartPhrases() : 0;
+                    _phrasesChanged = true;
                     // Sync up to Firebase so other devices pick up the restore
                     const db = (typeof database !== 'undefined') ? database : (window.firebase && firebase.database());
                     if (window.syncSmartPhrasesToFirebase) window.syncSmartPhrasesToFirebase(db, currentUid);
@@ -867,6 +1049,20 @@
         document.getElementById('profNameInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') saveDisplayName();
             if (e.key === 'Escape') cancelEditName();
+        });
+
+        // Add-phrase form: Enter in Shortcut moves on to Expansion (or submits if it's
+        // already filled); Enter in Expansion submits.
+        document.getElementById('newPhraseShortcut').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' || e.isComposing) return;
+            e.preventDefault();
+            const textEl = document.getElementById('newPhraseText');
+            if (textEl.value.trim()) addMyPhrase(); else textEl.focus();
+        });
+        document.getElementById('newPhraseText').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' || e.isComposing) return;
+            e.preventDefault();
+            addMyPhrase();
         });
 
         // loadProfile() and loadMyPhrases() are called inside onAuthStateChanged above

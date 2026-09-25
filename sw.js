@@ -1,44 +1,6 @@
-// BSN9B Service Worker
-// FCM background message support
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-    apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
-    authDomain: "bendbsn-17377.firebaseapp.com",
-    projectId: "bendbsn-17377",
-    messagingSenderId: "762882187702",
-    appId: "1:762882187702:web:81c97c9eae005666796117"
-});
-
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-    const { title, body, icon } = payload.notification || {};
-    self.registration.showNotification(title || 'BendBSN', {
-        body: body || '',
-        icon: icon || '/android-chrome-192x192.png',
-        badge: '/favicon-32x32.png',
-        tag: payload.data?.tag || 'bendbsn',
-        data: payload.data
-    });
-});
-
-self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    const targetUrl = event.notification.data?.url || '/chat/';
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-            for (const client of clientList) {
-                if (client.url.includes('/chat/') && 'focus' in client) return client.focus();
-            }
-            if (clients.openWindow) return clients.openWindow(targetUrl);
-        })
-    );
-});
-
+// BendBSN Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v220';
+const CACHE_VERSION = 'v222';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -49,10 +11,7 @@ const OFFLINE_URLS = [
     '/offline/',
     '/home/',
     '/app/',
-    '/chat/',
-    '/ai/',
     '/resources/',
-    '/community/',
     '/clinical/',
     '/clinical/cap-modules.js',
     '/clinical/cap-renderers.js',
@@ -60,7 +19,6 @@ const OFFLINE_URLS = [
     '/clinical/packet/',
     '/clinical/standalone/',
     '/apa/',
-    '/labsched/',
     '/sbar/',
     '/careplan/',
     '/rotationlog/',
@@ -97,13 +55,9 @@ const STALE_WHILE_REVALIDATE = [
     '/home/index.html',
     '/app/index.html',
     '/resources/index.html',
-    '/community/index.html',
-    '/chat/index.html',
-    '/ai/index.html',
     '/clinical/index.html',
     '/clinical/packet/index.html',
     '/apa/index.html',
-    '/labsched/index.html',
     '/sbar/index.html',
     '/careplan/index.html',
     '/rotationlog/index.html',
@@ -111,14 +65,44 @@ const STALE_WHILE_REVALIDATE = [
     '/emr/index.html'
 ];
 
+// Must be cached or the install fails. A failed install keeps the previous
+// worker and its cache, and the browser retries on the next update check,
+// instead of activating a worker whose cache has no offline fallback.
+const CRITICAL_URLS = ['/offline/'];
+
+// Fetch one precache URL and store it under its own key.
+// - cache: 'reload' skips the browser HTTP cache, so a new cache version never
+//   captures the previous deploy's JS/CSS (served cache-first until the next bump).
+// - A followed redirect (Firebase Hosting 301s /x/ <-> /x) is re-wrapped as a
+//   plain response: a redirected response served to a navigation is rejected
+//   by the browser as a network error, which broke offline pages.
+function precache(cache, url) {
+    return fetch(new Request(url, { cache: 'reload' })).then((res) => {
+        if (!res.ok) throw new Error('[SW] Precache ' + url + ' -> ' + res.status);
+        if (!res.redirected) return cache.put(url, res);
+        return res.blob().then((body) => cache.put(url, new Response(body, {
+            status: res.status,
+            statusText: res.statusText,
+            headers: res.headers
+        })));
+    });
+}
+
 // Install event - cache core resources
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(OFFLINE_URLS))
+            .then((cache) => Promise.all(CRITICAL_URLS.map((url) => precache(cache, url))).then(() => Promise.all(
+                // Everything else is best-effort: one 404 or flaky fetch skips
+                // that file rather than leaving the whole new cache empty.
+                OFFLINE_URLS.filter((url) => !CRITICAL_URLS.includes(url)).map((url) =>
+                    precache(cache, url).catch((err) => console.warn('[SW] Precache skipped:', url, err))
+                )
+            )))
             .then(() => self.skipWaiting())
             .catch((err) => {
                 console.error('[SW] Install cache failed:', err);
+                throw err;
             })
     );
 });
@@ -145,6 +129,17 @@ self.addEventListener('activate', (event) => {
             })
     );
 });
+
+// Last-resort offline page when even '/offline/' is not in the cache, so
+// respondWith() never resolves to undefined (a browser network error).
+function offlineResponse() {
+    return new Response(
+        '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>Offline</title><p style="font-family:system-ui,sans-serif;padding:24px">' +
+        'You\'re offline. Reconnect and reload the page.</p>',
+        { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+}
 
 // Check if URL should use stale-while-revalidate
 function shouldRevalidate(url) {
@@ -174,7 +169,12 @@ self.addEventListener('fetch', (event) => {
 
     // Always fetch admin fresh to avoid stale cached UI
     if (event.request.url.includes('/admin/')) {
-        event.respondWith(fetch(event.request));
+        // Never cached; offline navigations still get the offline card.
+        event.respondWith(fetch(event.request).catch(() =>
+            event.request.mode === 'navigate'
+                ? caches.match('/offline/').then((r) => r || offlineResponse())
+                : Response.error()
+        ));
         return;
     }
 
@@ -196,7 +196,7 @@ self.addEventListener('fetch', (event) => {
                     // Offline fallback - return cached version
                     return caches.match(event.request).then(cachedResponse => {
                         return cachedResponse || caches.match('/offline/');
-                    });
+                    }).then(r => r || offlineResponse());
                 })
         );
         return;
@@ -247,8 +247,9 @@ self.addEventListener('message', (event) => {
                         return caches.delete(cacheName);
                     })
                 );
-            }).then(() => {
-                console.log('✅ All caches cleared');
+            }).then(() => caches.open(CACHE_NAME).then((c) => c.add('/offline/')).catch(() => {}))
+            .then(() => {
+                console.log('✅ All caches cleared (offline page re-cached)');
                 // Notify all clients that cache was cleared
                 return self.clients.matchAll().then(clients => {
                     clients.forEach(client => {

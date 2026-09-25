@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <script>
         if (localStorage.getItem('bendbsn_auth') !== 'true') {
@@ -36,19 +36,21 @@
         }
 
         /* ---- Disclaimer bar ---- */
+        /* The shared .site-header is static (scrolls away), so the banner
+           sticks to the viewport top. Its height is published as
+           --emr-disclaimer-h (see script after the banner markup) so the
+           sticky chart action bar can sit directly below it. */
         .sim-disclaimer {
-            background: #7f1d1d;
-            color: #fff;
+            background: var(--clx-danger-bg, #fef2f2);
+            color: var(--clx-danger-text, #991b1b);
             text-align: center;
             font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            padding: 6px 12px;
-            border-bottom: 2px solid #450a0a;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
             position: sticky;
-            top: 56px;
+            top: 0;
             z-index: 99;
-            text-transform: uppercase;
         }
 
         /* ---- Sidebar units ---- */
@@ -81,6 +83,12 @@
             padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit;
         }
         .emr-back-btn:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
+        .emr-unit-select {
+            display: none; /* shown only at <=480px, where the sidebar is hidden */
+            padding: 6px 10px; border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary, #1a2532);
+            font-size: 13px; font-family: inherit;
+        }
 
         /* ---- Board mode toggle ---- */
         .board-mode-toggle { display: inline-flex; border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px; overflow: hidden; }
@@ -123,7 +131,7 @@
         }
         .mgr-table .mgr-dx { white-space: normal; max-width: 280px; }
         .mgr-table .mgr-allergies { white-space: normal; max-width: 180px; font-size: 12px; }
-        .mgr-table .mgr-allergies.has-allergy { color: #b91c1c; font-weight: 600; }
+        .mgr-table .mgr-allergies.has-allergy { color: var(--clx-danger-text, #b91c1c); font-weight: 600; }
         .mgr-table .mgr-badges { display: flex; gap: 3px; }
         @media (max-width: 720px) {
             .mgr-table .mgr-dx { max-width: 200px; }
@@ -168,6 +176,7 @@
            as .esi-N (replacing legacy .acuity-N) so only one scale exists in the UI. */
         .esi-dot {
             display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+            background: var(--clx-text-muted, #9ca3af); /* no ESI recorded */
         }
         .esi-1 { background: #dc2626; }
         .esi-2 { background: #f97316; }
@@ -216,15 +225,15 @@
         }
         .chart-header .ch-value { font-size: 13px; font-weight: 600; color: var(--clx-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .chart-header .ch-value.large { font-size: 16px; }
-        .chart-header .ch-value.warn { color: #b91c1c; }
+        .chart-header .ch-value.warn { color: var(--clx-danger-text, #b91c1c); }
         .chart-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
         /* Sticky chart-actions strip — keeps "+ New Order / Handoff /
            Transfer / Discharge" visible while scrolling long Notes /
-           LDA / Labs lists. Top offset matches the SIM-disclaimer +
-           shared site header (~56 + small gutter). */
+           LDA / Labs lists. Sticks just below the sticky SIM disclaimer
+           (the site header is static, so no header offset is needed). */
         .chart-title-bar-sticky {
             position: sticky;
-            top: 0;
+            top: var(--emr-disclaimer-h, 28px);
             z-index: 30;
             background: var(--clx-bg-canvas, #f0f4f8);
             padding-top: 6px;
@@ -232,6 +241,11 @@
             border-bottom: 1px solid var(--clx-border, #d1dce8);
         }
         [data-theme="dark"] .chart-title-bar-sticky { background: var(--clx-bg-canvas, #0d1f2d); }
+        /* shared/app-shell.css gives .clx-main overflow-y:auto, which makes it the
+           sticky bar's scroll container even though only the window scrolls, so the
+           bar scrolled off-screen. overflow-x:clip still clips wide content but does
+           not create a scroll container. Every wide table has its own overflow wrapper. */
+        body.has-sidebar .clx-main { overflow-y: visible; overflow-x: clip; }
         .chart-actions button {
             padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
             border: 1px solid var(--clx-border, #d1dce8); background: var(--clx-bg-surface, #fff); color: var(--clx-text-secondary, #4a5568);
@@ -283,11 +297,12 @@
         .chart-tab-badge.overdue { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
         [data-theme="dark"] .chart-tab-badge.new { background: rgba(234,179,8,0.22); color: #fde68a; border-color: rgba(234,179,8,0.4); }
         [data-theme="dark"] .chart-tab-badge.overdue { background: rgba(220,38,38,0.22); color: #fca5a5; border-color: rgba(220,38,38,0.4); }
-        /* Soft pulse to draw the eye when unacknowledged orders exist */
+        /* Soft pulse to draw the eye when unacknowledged orders / overdue meds exist.
+           Runs a few times then settles, so it doesn't compete with charting. */
         @keyframes chartTabPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(234,179,8,0); } 50% { box-shadow: 0 0 0 3px rgba(234,179,8,0.22); } }
-        .chart-tab-badge.new { animation: chartTabPulse 2s ease-in-out infinite; }
+        .chart-tab-badge.new { animation: chartTabPulse 2s ease-in-out 3; }
         @keyframes chartTabPulseOverdue { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); } 50% { box-shadow: 0 0 0 3px rgba(220,38,38,0.28); } }
-        .chart-tab-badge.overdue { animation: chartTabPulseOverdue 2s ease-in-out infinite; }
+        .chart-tab-badge.overdue { animation: chartTabPulseOverdue 2s ease-in-out 3; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
@@ -327,9 +342,14 @@
         /* ---- Forms ---- */
         .vs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
             gap: 10px 12px;
             margin-bottom: 12px;
+        }
+        /* BP systolic + diastolic stay together on one row */
+        .vs-grid .vs-pair {
+            grid-column: span 2;
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px;
         }
         .vs-grid label {
             font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
@@ -337,6 +357,7 @@
         }
         .vs-grid input {
             width: 100%;
+            min-width: 64px; /* fits "120", "98.6", "100" plus the number spinner */
             padding: 8px 10px;
             font-size: 14px;
             border: 1px solid var(--clx-border, #d1dce8);
@@ -355,8 +376,8 @@
         .btn:hover { background: var(--clx-bg-surface-2, #f5f8fa); }
         .btn.primary { background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490); }
         .btn.primary:hover { background: var(--clx-accent-hover, #0c5d75); border-color: var(--clx-accent-hover, #0c5d75); }
-        .btn.danger { background: #fff; color: #b91c1c; border-color: #fca5a5; }
-        .btn.danger:hover { background: #fef2f2; border-color: #dc2626; color: #7f1d1d; }
+        .btn.danger { background: var(--clx-bg-surface, #fff); color: #b91c1c; border-color: #fca5a5; }
+        .btn.danger:hover { background: var(--clx-danger-bg, #fef2f2); border-color: var(--clx-danger, #dc2626); color: #7f1d1d; }
         [data-theme="dark"] .btn.danger { background: rgba(220,38,38,0.12); color: #fca5a5; border-color: rgba(220,38,38,0.5); }
         [data-theme="dark"] .btn.danger:hover { background: rgba(220,38,38,0.22); color: #fecaca; }
         /* Solid destructive variant (for Confirm Discharge in flow modals) */
@@ -383,6 +404,15 @@
             padding: 24px; text-align: center; color: var(--clx-text-muted, #718096); font-size: 13px;
         }
         .vitals-table-wrap { overflow-x: auto; }
+        /* Out-of-range flags on flowsheet cells (same palette as the Labs flag cells) */
+        /* position:relative keeps the absolutely-positioned .vs-sr text inside the scroll wrapper */
+        /* !important on backgrounds: clinical-ui.css forces td backgrounds transparent (same as .lab-flag-cell-*) */
+        .vitals-table td.vs-caution { position: relative; background: #fef9c3 !important; color: #854d0e; font-weight: 700; }
+        .vitals-table td.vs-critical { position: relative; background: #fee2e2 !important; color: #7f1d1d; font-weight: 800; }
+        [data-theme="dark"] .vitals-table td.vs-caution { background: rgba(234,179,8,0.18) !important; color: #fde68a; }
+        [data-theme="dark"] .vitals-table td.vs-critical { background: rgba(220,38,38,0.22) !important; color: #fecaca; }
+        .vitals-table .vs-flag-mark { margin-left: 2px; font-size: 11px; }
+        .vs-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
         /* ---- Notes ---- */
         .note-type-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -693,8 +723,41 @@
         }
         .flow-form-grid .ff-field.full-row { grid-column: 1 / -1; }
         .flow-form-grid textarea { resize: vertical; min-height: 56px; }
+        .flow-form-grid .ff-field { min-width: 0; }
 
-        .esi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px; }
+        /* Enter Lab Results rows: Panel · Test · Value · Unit · Flag; wraps on narrow screens */
+        .ff-result-row {
+            display: grid;
+            grid-template-columns: minmax(110px, 1.2fr) minmax(130px, 2fr) minmax(80px, 1fr) minmax(72px, 0.8fr) minmax(72px, 0.8fr);
+            gap: 6px; align-items: end; padding: 8px;
+            border: 1px solid var(--clx-border); border-radius: 6px; margin-bottom: 6px;
+            background: var(--clx-bg-surface-2);
+        }
+        .ff-result-row .ff-field { display: flex; flex-direction: column; min-width: 0; }
+        .ff-result-row label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--clx-text-muted, #718096); margin-bottom: 3px;
+        }
+        .ff-result-row input, .ff-result-row select,
+        .med-row input {
+            width: 100%; min-width: 0; padding: 7px 8px; font-size: 13px;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff); color: var(--clx-text-primary);
+            font-family: inherit;
+        }
+        /* Home-med editor rows: Medication · Dose · Route · Frequency · remove */
+        .med-row {
+            display: grid; grid-template-columns: minmax(120px, 2fr) repeat(3, minmax(64px, 1fr)) auto;
+            gap: 6px; margin-bottom: 4px; align-items: center;
+        }
+        @media (max-width: 560px) {
+            .ff-result-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .ff-result-row .ff-field:nth-child(2) { grid-column: span 2; }
+            .med-row { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+            .med-row .ef-med-name { grid-column: 1 / -1; }
+        }
+
+        .esi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
         .esi-btn {
             padding: 8px 4px; border: 1px solid var(--clx-border, #d1dce8); background: var(--clx-bg-surface, #fff);
             color: var(--clx-text-primary); border-radius: 6px; cursor: pointer;
@@ -756,6 +819,8 @@
         }
         .enc-row .enc-badge.active { background: #dcfce7; color: #166534; }
         .enc-row .enc-badge.completed { background: #e5e7eb; color: #4b5563; }
+        [data-theme="dark"] .enc-row .enc-badge.active { background: rgba(34,197,94,0.18); color: #86efac; }
+        [data-theme="dark"] .enc-row .enc-badge.completed { background: rgba(148,163,184,0.18); color: #cbd5e1; }
 
         /* Phase 3G fix: My Patients filter active banner */
         .filter-active-banner {
@@ -1009,6 +1074,8 @@
         [data-theme="dark"] .ord-status.ord-status-acknowledged,
         [data-theme="dark"] .ord-status.ord-status-active { background: rgba(34,197,94,0.18); color: #86efac; }
         [data-theme="dark"] .ord-status.ord-status-discontinued { background: rgba(239,68,68,0.18); color: #fca5a5; }
+        [data-theme="dark"] .ord-status.ord-status-held { background: rgba(234,179,8,0.18); color: #fde68a; }
+        [data-theme="dark"] .ord-status.ord-status-completed { background: rgba(148,163,184,0.18); color: #cbd5e1; }
 
         /* New Order modal: type picker buttons */
         .ord-type-row {
@@ -1062,7 +1129,7 @@
             font-weight: 600; cursor: pointer; color: var(--clx-accent, #0f7490);
             text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
         }
-        .labs-table .lab-test:hover { color: var(--clx-accent-strong, #0a5c75); }
+        .labs-table .lab-test:hover { color: var(--clx-accent-hover, #0c6478); }
         .labs-table .lab-value { font-weight: 600; min-width: 70px; }
         .labs-table .lab-range { font-size: 11px; color: var(--clx-text-muted, #718096); }
         .labs-table .lab-flag { font-weight: 800; font-size: 11px; letter-spacing: 0.04em; }
@@ -1201,6 +1268,8 @@
         .fyi-banner .fyi-clear:hover { opacity: 1; }
         [data-theme="dark"] .fyi-banner { background: rgba(234,179,8,0.12); color: #fde68a; border-color: rgba(234,179,8,0.3); }
         [data-theme="dark"] .fyi-banner.empty { background: transparent; color: var(--clx-text-muted); }
+        [data-theme="dark"] .fyi-banner .fyi-meta,
+        [data-theme="dark"] .fyi-banner .fyi-clear { color: #fde68a; }
 
         /* All Units view: collapse the 5 empty FYI rows into a disclosure so the board
            isn't dominated by empty-state banners. Active banners still render inline above. */
@@ -1406,20 +1475,47 @@
         /* ---- Mobile tweaks ---- */
         @media (max-width: 480px) {
             .emr-title-bar h1 { font-size: 17px; }
+            .emr-unit-select { display: block; }
             .chart-header { padding: 10px 12px; gap: 8px 12px; }
             .chart-header .ch-value.large { font-size: 14px; }
             .chart-tab { padding: 8px 10px; font-size: 12px; }
             .emr-panel-bd { padding: 12px; }
             .adm-modal { padding: 14px 16px; max-height: 96vh; }
-            .esi-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
-            .esi-btn { padding: 6px 2px; font-size: 10px; }
+            /* 5 columns can't fit "Resuscitation" on a phone; wrap to 3 + 2 */
+            .esi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+            .esi-btn { padding: 6px 4px; }
             .esi-btn .esi-num { font-size: 14px; }
+            .flow-form-grid { grid-template-columns: minmax(0, 1fr); }
+            .vs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .ff-result-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .ff-result-row .ff-field:nth-child(2) { grid-column: 1 / -1; }
+        }
+        /* Touch targets on phones/tablets */
+        @media (pointer: coarse) {
+            .vs-grid input, .flow-form-grid input, .flow-form-grid select,
+            .ff-result-row input, .ff-result-row select, .med-row input, .med-row .btn,
+            .esi-btn { min-height: 44px; }
+            .ord-type-btn, .note-type-btn, .flow-tab-btn, .screen-q-row select, #noteRoleSelect,
+            .note-tools-row .btn, .adm-buttons .btn { min-height: 44px; }
+            .flow-close { min-width: 44px; min-height: 44px; }
         }
     </style>
 </head>
 <body class="has-sidebar">
 
-    <div class="sim-disclaimer">⚠ SIMULATION ONLY — All patients are fictional. Not for clinical use.</div>
+    <div class="sim-disclaimer" id="simDisclaimer" role="note">⚠ Simulation only: fictional patients, not for clinical use.</div>
+    <script>
+        // Publish the disclaimer's height so the sticky chart bar sits right below it
+        // (the text wraps to two lines on narrow phones).
+        (function () {
+            var d = document.getElementById('simDisclaimer');
+            if (!d) return;
+            function setH() { document.documentElement.style.setProperty('--emr-disclaimer-h', d.offsetHeight + 'px'); }
+            setH();
+            if (window.ResizeObserver) new ResizeObserver(setH).observe(d);
+            else window.addEventListener('resize', setH);
+        })();
+    </script>
 
     <div class="clx-shell">
 
@@ -1514,9 +1610,18 @@
                         <h1 id="boardTitle">All Units</h1>
                         <div class="subtitle" id="boardSubtitle">Loading patients…</div>
                     </div>
+                    <!-- Phone-only unit switcher (the sidebar is hidden at <=480px) -->
+                    <select class="emr-unit-select" id="unitSelectMobile" aria-label="Unit" onchange="showUnit(this.value)">
+                        <option value="all">All Units</option>
+                        <option value="ED">ED</option>
+                        <option value="MS">Med-Surg</option>
+                        <option value="ICU">ICU</option>
+                        <option value="PCU">PCU / Step-Down</option>
+                        <option value="OB">OB / L&amp;D</option>
+                    </select>
                     <div class="board-mode-toggle" role="group" aria-label="Board view mode">
-                        <button class="bm-btn active" id="bmCards" onclick="setBoardMode('cards')">📇 Cards</button>
-                        <button class="bm-btn" id="bmManager" onclick="setBoardMode('manager')">📋 Manager</button>
+                        <button class="bm-btn active" id="bmCards" aria-pressed="true" onclick="setBoardMode('cards')">📇 Cards</button>
+                        <button class="bm-btn" id="bmManager" aria-pressed="false" onclick="setBoardMode('manager')">📋 Manager</button>
                     </div>
                 </div>
                 <div id="boardContent" class="page-loading">Loading…</div>
@@ -1537,17 +1642,17 @@
 
                 <div class="chart-header" id="chartHeader"></div>
 
-                <div class="chart-tabs" role="tablist">
-                    <button class="chart-tab active" role="tab" data-tab="demographics" onclick="switchTab('demographics')">Demographics</button>
-                    <button class="chart-tab" role="tab" data-tab="vitals" onclick="switchTab('vitals')">Vitals</button>
-                    <button class="chart-tab" role="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
-                    <button class="chart-tab" role="tab" data-tab="orders" onclick="switchTab('orders')">📋 Orders</button>
-                    <button class="chart-tab" role="tab" data-tab="labs" onclick="switchTab('labs')">🧪 Labs</button>
-                    <button class="chart-tab" role="tab" data-tab="mar" onclick="switchTab('mar')">MAR</button>
-                    <button class="chart-tab" role="tab" data-tab="tar" onclick="switchTab('tar')">TAR</button>
-                    <button class="chart-tab" role="tab" data-tab="ldas" onclick="switchTab('ldas')">LDAs</button>
-                    <button class="chart-tab" role="tab" data-tab="flags" onclick="switchTab('flags')">Flags</button>
-                    <button class="chart-tab" role="tab" data-tab="encounters" onclick="switchTab('encounters')">Encounters</button>
+                <div class="chart-tabs" role="tablist" aria-label="Chart sections">
+                    <button class="chart-tab active" role="tab" id="chartTab-demographics" aria-controls="tab-demographics" aria-selected="true" data-tab="demographics" onclick="switchTab('demographics')">Demographics</button>
+                    <button class="chart-tab" role="tab" id="chartTab-vitals" aria-controls="tab-vitals" aria-selected="false" data-tab="vitals" onclick="switchTab('vitals')">Vitals</button>
+                    <button class="chart-tab" role="tab" id="chartTab-notes" aria-controls="tab-notes" aria-selected="false" data-tab="notes" onclick="switchTab('notes')">Notes</button>
+                    <button class="chart-tab" role="tab" id="chartTab-orders" aria-controls="tab-orders" aria-selected="false" data-tab="orders" onclick="switchTab('orders')">📋 Orders</button>
+                    <button class="chart-tab" role="tab" id="chartTab-labs" aria-controls="tab-labs" aria-selected="false" data-tab="labs" onclick="switchTab('labs')">🧪 Labs</button>
+                    <button class="chart-tab" role="tab" id="chartTab-mar" aria-controls="tab-mar" aria-selected="false" data-tab="mar" onclick="switchTab('mar')">MAR</button>
+                    <button class="chart-tab" role="tab" id="chartTab-tar" aria-controls="tab-tar" aria-selected="false" data-tab="tar" onclick="switchTab('tar')">TAR</button>
+                    <button class="chart-tab" role="tab" id="chartTab-ldas" aria-controls="tab-ldas" aria-selected="false" data-tab="ldas" onclick="switchTab('ldas')">LDAs</button>
+                    <button class="chart-tab" role="tab" id="chartTab-flags" aria-controls="tab-flags" aria-selected="false" data-tab="flags" onclick="switchTab('flags')">Flags</button>
+                    <button class="chart-tab" role="tab" id="chartTab-encounters" aria-controls="tab-encounters" aria-selected="false" data-tab="encounters" onclick="switchTab('encounters')">Encounters</button>
                 </div>
 
                 <!-- Historical-view banner (shown when viewing a prior encounter) -->
@@ -1564,19 +1669,29 @@
                     <button class="btn sm" onclick="cancelPendingTransfer()">Cancel Request</button>
                 </div>
 
-                <div class="tab-panel active" id="tab-demographics" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-vitals" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-notes" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-orders" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-mar" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-labs" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-tar" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-ldas" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-flags" role="tabpanel"></div>
-                <div class="tab-panel" id="tab-encounters" role="tabpanel"></div>
+                <div class="tab-panel active" id="tab-demographics" role="tabpanel" aria-labelledby="chartTab-demographics"></div>
+                <div class="tab-panel" id="tab-vitals" role="tabpanel" aria-labelledby="chartTab-vitals"></div>
+                <div class="tab-panel" id="tab-notes" role="tabpanel" aria-labelledby="chartTab-notes"></div>
+                <div class="tab-panel" id="tab-orders" role="tabpanel" aria-labelledby="chartTab-orders"></div>
+                <div class="tab-panel" id="tab-mar" role="tabpanel" aria-labelledby="chartTab-mar"></div>
+                <div class="tab-panel" id="tab-labs" role="tabpanel" aria-labelledby="chartTab-labs"></div>
+                <div class="tab-panel" id="tab-tar" role="tabpanel" aria-labelledby="chartTab-tar"></div>
+                <div class="tab-panel" id="tab-ldas" role="tabpanel" aria-labelledby="chartTab-ldas"></div>
+                <div class="tab-panel" id="tab-flags" role="tabpanel" aria-labelledby="chartTab-flags"></div>
+                <div class="tab-panel" id="tab-encounters" role="tabpanel" aria-labelledby="chartTab-encounters"></div>
             </section>
 
         </main>
+
+        <!-- Phone bottom nav: app-shell.css hides the sidebar and hamburger at <=480px.
+             Unit switching on phones uses #unitSelectMobile in the board title bar. -->
+        <nav class="clx-mobile-nav" aria-label="Mobile navigation">
+            <button class="clx-mobile-nav-item" onclick="openPatientSearch()" aria-label="Search patients"><span class="clx-mobile-nav-icon" aria-hidden="true">🔍</span><span>Search</span></button>
+            <button class="clx-mobile-nav-item" onclick="startEdArrival()" aria-label="New ED arrival"><span class="clx-mobile-nav-icon" aria-hidden="true">🚑</span><span>ED</span></button>
+            <button class="clx-mobile-nav-item" onclick="startAdmission()" aria-label="Admit patient"><span class="clx-mobile-nav-icon" aria-hidden="true">➕</span><span>Admit</span></button>
+            <button class="clx-mobile-nav-item" onclick="openScenarioPicker()" aria-label="Scenarios"><span class="clx-mobile-nav-icon" aria-hidden="true">🎬</span><span>Scenarios</span></button>
+            <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon" aria-hidden="true">🏠</span><span>Home</span></a>
+        </nav>
     </div>
 
     <!-- Administer Modal -->
@@ -1661,6 +1776,7 @@
     let currentUserUid = null;
     let currentUserName = 'Anonymous';
     let currentUserEmail = '';
+    let currentUserProfile = {};  // own userProfiles/{uid} (role gate for the seed migration modal)
 
     let allPatients = {};         // { patientId: patientObj }
     let allEncounters = {};       // { encounterId: encounterObj }  ← Phase 2
@@ -1695,6 +1811,7 @@
     let currentImaging = [];      // Phase 3C: ALL imaging studies for current patient (filtered by encounter at render time)
     let allLabsByPatient = {};    // Round-2 polish: global listener at emr/labs for board-side critical-value indicators — {pid: {labId: lab}}
     let lastVitalsByPatient = {}; // Round-3 polish: per-patient most-recent vitals timestamp for bed-card "VS Xm ago" display
+    let marByOrderId = {};        // {orderId: {status, at}} latest charted MAR administration, for board "overdue" counts
 
     let activeNoteType = 'soap';
     let activeNoteRole = 'RN';    // Phase 3A.5b — default role for new notes
@@ -1745,6 +1862,7 @@
         // Try to read display name from /userProfiles, else fall back to localStorage
         database.ref('userProfiles/' + user.uid).once('value').then(function (snap) {
             const p = snap.val() || {};
+            currentUserProfile = p;
             currentUserName = p.displayName || p.name || localStorage.getItem('bendbsn_displayName') || (user.email || 'Anonymous').split('@')[0];
             updateSessionInfo();
             // Sync theme
@@ -1790,8 +1908,15 @@
                 // Empty or first-time — seed quietly without modal prompt
                 seedFresh().then(attachGlobalListeners).catch(onStartError);
             } else if (dbVer < latest) {
-                // Data exists but on old schema — show migration modal; listeners attach after confirm
-                showMigrationModal();
+                // Data exists but on old schema. Only admins/instructors can run the
+                // migration (emr-level .write); everyone else gets the passive banner.
+                if (currentUserProfile.isAdmin === true || currentUserProfile.role_id === 'instructor') {
+                    showMigrationModal(); // listeners attach after confirm
+                } else {
+                    attachGlobalListeners();
+                    const sb = document.getElementById('seedBanner');
+                    if (sb) sb.classList.add('visible');
+                }
             } else {
                 // Up-to-date — just attach listeners
                 attachGlobalListeners();
@@ -1816,7 +1941,10 @@
         showToast('Skipped. Data may be incomplete — reload to try again.', 'info', 6000);
     };
 
+    let migrationInFlight = false; // blocks a second wipe+seed while the first is still running
     window.runMigration = function () {
+        if (migrationInFlight) return;
+        migrationInFlight = true;
         const btn = document.getElementById('migrationConfirmBtn');
         const status = document.getElementById('migrationStatus');
         btn.disabled = true; btn.textContent = 'Working…';
@@ -1825,8 +1953,9 @@
         // Watchdog: if the whole migration takes > 20 seconds, surface a retry/skip option
         const watchdog = setTimeout(function () {
             if (!document.getElementById('migrationOverlay').classList.contains('visible')) return;
+            // Status text only: the wipe+seed chain is still pending, so re-enabling the
+            // button here would let a second migration start on top of it.
             status.innerHTML = '⚠ Migration is taking longer than expected. Check network or Firebase auth, or click <strong>Skip for now</strong> to continue.';
-            btn.disabled = false; btn.textContent = 'Retry';
         }, 20000);
 
         const wipeUpdates = {
@@ -1850,12 +1979,14 @@
             return seedFresh();
         }).then(function () {
             clearTimeout(watchdog);
+            migrationInFlight = false;
             status.textContent = 'Done. Loading board…';
             document.getElementById('migrationOverlay').classList.remove('visible');
             attachGlobalListeners();
             showToast('Sim EMR data reset complete. 28 patients loaded.', 'success');
         }).catch(function (err) {
             clearTimeout(watchdog);
+            migrationInFlight = false;
             console.error('[EMR] Migration failed:', err);
             status.textContent = 'Error: ' + (err.message || err);
             btn.disabled = false;
@@ -1937,7 +2068,7 @@
                     patientId: p.id, status: 'completed'
                 });
                 const prChart = ((seed.CHART_BY_PATIENT[p.id] || {}).prior || [])[0] || {};
-                writeChartEntries(updates, p.id, prEncId, prChart, p.priorEncounter.admissionDate);
+                writeChartEntries(updates, p.id, prEncId, prChart, p.priorEncounter.admissionDate, 'completed');
             }
         });
 
@@ -1959,7 +2090,7 @@
                     patientId: p.id, status: 'completed'
                 });
                 const chart = priorChartList[idx] || {};
-                writeChartEntries(updates, p.id, encId, chart, priorEnc.admissionDate);
+                writeChartEntries(updates, p.id, encId, chart, priorEnc.admissionDate, 'completed');
             });
         });
 
@@ -1971,8 +2102,11 @@
     // Writes MAR/TAR/vitals/notes arrays for one (patient, encounter) pair.
     // Phase 3B: Each MAR item auto-generates a paired medication order; MAR row gets orderId backref.
     // Same for TAR items → treatment orders.
-    function writeChartEntries(updates, patientId, encounterId, chart, baseTs) {
+    function writeChartEntries(updates, patientId, encounterId, chart, baseTs, encStatus) {
         const base = baseTs || Date.now();
+        // Orders on a discharged (completed) encounter are completed too, so historical
+        // charts don't show ACTIVE orders or overdue badges.
+        const seededOrderStatus = encStatus === 'completed' ? 'completed' : 'active';
         (chart.mar || []).forEach(function (item, i) {
             const key = database.ref('emr/mar/' + patientId).push().key;
             const orderId = database.ref('emr/orders/' + encounterId).push().key;
@@ -1988,7 +2122,7 @@
                 scheduledTime: item.scheduledTime || null,
                 isPRN: !!item.isPRN,
                 prnIndication: item.prnIndication || null,
-                status: 'active',
+                status: seededOrderStatus,
                 placedBy: 'Seed (admitting MD)',
                 placedAt: base,
                 orderEntry: 'CPOE',
@@ -2015,7 +2149,7 @@
                 treatment: item.treatment || '',
                 frequency: item.frequency || '',
                 scheduledTime: item.scheduledTime || null,
-                status: 'active',
+                status: seededOrderStatus,
                 placedBy: 'Seed (admitting MD)',
                 placedAt: base,
                 orderEntry: 'CPOE',
@@ -2152,7 +2286,11 @@
     // ===========================================================
     // [560] FIREBASE LISTENERS
     // ===========================================================
+    let globalListenersAttached = false;
     function attachGlobalListeners() {
+        // Skip + a late-finishing migration can both call this; never double-register listeners.
+        if (globalListenersAttached) return;
+        globalListenersAttached = true;
         database.ref('emr/patients').on('value', function (snap) {
             allPatients = snap.val() || {};
             updateUnitCounts();
@@ -2165,6 +2303,7 @@
         });
         database.ref('emr/encounters').on('value', function (snap) {
             allEncounters = snap.val() || {};
+            updateUnitCounts(); // My Patients count reads careTeam off encounters
             if (currentPatientId) {
                 updateChartReadOnlyState();
                 renderChartHeader();
@@ -2182,10 +2321,16 @@
             unitBanners = snap.val() || {};
             renderBoard();
         });
-        // Phase 3G: load all user profiles for the Care Team picker
-        database.ref('userProfiles').on('value', function (snap) {
-            allUserProfiles = snap.val() || {};
-        });
+        // Phase 3G: load all user profiles for the Care Team picker. Root userProfiles
+        // reads are admin/instructor-only (PII), so students just get themselves.
+        if (currentUserProfile.isAdmin === true || currentUserProfile.role_id === 'instructor') {
+            database.ref('userProfiles').on('value', function (snap) {
+                allUserProfiles = snap.val() || {};
+            });
+        } else {
+            allUserProfiles = {};
+            if (currentUserUid) allUserProfiles[currentUserUid] = currentUserProfile;
+        }
         // Phase 3B.2: global orders listener for bed-card "new"/"overdue" indicators.
         // Volume at current seed size (~200-300 orders across 28 patients) is well within RTDB performance.
         database.ref('emr/orders').on('value', function (snap) {
@@ -2222,6 +2367,28 @@
             lastVitalsByPatient = out;
             renderBoard();
         });
+        // Global MAR listener, folded to {orderId: {status, at}} (most recent charted
+        // administration per order). pendingAndOverdueOrdersFor() uses it so a dose that
+        // was just given / held / refused stops showing as overdue on the board and the
+        // Orders tab badge, while the next scheduled dose of the same order still flags.
+        database.ref('emr/mar').on('value', function (snap) {
+            const val = snap.val() || {};
+            const out = {};
+            Object.keys(val).forEach(function (pid) {
+                const rows = val[pid] || {};
+                Object.keys(rows).forEach(function (k) {
+                    const it = rows[k];
+                    if (!it || !it.orderId || !it.administeredAt) return;
+                    const prev = out[it.orderId];
+                    if (!prev || it.administeredAt > prev.at) {
+                        out[it.orderId] = { status: String(it.status || '').toLowerCase(), at: it.administeredAt };
+                    }
+                });
+            });
+            marByOrderId = out;
+            renderBoard();
+            if (currentPatient) updateOrdersTabBadge();
+        });
     }
 
     // Format vitals-elapsed for bed-card display. Color-codes:
@@ -2237,9 +2404,11 @@
         let label, color;
         if (mins < 60) { label = mins + 'm ago'; color = 'var(--clx-text-muted, #718096)'; }
         else if (mins < 120) { label = Math.floor(mins / 60) + 'h ago'; color = 'var(--clx-text-muted, #718096)'; }
-        else if (mins < 240) { label = Math.floor(mins / 60) + 'h ago'; color = '#b45309'; }
-        else { label = Math.floor(mins / 60) + 'h ago'; color = '#b91c1c'; }
-        return '<div class="bc-last-vs" style="font-size:10px;color:' + color + ';margin-top:4px;" data-elapsed-ts="' + ts + '" title="Last vitals charted">🩺 VS ' + label + '</div>';
+        else if (mins < 240) { label = Math.floor(mins / 60) + 'h ago'; color = 'var(--clx-warning-text, #b45309)'; }
+        else { label = Math.floor(mins / 60) + 'h ago'; color = 'var(--clx-danger-text, #b91c1c)'; }
+        // data-elapsed-ts sits on the inner span so the 30s refresh (refreshElapsedElements)
+        // updates only the time text and keeps the "🩺 VS" prefix.
+        return '<div class="bc-last-vs" style="font-size:10px;color:' + color + ';margin-top:4px;" title="Last vitals charted">🩺 VS <span data-elapsed-ts="' + ts + '">' + label + '</span></div>';
     }
 
     // Returns the count of unresulted-or-recently-resulted CRITICAL labs
@@ -2271,7 +2440,6 @@
     }
 
     // Phase 2 helpers: encounter lookup
-    function encOf(encId) { return allEncounters[encId] || null; }
     function currentEncForPatient(pid) {
         const p = allPatients[pid];
         return (p && p.currentEncounterId) ? allEncounters[p.currentEncounterId] : null;
@@ -2282,13 +2450,22 @@
         return currentEncForPatient(currentPatientId);
     }
 
+    // ED hall beds are fillable, so they count toward ED capacity.
+    function unitCapacity(u) { return UNIT_BED_COUNT + (u === 'ED' ? ED_HALL_BEDS.length : 0); }
+    // Human label for an encounter location. Bed ids already carry the unit prefix ('MS-03'),
+    // so never prepend the unit again; 'WAITING' / empty becomes '<Unit> waiting room'.
+    function bedLabel(unit, bed) {
+        if (!bed || bed === 'WAITING') return (UNIT_NAMES[unit] || unit || '') + ' waiting room';
+        return String(bed).indexOf('-') === -1 && unit ? unit + '-' + bed : String(bed);
+    }
+
     function updateUnitCounts() {
         UNIT_ORDER.forEach(function (unit) {
             const beds = allBeds[unit] || {};
             let occ = 0;
             Object.values(beds).forEach(function (v) { if (v) occ++; });
             const el = document.getElementById('cnt-' + unit);
-            if (el) el.textContent = occ + '/' + UNIT_BED_COUNT;
+            if (el) el.textContent = occ + '/' + unitCapacity(unit);
         });
         // Phase 3G: My Patients sidebar count
         const mineEl = document.getElementById('cnt-mine');
@@ -2303,7 +2480,17 @@
         const refs = [
             { ref: database.ref('emr/vitals/' + pid), cb: function (snap) {
                 currentVitals = snapshotToSortedArray(snap, 'timestamp', 'desc');
-                if (currentTab === 'vitals') renderVitalsTab();
+                if (currentTab === 'vitals') {
+                    // Refresh only the flowsheet so a half-entered vitals set survives
+                    // another user saving vitals on this patient.
+                    if (document.getElementById('vitalsTableArea')) {
+                        renderVitalsTable();
+                        const hdr = document.getElementById('vitalsElapsedHdr');
+                        if (hdr) hdr.innerHTML = vitalsElapsedHdrHtml();
+                    } else {
+                        renderVitalsTab();
+                    }
+                }
             }},
             { ref: database.ref('emr/notes/' + pid), cb: function (snap) {
                 currentNotes = snapshotToSortedArray(snap, 'timestamp', 'desc');
@@ -2409,12 +2596,17 @@
         boardMode = mode;
         document.getElementById('bmCards').classList.toggle('active', mode === 'cards');
         document.getElementById('bmManager').classList.toggle('active', mode === 'manager');
+        document.getElementById('bmCards').setAttribute('aria-pressed', mode === 'cards');
+        document.getElementById('bmManager').setAttribute('aria-pressed', mode === 'manager');
         renderBoard();
     };
 
     function renderBoard() {
         const el = document.getElementById('boardContent');
         if (!el) return;
+        // Keep the phone-only unit picker in sync however currentUnit changed
+        const unitSel = document.getElementById('unitSelectMobile');
+        if (unitSel && unitSel.value !== currentUnit) unitSel.value = currentUnit;
         // If patients haven't loaded yet, keep loading state
         if (Object.keys(allPatients).length === 0 && Object.keys(allBeds).length === 0) {
             el.className = 'page-loading';
@@ -2426,7 +2618,7 @@
             const beds = allBeds[u] || {};
             return sum + Object.values(beds).filter(function (v) { return v; }).length;
         }, 0);
-        const totalBeds = units.length * UNIT_BED_COUNT;
+        const totalBeds = units.reduce(function (s, u) { return s + unitCapacity(u); }, 0);
         document.getElementById('boardSubtitle').textContent =
             totalOcc + ' occupied of ' + totalBeds + ' beds' + (currentUnit === 'all' ? ' across all units' : '');
 
@@ -2480,8 +2672,10 @@
                 ? '<span class="bc-crit-pill">🔬 ' + critLabs.length + ' critical' + criticalLabsHoverTooltip(p.id) + '</span>'
                 : '';
             const indicators = (newPill || overduePill || critPill) ? '<div class="bc-indicators">' + newPill + overduePill + critPill + '</div>' : '';
-            return '<div class="bed-card esi-band-' + (p.esiAcuity || 3) + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
-                '<div class="bed-num"><span class="esi-dot esi-' + (p.esiAcuity || 3) + '" title="ESI ' + (p.esiAcuity || '—') + ' (1 = resuscitation, 5 = non-urgent)"></span>' + esc(b.bedId) + rnChip + '</div>' +
+            // No ESI score (most inpatient admissions) → neutral dot, no colored band
+            const esi = /^[1-5]$/.test(String(p.esiAcuity || '')) ? String(p.esiAcuity) : '';
+            return '<div class="bed-card' + (esi ? ' esi-band-' + esi : '') + (pending ? ' pending-transfer' : '') + '" onclick="openChart(\'' + esc(p.id) + '\')">' +
+                '<div class="bed-num"><span class="esi-dot' + (esi ? ' esi-' + esi : '') + '" title="ESI ' + (esi || '—') + ' (1 = resuscitation, 5 = non-urgent)"></span>' + esc(b.bedId) + rnChip + '</div>' +
                 '<div class="pt-name">' + esc(p.name) + '</div>' +
                 '<div class="pt-meta">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' • MRN ' + esc(p.mrn) + '</div>' +
                 '<div class="pt-dx">' + esc(p.dx) + '</div>' +
@@ -2574,16 +2768,24 @@
             if (newVal) {
                 updates['emr/unitBanners/' + unit] = { text: newVal, updatedAt: Date.now(), updatedBy: currentUserName };
             } else {
-                updates['emr/unitBanners/' + unit] = null;
+                // Empty-text record instead of null: a null write that empties
+                // emr/unitBanners is denied for students by the emr/$section rule.
+                updates['emr/unitBanners/' + unit] = { text: '', updatedAt: Date.now(), updatedBy: currentUserName };
             }
-            database.ref().update(updates);
+            database.ref().update(updates).catch(function (e) {
+                showToast('Could not update banner: ' + (e.message || e), 'error');
+            });
         }, { defaultValue: existing, placeholder: 'e.g., All students break at 1500', submitText: 'Save' });
     };
 
     window.clearFyiBanner = function (ev, unit) {
         ev.stopPropagation();
         showConfirmModal('Clear FYI banner?', 'This will remove the banner for ' + (UNIT_NAMES[unit] || unit) + '.',
-            function () { database.ref('emr/unitBanners/' + unit).set(null); }, { danger: true, confirmText: 'Clear' });
+            function () {
+                database.ref('emr/unitBanners/' + unit).set({ text: '', updatedAt: Date.now(), updatedBy: currentUserName }).catch(function (e) {
+                    showToast('Could not clear banner: ' + (e.message || e), 'error');
+                });
+            }, { danger: true, confirmText: 'Clear' });
     };
 
     // Incoming Transfers section — shown at top of receiving unit
@@ -2598,7 +2800,7 @@
                 '<div class="wr-acuity" style="background:#f97316;">⇄</div>' +
                 '<div class="wr-main">' +
                     '<div class="wr-name">' + esc(e._patient.name) + ' <span class="wr-meta">' + esc(e._patient.sex) + ' ' + esc(String(e._patient.age)) + ' · ' + esc(e._patient.mrn) + '</span></div>' +
-                    '<div class="wr-cc">From ' + esc(e.unit) + '-' + esc(e.bed) + ' · ' + esc(pt.reason || '—') + '</div>' +
+                    '<div class="wr-cc">From ' + esc(bedLabel(e.unit, e.bed)) + ' · ' + esc(pt.reason || '—') + '</div>' +
                 '</div>' +
                 '<div class="wr-wait">Requested by ' + esc(pt.requestedBy) + '<br><span class="wr-mins">' + esc(waited) + ' ago</span></div>' +
                 '<div class="wr-actions">' +
@@ -2749,7 +2951,7 @@
         }
         switch (mgrSortBy) {
             case 'unit':   va = a.unit; vb = b.unit; break;
-            case 'name':   va = a.patient.name.toLowerCase(); vb = b.patient.name.toLowerCase(); break;
+            case 'name':   va = (a.patient.name || '').toLowerCase(); vb = (b.patient.name || '').toLowerCase(); break;
             case 'age':    va = a.patient.age || 0; vb = b.patient.age || 0; break;
             case 'dx':     va = (a.patient.dx || '').toLowerCase(); vb = (b.patient.dx || '').toLowerCase(); break;
             case 'code':   va = a.patient.codeStatus || ''; vb = b.patient.codeStatus || ''; break;
@@ -2874,6 +3076,7 @@
         currentPatientId = pid;
         currentPatient = p;
         viewingEncounterId = null; // start on current encounter
+        lastActiveTextarea = null; // never let Copy/Insert target another chart's hidden note field
         updateChartReadOnlyState();
         document.getElementById('viewBoard').classList.remove('active');
         document.getElementById('viewChart').classList.add('active');
@@ -2890,6 +3093,7 @@
         currentPatient = null;
         viewingEncounterId = null;
         chartReadOnly = false;
+        lastActiveTextarea = null;
         document.getElementById('historicalBanner').style.display = 'none';
         document.getElementById('viewChart').classList.remove('active');
         document.getElementById('viewBoard').classList.add('active');
@@ -3001,6 +3205,7 @@
         currentTab = tab;
         document.querySelectorAll('.chart-tab').forEach(function (el) {
             el.classList.toggle('active', el.dataset.tab === tab);
+            el.setAttribute('aria-selected', el.dataset.tab === tab ? 'true' : 'false');
         });
         document.querySelectorAll('.tab-panel').forEach(function (el) {
             el.classList.toggle('active', el.id === 'tab-' + tab);
@@ -3218,8 +3423,10 @@
                 '<div class="emr-panel-hd"><span>Record Vitals</span></div>' +
                 '<div class="emr-panel-bd">' +
                     '<div class="vs-grid">' +
-                        '<div><label>BP Sys</label><input type="number" id="vsSys" min="40" max="300" inputmode="numeric"></div>' +
-                        '<div><label>BP Dia</label><input type="number" id="vsDia" min="20" max="200" inputmode="numeric"></div>' +
+                        '<div class="vs-pair" role="group" aria-label="Blood pressure">' +
+                            '<div><label for="vsSys">BP Sys</label><input type="number" id="vsSys" min="40" max="300" inputmode="numeric"></div>' +
+                            '<div><label for="vsDia">BP Dia</label><input type="number" id="vsDia" min="20" max="200" inputmode="numeric"></div>' +
+                        '</div>' +
                         '<div><label>HR</label><input type="number" id="vsHr" min="20" max="250" inputmode="numeric"></div>' +
                         '<div><label>RR</label><input type="number" id="vsRr" min="4" max="60" inputmode="numeric"></div>' +
                         '<div><label>Temp °C</label><input type="number" id="vsTemp" min="30" max="45" step="0.1" inputmode="decimal"></div>' +
@@ -3229,17 +3436,58 @@
                     '<button class="btn primary" onclick="saveVitals()">Save Vitals</button>' +
                 '</div>' +
             '</div>';
-        // Most-recent vitals elapsed for the header
-        const latest = filterToActiveEncounter(currentVitals)[0];
-        const elapsedHdr = latest
-            ? '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Last vitals <span data-elapsed-ts="' + latest.timestamp + '">' + esc(fmtElapsed(latest.timestamp)) + '</span></span>'
-            : '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Most recent first (this encounter)</span>';
         el.innerHTML = formHtml +
             '<div class="emr-panel">' +
-                '<div class="emr-panel-hd"><span>Vitals Flowsheet</span>' + elapsedHdr + '</div>' +
+                '<div class="emr-panel-hd"><span>Vitals Flowsheet</span><span id="vitalsElapsedHdr">' + vitalsElapsedHdrHtml() + '</span></div>' +
                 '<div class="emr-panel-bd" id="vitalsTableArea"></div>' +
             '</div>';
         renderVitalsTable();
+    }
+
+    // Presentation-only range flags for the flowsheet (never copied into note text).
+    // Adult thresholds (temp in °C); patients under 18 are not flagged because
+    // pediatric normal ranges differ. cl/ch = critical low/high, wl/wh = caution low/high.
+    const VS_RANGES = {
+        sys:  { cl: 90,   ch: 180,  wl: 100,  wh: 140 },
+        dia:  { cl: null, ch: 110,  wl: null, wh: 90 },
+        hr:   { cl: 50,   ch: 120,  wl: 60,   wh: 100 },
+        rr:   { cl: 10,   ch: 24,   wl: 12,   wh: 20 },
+        temp: { cl: 35,   ch: 39,   wl: 36,   wh: 38 },
+        spo2: { cl: 92,   ch: null, wl: 95,   wh: null },
+        pain: { cl: null, ch: null, wl: null, wh: 3 }   // symptom score: caution only (4+)
+    };
+    function vsFlag(k, v) {
+        const none = { level: '', dir: '' };
+        const r = VS_RANGES[k];
+        const n = Number(v);
+        if (!r || v == null || v === '' || isNaN(n)) return none;
+        const age = currentPatient ? parseInt(currentPatient.age, 10) : NaN;
+        if (!isNaN(age) && age < 18) return none;
+        if (r.cl != null && n < r.cl) return { level: 'critical', dir: 'low' };
+        if (r.ch != null && n > r.ch) return { level: 'critical', dir: 'high' };
+        if (r.wl != null && n < r.wl) return { level: 'caution', dir: 'low' };
+        if (r.wh != null && n > r.wh) return { level: 'caution', dir: 'high' };
+        return none;
+    }
+    function vsWorst(a, b) {
+        const rank = { critical: 2, caution: 1 };
+        return (rank[b.level] || 0) > (rank[a.level] || 0) ? b : a;
+    }
+    // text must already be escaped. Colour is backed by an arrow + screen-reader text (WCAG 1.4.1).
+    function vsCell(text, f) {
+        if (!f.level) return '<td>' + text + '</td>';
+        const label = (f.dir === 'high' ? 'high' : 'low') + (f.level === 'critical' ? ', critical' : '');
+        return '<td class="vs-' + f.level + '" title="' + (f.level === 'critical' ? 'Critical ' : '') + (f.dir === 'high' ? 'high' : 'low') + ' (adult range)">' +
+            text + '<span class="vs-flag-mark" aria-hidden="true">' + (f.dir === 'high' ? '↑' : '↓') + (f.level === 'critical' ? '!' : '') + '</span>' +
+            '<span class="vs-sr"> (' + label + ')</span></td>';
+    }
+
+    // Most-recent vitals elapsed for the flowsheet header
+    function vitalsElapsedHdrHtml() {
+        const latest = filterToActiveEncounter(currentVitals)[0];
+        return latest
+            ? '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Last vitals <span data-elapsed-ts="' + latest.timestamp + '">' + esc(fmtElapsed(latest.timestamp)) + '</span></span>'
+            : '<span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">Most recent first (this encounter)</span>';
     }
 
     function renderVitalsTable() {
@@ -3253,12 +3501,12 @@
         const rows = filtered.map(function (v) {
             return '<tr>' +
                 '<td>' + esc(fmtTime(v.timestamp)) + '</td>' +
-                '<td>' + (v.sys != null && v.dia != null ? esc(v.sys + '/' + v.dia) : '—') + '</td>' +
-                '<td>' + (v.hr != null ? esc(String(v.hr)) : '—') + '</td>' +
-                '<td>' + (v.rr != null ? esc(String(v.rr)) : '—') + '</td>' +
-                '<td>' + (v.temp != null ? esc(String(v.temp)) + ' °C' : '—') + '</td>' +
-                '<td>' + (v.spo2 != null ? esc(String(v.spo2)) + '%' : '—') + '</td>' +
-                '<td>' + (v.pain != null ? esc(String(v.pain)) + '/10' : '—') + '</td>' +
+                (v.sys != null && v.dia != null ? vsCell(esc(v.sys + '/' + v.dia), vsWorst(vsFlag('sys', v.sys), vsFlag('dia', v.dia))) : '<td>—</td>') +
+                (v.hr != null ? vsCell(esc(String(v.hr)), vsFlag('hr', v.hr)) : '<td>—</td>') +
+                (v.rr != null ? vsCell(esc(String(v.rr)), vsFlag('rr', v.rr)) : '<td>—</td>') +
+                (v.temp != null ? vsCell(esc(String(v.temp)) + ' °C', vsFlag('temp', v.temp)) : '<td>—</td>') +
+                (v.spo2 != null ? vsCell(esc(String(v.spo2)) + '%', vsFlag('spo2', v.spo2)) : '<td>—</td>') +
+                (v.pain != null ? vsCell(esc(String(v.pain)) + '/10', vsFlag('pain', v.pain)) : '<td>—</td>') +
                 '<td>' + esc(v.by || '—') + '</td>' +
             '</tr>';
         }).join('');
@@ -3309,6 +3557,23 @@
     function renderNotesTab() {
         const el = document.getElementById('tab-notes');
         const ro = chartReadOnly;
+        // Returning to Notes from another tab must not wipe a half-written note (or lab
+        // lines copied in from the Labs tab). Rebuild the editor only when the chart
+        // context (patient / encounter / read-only) changes; otherwise refresh history.
+        const renderKey = currentPatientId + '|' + activeEncounterIdForView() + '|' + (ro ? 'ro' : 'rw');
+        if (!ro && el.dataset.renderKey === renderKey && document.getElementById('noteEditorArea')) {
+            const stamp = document.getElementById('noteEditorStamp');
+            if (stamp) stamp.textContent = 'By ' + currentUserName + ' · ' + fmtTime(Date.now());
+            renderNoteHistory();
+            return;
+        }
+        if (el.dataset.renderKey !== renderKey) {
+            // New chart context: drop the previous chart's screenings and cursor target
+            savedScreenings = [];
+            activeScreening = null;
+            lastActiveTextarea = null;
+        }
+        el.dataset.renderKey = renderKey;
         const noteTypes = [
             { id: 'soap',      label: 'SOAP' },
             { id: 'sbar',      label: 'SBAR' },
@@ -3323,7 +3588,7 @@
 
         const editorPanel = ro ? '' :
             '<div class="emr-panel">' +
-                '<div class="emr-panel-hd"><span>Add Note</span><span style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">By ' + esc(currentUserName) + ' · ' + esc(fmtTime(Date.now())) + '</span></div>' +
+                '<div class="emr-panel-hd"><span>Add Note</span><span id="noteEditorStamp" style="font-size:11px;font-weight:500;color:var(--clx-text-muted);">By ' + esc(currentUserName) + ' · ' + esc(fmtTime(Date.now())) + '</span></div>' +
                 '<div class="emr-panel-bd">' +
                     '<div class="note-type-row" style="align-items:center;">' + tabsHtml +
                         '<span style="margin-left:auto;font-size:11px;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Role:</span>' +
@@ -3349,7 +3614,7 @@
                 '<div class="emr-panel-bd" id="noteHistoryArea"></div>' +
             '</div>';
 
-        if (!ro) { renderNoteEditor(); wireTextareaTracking(); }
+        if (!ro) renderNoteEditor(); // renderNoteEditor already wires textarea focus tracking
         renderNoteHistory();
     }
 
@@ -3414,8 +3679,9 @@
     };
 
     window.insertLatestVitals = function () {
-        if (!currentVitals.length) { showToast('No vitals recorded yet.', 'warning'); return; }
-        const v = currentVitals[0];
+        const encVitals = filterToActiveEncounter(currentVitals);
+        if (!encVitals.length) { showToast('No vitals recorded for this encounter yet.', 'warning'); return; }
+        const v = encVitals[0];
         const parts = [];
         if (v.sys != null && v.dia != null) parts.push('BP ' + v.sys + '/' + v.dia);
         if (v.hr != null)   parts.push('HR ' + v.hr);
@@ -3428,15 +3694,18 @@
     };
 
     function insertAtCursor(text) {
+        // A re-rendered editor leaves the old textarea detached; don't write into it
+        if (lastActiveTextarea && !document.contains(lastActiveTextarea)) lastActiveTextarea = null;
         if (!lastActiveTextarea) {
             showToast('Click in a text field first, then insert.', 'warning');
-            return;
+            return false;
         }
         const start = lastActiveTextarea.selectionStart;
         const end = lastActiveTextarea.selectionEnd;
         lastActiveTextarea.value = lastActiveTextarea.value.slice(0, start) + text + lastActiveTextarea.value.slice(end);
         lastActiveTextarea.selectionStart = lastActiveTextarea.selectionEnd = start + text.length;
         lastActiveTextarea.focus();
+        return true;
     }
 
     function gatherNoteBody() {
@@ -3807,6 +4076,8 @@
             return;
         }
 
+        const _encId = activeEncounterIdForView();
+        const _encOrders = (_encId && allOrdersByEnc[_encId]) || null;
         const rows = items.map(function (it) {
             const status = (it.status || 'scheduled').toLowerCase();
             const adminInfo = (status !== 'scheduled' && it.administeredAt)
@@ -3818,18 +4089,17 @@
             const due = rowDueState(it);
             const rowCls = due.overdue ? ' mar-row-overdue' : (due.dueSoon ? ' mar-row-duesoon' : '');
             const lateChip = due.overdue
-                ? '<div style="margin-top:3px;font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:0.04em;text-transform:uppercase;">⏰ ' + fmtMinsLate(due.minutesLate) + '</div>'
-                : (due.dueSoon ? '<div style="margin-top:3px;font-size:10px;font-weight:700;color:#b45309;">⌛ Due soon</div>' : '');
+                ? '<div style="margin-top:3px;font-size:10px;font-weight:700;color:var(--clx-danger-text,#b91c1c);letter-spacing:0.04em;text-transform:uppercase;">⏰ ' + fmtMinsLate(due.minutesLate) + '</div>'
+                : (due.dueSoon ? '<div style="margin-top:3px;font-size:10px;font-weight:700;color:var(--clx-warning-text,#b45309);">⌛ Due soon</div>' : '');
             // Hold / refused reason — surfaced inline below the med name so
             // the off-going RN's reasoning is visible during board scan
             // (no click required). Pulls from the linked order's holdReason
             // first, falls back to per-row reason / notes if the row was
             // marked held independently.
-            const _encId = activeEncounterIdForView();
-            const ord = (it.orderId && _encId && allOrders[_encId]) ? allOrders[_encId][it.orderId] : null;
+            const ord = (it.orderId && _encOrders) ? _encOrders[it.orderId] : null;
             const heldReason = (ord && ord.holdReason) || it.holdReason || it.refusedReason;
             const reasonChip = (status === 'held' || status === 'refused') && heldReason
-                ? '<div style="margin-top:4px;font-size:11px;color:#b91c1c;font-style:italic;display:flex;align-items:flex-start;gap:4px;">' +
+                ? '<div style="margin-top:4px;font-size:11px;color:var(--clx-danger-text,#b91c1c);font-style:italic;display:flex;align-items:flex-start;gap:4px;">' +
                     '<span aria-hidden="true">⚠</span><span><strong>' + (status === 'held' ? 'Held' : 'Refused') + ':</strong> ' + esc(heldReason) + '</span>' +
                   '</div>'
                 : '';
@@ -4017,7 +4287,7 @@
             '<button class="btn sm" title="Copy to active note" onclick="copyLabToNote(\'' + esc(l._key) + '\')">Copy</button>';
         const row =
             '<tr class="lab-row" data-trend-key="' + esc(trendKey) + '">' +
-                '<td data-label="Test"><span class="lab-test" onclick="toggleLabSparkline(\'' + esc(trendKey) + '\')">' + esc(l.testName || '—') + '</span></td>' +
+                '<td data-label="Test"><span class="lab-test" onclick="toggleLabSparkline(this.closest(\'tr\').dataset.trendKey)">' + esc(l.testName || '—') + '</span></td>' +
                 '<td data-label="Value" class="lab-value' + flagCellClass + '">' + esc(String(l.value != null ? l.value : '—')) + (l.unit ? ' ' + esc(l.unit) : '') + noteHtml + '</td>' +
                 '<td data-label="Range" class="lab-range">' + esc(range) + '</td>' +
                 '<td data-label="Flag" class="lab-flag" title="' + esc(flagLabel(flag)) + '">' + esc(flag) + '</td>' +
@@ -4142,6 +4412,7 @@
     window.copyLabToNote = function (labKey) {
         const l = currentLabs.find(function (x) { return x._key === labKey; });
         if (!l) { showToast('Lab not found.', 'error'); return; }
+        if (lastActiveTextarea && !document.contains(lastActiveTextarea)) lastActiveTextarea = null;
         if (!lastActiveTextarea) {
             // Auto-jump to Notes tab so the user has a textarea to land in.
             switchTab('notes');
@@ -4162,8 +4433,7 @@
         const valBit = String(l.value != null ? l.value : '—') + (l.unit ? ' ' + l.unit : '');
         const time = fmtTimeShort(l.collectedAt);
         const text = (l.testName || 'Lab') + ' ' + valBit + flagBit + range + ' collected ' + time + '. ';
-        insertAtCursor(text);
-        showToast('Copied to note.', 'success', 2000);
+        if (insertAtCursor(text)) showToast('Copied to note.', 'success', 2000);
     }
 
     // ===========================================================
@@ -4191,7 +4461,9 @@
         };
         return parts.map(function (p) {
             const lower = p.toLowerCase();
-            const matched = Object.keys(panelHints).find(function (k) { return lower.indexOf(k) !== -1; });
+            // Longest matching hint wins, so 'urine culture' beats 'urine'
+            const matched = Object.keys(panelHints).filter(function (k) { return lower.indexOf(k) !== -1; })
+                .sort(function (a, b) { return b.length - a.length; })[0];
             return { panelId: matched ? panelHints[matched] : 'misc', testName: p };
         });
     }
@@ -4231,7 +4503,7 @@
                 (COMMON_TESTS_BY_PANEL[t.panelId] || []).map(function (n) {
                     return '<option' + (n === t.testName ? ' selected' : '') + '>' + esc(n) + '</option>';
                 }).join('');
-            return '<div class="ff-result-row" data-row-idx="' + i + '" style="display:grid;grid-template-columns:130px 1fr 90px 80px 90px;gap:6px;align-items:end;padding:8px;border:1px solid var(--clx-border);border-radius:6px;margin-bottom:6px;background:var(--clx-bg-surface-2);">' +
+            return '<div class="ff-result-row" data-row-idx="' + i + '">' +
                 '<div class="ff-field"><label>Panel</label><select data-r="panel" onchange="onResultPanelChange(' + i + ')">' + panelOpts + '</select></div>' +
                 '<div class="ff-field"><label>Test name</label><input data-r="name" value="' + esc(t.testName || '') + '" placeholder="e.g., WBC" list="result_test_list_' + i + '"><datalist id="result_test_list_' + i + '">' + testOpts + '</datalist></div>' +
                 '<div class="ff-field"><label>Value</label><input data-r="value" placeholder="e.g., 12.4"></div>' +
@@ -4280,7 +4552,6 @@
         const div = document.createElement('div');
         div.className = 'ff-result-row';
         div.dataset.rowIdx = idx;
-        div.style.cssText = 'display:grid;grid-template-columns:130px 1fr 90px 80px 90px;gap:6px;align-items:end;padding:8px;border:1px solid var(--clx-border);border-radius:6px;margin-bottom:6px;background:var(--clx-bg-surface-2);';
         div.innerHTML =
             '<div class="ff-field"><label>Panel</label><select data-r="panel" onchange="onResultPanelChange(' + idx + ')">' + panelOpts + '</select></div>' +
             '<div class="ff-field"><label>Test name</label><input data-r="name" placeholder="e.g., WBC" list="result_test_list_' + idx + '"><datalist id="result_test_list_' + idx + '">' + testOpts + '</datalist></div>' +
@@ -4506,9 +4777,11 @@
         const p = ctx.patient;
         const isMar = ctx.kind === 'mar';
         const itemName = isMar ? it.medication : it.treatment;
+        // Bed lives on the encounter, not the patient record
+        const encA = p.currentEncounterId ? allEncounters[p.currentEncounterId] : null;
 
         let html = '<div class="adm-section">' +
-            '<div class="adm-info-block"><span class="lbl">Patient</span><span class="val">' + esc(p.name) + '</span> &nbsp;<span style="color:var(--clx-text-muted);font-size:12px;">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' · DOB ' + esc(p.dob) + ' · ' + esc(p.bed) + '</span></div>' +
+            '<div class="adm-info-block"><span class="lbl">Patient</span><span class="val">' + esc(p.name) + '</span> &nbsp;<span style="color:var(--clx-text-muted);font-size:12px;">' + esc(p.sex) + ' ' + esc(String(p.age)) + ' · DOB ' + esc(p.dob) + ' · ' + esc(encA && encA.bed ? encA.bed : '—') + '</span></div>' +
             '<div class="adm-info-block"><span class="lbl">' + (isMar ? 'Medication' : 'Treatment') + '</span><span class="val">' + esc(itemName || '—') + '</span>' +
                 (isMar && it.dose ? '<div style="font-size:12px;margin-top:2px;">' + esc(it.dose) + (it.route ? ' · ' + esc(it.route) : '') + '</div>' : '') +
                 (it.frequency ? '<div style="font-size:11px;color:var(--clx-text-muted);">' + esc(it.frequency) + '</div>' : '') +
@@ -4674,10 +4947,12 @@
     });
 
     // ---- Shared patient-search renderer ----
-    function renderPatientSearchList(containerId, query, tab, onSelect) {
+    function renderPatientSearchList(containerId, query, tab) {
         const lcQ = (query || '').trim().toLowerCase();
         let list = Object.values(allPatients);
         if (tab === 'admitted') list = list.filter(function (p) { return !!p.currentEncounterId; });
+        // Admission wizards: only patients without an active encounter can be admitted
+        if (tab === 'inactive') list = list.filter(function (p) { return !p.currentEncounterId; });
         if (lcQ) {
             list = list.filter(function (p) {
                 return (p.name || '').toLowerCase().indexOf(lcQ) !== -1
@@ -4733,7 +5008,7 @@
     };
     window.flowUpdateSearch = function (q) {
         if (!flowCtx) return;
-        renderPatientSearchList('flowSearchResults', q, flowCtx.tab || 'admitted', 'open-chart');
+        renderPatientSearchList('flowSearchResults', q, flowCtx.tab || 'admitted');
     };
     window.flowSetSearchTab = function (tab) {
         if (!flowCtx) return;
@@ -4750,6 +5025,8 @@
             closeFlowModal();
             openChart(pid);
         } else if (flowCtx.mode === 'ed-arrival-step-1' || flowCtx.mode === 'admit-step-1') {
+            flowCtx.isNewPatient = false;
+            flowCtx.newPatient = null;
             flowCtx.selectedPatientId = pid;
             if (flowCtx.mode === 'ed-arrival-step-1') flowGoToEdArrivalStep2();
             else flowGoToAdmitStep2();
@@ -4758,11 +5035,14 @@
 
     // ---- 2. ED ARRIVAL WIZARD ----
     window.startEdArrival = function () {
-        flowCtx = { mode: 'ed-arrival-step-1', step: 1, isNewPatient: false };
+        flowCtx = { mode: 'ed-arrival-step-1', step: 1, isNewPatient: false, tab: 'inactive' };
         flowRenderEdArrivalStep1();
     };
 
     function flowRenderEdArrivalStep1() {
+        // Back from new-patient / triage: forget the prior choice so a stale
+        // isNewPatient can't create a nameless ghost patient.
+        if (flowCtx) { flowCtx.isNewPatient = false; flowCtx.newPatient = null; flowCtx.selectedPatientId = null; flowCtx.triage = null; flowCtx.esi = null; }
         const body = flowStepDots(1, 4) +
             '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Step 1 of 4 — Find existing patient or create new.</p>' +
             '<input type="text" class="flow-search-input" id="flowSearchQuery" placeholder="Search by name, MRN, or DOB…" oninput="flowUpdateSearch(this.value)" autofocus>' +
@@ -4814,6 +5094,8 @@
     window.flowGoToEdArrivalStep2 = function () {
         flowCtx.step = 2;
         const ptLabel = flowCtx.isNewPatient ? flowCtx.newPatient.name : (allPatients[flowCtx.selectedPatientId] || {}).name;
+        // Back from step 3 keeps the ESI + triage already entered (step 1 clears them).
+        const esiSel = flowCtx.esi || 3;
         const body = flowStepDots(2, 4) +
             '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Step 2 — Triage for <strong>' + esc(ptLabel) + '</strong>.</p>' +
             '<div class="flow-form-grid">' +
@@ -4829,11 +5111,10 @@
             '</div>' +
             '<div style="margin-top:10px;"><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clx-text-muted);">ESI Acuity</label>' +
             '<div class="esi-grid">' +
-                '<button class="esi-btn esi-1" onclick="flowSelectEsi(1)"><span class="esi-num">1</span>Resuscitation</button>' +
-                '<button class="esi-btn esi-2" onclick="flowSelectEsi(2)"><span class="esi-num">2</span>Emergent</button>' +
-                '<button class="esi-btn esi-3 selected" onclick="flowSelectEsi(3)"><span class="esi-num">3</span>Urgent</button>' +
-                '<button class="esi-btn esi-4" onclick="flowSelectEsi(4)"><span class="esi-num">4</span>Less urgent</button>' +
-                '<button class="esi-btn esi-5" onclick="flowSelectEsi(5)"><span class="esi-num">5</span>Non-urgent</button>' +
+                ['Resuscitation', 'Emergent', 'Urgent', 'Less urgent', 'Non-urgent'].map(function (lbl, i) {
+                    const n = i + 1;
+                    return '<button class="esi-btn esi-' + n + (n === esiSel ? ' selected' : '') + '" onclick="flowSelectEsi(' + n + ')"><span class="esi-num">' + n + '</span>' + lbl + '</button>';
+                }).join('') +
             '</div></div>' +
             '<div class="adm-buttons">' +
                 '<button class="btn" onclick="flowRenderEdArrivalStep1()">Back</button>' +
@@ -4841,7 +5122,15 @@
             '</div>';
         document.getElementById('flowTitle').textContent = 'New ED Arrival — Triage';
         document.getElementById('flowBody').innerHTML = body;
-        flowCtx.esi = 3;
+        flowCtx.esi = esiSel;
+        const tri = flowCtx.triage;
+        if (tri) {
+            [['tr_cc', 'cc'], ['tr_mode', 'mode'], ['tr_temp', 'temp'], ['tr_hr', 'hr'], ['tr_bp', 'bp'], ['tr_spo2', 'spo2'], ['tr_pain', 'pain']].forEach(function (pair) {
+                const f = document.getElementById(pair[0]);
+                const v = tri[pair[1]];
+                if (f && v !== null && v !== undefined && v !== '') f.value = String(v);
+            });
+        }
     };
 
     window.flowSelectEsi = function (n) {
@@ -4893,6 +5182,14 @@
         const dx = (document.getElementById('tr_dx').value || '').trim() || 'Eval per MD';
         const ctx = flowCtx;
         const now = Date.now();
+        if (ctx.isNewPatient && !(ctx.newPatient && ctx.newPatient.name)) {
+            showToast('Patient name missing — restart the arrival.', 'warning');
+            return;
+        }
+        if (!ctx.isNewPatient && !ctx.selectedPatientId) {
+            showToast('No patient selected — restart the arrival.', 'warning');
+            return;
+        }
 
         // Determine patient ID (existing or create new)
         let patientId;
@@ -4987,7 +5284,7 @@
 
     // ---- 3. DIRECT ADMIT WIZARD ----
     window.startAdmission = function () {
-        flowCtx = { mode: 'admit-step-1', step: 1, isNewPatient: false };
+        flowCtx = { mode: 'admit-step-1', step: 1, isNewPatient: false, tab: 'inactive' };
         const body = flowStepDots(1, 3) +
             '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Step 1 — Find existing patient or create new.</p>' +
             '<input type="text" class="flow-search-input" id="flowSearchQuery" placeholder="Search by name, MRN, or DOB…" oninput="flowUpdateSearch(this.value)" autofocus>' +
@@ -5026,7 +5323,7 @@
         if (!dob)  { showToast('DOB required.', 'warning'); return; }
         const age = calcAge(dob);
         const allergies = allergiesRaw.toUpperCase() === 'NKDA' ? ['NKDA'] : allergiesRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-        flowCtx.newPatient = { name: name, dob: dob, sex: sex, age: age, allergies: allergies, pmh: pmh, socialHx: '', homeMedications: [] };
+        flowCtx.newPatient = { name: name, dob: dob, sex: sex, age: age, allergies: allergies, pmh: pmh, socialHx: '', homeMedications: [], mrn: generateNewMRN() };
         flowGoToAdmitStep2();
     };
     window.flowGoToAdmitStep2 = function () {
@@ -5130,7 +5427,7 @@
         const noteKey = database.ref('emr/notes/' + patientId).push().key;
         updates['emr/notes/' + patientId + '/' + noteKey] = {
             encounterId: encId, type: 'narrative',
-            body: 'ADMISSION — ' + fmtTime(now) + '. Source: ' + enc.admissionSource + '. DX: ' + dx + '. Admitted to ' + unit + '-' + bed + ' by ' + enc.md + '.',
+            body: 'ADMISSION — ' + fmtTime(now) + '. Source: ' + enc.admissionSource + '. DX: ' + dx + '. Admitted to ' + bedLabel(unit, bed) + ' (' + (UNIT_NAMES[unit] || unit) + ') by ' + enc.md + '.',
             by: currentUserName, timestamp: now
         };
 
@@ -5173,7 +5470,7 @@
                 '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
                 '<button class="btn primary" id="tx_submit_btn" onclick="flowFinishTransfer()">Request Transfer</button>' +
             '</div>';
-        openFlowModal('Transfer Patient', body, esc(p.name));
+        openFlowModal('Transfer Patient', body, p.name); // subtitle is set via textContent
         const defaultTo = UNIT_ORDER.find(function (u) { return u !== enc.unit; }) || enc.unit;
         document.getElementById('tx_unit').value = defaultTo;
     };
@@ -5220,7 +5517,7 @@
             const noteKey = database.ref('emr/notes/' + currentPatientId).push().key;
             updates['emr/notes/' + currentPatientId + '/' + noteKey] = {
                 encounterId: ctx.encId, type: 'narrative',
-                body: 'TRANSFER (direct) \u2014 ' + fmtTime(now) + '. From ' + ctx.fromUnit + '-' + ctx.fromBed + ' to ' + toUnit + '-' + toBed + '. Reason: ' + reason + '. Report given to ' + rn + '.',
+                body: 'TRANSFER (direct) \u2014 ' + fmtTime(now) + '. From ' + bedLabel(ctx.fromUnit, ctx.fromBed) + ' to ' + bedLabel(toUnit, toBed) + '. Reason: ' + reason + '. Report given to ' + rn + '.',
                 by: currentUserName, timestamp: now
             };
             database.ref().update(updates).then(function () {
@@ -5313,7 +5610,7 @@
         const noteKey = database.ref('emr/notes/' + enc.patientId).push().key;
         updates['emr/notes/' + enc.patientId + '/' + noteKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'TRANSFER ACCEPTED \u2014 ' + fmtTime(now) + '. From ' + enc.unit + '-' + enc.bed + ' to ' + pt.toUnit + '-' + bed + '. Accepted by ' + currentUserName + '. Report originally given to ' + pt.reportGivenTo + '.',
+            body: 'TRANSFER ACCEPTED \u2014 ' + fmtTime(now) + '. From ' + bedLabel(enc.unit, enc.bed) + ' to ' + bedLabel(pt.toUnit, bed) + '. Accepted by ' + currentUserName + '. Report originally given to ' + pt.reportGivenTo + '.',
             by: currentUserName, timestamp: now
         };
         database.ref().update(updates).then(function () {
@@ -5352,7 +5649,7 @@
         const noteKey = database.ref('emr/notes/' + enc.patientId).push().key;
         updates['emr/notes/' + enc.patientId + '/' + noteKey] = {
             encounterId: ctx.encId, type: 'narrative',
-            body: 'TRANSFER REJECTED \u2014 ' + fmtTime(now) + '. Transfer to ' + (UNIT_NAMES[pt.toUnit] || pt.toUnit) + ' rejected by ' + currentUserName + '. Reason: ' + reason + '. Patient remains in ' + enc.unit + '-' + enc.bed + '.',
+            body: 'TRANSFER REJECTED \u2014 ' + fmtTime(now) + '. Transfer to ' + (UNIT_NAMES[pt.toUnit] || pt.toUnit) + ' rejected by ' + currentUserName + '. Reason: ' + reason + '. Patient remains in ' + bedLabel(enc.unit, enc.bed) + '.',
             by: currentUserName, timestamp: now
         };
         database.ref().update(updates).then(function () {
@@ -5536,7 +5833,7 @@
         const body =
             '<p style="font-size:13px;color:var(--clx-text-muted);margin-bottom:10px;">Assign a bed from the ED for <strong>' + esc((allPatients[enc.patientId] || {}).name) + '</strong>.</p>' +
             '<div class="flow-form-grid">' +
-                '<div class="ff-field full-row"><label>Bed</label><select id="wr_bed">' + (opts || '<option>No beds available</option>') + '</select></div>' +
+                '<div class="ff-field full-row"><label>Bed</label><select id="wr_bed">' + (opts || '<option value="">No beds available</option>') + '</select></div>' +
             '</div>' +
             '<div class="adm-buttons">' +
                 '<button class="btn" onclick="closeFlowModal()">Cancel</button>' +
@@ -5547,7 +5844,7 @@
     window.flowFinishWaitingRoomAssign = function () {
         const ctx = flowCtx;
         const bed = document.getElementById('wr_bed').value;
-        if (!bed) { showToast('Select a bed.', 'warning'); return; }
+        if (!bed) { showToast(availableBedsForUnit('ED').length ? 'Select a bed.' : 'No ED beds available.', 'warning'); return; }
         const updates = {};
         updates['emr/beds/ED/' + bed] = ctx.encId;
         updates['emr/encounters/' + ctx.encId + '/bed'] = bed;
@@ -5857,12 +6154,21 @@
                 encRec.statusNoteUpdatedAt = now;
                 encRec.statusNoteUpdatedBy = 'Scenario seed';
             }
-            // Bed conflict? Patient still admitted but bed left as-listed (will collide if existing patient is there)
-            // Strategy: if bed occupied, leave bed='WAITING' and add a status note
+            // Bed conflict? Try another free bed on the same unit first; if the unit is full,
+            // fall back to the ED waiting room (the only place a bedless encounter is listed).
             if (occupiedBeds.has(bedKey)) {
-                skippedBed++;
-                encRec.bed = 'WAITING';
-                encRec.statusNote = (encRec.statusNote || '') + ' [Append: original bed ' + enc.bed + ' was occupied; placed in waiting room]';
+                const free = availableBedsForUnit(enc.unit).filter(function (b) { return !occupiedBeds.has(enc.unit + '/' + b); });
+                if (free.length) {
+                    encRec.bed = free[0];
+                    updates['emr/beds/' + enc.unit + '/' + free[0]] = encId;
+                    occupiedBeds.add(enc.unit + '/' + free[0]);
+                    encRec.statusNote = (encRec.statusNote || '') + ' [Append: moved from ' + enc.bed + ' to ' + free[0] + ']';
+                } else {
+                    skippedBed++;
+                    encRec.unit = 'ED';
+                    encRec.bed = 'WAITING';
+                    encRec.statusNote = (encRec.statusNote || '') + ' [Append: ' + enc.bed + ' occupied and ' + enc.unit + ' full; placed in ED waiting room]';
+                }
             } else {
                 updates['emr/beds/' + enc.unit + '/' + enc.bed] = encId;
                 occupiedBeds.add(bedKey);
@@ -5923,7 +6229,7 @@
                 updates['emr/encounters/' + encId] = Object.assign({}, priorEnc, {
                     patientId: p.id, status: 'completed'
                 });
-                writeChartEntries(updates, p.id, encId, priorChartList[idx] || {}, priorEnc.admissionDate);
+                writeChartEntries(updates, p.id, encId, priorChartList[idx] || {}, priorEnc.admissionDate, 'completed');
             });
         });
 
@@ -5950,6 +6256,13 @@
                 if (existing && existing.currentEncounterId) { skippedPatient++; return; }
                 patientId = wr.patientId;
                 if (!existingPatientIds.has(patientId)) return; // unadmitted block didn't write them — skip
+                if (allPatients[patientId]) {
+                    // Record pre-existed, so the unadmitted block did not rewrite it: link the new
+                    // encounter here. (Only when pre-existing: a child write alongside a full-record
+                    // write in the same multi-path update is rejected by Firebase.)
+                    updates['emr/patients/' + patientId + '/currentEncounterId'] = encId;
+                    updates['emr/patients/' + patientId + '/status'] = 'admitted';
+                }
                 added++;
             }
             updates['emr/encounters/' + encId] = Object.assign({}, wr.encounter, {
@@ -6077,6 +6390,11 @@
             if (plan.marByPid   && plan.marByPid[p.id])   chart.mar   = (chart.mar   || []).concat(plan.marByPid[p.id]);
             if (plan.tarByPid   && plan.tarByPid[p.id])   chart.tar   = (chart.tar   || []).concat(plan.tarByPid[p.id]);
             writeChartEntries(updates, p.id, encId, chart, enc.admissionDate);
+            // Same seeded orders/labs/imaging the base migration and Append write
+            // (applyScenarioPlan wipes emr/orders, emr/labs and emr/imaging first).
+            writeSeededOrders(updates, p.id, encId, chart, enc.admissionDate, seed);
+            writeSeededLabs(updates, p.id, encId, enc.admissionDate, seed);
+            writeSeededImaging(updates, p.id, encId, enc.admissionDate, seed);
 
             // LDAs
             const ldaList = (plan.ldasByPid || {})[p.id] || [];
@@ -6099,7 +6417,7 @@
                     patientId: p.id, status: 'completed'
                 });
                 const prChart = ((plan.chartByPatient[p.id] || {}).prior || [])[0] || {};
-                writeChartEntries(updates, p.id, prEncId, prChart, p.priorEncounter.admissionDate);
+                writeChartEntries(updates, p.id, prEncId, prChart, p.priorEncounter.admissionDate, 'completed');
             }
         });
 
@@ -6123,7 +6441,7 @@
                 updates['emr/encounters/' + encId] = Object.assign({}, priorEnc, {
                     patientId: p.id, status: 'completed'
                 });
-                writeChartEntries(updates, p.id, encId, priorChartList[idx] || {}, priorEnc.admissionDate);
+                writeChartEntries(updates, p.id, encId, priorChartList[idx] || {}, priorEnc.admissionDate, 'completed');
             });
         });
 
@@ -6282,7 +6600,7 @@
 
     // Home-meds row helpers (used by the 'meds' kind editor)
     function medRowHtml(m, i) {
-        return '<div class="med-row" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:4px;">' +
+        return '<div class="med-row">' +
             '<input class="ef-med-name" placeholder="Medication" value="' + esc((m && m.med) || '') + '">' +
             '<input class="ef-med-dose" placeholder="Dose" value="' + esc((m && m.dose) || '') + '">' +
             '<input class="ef-med-route" placeholder="Route" value="' + esc((m && m.route) || '') + '">' +
@@ -6344,14 +6662,29 @@
             newVal = (input.value || '').trim() || null;
         }
 
-        const displayOld = (function (v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined || v === '' ? '—' : String(v)); })(oldVal);
-        const displayNew = (function (v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined || v === '' ? '—' : String(v)); })(newVal);
+        // Kind-aware display so allergy/med arrays of objects don't log "[object Object]";
+        // the med formatter must match the oldVal one above or the no-change check breaks.
+        function fmtDisplay(v) {
+            let out;
+            if (def.kind === 'allergies' && Array.isArray(v)) out = allergiesDisplayText(v);
+            else if (def.kind === 'meds' && Array.isArray(v)) out = v.map(function (m) { return m.med + ' ' + m.dose + ' ' + m.route + ' ' + m.freq; }).join('; ');
+            else if (Array.isArray(v)) out = v.join(', ');
+            else out = (v === null || v === undefined) ? '' : String(v);
+            return out === '' ? '—' : out;
+        }
+        const displayOld = fmtDisplay(oldVal);
+        const displayNew = fmtDisplay(newVal);
         if (displayOld === displayNew) { closeFlowModal(); return; }
 
         const now = Date.now();
         const updates = {};
         if (def.level === 'patient') {
             updates['emr/patients/' + p.id + '/' + fieldKey] = newVal;
+            // Age is stored, not derived: keep it in step with a DOB edit (never write NaN)
+            if (fieldKey === 'dob' && /^\d{4}-\d{2}-\d{2}$/.test(newVal || '')) {
+                const newAge = calcAge(newVal);
+                if (isFinite(newAge)) updates['emr/patients/' + p.id + '/age'] = newAge;
+            }
         } else {
             updates['emr/encounters/' + encId + '/' + fieldKey] = newVal;
         }
@@ -6362,7 +6695,7 @@
                 dx:'Diagnosis', md:'Attending MD', codeStatus:'Code Status',
                 diet:'Diet', activity:'Activity', ivAccess:'IV Access',
                 isolation:'Isolation', fallRisk:'Fall Risk', dnr:'DNR',
-                weightKg:'Weight (kg)', heightIn:'Height (in)'
+                weightKg:'Weight (kg)', heightIn:'Height (in)', dob:'Date of Birth'
             };
             const label = labelMap[fieldKey] || fieldKey;
             const noteKey = database.ref('emr/notes/' + p.id).push().key;
@@ -6396,6 +6729,9 @@
         ta.value = existing;
         ta.maxLength = 160;
         ta.placeholder = 'e.g., pending psych consult, family in waiting room, NPO for 1400 OR';
+        // Clicks inside the editor must not bubble to the bed card / manager row openChart
+        ta.addEventListener('click', function (e) { e.stopPropagation(); });
+        ta.addEventListener('mousedown', function (e) { e.stopPropagation(); });
         target.parentNode.replaceChild(ta, target);
         ta.focus();
         ta.select();
@@ -6770,7 +7106,7 @@
         const order = currentOrders.find(function (o) { return o._key === orderId; });
         if (!order) { showToast('Order not found.', 'error'); return; }
         showConfirmModal('Resume this order?',
-            'Status will change from Held back to Active. Previous hold reason ("' + esc(order.holdReason || '—') + '") will be preserved in notes.',
+            'Status will change from Held back to Active. Previous hold reason ("' + (order.holdReason || '—') + '") will be preserved in notes.',
             function () {
                 const now = Date.now();
                 const updates = {};
@@ -7199,7 +7535,7 @@
         const dayLabel = days === 0 ? 'Day 0 (today)' : 'Day ' + days;
         const lastAssessed = lda.lastAssessedAt
             ? '<span data-elapsed-ts="' + lda.lastAssessedAt + '">' + esc(fmtElapsed(lda.lastAssessedAt)) + '</span> by ' + esc(lda.lastAssessedBy || '—')
-            : '<span style="color:#b91c1c;">never</span>';
+            : '<span style="color:var(--clx-danger-text,#b91c1c);">never</span>';
         return '<div class="lda-row">' +
             '<div class="lda-main">' +
                 '<div class="lda-head"><strong>' + esc(lda.type) + '</strong> · ' + esc(lda.site || '—') + ' · ' + esc(lda.size || '—') + '</div>' +
@@ -7484,14 +7820,6 @@
         { id: 'mdConsult',   label: 'Consulting MD', short: 'Cons',  color: '#7c3aed' },
         { id: 'caseManager', label: 'Case Manager',  short: 'CM',    color: '#9a3412' }
     ];
-    function careTeamRoleColor(roleId) {
-        const r = CARE_TEAM_ROLES.find(function (r) { return r.id === roleId; });
-        return r ? r.color : '#6b7280';
-    }
-    function careTeamRoleLabel(roleId) {
-        const r = CARE_TEAM_ROLES.find(function (r) { return r.id === roleId; });
-        return r ? r.label : roleId;
-    }
     function initialsFor(name) {
         if (!name) return '??';
         const parts = String(name).trim().split(/\s+/);
@@ -7529,6 +7857,8 @@
         if (!encId) return { pending: [], overdue: [] };
         const orders = allOrdersByEnc[encId];
         if (!orders) return { pending: [], overdue: [] };
+        // A discharged encounter can't have overdue doses (older seeds wrote its orders as 'active').
+        const encActive = (allEncounters[encId] || {}).status === 'active';
         const pending = [], overdue = [];
         const now = Date.now();
         Object.keys(orders).forEach(function (oid) {
@@ -7537,7 +7867,7 @@
             if (o.status === 'pending-ack') {
                 pending.push(Object.assign({ _key: oid }, o));
             }
-            if (o.orderType === 'medication' && o.status === 'active' && !o.isPRN && o.scheduledTime) {
+            if (encActive && o.orderType === 'medication' && o.status === 'active' && !o.isPRN && o.scheduledTime) {
                 const times = String(o.scheduledTime).split(',').map(function (t) { return t.trim(); }).filter(function (t) { return /^\d{3,4}$/.test(t); });
                 if (!times.length) return;
                 const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -7552,6 +7882,11 @@
                     }
                 });
                 if (mostRecentPast !== null && (now - mostRecentPast) > 30 * 60000) {
+                    // Skip if this dose was already charted on the MAR (given / held / refused
+                    // within an hour before the slot or any time after it).
+                    const m = marByOrderId[oid];
+                    if (m && (m.status === 'given' || m.status === 'held' || m.status === 'refused') &&
+                        m.at >= mostRecentPast - 60 * 60000) return;
                     overdue.push(Object.assign({ _key: oid, _overdueMinutes: Math.floor((now - mostRecentPast) / 60000) }, o));
                 }
             }
@@ -7596,6 +7931,9 @@
         let label = '📋 Orders';
         if (counts.neew > 0) label += ' <span class="chart-tab-badge new" title="' + counts.neew + ' order' + (counts.neew === 1 ? '' : 's') + ' awaiting acknowledgment">🆕 ' + counts.neew + '</span>';
         if (counts.overdue > 0) label += ' <span class="chart-tab-badge overdue" title="' + counts.overdue + ' overdue medication' + (counts.overdue === 1 ? '' : 's') + '">⏰ ' + counts.overdue + '</span>';
+        // Only rebuild when the counts change, so the 30s refresh doesn't replay the badge pulse
+        if (btn.dataset.badgeLabel === label) return;
+        btn.dataset.badgeLabel = label;
         btn.innerHTML = label;
     }
 
@@ -7648,6 +7986,16 @@
         const team = enc.careTeam || {};
         const userOpts = userProfileList();
         const mdList = (window.EMR_SEED && window.EMR_SEED.SEED_MD_LIST) || [];
+        // Students can't read the userProfiles root, so classmates already on the team
+        // are missing from userOpts. Keep them as options so an untouched select
+        // doesn't render "Unassigned" and silently clear the role on save.
+        CARE_TEAM_ROLES.forEach(function (r) {
+            if (r.id === 'mdAttending' || r.id === 'mdConsult') return;
+            const m = team[r.id];
+            if (m && m.uid && !userOpts.find(function (u) { return u.uid === m.uid; })) {
+                userOpts.push({ uid: m.uid, name: m.name || m.uid, email: '', role: '' });
+            }
+        });
 
         function optHtmlForRole(r, selectedUid) {
             // MD roles use the fake MD list grouped by specialty
@@ -7726,7 +8074,14 @@
                     newM = { uid: newUid, name: (md && md.name) || newUid, specialty: (md && md.specialty) || '', assignedAt: Date.now() };
                 } else {
                     const u = userOpts.find(function (x) { return x.uid === newUid; });
-                    newM = { uid: newUid, name: (u && u.name) || newUid, assignedAt: Date.now() };
+                    // Classmate not in the (student-visible) profile list: reuse the name stored on the team
+                    let knownName = null;
+                    if (!u) {
+                        Object.keys(oldTeam).forEach(function (k) {
+                            if (!knownName && oldTeam[k] && oldTeam[k].uid === newUid && oldTeam[k].name) knownName = oldTeam[k].name;
+                        });
+                    }
+                    newM = { uid: newUid, name: (u && u.name) || knownName || newUid, assignedAt: Date.now() };
                 }
                 updates['emr/encounters/' + encId + '/careTeam/' + r.id] = newM;
                 changes.push(r.label + ': ' + (oldM ? oldM.name : '—') + ' → ' + newM.name);
@@ -7831,11 +8186,15 @@
         return 'SIM-' + String(maxNum).padStart(5, '0');
     }
 
+    // Calendar age in local time from a YYYY-MM-DD string (no UTC parse, no 365.25-day year).
     function calcAge(dobStr) {
-        if (!dobStr) return 0;
-        const dob = new Date(dobStr);
-        const diff = Date.now() - dob.getTime();
-        return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dobStr || '');
+        if (!m) return 0;
+        const now = new Date();
+        let age = now.getFullYear() - +m[1];
+        const mo = now.getMonth() + 1, d = now.getDate();
+        if (mo < +m[2] || (mo === +m[2] && d < +m[3])) age--;
+        return Math.max(0, age);
     }
     function flowStepDots(step, total) {
         let dots = '<div class="flow-step-dots">';

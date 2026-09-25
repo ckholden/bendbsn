@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
     <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -45,16 +45,9 @@
         .cp-page-title { font-size: 20px; font-weight: 700; color: var(--clx-text-primary); }
         .cp-page-sub { font-size: 13px; color: var(--clx-text-muted); margin-top: 2px; margin-bottom: 14px; }
 
-        .edu-notice {
-            background: #fffbeb;
-            border: 1px solid #f59e0b;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 12px;
-            color: #92400e;
-            margin-bottom: 14px;
-        }
-        [data-theme="dark"] .edu-notice { background: #1c1a0e; border-color: #78350f; color: #fcd34d; }
+        /* Push the page below the fixed alert/FYI banners while they show */
+        body.has-alert .site-header, body.has-fyi .site-header { margin-top: 50px; }
+        body.has-alert.has-fyi .site-header { margin-top: 100px; }
 
         /* Scenario card */
         .cp-scenario-card {
@@ -117,7 +110,7 @@
             max-height: 240px;
             overflow-y: auto;
             z-index: 200;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            box-shadow: var(--clx-shadow-md);
             display: none;
         }
         .nanda-dropdown.open { display: block; }
@@ -128,7 +121,7 @@
             font-size: 13px;
         }
         .nanda-option:last-child { border-bottom: none; }
-        .nanda-option:hover { background: var(--clx-accent-subtle); color: var(--clx-accent); }
+        .nanda-option:hover, .nanda-option.active { background: var(--clx-accent-subtle); color: var(--clx-accent); }
         .nanda-option-code { font-size: 10px; color: var(--clx-text-muted); margin-bottom: 1px; }
         .nanda-option-label { font-weight: 600; color: var(--clx-text-primary); }
         .nanda-option-domain { font-size: 11px; color: var(--clx-text-muted); }
@@ -146,15 +139,16 @@
             border-bottom: 1px solid var(--clx-border);
             padding: 10px 14px;
             display: flex;
+            flex-wrap: wrap; /* long diagnosis + domain + controls wrap instead of squeezing the title */
             align-items: center;
-            gap: 10px;
+            gap: 8px 10px;
         }
         .dx-priority-badge {
             width: 26px;
             height: 26px;
             border-radius: 50%;
             background: var(--clx-accent);
-            color: #fff;
+            color: var(--clx-accent-text);
             font-size: 12px;
             font-weight: 700;
             display: flex;
@@ -163,7 +157,8 @@
             flex-shrink: 0;
         }
         .dx-title {
-            flex: 1;
+            flex: 1 1 160px;
+            min-width: 0;
             font-size: 13px;
             font-weight: 700;
             color: var(--clx-text-primary);
@@ -177,8 +172,8 @@
             font-weight: 600;
         }
         .dx-card-body { padding: 14px; }
-        .dx-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .dx-field { display: flex; flex-direction: column; gap: 4px; }
+        .dx-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 12px; }
+        .dx-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .dx-field.full { grid-column: 1 / -1; }
         .dx-label {
             font-size: 11px;
@@ -203,7 +198,7 @@
         /* Interventions */
         .intervention-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
             gap: 8px;
             margin-bottom: 8px;
             align-items: start;
@@ -246,7 +241,7 @@
             border-radius: 4px;
             font-family: inherit;
         }
-        .del-dx-btn:hover { color: #dc2626; background: #fee2e2; }
+        .del-dx-btn:hover { color: var(--clx-danger); background: var(--clx-danger-bg); }
 
         /* Action bar */
         .cp-actions {
@@ -271,7 +266,7 @@
             transition: background 0.15s;
         }
         .cp-btn:hover { background: var(--clx-bg-surface-2); border-color: var(--clx-border-strong); }
-        .cp-btn.primary { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
+        .cp-btn.primary { background: var(--clx-accent); color: var(--clx-accent-text); border-color: var(--clx-accent); }
         .cp-btn.primary:hover { background: var(--clx-accent-hover); border-color: var(--clx-accent-hover); }
 
         /* Saved plans list */
@@ -288,14 +283,14 @@
             transition: background 0.15s;
         }
         .plan-item:hover { background: var(--clx-accent-subtle); border-color: var(--clx-accent); }
-        .plan-item-title { flex: 1; font-size: 13px; font-weight: 500; }
+        .plan-item-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
         .plan-item-date { font-size: 11px; color: var(--clx-text-muted); white-space: nowrap; }
         .plan-item-del {
             background: none; border: none; cursor: pointer;
             color: var(--clx-text-muted); font-size: 16px; padding: 4px;
             border-radius: 4px; font-family: inherit;
         }
-        .plan-item-del:hover { color: #dc2626; background: #fee2e2; }
+        .plan-item-del:hover { color: var(--clx-danger); background: var(--clx-danger-bg); }
 
         /* Tabs */
         .cp-tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--clx-border); margin-bottom: 16px; }
@@ -310,18 +305,37 @@
         .cp-panel { display: none; }
         .cp-panel.active { display: block; }
 
+        /* Privacy lock: covers the page without signing out or dropping the plan */
+        #lockScreenOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #0d1f2d;
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
         @media (max-width: 600px) {
             .dx-form-grid { grid-template-columns: 1fr; }
             .intervention-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .cp-page { padding: 12px 16px; }
+            .dx-card-body { padding: 12px; }
+            .cp-actions .cp-btn { flex: 1 1 auto; justify-content: center; }
+        }
+        @media (pointer: coarse) {
+            .dx-input, .nanda-search, .cp-btn, .cp-tab, .add-intervention-btn { min-height: 44px; }
+            .nanda-option { padding: 12px; }
+            .order-btn, .del-dx-btn, .plan-item-del { min-width: 44px; min-height: 44px; }
         }
     </style>
 </head>
 <body>
     <header class="site-header">
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
-        <div class="header-actions">
-            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
-        </div>
     </header>
 
     <div class="clx-shell">
@@ -354,35 +368,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
         <a href="/apa/" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -407,18 +407,18 @@
             <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
-    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
     <main class="clx-main" role="main">
     <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;"><span id="alertText"></span></div>
+    <div id="fyiBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#d97706;color:#1a1a2e;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:9999;"><span id="fyiText"></span></div>
 
     <div class="cp-page">
         <div class="cp-page-title">Care Plan Builder</div>
         <div class="cp-page-sub">Build NANDA-I based nursing care plans for clinical education scenarios</div>
 
         <div class="cp-tabs" role="tablist">
-            <button class="cp-tab active" onclick="showCpTab('builder')" role="tab">Build Plan</button>
-            <button class="cp-tab" onclick="showCpTab('saved')" role="tab">Saved Plans</button>
+            <button class="cp-tab active" onclick="showCpTab('builder')" role="tab" aria-selected="true">Build Plan</button>
+            <button class="cp-tab" onclick="showCpTab('saved')" role="tab" aria-selected="false">Saved Plans</button>
         </div>
 
         <div class="cp-panel active" id="cp-tab-builder">
@@ -432,10 +432,10 @@
             <div class="cp-scenario-card">
                 <div class="cp-scenario-label">Add NANDA-I Nursing Diagnosis</div>
                 <div class="nanda-search-wrap">
-                    <input type="text" id="nandaSearch" class="nanda-search" placeholder="Search NANDA diagnoses (e.g., pain, fluid, anxiety)…" autocomplete="off" oninput="filterNanda(this.value)" onfocus="filterNanda(this.value)">
+                    <input type="text" id="nandaSearch" class="nanda-search" placeholder="Search NANDA diagnoses (e.g., pain, fluid, anxiety)…" autocomplete="off" oninput="filterNanda(this.value)" onfocus="filterNanda(this.value)" onkeydown="nandaKey(event)">
                     <div class="nanda-dropdown" id="nandaDropdown"></div>
                 </div>
-                <div style="font-size:12px;color:var(--clx-text-muted);">Select from the list to add a diagnosis (max 5 per plan)</div>
+                <div style="font-size:12px;color:var(--clx-text-muted);">Select from the list, or press Enter to add the top match (max 5 per plan)</div>
             </div>
 
             <!-- Diagnoses list -->
@@ -444,7 +444,7 @@
             <!-- Actions -->
             <div class="cp-actions">
                 <button class="cp-btn primary" onclick="saveCpToFirebase()">Save Care Plan</button>
-                <button class="cp-btn" onclick="exportCpDocx()">Export to Word</button>
+                <button class="cp-btn" onclick="exportCpDocx(this)">Export to Word</button>
                 <button class="cp-btn" onclick="clearCpForm()">Clear Form</button>
             </div>
         </div><!-- /builder -->
@@ -459,11 +459,20 @@
     </main>
     </div><!-- /clx-shell -->
 
+    <!-- Lock screen (privacy overlay; the session and the plan stay intact) -->
+    <div id="lockScreenOverlay" role="dialog" aria-modal="true" aria-label="Portal locked">
+        <div style="text-align:center;color:#fff;">
+            <div style="font-size:60px;margin-bottom:16px;">&#128274;</div>
+            <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
+            <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
+            <button type="button" id="unlockScreenBtn" onclick="unlockScreen()" style="background:var(--clx-accent);color:var(--clx-accent-text);border:none;padding:14px 40px;min-height:44px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">&#128275; Unlock</button>
+        </div>
+    </div>
+
         <nav class="clx-mobile-nav" aria-label="Mobile navigation">
         <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
         <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
         <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
-        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat"><span class="clx-mobile-nav-icon">&#128172;</span><span>Chat</span></a>
         <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
     </nav>
 
@@ -503,17 +512,50 @@
         }
         initTheme();
 
-        let sidebarOpen = false;
+        // Sidebar — desktop collapse/expand, same as /app/. The mobile drawer
+        // (hamburger + backdrop) is injected by shared/header.js.
+        (function initSidebar() {
+            document.body.classList.add('has-sidebar');
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
+                sidebar.classList.add('collapsed');
+            } else {
+                const icon = document.getElementById('sidebarToggleIcon');
+                if (icon) icon.textContent = '◀';
+                const label = document.querySelector('.clx-sidebar-toggle-label');
+                if (label) label.textContent = 'Collapse';
+            }
+        })();
         function toggleSidebar() {
-            sidebarOpen = !sidebarOpen;
-            document.getElementById('appSidebar').classList.toggle('mobile-open', sidebarOpen);
-            document.getElementById('sidebarBackdrop').classList.toggle('visible', sidebarOpen);
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
-        function lockScreen() { localStorage.removeItem('bendbsn_auth'); window.location.href = '/'; }
+        // Lock is a privacy overlay (same as /app/ and /home/): it keeps the session
+        // and the in-progress plan. Idle auto-logout (shared/header.js) still applies.
+        function lockScreen() {
+            if (typeof window.bsnShowLockOverlay === 'function') { window.bsnShowLockOverlay(); return; }
+            const o = document.getElementById('lockScreenOverlay');
+            if (!o) return;
+            o.style.display = 'flex';
+            const b = document.getElementById('unlockScreenBtn');
+            if (b) b.focus();
+        }
+        function unlockScreen() {
+            const o = document.getElementById('lockScreenOverlay');
+            if (o) o.style.display = 'none';
+        }
         function logout() {
             showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
                 try { firebase.auth().signOut(); } catch(e) {}
                 ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
+                try { if (typeof window.bsnPurgeLocalUserData === 'function') window.bsnPurgeLocalUserData(); } catch (e) {}
                 window.location.href = '/';
             }, { confirmText: 'Logout', danger: true });
         }
@@ -581,14 +623,20 @@
         ];
 
         let dxCards = []; // [{nanda, rt, aeb, stGoal, ltGoal, interventions:[{text,rationale}], evaluation}]
+        let currentCpKey = null; // saved plan being edited (null = new) so Save updates instead of duplicating
         let nandaSearchTimeout = null;
+
+        function nandaMatches(query) {
+            const q = String(query || '').toLowerCase().trim();
+            return q ? NANDA_LIST.filter(n => n.label.toLowerCase().includes(q) || n.code.includes(q) || n.domain.toLowerCase().includes(q)) : NANDA_LIST;
+        }
 
         function filterNanda(query) {
             const dropdown = document.getElementById('nandaDropdown');
             clearTimeout(nandaSearchTimeout);
             nandaSearchTimeout = setTimeout(() => {
-                const q = query.toLowerCase().trim();
-                const filtered = q ? NANDA_LIST.filter(n => n.label.toLowerCase().includes(q) || n.code.includes(q) || n.domain.toLowerCase().includes(q)) : NANDA_LIST;
+                nandaSearchTimeout = null;
+                const filtered = nandaMatches(query);
                 if (!filtered.length) {
                     dropdown.innerHTML = '<div class="nanda-option" style="color:var(--clx-text-muted);">No matches found</div>';
                 } else {
@@ -628,13 +676,57 @@
             if (n) selectNanda(n);
         });
 
+        // Keyboard: ↑/↓ highlight an option, Enter adds it (or the top match), Esc closes.
+        function nandaKey(e) {
+            if (e.isComposing) return;
+            const input = e.target;
+            const dropdown = document.getElementById('nandaDropdown');
+            if (e.key === 'Escape') {
+                clearTimeout(nandaSearchTimeout);
+                nandaSearchTimeout = null;
+                dropdown.classList.remove('open');
+                return;
+            }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!dropdown.classList.contains('open')) { filterNanda(input.value); return; }
+                const opts = Array.from(dropdown.querySelectorAll('.nanda-option[data-nanda-code]'));
+                if (!opts.length) return;
+                let i = opts.findIndex(o => o.classList.contains('active'));
+                i = e.key === 'ArrowDown' ? Math.min(i + 1, opts.length - 1) : Math.max(i - 1, 0);
+                opts.forEach(o => o.classList.remove('active'));
+                opts[i].classList.add('active');
+                opts[i].scrollIntoView({ block: 'nearest' });
+                return;
+            }
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            // A highlighted option only counts if the list is current (no filter pending)
+            const active = nandaSearchTimeout === null && dropdown.classList.contains('open') &&
+                dropdown.querySelector('.nanda-option.active[data-nanda-code]');
+            clearTimeout(nandaSearchTimeout);
+            nandaSearchTimeout = null;
+            let n = null;
+            if (active) {
+                const code = active.getAttribute('data-nanda-code');
+                n = NANDA_LIST.find(x => x.code === code) || null;
+            } else {
+                const q = input.value.trim();
+                if (!q) return; // empty box would otherwise add the first list entry by accident
+                n = nandaMatches(q)[0] || null;
+                if (!n) { showToast('No matching diagnosis.', 'warning'); return; }
+            }
+            if (n) selectNanda(n);
+        }
+
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.nanda-search-wrap')) {
                 document.getElementById('nandaDropdown').classList.remove('open');
             }
         });
 
-        function renderDxCards() {
+        function renderDxCards(skipDraft) {
+            if (skipDraft !== true) saveCpDraft(); // add / move / remove all re-render, so persist here (before the early return)
             const listEl = document.getElementById('dxList');
             if (!dxCards.length) { listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);font-size:13px;border:1px dashed var(--clx-border);border-radius:8px;margin-bottom:12px;">No diagnoses added yet. Search for a NANDA-I diagnosis above.</div>'; return; }
             listEl.innerHTML = dxCards.map((dx, i) => buildDxCardHtml(dx, i)).join('');
@@ -643,8 +735,8 @@
         function buildDxCardHtml(dx, i) {
             const interventionsHtml = dx.interventions.map((iv, j) =>
                 '<div class="intervention-row" id="iv-row-' + i + '-' + j + '">' +
-                '<div><div class="dx-label">Intervention ' + (j+1) + '</div><textarea class="dx-textarea" rows="2" placeholder="Nursing intervention…" onchange="updateInterventionText(' + i + ',' + j + ',this.value)">' + escapeHtml(iv.text) + '</textarea></div>' +
-                '<div><div class="dx-label">Rationale</div><textarea class="dx-textarea" rows="2" placeholder="Scientific rationale…" onchange="updateInterventionRationale(' + i + ',' + j + ',this.value)">' + escapeHtml(iv.rationale) + '</textarea></div>' +
+                '<div><div class="dx-label">Intervention ' + (j+1) + '</div><textarea class="dx-textarea" rows="2" placeholder="Nursing intervention…" oninput="updateInterventionText(' + i + ',' + j + ',this.value)">' + escapeHtml(iv.text) + '</textarea></div>' +
+                '<div><div class="dx-label">Rationale</div><textarea class="dx-textarea" rows="2" placeholder="Scientific rationale…" oninput="updateInterventionRationale(' + i + ',' + j + ',this.value)">' + escapeHtml(iv.rationale) + '</textarea></div>' +
                 '</div>'
             ).join('');
 
@@ -662,17 +754,17 @@
                 '<div class="dx-card-body">' +
                     '<div style="font-size:11px;color:var(--clx-text-muted);margin-bottom:8px;">Code: ' + escapeHtml(dx.nanda.code) + '</div>' +
                     '<div class="dx-form-grid">' +
-                        '<div class="dx-field"><label class="dx-label">Related To (RT)</label><input type="text" class="dx-input" placeholder="e.g., decreased lung compliance, fluid overload" value="' + escapeHtml(dx.rt) + '" onchange="updateDxField(' + i + ',\'rt\',this.value)"></div>' +
-                        '<div class="dx-field"><label class="dx-label">As Evidenced By (AEB)</label><input type="text" class="dx-input" placeholder="e.g., crackles bilateral bases, SpO2 88%" value="' + escapeHtml(dx.aeb) + '" onchange="updateDxField(' + i + ',\'aeb\',this.value)"></div>' +
-                        '<div class="dx-field"><label class="dx-label">Short-Term Goal (measurable, time-bound)</label><input type="text" class="dx-input" placeholder="e.g., Patient will maintain SpO2 ≥92% within 4 hours" value="' + escapeHtml(dx.stGoal) + '" onchange="updateDxField(' + i + ',\'stGoal\',this.value)"></div>' +
-                        '<div class="dx-field"><label class="dx-label">Long-Term Goal</label><input type="text" class="dx-input" placeholder="e.g., Patient will demonstrate effective breathing technique by discharge" value="' + escapeHtml(dx.ltGoal) + '" onchange="updateDxField(' + i + ',\'ltGoal\',this.value)"></div>' +
+                        '<div class="dx-field"><label class="dx-label">Related To (RT)</label><input type="text" class="dx-input" placeholder="e.g., decreased lung compliance, fluid overload" value="' + escapeHtml(dx.rt) + '" oninput="updateDxField(' + i + ',\'rt\',this.value)"></div>' +
+                        '<div class="dx-field"><label class="dx-label">As Evidenced By (AEB)</label><input type="text" class="dx-input" placeholder="e.g., crackles bilateral bases, SpO2 88%" value="' + escapeHtml(dx.aeb) + '" oninput="updateDxField(' + i + ',\'aeb\',this.value)"></div>' +
+                        '<div class="dx-field"><label class="dx-label">Short-Term Goal (measurable, time-bound)</label><input type="text" class="dx-input" placeholder="e.g., Patient will maintain SpO2 ≥92% within 4 hours" value="' + escapeHtml(dx.stGoal) + '" oninput="updateDxField(' + i + ',\'stGoal\',this.value)"></div>' +
+                        '<div class="dx-field"><label class="dx-label">Long-Term Goal</label><input type="text" class="dx-input" placeholder="e.g., Patient will demonstrate effective breathing technique by discharge" value="' + escapeHtml(dx.ltGoal) + '" oninput="updateDxField(' + i + ',\'ltGoal\',this.value)"></div>' +
                     '</div>' +
                     '<div style="margin-top:12px;">' +
                         '<div class="dx-label" style="margin-bottom:8px;">Nursing Interventions & Rationale</div>' +
                         '<div id="iv-list-' + i + '">' + interventionsHtml + '</div>' +
                         '<button class="add-intervention-btn" onclick="addIntervention(' + i + ')">+ Add Intervention</button>' +
                     '</div>' +
-                    '<div class="dx-field full" style="margin-top:12px;"><label class="dx-label">Evaluation</label><textarea class="dx-textarea" rows="2" placeholder="Outcome evaluation: Was the goal met? Partially met? Not met? Evidence?" onchange="updateDxField(' + i + ',\'evaluation\',this.value)">' + escapeHtml(dx.evaluation) + '</textarea></div>' +
+                    '<div class="dx-field full" style="margin-top:12px;"><label class="dx-label">Evaluation</label><textarea class="dx-textarea" rows="2" placeholder="Outcome evaluation: Was the goal met? Partially met? Not met? Evidence?" oninput="updateDxField(' + i + ',\'evaluation\',this.value)">' + escapeHtml(dx.evaluation) + '</textarea></div>' +
                 '</div>' +
             '</div>';
         }
@@ -703,10 +795,12 @@
         }
 
         function clearCpForm() {
-            showConfirmModal('Clear Form', 'Clear the entire care plan?', function() {
+            showConfirmModal('Clear Form', 'Clear the entire care plan? Plans saved to your account are kept.', function() {
                 document.getElementById('cpScenario').value = '';
                 dxCards = [];
+                currentCpKey = null;
                 renderDxCards();
+                clearCpDraft();
                 showToast('Care plan cleared.', 'success');
             }, { confirmText: 'Clear', danger: true });
         }
@@ -726,23 +820,29 @@
             if (!currentUid) { showToast('Sign in to save care plans.', 'warning'); return; }
             if (!dxCards.length) { showToast('Add at least one diagnosis before saving.', 'warning'); return; }
             const data = getCpData();
-            const key = Date.now();
+            // Re-use the loaded plan's key so Save updates it instead of adding a copy
+            const key = currentCpKey || Date.now();
+            const isUpdate = !!currentCpKey;
             database.ref('carePlans/' + currentUid + '/' + key).set({
                 ...data,
-                createdAt: key,
+                createdAt: Number(key),
+                updatedAt: Date.now(),
                 createdBy: displayName
-            }).then(() => showToast('Care plan saved.', 'success'))
-              .catch(e => showToast('Save failed: ' + e.message, 'error'));
+            }).then(() => {
+                currentCpKey = key;
+                writeCpDraft(true); // a reload keeps updating this plan instead of adding a copy
+                showToast(isUpdate ? 'Care plan updated.' : 'Care plan saved.', 'success');
+            }).catch(e => showToast('Save failed: ' + e.message, 'error'));
         }
 
         function showCpTab(tab) {
             document.querySelectorAll('.cp-panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.cp-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.cp-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
             document.getElementById('cp-tab-' + tab).classList.add('active');
             const tabs = document.querySelectorAll('.cp-tab');
             const order = ['builder','saved'];
             const idx = order.indexOf(tab);
-            if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+            if (idx >= 0 && tabs[idx]) { tabs[idx].classList.add('active'); tabs[idx].setAttribute('aria-selected','true'); }
             if (tab === 'saved') loadSavedCps();
         }
 
@@ -758,62 +858,106 @@
                     const date = new Date(parseInt(key)).toLocaleDateString();
                     const dxCount = (data.diagnoses || []).length;
                     const scenario = (data.scenario || '').substring(0, 80) + (data.scenario && data.scenario.length > 80 ? '…' : '');
-                    return '<div class="plan-item" onclick="loadCp(\'' + key + '\')">' +
+                    return '<div class="plan-item" data-key="' + escapeHtml(key) + '">' +
                         '<div class="plan-item-title">' + (scenario ? escapeHtml(scenario) : '(no scenario)') + ' <span style="color:var(--clx-text-muted);font-size:11px;">[' + dxCount + ' dx]</span></div>' +
                         '<div class="plan-item-date">' + date + '</div>' +
-                        '<button class="plan-item-del" onclick="event.stopPropagation();deleteCp(\'' + key + '\')" title="Delete" aria-label="Delete plan">&#128465;</button>' +
+                        '<button type="button" class="plan-item-del" title="Delete" aria-label="Delete plan">&#128465;</button>' +
                     '</div>';
                 }).join('');
-            }).catch(() => { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Error loading plans.</div>'; });
+            }).catch(e => {
+                el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--clx-text-muted);">Error loading plans.</div>';
+                showToast('Could not load plans: ' + (e && e.message ? e.message : e), 'error');
+            });
         }
+        // One delegated handler for the saved-plan rows (keys come from the
+        // database, so they are never spliced into inline onclick JS).
+        document.getElementById('cpSavedList').addEventListener('click', function (e) {
+            const item = e.target.closest('.plan-item');
+            if (!item) return;
+            const key = item.getAttribute('data-key');
+            if (e.target.closest('.plan-item-del')) { e.stopPropagation(); deleteCp(key); return; }
+            loadCp(key);
+        });
 
         function loadCp(key) {
             database.ref('carePlans/' + currentUid + '/' + key).once('value').then(snap => {
                 const data = snap.val();
                 if (!data) return;
-                document.getElementById('cpScenario').value = data.scenario || '';
-                dxCards = (data.diagnoses || []).map(d => ({
-                    nanda: {code: d.code, label: d.label, domain: d.domain},
-                    rt: d.rt || '', aeb: d.aeb || '',
-                    stGoal: d.stGoal || '', ltGoal: d.ltGoal || '',
-                    interventions: d.interventions && d.interventions.length ? d.interventions : [{text:'',rationale:''}],
-                    evaluation: d.evaluation || ''
-                }));
-                renderDxCards();
+                hydrateFromCpData(data);
+                currentCpKey = key;
+                renderDxCards(true);
+                writeCpDraft(true);
                 showCpTab('builder');
-                showToast('Care plan loaded.', 'success');
-            });
+                showToast('Care plan loaded — "Save Care Plan" updates this plan.', 'success');
+            }).catch(e => showToast('Load failed: ' + (e && e.message ? e.message : e), 'error'));
+        }
+
+        // Scenario + dxCards from a saved plan or a local draft (getCpData's shape)
+        function hydrateFromCpData(data) {
+            document.getElementById('cpScenario').value = data.scenario || '';
+            dxCards = (data.diagnoses || []).map(d => ({
+                nanda: {code: d.code, label: d.label, domain: d.domain},
+                rt: d.rt || '', aeb: d.aeb || '',
+                stGoal: d.stGoal || '', ltGoal: d.ltGoal || '',
+                interventions: d.interventions && d.interventions.length ? d.interventions : [{text:'',rationale:''}],
+                evaluation: d.evaluation || ''
+            }));
         }
 
         function deleteCp(key) {
             showConfirmModal('Delete Plan', 'Delete this care plan?', function() {
                 database.ref('carePlans/' + currentUid + '/' + key).remove().then(() => {
+                    if (String(currentCpKey) === String(key)) { currentCpKey = null; writeCpDraft(); }
                     showToast('Plan deleted.', 'success'); loadSavedCps();
-                });
+                }).catch(e => showToast('Delete failed: ' + (e && e.message ? e.message : e), 'error'));
             }, { confirmText: 'Delete', danger: true });
         }
 
-        function exportCpDocx() {
+        // Load each export library once. A failed load is forgotten so the next
+        // click retries (offline, blocked CDN) instead of doing nothing.
+        const _exportLibs = {};
+        function loadScriptOnce(src) {
+            if (!_exportLibs[src]) {
+                _exportLibs[src] = new Promise(function (resolve, reject) {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = resolve;
+                    s.onerror = function () {
+                        delete _exportLibs[src];
+                        s.remove();
+                        reject(new Error('could not load the Word export library. Check your connection and try again.'));
+                    };
+                    document.head.appendChild(s);
+                });
+            }
+            return _exportLibs[src];
+        }
+
+        function exportCpDocx(btn) {
             const data = getCpData();
             if (!data.diagnoses.length) { showToast('Add at least one diagnosis before exporting.', 'warning'); return; }
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/docx@8.2.2/build/index.umd.js';
-            script.onload = function() {
-                const fsSrc = document.createElement('script');
-                fsSrc.src = 'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js';
-                fsSrc.onload = function() { doExportCpDocx(data); };
-                document.head.appendChild(fsSrc);
-            };
-            document.head.appendChild(script);
+            if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+            Promise.all([
+                loadScriptOnce('https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js'),
+                loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js')
+            ]).then(function () { return doExportCpDocx(data); })
+              .catch(function (e) { showToast('Export failed: ' + (e && e.message ? e.message : e), 'error'); })
+              .then(function () { if (btn) { btn.disabled = false; btn.textContent = 'Export to Word'; } });
+        }
+
+        // TextRuns for text that may hold line breaks (textareas); a bare string
+        // TextRun flattens "a\nb" into one line in Word.
+        function cpRuns(text, opts) {
+            return String(text).split(/\r?\n/).map((t, k) =>
+                new docx.TextRun(Object.assign({}, opts, { text: t }, k ? { break: 1 } : {})));
         }
 
         function doExportCpDocx(data) {
             try {
                 const children = [];
                 children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'NURSING CARE PLAN',bold:true,size:32})], spacing:{after:200} }));
-                children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'EDUCATIONAL USE ONLY — NOT FOR ACTUAL CLINICAL USE',bold:true,size:18,color:'C62828'})], spacing:{after:100} }));
                 children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Generated: ' + new Date().toLocaleString(),size:18})], spacing:{after:100} }));
-                if (data.scenario) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Scenario: ' + data.scenario,size:20,italics:true})], spacing:{after:300} }));
+                if (data.scenario) children.push(new docx.Paragraph({ children: cpRuns('Scenario: ' + data.scenario, {size:20,italics:true}), spacing:{after:300} }));
 
                 data.diagnoses.forEach((dx, i) => {
                     children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Priority ' + (i+1) + ': ' + dx.label,bold:true,size:24})], spacing:{after:120}, border:{bottom:{color:'0f7490',size:8,style:'single'}} }));
@@ -821,25 +965,111 @@
                     children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Nursing Diagnosis: ',bold:true,size:20}),new docx.TextRun({text:dx.label + (dx.rt?' related to '+dx.rt:'') + (dx.aeb?' as evidenced by '+dx.aeb:''),size:20})], spacing:{after:80} }));
                     if (dx.stGoal) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Short-Term Goal: ',bold:true,size:20}),new docx.TextRun({text:dx.stGoal,size:20})], spacing:{after:60} }));
                     if (dx.ltGoal) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Long-Term Goal: ',bold:true,size:20}),new docx.TextRun({text:dx.ltGoal,size:20})], spacing:{after:80} }));
-                    if (dx.interventions && dx.interventions.length) {
+                    // Keep rationale-only rows and number what is actually printed
+                    const ivs = (dx.interventions || []).filter(iv => iv && (String(iv.text || '').trim() || String(iv.rationale || '').trim()));
+                    if (ivs.length) {
                         children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Nursing Interventions & Rationale:',bold:true,size:20})], spacing:{before:80,after:60} }));
-                        dx.interventions.forEach((iv, j) => {
-                            if (iv.text) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:(j+1)+'. '+iv.text+(iv.rationale?' — Rationale: '+iv.rationale:''),size:19})], indent:{left:360}, spacing:{after:60} }));
+                        ivs.forEach((iv, j) => {
+                            children.push(new docx.Paragraph({ children: cpRuns((j+1)+'. '+(iv.text || '(no intervention entered)')+(iv.rationale?' — Rationale: '+iv.rationale:''), {size:19}), indent:{left:360}, spacing:{after:60} }));
                         });
                     }
-                    if (dx.evaluation) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Evaluation: ',bold:true,size:20}),new docx.TextRun({text:dx.evaluation,size:20})], spacing:{after:200} }));
+                    if (dx.evaluation) children.push(new docx.Paragraph({ children:[new docx.TextRun({text:'Evaluation: ',bold:true,size:20})].concat(cpRuns(dx.evaluation, {size:20})), spacing:{after:200} }));
                 });
 
                 const doc = new docx.Document({ sections:[{properties:{},children}] });
-                docx.Packer.toBlob(doc).then(blob => {
-                    saveAs(blob, 'CarePlan_' + new Date().toISOString().split('T')[0] + '.docx');
+                return docx.Packer.toBlob(doc).then(blob => {
+                    const d = new Date(); // local date, not UTC (evening exports were dated tomorrow)
+                    const ymd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                    saveAs(blob, 'CarePlan_' + ymd + '.docx');
                     showToast('Word document exported.', 'success');
                 });
             } catch(e) { showToast('Export failed: ' + e.message, 'error'); }
         }
 
+        // Local draft autosave: keeps the plan through a refresh, a closed tab or
+        // a service-worker update. The key starts with bendbsn_draft_ so
+        // shared/header.js wipes it on a forced logout, and the uid check stops a
+        // draft on a shared computer reaching another student.
+        const CP_DRAFT_KEY = 'bendbsn_draft_careplan';
+        let _cpDraftTimer = null;
+        function writeCpDraft(clean) {
+            clearTimeout(_cpDraftTimer);
+            _cpDraftTimer = null;
+            try {
+                const data = getCpData();
+                if (!data.scenario && !data.diagnoses.length && !currentCpKey) { localStorage.removeItem(CP_DRAFT_KEY); return; }
+                localStorage.setItem(CP_DRAFT_KEY, JSON.stringify({
+                    uid: currentUid, key: currentCpKey, data: data, dirty: !clean, savedAt: Date.now()
+                }));
+            } catch (e) {}
+        }
+        function saveCpDraft() {
+            clearTimeout(_cpDraftTimer);
+            _cpDraftTimer = setTimeout(() => writeCpDraft(), 500);
+        }
+        function clearCpDraft() {
+            clearTimeout(_cpDraftTimer);
+            _cpDraftTimer = null;
+            try { localStorage.removeItem(CP_DRAFT_KEY); } catch (e) {}
+        }
+        document.addEventListener('input', e => {
+            if (e.target.id !== 'nandaSearch' && e.target.closest && e.target.closest('.cp-page')) saveCpDraft();
+        });
+        // Flush a pending debounced save when the tab is hidden or unloaded
+        window.addEventListener('pagehide', () => { if (_cpDraftTimer) writeCpDraft(); });
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && _cpDraftTimer) writeCpDraft(); });
+        (function restoreCpDraft() {
+            let d = null;
+            try { d = JSON.parse(localStorage.getItem(CP_DRAFT_KEY) || 'null'); } catch (e) {}
+            if (!d || !d.data) return;
+            if (d.uid !== currentUid) { clearCpDraft(); return; }
+            hydrateFromCpData(d.data);
+            currentCpKey = d.key || null;
+            const when = d.savedAt ? new Date(d.savedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+            if (typeof showToastAction === 'function') {
+                showToastAction({
+                    type: 'info',
+                    title: d.dirty === false ? 'Reopened your last saved care plan' : 'Restored your unsaved care plan',
+                    message: when ? 'Last edited ' + when : '',
+                    duration: 8000,
+                    actions: [{ label: 'Start new', onClick: function () { clearCpForm(); } }]
+                });
+            }
+        })();
+
+        // Site-wide alert / FYI banners (announcements node, set by admins)
+        function renderAnnouncements(snap) {
+            const d = snap.val() || {};
+            const ab = document.getElementById('alertBanner'), fb = document.getElementById('fyiBanner');
+            const hasAlert = !!(d.alert && d.alert.message), hasFyi = !!(d.fyi && d.fyi.message);
+            if (ab) {
+                ab.style.display = hasAlert ? 'block' : 'none';
+                if (hasAlert) document.getElementById('alertText').textContent = d.alert.message;
+            }
+            if (fb) {
+                fb.style.display = hasFyi ? 'block' : 'none';
+                fb.style.top = hasAlert ? '50px' : '0';
+                if (hasFyi) document.getElementById('fyiText').textContent = d.fyi.message;
+            }
+            document.body.classList.toggle('has-alert', hasAlert && !!ab);
+            document.body.classList.toggle('has-fyi', hasFyi && !!fb);
+        }
+        let _announcementsWired = false;
+        firebase.auth().onAuthStateChanged(function (user) {
+            if (!user || !user.uid) {
+                if (_announcementsWired) { database.ref('announcements').off('value', renderAnnouncements); _announcementsWired = false; }
+                return;
+            }
+            // Pull the account's saved theme and let theme changes here sync back
+            if (window.initThemeSync) window.initThemeSync(database, user.uid);
+            if (!_announcementsWired) {
+                _announcementsWired = true;
+                database.ref('announcements').on('value', renderAnnouncements, function () { _announcementsWired = false; });
+            }
+        });
+
         // Init
-        renderDxCards();
+        renderDxCards(true);
     </script>
 </body>
 </html>

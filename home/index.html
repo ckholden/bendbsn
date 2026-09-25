@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co https://en.wikipedia.org wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.emailjs.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://formsubmit.co wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol !== 'https:' && location.hostname !== 'localhost'){location.replace('https:' + location.href.substring(location.protocol.length));}</script>
     <script>
         if (localStorage.getItem('bendbsn_auth') !== 'true') {
@@ -36,12 +36,6 @@
     <style>
         /* ---- Base ---- */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-
-        .status-online  { background: #22c55e; }
-        .status-away    { background: #eab308; }
-        .status-offline { background: #6b7280; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 
         html { scroll-behavior: smooth; }
 
@@ -301,14 +295,29 @@
             align-items: center;
         }
         .rem-input {
-            flex: 1;
+            flex: 1 1 200px;
             min-width: 140px;
         }
+        /* Date needs room for "mm/dd/yyyy" plus the picker icon; the select
+           for "⚡ High" plus its arrow. Both may shrink no further. */
         .rem-date {
-            width: 140px;
+            flex: 0 0 auto;
+            width: 156px;
+            min-width: 156px;
         }
         .rem-sel {
-            width: 90px;
+            flex: 0 0 auto;
+            width: 104px;
+            min-width: 104px;
+        }
+        @media (max-width: 480px) {
+            /* Text takes its own line; date, priority and Add share the next. */
+            .rem-input { flex-basis: 100%; }
+            .rem-date { flex: 1 1 140px; width: auto; }
+            .rem-sel { flex: 0 0 104px; }
+        }
+        @media (pointer: coarse) {
+            .rem-input, .rem-date, .rem-sel, .rem-add-btn { min-height: 44px; }
         }
         .rem-add-btn {
             white-space: nowrap;
@@ -373,7 +382,6 @@
             color: var(--clx-text-muted);
             text-align: center;
         }
-
 
         /* ================================================
            DOCUMENTATION HERO
@@ -624,7 +632,6 @@
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        [data-theme="dark"] #pwaBanner { background: #1e2a3a; border-top-color: #2d3f55; }
         [data-theme="dark"] #pwaBannerBtn { background: #f4f4f5; color: #18181b; }
 
         /* iOS Install Guide Modal */
@@ -670,7 +677,6 @@
             font-size: 15px; font-weight: 600; cursor: pointer;
         }
         #iosModalGotIt:hover { opacity: 0.88; }
-        [data-theme="dark"] .ios-modal-card { background: #1e2a3a; }
         [data-theme="dark"] .ios-step-num { background: #f4f4f5; color: #18181b; }
         [data-theme="dark"] #iosModalGotIt { background: #f4f4f5; color: #18181b; }
     </style>
@@ -679,12 +685,6 @@
     <!-- Site header -->
     <header class="site-header">
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
-        <div class="header-actions">
-            <div class="online-count" id="onlineCount" onclick="toggleUserList()" title="Online users" aria-label="Online users" role="button" tabindex="0">
-                <span class="online-dot"></span>
-                <span class="online-count-text" id="onlineCountText">—</span>
-            </div>
-        </div>
     </header>
 
     <!-- Toast container -->
@@ -722,35 +722,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
-        <a href="/apa/" class="clx-sidebar-item" data-page="apa">
+        <a href="/apa/" id="apaMenuLink" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -807,7 +793,6 @@
         </div>
     </div>
 
-
     <!-- Context bar -->
     <div class="dash-context-bar" id="dashContextBar">
         <div class="ctx-item">
@@ -860,14 +845,12 @@
                     <a class="dash-ref-link" href="/resources/#labValuesCard">Lab Values</a>
                     <a class="dash-ref-link" href="/resources/#section-dosage-calculator">Dosage Calculator</a>
                     <a class="dash-ref-link" href="/resources/#section-iv-drip">IV Drip Rate</a>
-                    <a class="dash-ref-link" href="/resources/#section-clinical-toolkit">Glasgow Coma Scale</a>
-                    <a class="dash-ref-link" href="/resources/#section-clinical-toolkit">APGAR Score</a>
-                    <a class="dash-ref-link" href="/resources/#section-clinical-toolkit">SBAR Template</a>
+                    <a class="dash-ref-link" href="/resources/#section-gcs">Glasgow Coma Scale</a>
+                    <a class="dash-ref-link" href="/resources/#section-apgar">APGAR Score</a>
+                    <a class="dash-ref-link" href="/resources/#section-sbar-template">SBAR Template</a>
                     <a class="dash-ref-link" href="/resources/#section-drug-lookup">Drug Lookup (RxNav)</a>
-                    <a class="dash-ref-link" href="/ai/">Ask AI Nursing Assistant</a>
                 </div>
             </div>
-
 
         </div><!-- /dash-grid -->
 
@@ -902,7 +885,6 @@
         <a href="/home/" class="clx-mobile-nav-item active" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
         <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
         <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
-        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat"><span class="clx-mobile-nav-icon">&#128172;</span><span>Chat</span></a>
         <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
     </nav>
 
@@ -941,12 +923,6 @@
     </div>
 
     </div><!-- /clx-shell -->
-
-    <!-- User list dropdown (online presence) -->
-    <div id="userListDropdown" style="display:none;position:fixed;top:56px;right:10px;background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);padding:8px 0;min-width:180px;z-index:1001;max-height:300px;overflow-y:auto;">
-        <div style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--clx-text-muted);border-bottom:1px solid var(--clx-border);margin-bottom:4px;">Online Now</div>
-        <div id="userListNames"></div>
-    </div>
 
     <!-- Feedback Modal -->
     <div id="feedbackModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
@@ -1018,13 +994,9 @@
         let sessionHeartbeatTimer = null;
         let sessionValidated = false;
 
-        const IDLE_TIMEOUT = 10 * 60 * 1000;
         const LOGOUT_TIMEOUT = 30 * 60 * 1000;
         const LOGOUT_WARNING_TIMEOUT = 25 * 60 * 1000;
-        const ACTIVITY_DEBOUNCE = 30000;
-        let idleTimer = null, logoutTimer = null, logoutWarningTimer = null, activityDebounceTimer = null;
-        let currentPresenceStatus = 'online';
-        let myPresenceRef = null;
+        let logoutTimer = null, logoutWarningTimer = null;
 
         function updateSessionHeartbeat() {
             const key = localStorage.getItem(SESSION_KEY);
@@ -1037,6 +1009,8 @@
             database.ref('loginHistory/' + key).once('value', (snap) => {
                 if (snap.exists() && snap.val().timestamp) {
                     sessionValidated = true;
+                    // Re-arm the end marker on every page load of a live session
+                    try { localStorage.removeItem('bendbsn_session_end_sent'); } catch (e) {}
                     updateSessionHeartbeat();
                     if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
                     sessionHeartbeatTimer = setInterval(updateSessionHeartbeat, SESSION_HEARTBEAT_MS);
@@ -1067,7 +1041,14 @@
             localStorage.removeItem('bendbsn_session_end_sent');
         }
 
-        const presenceRef = database.ref('chat/presence');
+        // Leaving the page (tab close, reload, or navigating within the site)
+        // only refreshes lastSeen. Writing sessionEnd here would mark the session
+        // ended at the first in-site navigation and block the real logout
+        // record; the admin view derives the end of a closed tab from lastSeen.
+        window.addEventListener('pagehide', function () {
+            updateSessionHeartbeat();
+        });
+
         const bannedRef = database.ref('banned');
         const announcementsRef = database.ref('announcements');
         const userProfilesRef = database.ref('userProfiles');
@@ -1121,49 +1102,78 @@
                 currentUserUid = user.uid;
                 if (window.initThemeSync) window.initThemeSync(database, user.uid);
                 currentUsername = user.email || currentUsername;
-                if (user.displayName) displayName = user.displayName;
+                // The Profile page renames via userProfiles/{uid}.displayName, not the
+                // Auth profile, so Auth's name is only a fallback for a first visit.
+                if (user.displayName && !localStorage.getItem('bendbsn_displayName')) displayName = user.displayName;
                 localStorage.setItem('bendbsn_uid', currentUserUid);
                 localStorage.setItem('bendbsn_user', currentUsername);
                 localStorage.setItem('bendbsn_displayName', displayName);
-                syncUserProfile(user);
                 document.getElementById('ctxName').textContent = displayName;
 
                 userProfilesRef.child(user.uid).once('value').then((snap) => {
                     const profile = snap.val();
-                    if (profile && (profile.role === 'Instructor' || profile.role_label === 'Instructor')) {
+                    // The RTDB profile is the source of truth for the display name.
+                    if (profile && profile.displayName && profile.displayName !== displayName) {
+                        displayName = profile.displayName;
+                        localStorage.setItem('bendbsn_displayName', displayName);
+                        document.getElementById('ctxName').textContent = displayName;
+                    }
+                    syncUserProfile(user);
+                    if (profile && (profile.role_id === 'instructor' || profile.role === 'Instructor' || profile.role_label === 'Instructor')) {
                         const apaLink = document.getElementById('apaMenuLink');
                         if (apaLink) apaLink.style.display = 'none';
-                        const apaChip = document.getElementById('apaToolChip');
-                        if (apaChip) apaChip.style.display = 'none';
                     }
-                });
+                }).catch(() => {});
 
                 // Load recent notes from Firebase (keyed by uid, not email)
                 loadRecentNotes(user.uid);
+                startBanWatch();
+            } else if (localStorage.getItem('bendbsn_auth') === 'true') {
+                // Firebase has no session (token revoked, storage cleared) but the
+                // local flag says signed in: clear it and go to the login page.
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid','bendbsn_login_at'].forEach(k => localStorage.removeItem(k));
+                clearSessionTracking();
+                window.location.replace('/');
             }
         });
 
-        function checkIfBanned() {
-            bannedRef.once('value', (snap) => {
-                snap.forEach((child) => {
-                    const b = child.val();
-                    if (b.username === currentUsername || b.username === displayName) {
-                        showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
-                        ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
-                        setTimeout(() => { window.location.href = '/'; }, 2000);
-                    }
-                });
+        // ========== BAN CHECK ==========
+        // Admin ban entries carry uid + email; username is only the email local
+        // part, so it is compared only for legacy entries that lack both.
+        function isBanMatch(b) {
+            const u = auth.currentUser;
+            if (!b || !u) return false;
+            if (b.uid || b.email) {
+                return !!((b.uid && b.uid === u.uid) ||
+                    (b.email && u.email && String(b.email).toLowerCase() === u.email.toLowerCase()));
+            }
+            return !!b.username && (b.username === currentUsername || b.username === displayName);
+        }
+        let _banHandled = false;
+        function handleBanned(b) {
+            if (_banHandled) return;
+            _banHandled = true;
+            showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
+            setTimeout(() => {
+                cleanupFirebaseListeners();
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid','bendbsn_role_v2','bendbsn_login_at','bendbsn_last_activity'].forEach(k => localStorage.removeItem(k));
+                try { if (typeof window.bsnPurgeLocalUserData === 'function') window.bsnPurgeLocalUserData(); } catch (e) {}
+                clearSessionTracking();
+                // Sign out before leaving, or the login page sees the live session
+                // and sends the user straight back here.
+                auth.signOut().catch(() => {}).finally(() => { window.location.replace('/'); });
+            }, 2000);
+        }
+        let _banWatchStarted = false;
+        function startBanWatch() {
+            if (_banWatchStarted) return;
+            _banWatchStarted = true;
+            // child_added fires for every existing entry first, then for new bans.
+            bannedRef.on('child_added', (snap) => {
+                const b = snap.val();
+                if (isBanMatch(b)) handleBanned(b);
             });
         }
-        checkIfBanned();
-        bannedRef.on('child_added', (snap) => {
-            const b = snap.val();
-            if (b.username === currentUsername || b.username === displayName) {
-                showToast('Your account has been suspended: ' + (b.reason || 'Rule violation'), 'error', 5000);
-                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
-                setTimeout(() => { window.location.href = '/'; }, 2000);
-            }
-        });
 
         document.addEventListener('DOMContentLoaded', () => {
             startSessionHeartbeat();
@@ -1172,39 +1182,46 @@
             });
         });
 
-        // ========== PRESENCE ==========
-        function setPresence(status = 'online') {
-            const uid = getCurrentUserUid();
-            if (!uid) return;
-            myPresenceRef = presenceRef.child(uid);
-            myPresenceRef.set({ user: displayName, username: currentUsername, uid, status, lastActive: firebase.database.ServerValue.TIMESTAMP });
-            myPresenceRef.onDisconnect().remove();
-            currentPresenceStatus = status;
+        // ========== IDLE AUTO-LOGOUT ==========
+        // Activity is shared across tabs through localStorage, so an idle
+        // background tab never signs out a user who is working in another tab
+        // (auth.signOut() ends the session in every tab). When a timer fires it
+        // re-checks the newest activity from any tab and re-arms if needed.
+        // Without localStorage it falls back to this tab's own activity.
+        const LAST_ACTIVITY_KEY = 'bendbsn_last_activity';
+        let _localLastActivity = Date.now();
+        let _lastActivityWrite = 0;
+        function noteActivity() {
+            _localLastActivity = Date.now();
+            if (_localLastActivity - _lastActivityWrite < 15000) return; // throttle writes
+            _lastActivityWrite = _localLastActivity;
+            try { localStorage.setItem(LAST_ACTIVITY_KEY, String(_localLastActivity)); } catch (e) {}
         }
-        function updatePresenceStatus(status) {
-            const uid = getCurrentUserUid();
-            if (!uid) return;
-            presenceRef.child(uid).update({ status, lastActive: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
-            currentPresenceStatus = status;
+        function lastActivityAnyTab() {
+            let shared = 0;
+            try { shared = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10) || 0; } catch (e) {}
+            // Ignore a timestamp from the future (clock change) beyond this tab's own
+            return Math.max(_localLastActivity, Math.min(shared, Date.now()));
+        }
+        function armIdleTimers(idleSoFar) {
+            clearTimeout(logoutTimer); clearTimeout(logoutWarningTimer);
+            const warnIn = LOGOUT_WARNING_TIMEOUT - idleSoFar;
+            if (warnIn > 0) {
+                logoutWarningTimer = setTimeout(() => {
+                    const idle = Date.now() - lastActivityAnyTab();
+                    if (idle < LOGOUT_WARNING_TIMEOUT) { armIdleTimers(idle); return; }
+                    showToast('You will be logged out in 5 minutes due to inactivity.', 'warning', 10000);
+                }, warnIn);
+            }
+            logoutTimer = setTimeout(() => {
+                const idle = Date.now() - lastActivityAnyTab();
+                if (idle < LOGOUT_TIMEOUT) { armIdleTimers(idle); return; } // active in another tab
+                logout('idle');
+            }, Math.max(0, LOGOUT_TIMEOUT - idleSoFar));
         }
         function recordActivity() {
-            clearTimeout(idleTimer); clearTimeout(logoutTimer); clearTimeout(logoutWarningTimer);
-            idleTimer = setTimeout(() => {
-                updatePresenceStatus('away');
-                logoutTimer = setTimeout(() => logout(), LOGOUT_TIMEOUT - IDLE_TIMEOUT);
-            }, IDLE_TIMEOUT);
-            logoutWarningTimer = setTimeout(() => {
-                showToast('You will be logged out in 5 minutes due to inactivity.', 'warning', 10000);
-            }, LOGOUT_WARNING_TIMEOUT);
-            if (activityDebounceTimer) return;
-            if (currentPresenceStatus === 'away') updatePresenceStatus('online');
-            activityDebounceTimer = setTimeout(() => {
-                activityDebounceTimer = null;
-                const uid = getCurrentUserUid();
-                if (currentPresenceStatus === 'online' && uid) {
-                    presenceRef.child(uid).update({ lastActive: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
-                }
-            }, ACTIVITY_DEBOUNCE);
+            noteActivity();
+            armIdleTimers(0);
         }
         function initActivityTracking() {
             ['mousedown','keydown','scroll','touchstart','mousemove'].forEach(ev => {
@@ -1215,55 +1232,14 @@
             });
             recordActivity();
         }
-        setPresence('online');
         initActivityTracking();
-        database.ref('.info/connected').on('value', (snap) => {
-            if (snap.val() === true && currentUsername) setPresence(currentPresenceStatus || 'online');
-        });
 
-        // Online count display
-        let userListOpen = false;
-        presenceRef.on('value', (snap) => {
-            const data = snap.val() || {};
-            const users = Object.values(data);
-            const online = users.filter(u => u.status === 'online');
-            const away   = users.filter(u => u.status === 'away');
-            const countText = document.getElementById('onlineCountText');
-            if (countText) countText.textContent = `${online.length} online${away.length ? `, ${away.length} away` : ''}`;
-            renderUserList(online, away);
-            if (typeof window.updateOnlineCount === 'function') {
-                const names = [...online, ...away].map(u => u.user || '').filter(Boolean);
-                window.updateOnlineCount(online.length + away.length, names);
-            }
-        });
-        function toggleUserList() {
-            userListOpen = !userListOpen;
-            const d = document.getElementById('userListDropdown');
-            if (d) d.style.display = userListOpen ? 'block' : 'none';
-        }
         function escapeHtml(s) {
             // Quote-safe (also escapes " and ') for attribute/inline-JS-string contexts.
             return String(s ?? '')
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
-
-        function renderUserList(online, away) {
-            const el = document.getElementById('userListNames');
-            if (!el) return;
-            const rows = [
-                ...online.map(u => `<div style="padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>${escapeHtml(u.user||'—')}</div>`),
-                ...away.map(u => `<div style="padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:8px;color:var(--clx-text-muted);"><span style="width:8px;height:8px;border-radius:50%;background:#eab308;display:inline-block;flex-shrink:0;"></span>${escapeHtml(u.user||'—')}</div>`)
-            ];
-            el.innerHTML = rows.length ? rows.join('') : '<div style="padding:8px 14px;font-size:12px;color:var(--clx-text-muted);">Nobody online</div>';
-        }
-        document.addEventListener('click', (e) => {
-            if (userListOpen && !e.target.closest('#userListDropdown') && !e.target.closest('#onlineCount')) {
-                userListOpen = false;
-                const d = document.getElementById('userListDropdown');
-                if (d) d.style.display = 'none';
-            }
-        });
 
         // ========== THEME ==========
         function initTheme() {
@@ -1294,14 +1270,17 @@
         function unlockScreen() { document.getElementById('lockScreenOverlay').style.display = 'none'; }
 
         // ========== LOGOUT ==========
-        function logout() {
-            endSessionTracking('logout');
+        function logout(reason) {
+            // 'idle' comes from the inactivity timer; the flag makes the login page explain the sign-out.
+            if (reason === 'idle') {
+                try { sessionStorage.setItem('bendbsn_idle_logout', '1'); } catch (e) {}
+            }
+            endSessionTracking(reason === 'idle' ? 'idle' : 'logout');
             cleanupFirebaseListeners();
-            const uid = getCurrentUserUid();
-            if (uid) presenceRef.child(uid).remove().catch(() => {});
-            [idleTimer, logoutTimer, logoutWarningTimer, activityDebounceTimer].forEach(t => clearTimeout(t));
+            [logoutTimer, logoutWarningTimer].forEach(t => clearTimeout(t));
             auth.signOut().then(() => {
-                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
+                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid','bendbsn_role_v2','bendbsn_login_at','bendbsn_last_activity'].forEach(k => localStorage.removeItem(k));
+                try { if (typeof window.bsnPurgeLocalUserData === 'function') window.bsnPurgeLocalUserData(); } catch (e) {}
                 clearSessionTracking();
                 window.location.href = '/';
             });
@@ -1311,8 +1290,6 @@
             try {
                 if (typeof announcementsRef !== 'undefined') announcementsRef.off();
                 if (typeof bannedRef !== 'undefined') bannedRef.off();
-                if (typeof presenceRef !== 'undefined') presenceRef.off();
-                database.ref('.info/connected').off();
             } catch(e) {}
         }
         window.addEventListener('beforeunload', cleanupFirebaseListeners);
@@ -1322,11 +1299,11 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
-                if (userListOpen) { userListOpen = false; document.getElementById('userListDropdown').style.display = 'none'; }
             }
         });
 
         // ========== SERVICE WORKER ==========
+        let _swReloadRequested = false;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').then(reg => {
@@ -1336,18 +1313,43 @@
                         if (!nw) return;
                         nw.addEventListener('statechange', () => {
                             if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                                showToast('Update available — click to reload.', 'info', 0);
+                                showToastAction({
+                                    title: 'Update available — tap to reload.',
+                                    type: 'info',
+                                    duration: 0,
+                                    actions: [{
+                                        label: 'Reload',
+                                        onClick: function () {
+                                            _swReloadRequested = true;
+                                            nw.postMessage({ type: 'SKIP_WAITING' });
+                                            // sw.js skips waiting on install, so the new worker
+                                            // may already control this page: reload right away.
+                                            if (nw.state === 'activated' || nw.state === 'redundant' ||
+                                                navigator.serviceWorker.controller === nw) {
+                                                window.location.reload();
+                                            } else {
+                                                setTimeout(function () { if (_swReloadRequested) window.location.reload(); }, 3000);
+                                            }
+                                        }
+                                    }]
+                                });
                             }
                         });
                     });
                 }).catch(() => {});
             });
-            navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+            // Only reload when the user chose 'Reload': a background update (or the
+            // first install claiming this tab) must never reload over a reminder
+            // being typed.
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!_swReloadRequested) return;
+                _swReloadRequested = false;
+                window.location.reload();
+            });
         }
 
         // ========== CONTEXT BAR ==========
         document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bendbsn_displayName') || '—';
-
 
         // ========== RECENT NOTES ==========
         function sanitizeEmail(email) {
@@ -1362,7 +1364,7 @@
                 const heroCount = document.getElementById('docHeroNoteCount');
                 if (heroCount) heroCount.textContent = total;
             }).catch(() => {});
-            ref.orderByChild('savedAt').limitToLast(5).once('value', (snap) => {
+            ref.orderByChild('createdAt').limitToLast(5).once('value', (snap) => {
                 const docs = [];
                 snap.forEach((child) => {
                     docs.unshift({ id: child.key, ...child.val() });
@@ -1380,8 +1382,9 @@
             el.innerHTML = docs.map(doc => {
                 const name = doc.patientName || doc.name || 'Unnamed Note';
                 const type = doc.noteType || doc.type || '—';
-                const date = doc.savedAt ? new Date(doc.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-                return `<a class="dash-note-item" href="/app/" title="Open in Note Builder">
+                const ts = doc.updatedAt || doc.createdAt || doc.savedAt;
+                const date = ts ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                return `<a class="dash-note-item" href="/app/#doc=${escHtml(encodeURIComponent(doc.id))}" title="Open in Note Builder">
                     <span class="dash-note-type">${escHtml(type)}</span>
                     <span class="dash-note-name">${escHtml(name)}</span>
                     <span class="dash-note-date">${escHtml(date)}</span>
@@ -1391,7 +1394,6 @@
         function escHtml(s) {
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
-
 
         // ========== COLLAPSIBLE HOME PANELS ==========
         const HOME_PANEL_KEY = 'bendbsn_home_panels';
@@ -1463,10 +1465,11 @@
             if (!due) return '—';
             const d = new Date(due + 'T00:00:00');
             const today = new Date(); today.setHours(0,0,0,0);
-            const diff = d - today;
-            if (diff < 0) return 'Overdue';
-            if (diff === 0) return 'Today';
-            if (diff === 86400000) return 'Tomorrow';
+            // Round whole days so a 23h/25h DST day still counts as one.
+            const days = Math.round((d - today) / 86400000);
+            if (days < 0) return 'Overdue';
+            if (days === 0) return 'Today';
+            if (days === 1) return 'Tomorrow';
             return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
@@ -1669,8 +1672,8 @@
                 },
                 {
                     icon: '📚',
-                    title: 'Resources, AI & Community',
-                    body: '<strong>Resources</strong> has drug cards, disease fast cards, ECG reference, lab values, and clinical calculators — all offline.<br><br><strong>AI</strong> generates NCLEX practice questions including Next-Gen format.<br><br><strong>Community</strong> is where your classmates post tips, questions, and announcements.',
+                    title: 'Resources — References & Calculators',
+                    body: '<strong>Resources</strong> has drug cards, disease fast cards, ECG reference, lab values, and clinical calculators — all offline.',
                     btn: 'Get Started 🎉'
                 }
             ];
@@ -1717,49 +1720,6 @@
             document.body.appendChild(overlay);
         })();
         // ===== END ONBOARDING TOUR =====
-
-        // ===== WHAT'S NEW MODAL =====
-        (function() {
-            var WHATS_NEW_VERSION = '2026-04-13';
-            var SEEN_KEY = 'bendbsn_whats_new_seen';
-
-            if (localStorage.getItem(SEEN_KEY) === WHATS_NEW_VERSION) return;
-
-            var updates = [
-                { icon: '👤', title: 'Role selector on Profile', desc: 'Update your year / credential directly from your profile page — saves instantly.' },
-                { icon: '📝', title: 'Smart Phrases on Profile', desc: 'Add and manage your own custom shortcut phrases from the Profile page.' },
-            ];
-
-            var html = '<div id="wnOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;">'
-                + '<div style="background:var(--clx-bg-surface,#1a2744);border:1px solid rgba(255,255,255,0.12);border-radius:16px;max-width:420px;width:100%;padding:28px 24px 24px;box-shadow:0 24px 60px rgba(0,0,0,0.5);">'
-                + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">'
-                + '<span style="font-size:28px;">🎉</span>'
-                + '<div><div style="font-size:17px;font-weight:700;color:var(--clx-text-primary,#fff);">What\'s New</div>'
-                + '<div style="font-size:12px;color:var(--clx-text-muted,rgba(255,255,255,0.5));">April 2026 update</div></div>'
-                + '</div>'
-                + '<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px;">';
-
-            updates.forEach(function(u) {
-                html += '<div style="display:flex;gap:12px;align-items:flex-start;">'
-                    + '<span style="font-size:18px;line-height:1.4;flex-shrink:0;">' + u.icon + '</span>'
-                    + '<div><div style="font-size:13px;font-weight:600;color:var(--clx-text-primary,#fff);margin-bottom:2px;">' + u.title + '</div>'
-                    + '<div style="font-size:12px;color:var(--clx-text-muted,rgba(255,255,255,0.6));line-height:1.5;">' + u.desc + '</div></div>'
-                    + '</div>';
-            });
-
-            html += '</div>'
-                + '<button onclick="document.getElementById(\'wnOverlay\').remove();localStorage.setItem(\'' + SEEN_KEY + '\',\'' + WHATS_NEW_VERSION + '\');" '
-                + 'style="width:100%;padding:12px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0.02em;">Got it!</button>'
-                + '</div></div>';
-
-            // Show after a short delay so the page has rendered
-            setTimeout(function() {
-                var el = document.createElement('div');
-                el.innerHTML = html;
-                document.body.appendChild(el.firstChild);
-            }, 800);
-        })();
-        // ===== END WHAT'S NEW MODAL =====
     </script>
 </body>
 </html>

@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
     <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
+    <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('bendbsn_theme')||'light');}catch(e){}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0d1f2d">
@@ -40,8 +41,8 @@
         .rl-page-sub { font-size: 13px; color: var(--clx-text-muted); margin-top: 2px; margin-bottom: 14px; }
 
         /* Tabs */
-        .rl-tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--clx-border); margin-bottom: 16px; }
-        .rl-tab { padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--clx-text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; font-family: inherit; transition: color 0.15s; }
+        .rl-tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--clx-border); margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
+        .rl-tab { white-space: nowrap; flex-shrink: 0; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--clx-text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; font-family: inherit; transition: color 0.15s; }
         .rl-tab:hover { color: var(--clx-text-primary); }
         .rl-tab.active { color: var(--clx-accent); border-bottom-color: var(--clx-accent); }
         .rl-panel { display: none; }
@@ -55,10 +56,19 @@
 
         /* Form card */
         .rl-form-card { background: var(--clx-bg-surface); border: 1px solid var(--clx-border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-        .rl-form-card-title { font-size: 13px; font-weight: 700; color: var(--clx-text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .rl-form-card-title { font-size: 13px; font-weight: 700; color: var(--clx-text-primary); margin-bottom: 12px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .rl-title-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .rl-title-tools .rl-input { width: 200px; max-width: 100%; padding: 5px 8px; }
         .rl-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .rl-form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-        .rl-field { display: flex; flex-direction: column; gap: 4px; }
+        /* Lab form: responsive columns that wrap instead of squeezing the value / date-time inputs */
+        .rl-form-grid.cols-3 { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+        .rl-form-grid.cols-3 .lab-dt-field { grid-column: span 2; }
+        .rl-form-grid.cols-3 .lab-actions { grid-column: span 2; }
+        .rl-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        /* Shift start / end / hours — the pair never splits; hours stays beside it */
+        .rl-shift-times { display: grid; grid-template-columns: minmax(96px, 1fr) minmax(96px, 1fr) auto; gap: 8px; align-items: flex-end; }
+        .rl-shift-times > div { min-width: 0; }
+        .bulk-times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .rl-field.full { grid-column: 1 / -1; }
         .rl-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--clx-text-muted); }
         .rl-input, .rl-select, .rl-textarea {
@@ -83,9 +93,13 @@
         /* Buttons */
         .rl-btn { padding: 9px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--clx-border); background: var(--clx-bg-surface); color: var(--clx-text-primary); cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s; }
         .rl-btn:hover { background: var(--clx-bg-surface-2); border-color: var(--clx-border-strong); }
-        .rl-btn.primary { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
+        .rl-btn.primary { background: var(--clx-accent); color: var(--clx-accent-text); border-color: var(--clx-accent); }
+        .rl-btn:disabled { opacity: 0.6; cursor: default; }
+        .rl-icon-btn { background: none; border: none; cursor: pointer; color: var(--clx-text-muted); font-size: 14px; padding: 2px 6px; border-radius: 4px; }
+        .rl-icon-btn:hover { background: var(--clx-bg-surface-2); color: var(--clx-danger); }
         .rl-btn.primary:hover { background: var(--clx-accent-hover); border-color: var(--clx-accent-hover); }
         .rl-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .lab-actions .rl-btn { padding: 8px 12px; white-space: nowrap; }
 
         /* Log table */
         .rl-table-wrap { overflow-x: auto; }
@@ -123,18 +137,34 @@
         .checklist-item label { font-size: 12px; color: var(--clx-text-primary); cursor: pointer; flex: 1; }
         .checklist-item.completed label { text-decoration: line-through; color: var(--clx-text-muted); }
 
+        /* Lock screen: privacy overlay — the session stays signed in (same as /home/, /app/, /sbar/) */
+        #lockScreenOverlay { display: none; position: fixed; inset: 0; background: #0d1f2d; z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
+
+        /* Touch: 44px targets */
+        @media (pointer: coarse) {
+            .rl-input, .rl-select, .rl-btn, .rl-tab, .rl-icon-btn { min-height: 44px; }
+            .rl-icon-btn { min-width: 44px; }
+            .skill-chip { min-height: 44px; padding: 6px 12px; font-size: 12px; }
+            .checklist-item { min-height: 44px; }
+            .checklist-item input[type="checkbox"] { width: 20px; height: 20px; }
+            .checklist-item label { padding: 8px 0; }
+        }
+
         @media (max-width: 600px) {
             .rl-form-grid { grid-template-columns: 1fr; }
-            .rl-form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .rl-form-grid.cols-3 { grid-template-columns: 1fr; }
+            .rl-form-grid.cols-3 .lab-dt-field, .rl-form-grid.cols-3 .lab-actions { grid-column: 1 / -1; }
+            .rl-title-tools { width: 100%; }
+            .rl-title-tools .rl-input { flex: 1 1 140px; width: auto; }
+            .bulk-times { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <header class="site-header">
         <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
-        <div class="header-actions">
-            <button class="clx-hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle navigation">&#9776;</button>
-        </div>
     </header>
 
     <div class="clx-shell">
@@ -167,35 +197,21 @@
             <span class="clx-sidebar-icon">&#128336;</span>
             <span class="clx-sidebar-label">Rotation Log</span>
         </a>
+        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
+            <span class="clx-sidebar-icon">&#128203;</span>
+            <span class="clx-sidebar-label">Clinical Packet</span>
+        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
         <a href="/resources/" class="clx-sidebar-item" data-page="resources">
             <span class="clx-sidebar-icon">&#128218;</span>
             <span class="clx-sidebar-label">Resources</span>
         </a>
-        <a href="/ai/" class="clx-sidebar-item" data-page="ai" target="_blank">
-            <span class="clx-sidebar-icon">&#129302;</span>
-            <span class="clx-sidebar-label">AI Assistant</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Community</div>
-        <a href="/chat/" class="clx-sidebar-item" data-page="chat" target="_blank">
-            <span class="clx-sidebar-icon">&#128172;</span>
-            <span class="clx-sidebar-label">Chat</span>
-        </a>
-        <a href="/community/" class="clx-sidebar-item" data-page="community">
-            <span class="clx-sidebar-icon">&#128101;</span>
-            <span class="clx-sidebar-label">Community</span>
-        </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
         <a href="/apa/" class="clx-sidebar-item" data-page="apa">
             <span class="clx-sidebar-icon">&#128196;</span>
             <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-        <a href="/labsched/" class="clx-sidebar-item" data-page="labsched">
-            <span class="clx-sidebar-icon">&#128197;</span>
-            <span class="clx-sidebar-label">Lab Sched</span>
         </a>
 
         <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
@@ -220,7 +236,6 @@
             <span class="clx-sidebar-toggle-label">Expand</span>
         </button>
     </aside>
-    <div class="clx-sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
     <main class="clx-main" role="main">
     <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;"><span id="alertText"></span></div>
@@ -251,7 +266,7 @@
             </div>
 
             <!-- Add Entry Form -->
-            <div class="rl-form-card">
+            <div class="rl-form-card" id="rlEntryCard">
                 <div class="rl-form-card-title">+ Add Rotation Entry</div>
                 <div class="rl-form-grid">
                     <div class="rl-field">
@@ -289,21 +304,21 @@
                     </div>
                     <div class="rl-field">
                         <label class="rl-label" for="rlShift">Shift</label>
-                        <select id="rlShift" class="rl-select">
+                        <select id="rlShift" class="rl-select" onchange="applyShiftPreset()">
                             <option value="">Select…</option>
                             <option>Days (0700–1900)</option>
                             <option>Evenings (1500–2300)</option>
                             <option>Nights (1900–0700)</option>
                         </select>
                     </div>
-                    <div class="rl-field full" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:flex-end;">
+                    <div class="rl-field full rl-shift-times">
                         <div>
                             <label class="rl-label" for="rlShiftStart">Shift Start (24h)</label>
-                            <input type="text" id="rlShiftStart" class="rl-input" placeholder="e.g. 07:00" maxlength="5" oninput="calcShiftHours()">
+                            <input type="text" id="rlShiftStart" class="rl-input" placeholder="e.g. 0700" maxlength="5" inputmode="numeric" oninput="calcShiftHours()">
                         </div>
                         <div>
                             <label class="rl-label" for="rlShiftEnd">Shift End (24h)</label>
-                            <input type="text" id="rlShiftEnd" class="rl-input" placeholder="e.g. 19:00" maxlength="5" oninput="calcShiftHours()">
+                            <input type="text" id="rlShiftEnd" class="rl-input" placeholder="e.g. 1900" maxlength="5" inputmode="numeric" oninput="calcShiftHours()">
                         </div>
                         <div style="text-align:center;padding-bottom:6px;min-width:52px;">
                             <div id="rlCalcHours" style="font-size:20px;font-weight:800;color:var(--clx-accent);line-height:1;">—</div>
@@ -354,7 +369,7 @@
                     </div>
                 </div>
                 <div class="rl-actions">
-                    <button class="rl-btn primary" onclick="addRlEntry()">Add Entry</button>
+                    <button class="rl-btn primary" id="rlAddBtn" onclick="addRlEntry()">Add Entry</button>
                     <button class="rl-btn" onclick="openBulkAddModal()">&#128203; Bulk Add</button>
                     <button class="rl-btn" onclick="clearRlForm()">Clear</button>
                 </div>
@@ -364,8 +379,8 @@
             <div class="rl-form-card">
                 <div class="rl-form-card-title" style="justify-content:space-between;">
                     <span>All Entries</span>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <input type="text" id="rlSearch" class="rl-input" style="width:200px;padding:5px 8px;" placeholder="Search entries…" oninput="renderRlTable()">
+                    <div class="rl-title-tools">
+                        <input type="text" id="rlSearch" class="rl-input" placeholder="Search entries…" aria-label="Search entries" oninput="renderRlTable()">
                         <button class="rl-btn" onclick="exportRlCsv()">Export CSV</button>
                     </div>
                 </div>
@@ -385,7 +400,7 @@
                             </tr>
                         </thead>
                         <tbody id="rlTableBody">
-                            <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--clx-text-muted);">Loading…</td></tr>
+                            <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--clx-text-muted);">Loading…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -409,9 +424,9 @@
             <div class="rl-form-card">
                 <div class="rl-form-card-title">&#129514; Add Lab Value</div>
                 <div class="rl-form-grid cols-3">
-                    <div>
-                        <label style="font-size:11px;font-weight:700;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;">Lab</label>
-                        <select id="labName" onchange="updateLabNormalRange()" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                    <div class="rl-field">
+                        <label class="rl-label" for="labName">Lab</label>
+                        <select id="labName" class="rl-select" onchange="updateLabNormalRange()">
                             <optgroup label="Basic Metabolic">
                                 <option value="Na">Na (Sodium)</option>
                                 <option value="K">K (Potassium)</option>
@@ -449,25 +464,25 @@
                             <option value="Custom">Custom</option>
                         </select>
                     </div>
-                    <div>
-                        <label style="font-size:11px;font-weight:700;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;">Custom Name (if Custom)</label>
-                        <input type="text" id="labCustomName" placeholder="e.g. Ammonia" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                    <div class="rl-field">
+                        <label class="rl-label" for="labCustomName">Custom Name (if Custom)</label>
+                        <input type="text" id="labCustomName" class="rl-input" placeholder="e.g. Ammonia">
                     </div>
-                    <div>
-                        <label style="font-size:11px;font-weight:700;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;">Value</label>
-                        <input type="number" id="labValue" step="any" placeholder="e.g. 3.8" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                    <div class="rl-field">
+                        <label class="rl-label" for="labValue">Value</label>
+                        <input type="number" id="labValue" class="rl-input" step="any" placeholder="e.g. 3.8">
                     </div>
                     <div style="grid-column:1/-1;">
                         <div id="labNormalRange" style="font-size:12px;color:var(--clx-text-muted);padding:5px 8px;background:var(--clx-bg-surface-2);border-radius:5px;border:1px solid var(--clx-border);min-height:28px;">Normal range: Select a lab above</div>
                     </div>
-                    <div>
-                        <label style="font-size:11px;font-weight:700;color:var(--clx-text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;">Date / Time</label>
-                        <input type="datetime-local" id="labDateTime" style="width:100%;padding:7px 10px;border:1px solid var(--clx-border);border-radius:6px;font-size:13px;background:var(--clx-bg-surface);color:var(--clx-text-primary);">
+                    <div class="rl-field lab-dt-field">
+                        <label class="rl-label" for="labDateTime">Date / Time</label>
+                        <input type="datetime-local" id="labDateTime" class="rl-input">
                     </div>
-                    <div style="display:flex;align-items:flex-end;gap:8px;">
-                        <button onclick="addLabEntry()" style="flex:1;padding:8px 12px;background:var(--clx-accent);color:white;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Add Entry</button>
-                        <button onclick="exportLabCSV()" title="Export CSV" style="padding:8px 12px;background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--clx-text-primary);">&#8595; CSV</button>
-                        <button onclick="clearAllLabs()" title="Clear all entries" style="padding:8px 12px;background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--clx-text-muted);">Clear</button>
+                    <div class="lab-actions" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;">
+                        <button class="rl-btn primary" onclick="addLabEntry()" style="flex:1 1 140px;justify-content:center;">Add Entry</button>
+                        <button class="rl-btn" onclick="exportLabCSV()" title="Export CSV">&#8595; CSV</button>
+                        <button class="rl-btn" onclick="clearAllLabs()" title="Clear all entries">Clear</button>
                     </div>
                 </div>
             </div>
@@ -499,11 +514,20 @@
     </main>
     </div><!-- /clx-shell -->
 
+    <!-- Lock screen (privacy overlay; the session and the form stay intact) -->
+    <div id="lockScreenOverlay" role="dialog" aria-modal="true" aria-label="Portal locked">
+        <div style="text-align:center;color:#fff;">
+            <div style="font-size:60px;margin-bottom:16px;">&#128274;</div>
+            <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
+            <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
+            <button type="button" id="unlockScreenBtn" onclick="unlockScreen()" style="background:var(--clx-accent);color:var(--clx-accent-text);border:none;padding:14px 40px;min-height:44px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">&#128275; Unlock</button>
+        </div>
+    </div>
+
         <nav class="clx-mobile-nav" aria-label="Mobile navigation">
         <a href="/home/" class="clx-mobile-nav-item" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
         <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
         <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
-        <a href="/chat/" class="clx-mobile-nav-item" target="_blank" aria-label="Chat"><span class="clx-mobile-nav-icon">&#128172;</span><span>Chat</span></a>
         <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
     </nav>
 
@@ -543,18 +567,58 @@
         }
         initTheme();
 
-        let sidebarOpen = false;
+        // Desktop collapse/expand — same key and default (collapsed) as /app/.
+        // The tablet drawer + hamburger are injected by shared/header.js.
+        (function initSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            let collapsed = true;
+            try { collapsed = localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false'; } catch (e) {}
+            sidebar.classList.toggle('collapsed', collapsed);
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
+        })();
         function toggleSidebar() {
-            sidebarOpen = !sidebarOpen;
-            document.getElementById('appSidebar').classList.toggle('mobile-open', sidebarOpen);
-            document.getElementById('sidebarBackdrop').classList.toggle('visible', sidebarOpen);
+            const sidebar = document.getElementById('appSidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            try { localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed)); } catch (e) {}
+            const icon = document.getElementById('sidebarToggleIcon');
+            if (icon) icon.textContent = collapsed ? '▶' : '◀';
+            const label = document.querySelector('.clx-sidebar-toggle-label');
+            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
         }
-        function lockScreen() { localStorage.removeItem('bendbsn_auth'); window.location.href = '/'; }
+        // Lock is a privacy overlay (same as /home/, /app/, /sbar/): it keeps the
+        // session and the half-filled entry. Removing bendbsn_auth did nothing — the
+        // login page saw the live Firebase session and bounced straight to /home/.
+        function lockScreen() {
+            const o = document.getElementById('lockScreenOverlay');
+            if (!o) return;
+            o.style.display = 'flex';
+            const b = document.getElementById('unlockScreenBtn');
+            if (b) b.focus();
+        }
+        function unlockScreen() {
+            const o = document.getElementById('lockScreenOverlay');
+            if (o) o.style.display = 'none';
+        }
         function logout() {
             showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
-                try { firebase.auth().signOut(); } catch(e) {}
-                ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid'].forEach(k => localStorage.removeItem(k));
-                window.location.href = '/';
+                // End the Firebase session first, then clear the local session and leave
+                let signOut;
+                try { signOut = firebase.auth().signOut(); } catch(e) {}
+                Promise.resolve(signOut).catch(() => {}).then(() => {
+                    // Also the caches that aren't uid-keyed (role, smart phrases): on a shared
+                    // computer they would carry over to the next student. This page has no
+                    // pending phrase sync, so dropping the phrase cache loses nothing.
+                    ['bendbsn_auth','bendbsn_user','bendbsn_displayName','bendbsn_uid',
+                     'bendbsn_role_v2','bendbsn_login_at','bendbsn_custom_phrases','bendbsn_phrases_seeded_v1'].forEach(k => {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                    });
+                    window.location.href = '/';
+                });
             }, { confirmText: 'Logout', danger: true });
         }
 
@@ -573,8 +637,19 @@
             });
         });
 
+        // Local calendar date as YYYY-MM-DD (valueAsDate uses the UTC date, which is
+        // already tomorrow from 5 PM Pacific)
+        function localDateStr(d) {
+            d = d || new Date();
+            return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        }
+        // Per-account localStorage key — this cache used to be shared by everyone
+        // on the same browser (shared lab computers).
+        const RL_LAST_SHIFT_KEY = 'bendbsn_rotationlog_last_shift_' + currentUid;
+        try { localStorage.removeItem('bendbsn_rotationlog_last_shift'); } catch (e) {} // unscoped legacy key: owner unknown
+
         // Set today's date
-        document.getElementById('rlDate').valueAsDate = new Date();
+        document.getElementById('rlDate').value = localDateStr();
         // Pre-populate stable shift fields from the last saved entry — students
         // log the same facility / preceptor / shift template all term.
         applyShiftTemplate();
@@ -589,7 +664,7 @@
             const idx = order.indexOf(tab);
             if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
             if (tab === 'checklists') renderChecklists();
-            if (tab === 'labs') renderLabTable();
+            if (tab === 'labs') { renderLabTable(); offerLegacyLabImport(); }
         }
 
         // --- Data ---
@@ -616,20 +691,21 @@
             const end = (document.getElementById('rlShiftEnd').value || '').trim();
             const display = document.getElementById('rlCalcHours');
             const hidden = document.getElementById('rlHours');
-            if (!start || !end || !/^\d{1,2}:\d{2}$/.test(start) || !/^\d{1,2}:\d{2}$/.test(end)) {
+            // Accepts HH:MM, HHMM (0700) and HMM (630) — same parser as Bulk Add
+            const s = start ? parseTime(start) : null;
+            const e = end ? parseTime(end) : null;
+            if (!s || !e) {
                 display.textContent = '—';
                 hidden.value = '';
                 return;
             }
-            const [sh, sm] = start.split(':').map(Number);
-            const [eh, em] = end.split(':').map(Number);
-            if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em) || sh > 23 || eh > 23 || sm > 59 || em > 59) {
+            if (s.h > 23 || e.h > 23 || s.min > 59 || e.min > 59) {
                 display.textContent = '!';
                 hidden.value = '';
                 return;
             }
-            let startMins = sh * 60 + sm;
-            let endMins = eh * 60 + em;
+            let startMins = s.h * 60 + s.min;
+            let endMins = e.h * 60 + e.min;
             if (endMins <= startMins) endMins += 24 * 60; // overnight
             const hrs = (endMins - startMins) / 60;
             display.textContent = hrs % 1 === 0 ? hrs : hrs.toFixed(1);
@@ -655,17 +731,32 @@
             if (!date) { showToast('Please select a date.', 'warning'); return; }
             if (!facility) { showToast('Please enter a facility name.', 'warning'); return; }
             if (!unit) { showToast('Please select a unit.', 'warning'); return; }
+            if (unit === 'Other' && !unitOther) { showToast('Please specify the unit.', 'warning'); document.getElementById('rlUnitOther').focus(); return; }
             if (!shiftStart || !shiftEnd) { showToast('Please enter shift start and end times.', 'warning'); return; }
-            if (!hours || isNaN(hours) || hours <= 0) { showToast('Invalid shift times — check format (HH:MM).', 'warning'); return; }
+            if (!hours || isNaN(hours) || hours <= 0) { showToast('Invalid shift times — use HHMM or HH:MM (24h).', 'warning'); return; }
 
             if (!currentUid) { showToast('Sign in to save entries.', 'warning'); return; }
 
-            const entryId = Date.now().toString();
             const entry = {
                 date, facility, unit: unit === 'Other' ? unitOther : unit,
-                shift, shiftStart, shiftEnd, hours, preceptor, population, skills, notes,
+                shift, shiftStart: normalizeBulkTime(shiftStart), shiftEnd: normalizeBulkTime(shiftEnd),
+                hours, preceptor, population, skills, notes,
                 createdAt: Date.now()
             };
+            // The form keeps the shift template after each Add, so guard against a
+            // second tap saving the same shift twice.
+            if (rlEntries.some(x => x.date === entry.date && x.shiftStart === entry.shiftStart)) {
+                showConfirmModal('Possible duplicate', 'You already logged a shift on ' + entry.date + ' starting at ' + entry.shiftStart + '. Add another entry anyway?',
+                    () => saveRlEntry(entry, unit, unitOther), { confirmText: 'Add anyway' });
+                return;
+            }
+            saveRlEntry(entry, unit, unitOther);
+        }
+
+        function saveRlEntry(entry, unit, unitOther) {
+            const addBtn = document.getElementById('rlAddBtn');
+            if (addBtn) addBtn.disabled = true;
+            const entryId = Date.now().toString();
             database.ref('rotationLog/' + currentUid + '/' + entryId).set(entry).then(() => {
                 rlEntries.push({...entry, _id: entryId});
                 renderRlTable();
@@ -673,8 +764,8 @@
                 // Cache last shift for next visit's prefill (facility / unit /
                 // shift / start / end / preceptor / population — the parts
                 // that are stable across consecutive shifts at the same site).
-                try {
-                    localStorage.setItem('bendbsn_rotationlog_last_shift', JSON.stringify({
+                if (currentUid) try {
+                    localStorage.setItem(RL_LAST_SHIFT_KEY, JSON.stringify({
                         facility: entry.facility,
                         unit: unit,           // raw unit value, before "Other" remap
                         unitOther: unitOther,
@@ -686,15 +777,30 @@
                     }));
                 } catch (e) {}
                 clearRlForm();
+                // Bring the stable fields back so the next shift is quick to log
+                // (skills / notes stay cleared).
+                applyShiftTemplate();
                 showToast('Entry added.', 'success');
-            }).catch(e => showToast('Save failed: ' + e.message, 'error'));
+            }).catch(e => showToast('Save failed: ' + e.message, 'error'))
+              .finally(() => { if (addBtn) addBtn.disabled = false; });
+        }
+
+        // Shift select → pre-fill start/end from the times in its label,
+        // e.g. "Days (0700–1900)".
+        function applyShiftPreset() {
+            const m = (document.getElementById('rlShift').value || '').match(/\((\d{4})\D(\d{4})\)/);
+            if (!m) return;
+            document.getElementById('rlShiftStart').value = normalizeBulkTime(m[1]);
+            document.getElementById('rlShiftEnd').value = normalizeBulkTime(m[2]);
+            calcShiftHours();
         }
 
         // Prefill the form from the last saved shift at first paint. Runs
         // after rlDate is defaulted to today so today's date isn't clobbered.
         function applyShiftTemplate() {
+            if (!currentUid) return;
             try {
-                const raw = localStorage.getItem('bendbsn_rotationlog_last_shift');
+                const raw = localStorage.getItem(RL_LAST_SHIFT_KEY);
                 if (!raw) return;
                 const t = JSON.parse(raw);
                 if (!t || typeof t !== 'object') return;
@@ -709,13 +815,13 @@
                 setIf('rlPopulation', t.population);
                 if (typeof calcShiftHours === 'function') calcShiftHours();
                 // Friendly hint that fields were prefilled — dismissable by user
-                const wrap = document.querySelector('#rl-tab-log .rl-card');
+                const wrap = document.getElementById('rlEntryCard');
                 if (wrap && !document.getElementById('shiftPrefillHint')) {
                     const hint = document.createElement('div');
                     hint.id = 'shiftPrefillHint';
                     hint.style.cssText = 'font-size:11px;color:var(--clx-text-muted);margin:-6px 0 12px 0;display:flex;align-items:center;gap:6px;';
                     hint.innerHTML = '✨ Pre-filled from your last shift &mdash; <a href="#" style="color:var(--clx-accent);" onclick="event.preventDefault();clearRlForm();this.parentNode.remove();">reset all fields</a>';
-                    wrap.insertBefore(hint, wrap.firstChild);
+                    wrap.insertBefore(hint, wrap.querySelector('.rl-form-grid'));
                 }
             } catch (e) {}
         }
@@ -727,7 +833,7 @@
                     renderRlTable();
                     updateRlStats();
                     showToast('Entry deleted.', 'success');
-                });
+                }).catch(e => showToast('Delete failed: ' + e.message, 'error'));
             }, { confirmText: 'Delete', danger: true });
         }
 
@@ -786,7 +892,7 @@
                     '<td style="font-weight:600;">' + escapeHtml(String(e.hours)) + '</td>' +
                     '<td>' + skillsHtml + '</td>' +
                     '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(e.notes) + '">' + escapeHtml(e.notes || '—') + '</td>' +
-                    '<td><button onclick="deleteRlEntry(\'' + e._id + '\')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:14px;padding:2px 6px;border-radius:4px;" title="Delete" aria-label="Delete">&#128465;</button></td>' +
+                    '<td><button type="button" class="rl-icon-btn rl-del" data-id="' + escapeHtml(e._id) + '" title="Delete" aria-label="Delete entry">&#128465;</button></td>' +
                 '</tr>';
             }).join('');
         }
@@ -830,14 +936,23 @@
 
         function exportRlCsv() {
             if (!rlEntries.length) { showToast('No entries to export.', 'warning'); return; }
-            const header = ['Date','Facility','Unit','Shift','Hours','Preceptor','Population','Skills','Notes'];
-            const rows = rlEntries.map(e => [
-                e.date, e.facility, e.unit, e.shift, e.hours,
+            const header = ['Date','Facility','Unit','Shift','Start','End','Hours','Preceptor','Population','Skills','Notes'];
+            // Quote every cell; prefix text that Excel would treat as a formula
+            const cell = v => {
+                let s = String(v||'');
+                if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+                return '"' + s.replace(/"/g,'""') + '"';
+            };
+            const sorted = [...rlEntries].sort((a,b) => (a.date||'').localeCompare(b.date||''));
+            const rows = sorted.map(e => [
+                e.date, e.facility, e.unit, e.shift, e.shiftStart, e.shiftEnd, e.hours,
                 e.preceptor, e.population,
                 (e.skills||[]).join('; '), e.notes
-            ].map(v => '"' + String(v||'').replace(/"/g,'""') + '"'));
-            const csv = [header, ...rows].map(r => r.join(',')).join('\n');
-            const blob = new Blob([csv], {type:'text/csv'});
+            ].map(cell));
+            const total = Math.round(rlEntries.reduce((s,e) => s + (parseFloat(e.hours)||0), 0) * 100) / 100;
+            const totalRow = ['Total','','','','','', total].map(cell);
+            const csv = [header, ...rows, [], totalRow].map(r => r.join(',')).join('\n');
+            const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url; a.download = 'RotationLog_' + new Date().toISOString().split('T')[0] + '.csv';
@@ -869,6 +984,10 @@
 
         let checklistData = {}; // { specialty: { itemIdx: true/false } }
 
+        // Firebase treats '/' as a path separator, so 'OB/L&D' is stored as 'OB-L&D'
+        // (the same transform the checkbox IDs use).
+        function clKey(specialty) { return specialty.replace(/\//g,'-'); }
+
         function renderChecklists() {
             if (!currentUid) {
                 document.getElementById('checklistGrid').innerHTML = '<div style="padding:20px;color:var(--clx-text-muted);">Sign in to use checklists.</div>';
@@ -876,9 +995,29 @@
             }
             // Load from Firebase then render
             database.ref('rotationChecklists/' + currentUid).once('value').then(snap => {
-                checklistData = snap.val() || {};
+                const raw = snap.val() || {};
+                checklistData = {};
+                const migration = {};
+                Object.keys(CHECKLISTS).forEach(s => {
+                    // Fall back to the old nested location (OB → L&D) for data saved before clKey
+                    const legacy = s.indexOf('/') !== -1 ? s.split('/').reduce((node, part) => node && node[part], raw) : null;
+                    const saved = raw[clKey(s)] || legacy;
+                    if (saved && typeof saved === 'object') checklistData[s] = saved;
+                    // Migrate once: move legacy data to the flat key and drop the nested node,
+                    // so unchecking everything later can't resurrect the old ticks.
+                    if (legacy != null) {
+                        if (!raw[clKey(s)] && typeof legacy === 'object') migration[clKey(s)] = legacy;
+                        migration[s] = null;
+                    }
+                });
+                if (Object.keys(migration).length) {
+                    database.ref('rotationChecklists/' + currentUid).update(migration).catch(() => {});
+                }
                 buildChecklistGrid();
-            }).catch(() => buildChecklistGrid());
+            }).catch(() => {
+                showToast('Could not load your saved checklists — check your connection.', 'error');
+                buildChecklistGrid();
+            });
         }
 
         function buildChecklistGrid() {
@@ -898,7 +1037,7 @@
                 return '<div class="checklist-card">' +
                     '<div class="checklist-card-hd">' +
                         '<div class="checklist-card-title">' + escapeHtml(specialty) + '</div>' +
-                        '<div style="font-size:11px;color:var(--clx-text-muted);">' + completed + '/' + items.length + '</div>' +
+                        '<div class="checklist-card-count" style="font-size:11px;color:var(--clx-text-muted);">' + completed + '/' + items.length + '</div>' +
                     '</div>' +
                     '<div class="checklist-progress-wrap"><div class="checklist-progress-fill" style="width:' + pct + '%"></div></div>' +
                     '<div class="checklist-progress-label">' + pct + '% complete</div>' +
@@ -907,23 +1046,53 @@
             }).join('');
         }
 
+        // Refresh one card's count + progress bar without re-rendering the grid
+        // (a full rebuild destroys the focused checkbox).
+        function updateChecklistCard(cardEl, specialty) {
+            if (!cardEl) return;
+            const items = CHECKLISTS[specialty] || [];
+            const saved = checklistData[specialty] || {};
+            const done = items.filter((_, i) => saved[i]).length;
+            const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+            const fill = cardEl.querySelector('.checklist-progress-fill');
+            const label = cardEl.querySelector('.checklist-progress-label');
+            const count = cardEl.querySelector('.checklist-card-count');
+            if (fill) fill.style.width = pct + '%';
+            if (label) label.textContent = pct + '% complete';
+            if (count) count.textContent = done + '/' + items.length;
+        }
+
         function toggleChecklistItem(specialty, idx, checked) {
-            if (!checklistData[specialty]) checklistData[specialty] = {};
-            if (checked) checklistData[specialty][idx] = true;
-            else delete checklistData[specialty][idx];
+            const setItem = (on) => {
+                if (!checklistData[specialty]) checklistData[specialty] = {};
+                if (on) checklistData[specialty][idx] = true;
+                else delete checklistData[specialty][idx];
+            };
+            setItem(checked);
             // Update UI
-            const itemEl = document.getElementById('cl-' + specialty.replace(/\//g,'-') + '-' + idx);
+            const itemEl = document.getElementById('cl-' + clKey(specialty) + '-' + idx);
+            const card = itemEl && itemEl.closest('.checklist-card');
             if (itemEl) itemEl.closest('.checklist-item').classList.toggle('completed', checked);
-            // Save to Firebase
+            updateChecklistCard(card, specialty);
+            // Save to Firebase — roll the tick back if the write is rejected
             if (currentUid) {
-                database.ref('rotationChecklists/' + currentUid + '/' + specialty).set(checklistData[specialty] || {});
+                database.ref('rotationChecklists/' + currentUid + '/' + clKey(specialty)).set(checklistData[specialty] || {}).catch(() => {
+                    setItem(!checked);
+                    if (itemEl) {
+                        itemEl.checked = !checked;
+                        itemEl.closest('.checklist-item').classList.toggle('completed', !checked);
+                    }
+                    updateChecklistCard(card, specialty);
+                    showToast('Could not save checklist item — please try again.', 'error');
+                });
             }
-            // Update progress bar
-            buildChecklistGrid();
         }
 
         // ========== LAB TRACKER ==========
-        const LAB_STORAGE_KEY = 'bendbsn_lab_tracker';
+        // Per-account key. Entries saved under the old shared key are offered for
+        // import (not copied silently — on a shared computer they may be someone else's).
+        const LAB_LEGACY_KEY = 'bendbsn_lab_tracker';
+        const LAB_STORAGE_KEY = LAB_LEGACY_KEY + '_' + (currentUid || 'anon');
 
         const LAB_NORMALS = {
             'Na':          { low: 136, high: 145, unit: 'mEq/L' },
@@ -964,6 +1133,32 @@
 
         function saveLabEntries() {
             try { localStorage.setItem(LAB_STORAGE_KEY, JSON.stringify(labEntries)); } catch(e) {}
+        }
+
+        // One-time (per page load) offer to import entries from the old shared key.
+        // "Not now" keeps them and asks again next visit.
+        let _labLegacyOffered = false;
+        function offerLegacyLabImport() {
+            if (_labLegacyOffered || !currentUid) return;
+            _labLegacyOffered = true;
+            let legacy = null;
+            try { legacy = JSON.parse(localStorage.getItem(LAB_LEGACY_KEY) || 'null'); } catch (e) { legacy = null; }
+            if (!Array.isArray(legacy) || !legacy.length) {
+                try { localStorage.removeItem(LAB_LEGACY_KEY); } catch (e) {}
+                return;
+            }
+            const n = legacy.length;
+            showConfirmModal('Lab entries on this browser',
+                n + ' lab entr' + (n === 1 ? 'y was' : 'ies were') + ' saved on this browser before the lab tracker became per-account. Import ' + (n === 1 ? 'it' : 'them') + ' only if ' + (n === 1 ? 'it is' : 'they are') + ' yours — on a shared computer ' + (n === 1 ? 'it' : 'they') + ' may belong to another student.',
+                function () {
+                    const have = new Set(labEntries.map(e => e.id));
+                    legacy.forEach(e => { if (e && typeof e === 'object' && e.id && !have.has(e.id)) labEntries.push(e); });
+                    saveLabEntries();
+                    try { localStorage.removeItem(LAB_LEGACY_KEY); } catch (e) {}
+                    renderLabTable();
+                    showToast('Imported ' + n + ' lab entr' + (n === 1 ? 'y' : 'ies') + '.', 'success');
+                },
+                { confirmText: 'Import', cancelText: 'Not now' });
         }
 
         function updateLabNormalRange() {
@@ -1051,23 +1246,30 @@
                 let statusBadge = '';
                 let rowBg = '';
                 if (status === 'high') {
-                    statusBadge = '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">HIGH</span>';
-                    rowBg = 'background:rgba(220,38,38,0.05);';
+                    statusBadge = '<span class="pill pill-danger">HIGH</span>';
+                    rowBg = 'background:var(--clx-danger-bg);';
                 } else if (status === 'low') {
-                    statusBadge = '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">LOW</span>';
-                    rowBg = 'background:rgba(220,38,38,0.05);';
+                    statusBadge = '<span class="pill pill-danger">LOW</span>';
+                    rowBg = 'background:var(--clx-danger-bg);';
                 } else if (status === 'normal') {
-                    statusBadge = '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">NORMAL</span>';
+                    statusBadge = '<span class="pill pill-success">NORMAL</span>';
                 } else {
-                    statusBadge = '<span style="background:var(--clx-bg-surface-2);color:var(--clx-text-muted);padding:2px 8px;border-radius:10px;font-size:11px;">—</span>';
+                    statusBadge = '<span class="pill pill-neutral">—</span>';
                 }
 
-                // Directional arrow: compare to previous entry for same lab
+                // Directional arrow: compare to previous entry for same lab.
+                // Colour by whether the value moved toward (green) or away from
+                // (red) the normal range — a rising K of 3.0 is improving, not bad.
                 const prevEntry = sorted.slice(idx + 1).find(e => e.name === entry.name);
                 let arrow = '';
                 if (prevEntry !== undefined) {
-                    if (entry.value > prevEntry.value) arrow = '<span style="color:#dc2626;font-weight:700;">&#8593;</span>';
-                    else if (entry.value < prevEntry.value) arrow = '<span style="color:#059669;font-weight:700;">&#8595;</span>';
+                    const rangeDist = v => (!norm || v === '' || v === null || isNaN(v)) ? 0
+                        : (norm.low !== null && v < norm.low) ? norm.low - v
+                        : (norm.high !== null && v > norm.high) ? v - norm.high : 0;
+                    const dNow = rangeDist(entry.value), dPrev = rangeDist(prevEntry.value);
+                    const arrowColor = dNow < dPrev ? 'var(--clx-success)' : dNow > dPrev ? 'var(--clx-danger)' : 'var(--clx-text-muted)';
+                    if (entry.value > prevEntry.value) arrow = '<span style="color:' + arrowColor + ';font-weight:700;">&#8593;</span>';
+                    else if (entry.value < prevEntry.value) arrow = '<span style="color:' + arrowColor + ';font-weight:700;">&#8595;</span>';
                     else arrow = '<span style="color:var(--clx-text-muted);">&#8596;</span>';
                 }
 
@@ -1080,7 +1282,7 @@
                     <td>${statusBadge}</td>
                     <td style="text-align:center;font-size:16px;">${arrow}</td>
                     <td style="font-size:12px;color:var(--clx-text-secondary);">${escapeHtml(dateStr)}</td>
-                    <td><button onclick="deleteLabEntry('${escapeHtml(entry.id)}')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:14px;" title="Delete">&#128465;</button></td>
+                    <td><button type="button" class="rl-icon-btn lab-del" data-id="${escapeHtml(entry.id)}" title="Delete" aria-label="Delete lab entry">&#128465;</button></td>
                 </tr>`;
             });
             tbody.innerHTML = html;
@@ -1095,10 +1297,10 @@
                 const normalStr = norm ? ((norm.low !== null ? norm.low : '') + ' – ' + (norm.high !== null ? norm.high : '') + ' ' + (norm.unit || '')) : '';
                 const status = getLabStatus(entry.name, entry.value);
                 const dateStr = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '';
-                const esc = v => '"' + String(v || '').replace(/"/g,'""') + '"';
+                const esc = v => '"' + (v == null ? '' : String(v)).replace(/"/g,'""') + '"';
                 csv += [esc(entry.name), esc(entry.value), esc(normalStr.trim()), esc(status.toUpperCase()), esc(dateStr)].join(',') + '\n';
             });
-            const blob = new Blob([csv], { type: 'text/csv' });
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -1125,15 +1327,38 @@
 
         // ========== BULK ADD ==========
 
+        let _bulkReturnFocus = null;
         function openBulkAddModal() {
+            _bulkReturnFocus = document.activeElement;
             document.getElementById('bulkAddModal').style.display = 'flex';
+            document.getElementById('bulkFacility').focus();
         }
 
         function closeBulkAddModal() {
-            document.getElementById('bulkAddModal').style.display = 'none';
+            const modal = document.getElementById('bulkAddModal');
+            if (modal.style.display === 'none') return;
+            modal.style.display = 'none';
+            if (_bulkReturnFocus && _bulkReturnFocus.focus) _bulkReturnFocus.focus();
+            _bulkReturnFocus = null;
         }
 
+        // ESC closes the Bulk Add modal (typed values are kept until the next open)
+        document.addEventListener('keydown', e => {
+            const modal = document.getElementById('bulkAddModal');
+            if (e.key === 'Escape' && modal && modal.style.display === 'flex' && !document.getElementById('bsnConfirmModal')) closeBulkAddModal();
+        });
+
+        // Reject impossible dates like 2026-13-05 or 2026-02-30
+        function validIsoDate(s) {
+            if (!s) return null;
+            const [y, mo, d] = s.split('-').map(Number);
+            const dt = new Date(y, mo - 1, d);
+            return (dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d) ? s : null;
+        }
         function parseBulkDate(str) {
+            return validIsoDate(parseBulkDateRaw(str));
+        }
+        function parseBulkDateRaw(str) {
             str = str.trim();
             if (!str) return null;
             // YYYY-MM-DD
@@ -1177,6 +1402,7 @@
             const s = parseTime(start);
             const e = parseTime(end);
             if (!s || !e) return null;
+            if (s.h > 23 || e.h > 23 || s.min > 59 || e.min > 59) return null; // e.g. 2500 / 0775
             let startMins = s.h * 60 + s.min;
             let endMins = e.h * 60 + e.min;
             if (endMins <= startMins) endMins += 24 * 60; // overnight
@@ -1255,38 +1481,48 @@
 
         // ========== END BULK ADD ==========
 
+        // Row delete buttons carry their id in data-id (no ids inside inline onclick JS)
+        document.getElementById('rlTableBody').addEventListener('click', function (e) {
+            const b = e.target.closest('.rl-del');
+            if (b && this.contains(b)) deleteRlEntry(b.getAttribute('data-id'));
+        });
+        document.getElementById('labTrackerBody').addEventListener('click', function (e) {
+            const b = e.target.closest('.lab-del');
+            if (b && this.contains(b)) deleteLabEntry(b.getAttribute('data-id'));
+        });
+
         // Init
         loadRlEntries();
     </script>
 
     <!-- Bulk Add Modal -->
-    <div id="bulkAddModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;align-items:center;justify-content:center;padding:16px;">
-        <div style="background:var(--clx-bg-surface);border-radius:12px;width:100%;max-width:480px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+    <div id="bulkAddModal" onclick="if(event.target===this)closeBulkAddModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;align-items:center;justify-content:center;padding:16px;">
+        <div role="dialog" aria-modal="true" aria-labelledby="bulkAddTitle" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:12px;width:100%;max-width:480px;padding:20px;box-shadow:var(--clx-shadow-xl);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                <h3 style="font-size:16px;font-weight:700;color:var(--clx-text-primary);">&#128203; Bulk Add Entries</h3>
-                <button onclick="closeBulkAddModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--clx-text-muted);line-height:1;">&times;</button>
+                <h3 id="bulkAddTitle" style="font-size:16px;font-weight:700;color:var(--clx-text-primary);">&#128203; Bulk Add Entries</h3>
+                <button onclick="closeBulkAddModal()" aria-label="Close" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--clx-text-muted);line-height:1;">&times;</button>
             </div>
             <div style="display:flex;flex-direction:column;gap:10px;">
                 <div>
-                    <label class="rl-label">Facility</label>
+                    <label class="rl-label" for="bulkFacility">Facility</label>
                     <input id="bulkFacility" class="rl-input" type="text" placeholder="e.g. St. Charles Medical Center">
                 </div>
                 <div>
-                    <label class="rl-label">Unit / Dept</label>
+                    <label class="rl-label" for="bulkUnit">Unit / Dept</label>
                     <input id="bulkUnit" class="rl-input" type="text" placeholder="e.g. Med-Surg, ICU, SNF">
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="bulk-times">
                     <div>
-                        <label class="rl-label">Shift Start (0600 or 06:00)</label>
+                        <label class="rl-label" for="bulkShiftStart">Shift Start (0600 or 06:00)</label>
                         <input id="bulkShiftStart" class="rl-input" type="text" placeholder="e.g. 0600" maxlength="5">
                     </div>
                     <div>
-                        <label class="rl-label">Shift End (1430 or 14:30)</label>
+                        <label class="rl-label" for="bulkShiftEnd">Shift End (1430 or 14:30)</label>
                         <input id="bulkShiftEnd" class="rl-input" type="text" placeholder="e.g. 1430" maxlength="5">
                     </div>
                 </div>
                 <div>
-                    <label class="rl-label">Dates (one per line — MM/DD/YY or YYYY-MM-DD)</label>
+                    <label class="rl-label" for="bulkDates">Dates (one per line — MM/DD/YY or YYYY-MM-DD)</label>
                     <textarea id="bulkDates" class="rl-textarea" rows="8" placeholder="10/28/25&#10;11/04/25&#10;11/18/25"></textarea>
                 </div>
             </div>

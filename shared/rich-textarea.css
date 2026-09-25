@@ -46,8 +46,12 @@
     background: var(--clx-bg-hover, #e6edf5);
     color: var(--clx-text-primary, #1a202c);
 }
-.rt-btn:active,
+/* Toggle state: formatting at the caret (set by rich-textarea.js) */
 .rt-btn.active {
+    background: var(--clx-accent-subtle, #e0f2f8);
+    color: var(--clx-accent, #0f7490);
+}
+.rt-btn:active {
     background: var(--clx-accent, #0f7490);
     color: #fff;
 }
@@ -121,6 +125,13 @@
 [data-theme="dark"] .rt-toolbar { background: rgba(255, 255, 255, 0.03); border-bottom-color: var(--clx-border, #2d3748); }
 [data-theme="dark"] .rt-btn { color: var(--clx-text-secondary, #cbd5e0); }
 [data-theme="dark"] .rt-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+[data-theme="dark"] .rt-btn.active { background: var(--clx-accent-subtle); color: var(--clx-accent); }
+/* The 'Default' swatch stores #111827; in dark mode show it as the normal
+   (light) text colour instead of near-black on the dark editor. Covers the
+   live execCommand markup and the sanitized markup reloaded from storage. */
+[data-theme="dark"] .rt-editor font[color="#111827" i],
+[data-theme="dark"] .rt-editor span[style*="color:#111827"],
+[data-theme="dark"] .rt-editor span[style*="color: rgb(17, 24, 39)"] { color: inherit !important; }
 [data-theme="dark"] .rt-divider { background: var(--clx-border, #2d3748); }
 [data-theme="dark"] .rt-wrap:focus-within { box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.35); }
 
@@ -190,6 +201,7 @@
     background-color: #fff !important;
 }
 [data-theme="dark"] .rt-swatch { border-color: var(--clx-border, #2d3748); }
+[data-theme="dark"] .rt-swatch-default { border-color: var(--clx-text-muted, #64748b); }
 
 /* Smart-phrase picker — slightly wider, scrollable list */
 .rt-popover-phrases {

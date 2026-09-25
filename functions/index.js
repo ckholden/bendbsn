@@ -1,80 +1,20 @@
 'use strict';
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
-const { onValueCreated } = require('firebase-functions/v2/database');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { logger } = require('firebase-functions');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
 
-// Presence entries older than this are considered stale.
-// 60 minutes = 2× the 30-min auto-logout threshold, giving a comfortable buffer
-// for onDisconnect() to fire under normal conditions before the function runs.
-const STALE_THRESHOLD_MS = 60 * 60 * 1000;
-
-/**
- * cleanupStalePresence
- *
- * Scheduled safety-net cleanup that removes ghost entries from chat/presence/{uid}.
- * Runs every 30 minutes.
- *
- * onDisconnect() handles normal disconnects (tab close, navigation, explicit logout)
- * but can fail when:
- *   - Browser is force-killed or crashes
- *   - Device loses power or network before the disconnect handler fires
- *   - Firebase connection drops without a clean handshake
- *
- * Data shape expected at chat/presence/{uid}:
- *   { user, username, uid, status: "online"|"away", lastActive: <epoch ms> }
- */
-exports.cleanupStalePresence = onSchedule('every 30 minutes', async () => {
-    const db = admin.database();
-    const presenceRef = db.ref('chat/presence');
-
-    const snap = await presenceRef.once('value');
-
-    if (!snap.exists()) {
-        logger.info('cleanupStalePresence: no presence entries — nothing to do');
-        return;
-    }
-
-    const now = Date.now();
-    const updates = {};
-    let staleCount = 0;
-    let freshCount = 0;
-
-    snap.forEach(child => {
-        const data = child.val();
-        // Treat missing lastActive as epoch 0 (always stale)
-        const lastActive = (data && data.lastActive) ? data.lastActive : 0;
-        const ageMs = now - lastActive;
-
-        if (ageMs > STALE_THRESHOLD_MS) {
-            updates[child.key] = null; // null = delete in RTDB multi-path update
-            staleCount++;
-            logger.debug(
-                `stale: uid=${child.key} user="${data && data.user || '?'}"` +
-                ` lastActive=${new Date(lastActive).toISOString()}` +
-                ` age=${Math.round(ageMs / 60000)}min`
-            );
-        } else {
-            freshCount++;
-        }
-    });
-
-    if (staleCount > 0) {
-        await presenceRef.update(updates);
-        logger.info(
-            `cleanupStalePresence: removed ${staleCount} stale` +
-            ` (${freshCount} fresh remaining)`
-        );
-    } else {
-        logger.info(
-            `cleanupStalePresence: all ${freshCount} entries are fresh — nothing removed`
-        );
-    }
-});
+// userProfiles/{uid}/isAdmin in the RTDB is the source of truth for admin rights: database.rules.json
+// and the admin panel both check it. The isAdmin custom claim is only a mirror of that flag, so every
+// admin check here reads the RTDB, and grant/revoke always writes both.
+async function isRtdbAdmin(uid) {
+    if (!uid) return false;
+    const snap = await admin.database().ref('userProfiles/' + uid + '/isAdmin').once('value');
+    return snap.val() === true;
+}
 
 /**
  * sendDailyWelcomeEmails
@@ -101,8 +41,10 @@ exports.sendDailyWelcomeEmails = onSchedule(
         }
 
         const profiles = snap.val();
+        // manual_ keys are admin-added placeholders for people who have not registered yet; the
+        // welcome text ("use the password you created") would be wrong for them.
         const pending = Object.entries(profiles).filter(
-            ([, p]) => p && !p.welcomeEmailSent && p.email
+            ([uid, p]) => p && !p.welcomeEmailSent && p.email && !uid.startsWith('manual_') && p.welcomeEmailSkipped !== true
         );
 
         if (pending.length === 0) {
@@ -177,134 +119,11 @@ exports.sendDailyWelcomeEmails = onSchedule(
 );
 
 /**
- * onDMSent
- *
- * Fires when a new direct message is written. Sends a push notification to the
- * recipient using any FCM tokens stored under userFCMTokens/{recipientUid}.
- * Invalid tokens are cleaned up automatically.
- */
-exports.onDMSent = onValueCreated(
-    { ref: '/directMessages/{convId}/messages/{msgId}', region: 'us-central1' },
-    async (event) => {
-        const msg = event.data.val();
-        logger.info(`onDMSent fired: convId=${event.params.convId} recipientUid=${msg?.recipientUid} senderName=${msg?.senderName}`);
-
-        if (!msg || !msg.recipientUid || !msg.senderName) {
-            logger.info('onDMSent: missing recipientUid or senderName — skipping');
-            return;
-        }
-
-        const db = admin.database();
-        const tokensSnap = await db.ref(`userFCMTokens/${msg.recipientUid}`).get();
-        if (!tokensSnap.exists()) {
-            logger.info(`onDMSent: no FCM tokens for uid=${msg.recipientUid}`);
-            return;
-        }
-
-        const tokens = Object.values(tokensSnap.val())
-            .map(t => t.token)
-            .filter(Boolean);
-        logger.info(`onDMSent: sending to ${tokens.length} token(s)`);
-        if (!tokens.length) return;
-
-        const response = await admin.messaging().sendEachForMulticast({
-            tokens,
-            notification: {
-                title: `DM from ${msg.senderName}`,
-                body: (msg.text || 'New message').substring(0, 100)
-            },
-            data: { url: '/chat/', tag: `dm-${event.params.convId}` },
-            webpush: { fcmOptions: { link: 'https://bendbsn.com/chat/' } }
-        });
-
-        logger.info(`onDMSent: FCM response — success=${response.successCount} failure=${response.failureCount}`);
-
-        // Remove tokens that FCM reports as invalid or unregistered
-        const cleanupPromises = [];
-        response.responses.forEach((r, i) => {
-            const code = r.error?.code;
-            if (!r.success && (
-                code === 'messaging/invalid-registration-token' ||
-                code === 'messaging/registration-token-not-registered'
-            )) {
-                const badKey = tokens[i].replace(/\./g, ',').substring(0, 768);
-                cleanupPromises.push(
-                    db.ref(`userFCMTokens/${msg.recipientUid}/${badKey}`).remove()
-                );
-            }
-        });
-        await Promise.all(cleanupPromises);
-    }
-);
-
-/**
- * onChatMention
- *
- * Fires when a new channel message is written. Scans the message text for
- * @firstName mentions, resolves matching UIDs from userProfiles, and sends a
- * push notification to each mentioned user (excluding the sender).
- */
-exports.onChatMention = onValueCreated(
-    { ref: '/chat/messages/{channelId}/{msgId}', region: 'us-central1' },
-    async (event) => {
-        const msg = event.data.val();
-        if (!msg || !msg.text) return;
-
-        const mentionRegex = /@([\w.-]+)/g;
-        const mentions = [...msg.text.matchAll(mentionRegex)].map(m => m[1].toLowerCase());
-        if (!mentions.length) return;
-
-        const db = admin.database();
-        const profilesSnap = await db.ref('userProfiles').get();
-        if (!profilesSnap.exists()) return;
-
-        // Match first names to UIDs, skip the sender
-        const notifiedUids = new Set();
-        profilesSnap.forEach(child => {
-            const profile = child.val();
-            const uid = child.key;
-            if (!profile || !profile.displayName || uid === msg.senderUid) return;
-            const firstName = profile.displayName.split(' ')[0].toLowerCase();
-            if (mentions.includes(firstName)) {
-                notifiedUids.add(uid);
-            }
-        });
-
-        for (const uid of notifiedUids) {
-            const tokensSnap = await db.ref(`userFCMTokens/${uid}`).get();
-            if (!tokensSnap.exists()) continue;
-
-            const tokens = Object.values(tokensSnap.val())
-                .map(t => t.token)
-                .filter(Boolean);
-            if (!tokens.length) continue;
-
-            try {
-                await admin.messaging().sendEachForMulticast({
-                    tokens,
-                    notification: {
-                        title: `${msg.user || 'Someone'} mentioned you`,
-                        body: (msg.text || '').substring(0, 100)
-                    },
-                    data: {
-                        url: '/chat/',
-                        tag: `mention-${event.params.channelId}`
-                    },
-                    webpush: { fcmOptions: { link: 'https://bendbsn.com/chat/' } }
-                });
-            } catch (err) {
-                logger.error(`onChatMention: FCM failed for uid=${uid}`, err);
-            }
-        }
-    }
-);
-
-/**
  * setAdminClaim
  *
- * Callable function that sets or revokes the isAdmin custom claim on a user.
- * Caller must already have isAdmin: true in their custom claims OR in their
- * userProfiles RTDB node (bootstrap path for the very first admin).
+ * Callable function that grants or revokes admin rights: it writes both the RTDB
+ * userProfiles/{uid}/isAdmin flag (what the rules check) and the isAdmin custom claim.
+ * Caller must have isAdmin: true in their userProfiles RTDB node.
  *
  * Usage from admin panel:
  *   const fn = firebase.functions().httpsCallable('setAdminClaim');
@@ -316,19 +135,41 @@ exports.setAdminClaim = onCall({ region: 'us-central1' }, async (request) => {
         throw new HttpsError('unauthenticated', 'Authentication required.');
     }
 
-    // Allow if custom claim already set OR if RTDB isAdmin flag is true (bootstrap)
-    const callerSnap = await admin.database()
-        .ref('userProfiles/' + auth.uid + '/isAdmin').once('value');
-    const callerIsAdmin = auth.token?.isAdmin === true || callerSnap.val() === true;
-
-    if (!callerIsAdmin) {
+    // The RTDB flag is authoritative. A stale custom claim alone (e.g. left over after a revoke)
+    // must not be enough to grant or revoke admin rights.
+    if (!(await isRtdbAdmin(auth.uid))) {
         throw new HttpsError('permission-denied', 'Admins only.');
     }
 
-    const { uid, revoke } = request.data;
-    if (!uid) throw new HttpsError('invalid-argument', 'uid is required.');
+    const { uid, revoke } = request.data || {};
+    if (typeof uid !== 'string' || !uid) throw new HttpsError('invalid-argument', 'uid is required.');
+    if (uid.startsWith('manual_')) {
+        throw new HttpsError('failed-precondition', 'That account has not registered yet.');
+    }
+    if (revoke && uid === auth.uid) {
+        throw new HttpsError('failed-precondition', 'You cannot remove your own admin rights.');
+    }
+    try {
+        await admin.auth().getUser(uid);
+    } catch (e) {
+        if (e.code === 'auth/user-not-found') throw new HttpsError('not-found', 'That account has not registered yet.');
+        throw new HttpsError('internal', 'Could not look up user.');
+    }
+    if (revoke) {
+        const admins = await admin.database().ref('userProfiles').orderByChild('isAdmin').equalTo(true).once('value');
+        if (admins.numChildren() <= 1 && admins.hasChild(uid)) {
+            throw new HttpsError('failed-precondition', 'Cannot remove the last remaining admin.');
+        }
+    }
 
+    // Write both, so the rules (RTDB flag) and the claim can never disagree. Previously a revoke only
+    // cleared the claim; the RTDB flag stayed true and bootstrapAdminClaims re-granted the claim nightly.
     await admin.auth().setCustomUserClaims(uid, revoke ? {} : { isAdmin: true });
+    if (revoke) {
+        await admin.database().ref('userProfiles/' + uid + '/isAdmin').remove();
+    } else {
+        await admin.database().ref('userProfiles/' + uid + '/isAdmin').set(true);
+    }
     logger.info(`setAdminClaim: ${revoke ? 'revoked' : 'granted'} isAdmin for uid=${uid} by caller=${auth.uid}`);
     return { success: true };
 });
@@ -336,8 +177,9 @@ exports.setAdminClaim = onCall({ region: 'us-central1' }, async (request) => {
 /**
  * bootstrapAdminClaims
  *
- * Scheduled function that runs daily and ensures every userProfile with
- * isAdmin: true in the RTDB also has the isAdmin custom claim set.
+ * Scheduled function that runs daily and keeps custom claims in sync with the RTDB:
+ * every userProfile with isAdmin: true gets the claim, and any user holding the claim
+ * whose RTDB flag is gone has it cleared.
  * Idempotent — safe to run repeatedly.
  */
 exports.bootstrapAdminClaims = onSchedule(
@@ -345,6 +187,28 @@ exports.bootstrapAdminClaims = onSchedule(
     async () => {
         const snap = await admin.database().ref('userProfiles')
             .orderByChild('isAdmin').equalTo(true).once('value');
+        const rtdbAdmins = new Set();
+        snap.forEach(child => { rtdbAdmins.add(child.key); });
+
+        // Clear stale claims: anyone holding isAdmin in their token whose RTDB flag is gone.
+        let cleared = 0;
+        let pageToken;
+        do {
+            const page = await admin.auth().listUsers(1000, pageToken);
+            for (const u of page.users) {
+                if (u.customClaims?.isAdmin === true && !rtdbAdmins.has(u.uid)) {
+                    try {
+                        await admin.auth().setCustomUserClaims(u.uid, {});
+                        cleared++;
+                        logger.info(`bootstrapAdminClaims: cleared stale claim for uid=${u.uid}`);
+                    } catch (err) {
+                        logger.error(`bootstrapAdminClaims: failed to clear claim for uid=${u.uid}`, err);
+                    }
+                }
+            }
+            pageToken = page.pageToken;
+        } while (pageToken);
+        if (cleared) logger.info(`bootstrapAdminClaims: cleared ${cleared} stale claim(s)`);
 
         if (!snap.exists()) {
             logger.info('bootstrapAdminClaims: no admin profiles found');
@@ -372,7 +236,8 @@ exports.bootstrapAdminClaims = onSchedule(
  */
 exports.backfillTenantId = onCall({ region: 'us-central1' }, async (request) => {
     const auth = request.auth;
-    if (!auth || auth.token?.isAdmin !== true) {
+    if (!auth) throw new HttpsError('unauthenticated', 'Authentication required.');
+    if (!(await isRtdbAdmin(auth.uid))) {
         throw new HttpsError('permission-denied', 'Admins only.');
     }
 
