@@ -9,10 +9,26 @@
      1. Add the module entry to cap-modules.js MODULE_CATALOG
      2. Add CAP_RENDERERS.{moduleId} here
      3. (Optional) add per-module CSS in /clinical/packet/index.html
+
+   A catalog entry with `base` (e.g. headToToe2 → headToToe) is registered
+   at the bottom as an alias that calls CAP_RENDERERS[base] at call time
+   with a 4th argument ctx = { moduleId, title, day, hint }. Renderers that
+   can be a base must take their heading from ctx.title when given.
+
+   Wording: the editor calls CAP_RENDERERS.setContext({ person }) before
+   rendering; who()/Who() give "patient" (default, as on the Word form) or
+   "resident" (memory-care packets).
 */
 (function () {
     'use strict';
     if (window.CAP_RENDERERS) return;
+
+    const CAP = window.CAP_MODULES || {};
+    const FORM = CAP.FORM || {};
+
+    let CTX = { person: 'patient' };
+    function who() { return CTX.person === 'resident' ? 'resident' : 'patient'; }
+    function Who() { const w = who(); return w.charAt(0).toUpperCase() + w.slice(1); }
 
     // ============================================================
     // SHARED HELPERS
@@ -94,73 +110,19 @@
     // ============================================================
     // DATA CONSTANTS (ported from standalone)
     // ============================================================
-    const OMEGA_ROWS = [
-        { key:'O', letter:'O', label:'Orientation' },
-        { key:'M', letter:'M', label:'Medication' },
-        { key:'E', letter:'E', label:'Emergency' },
-        { key:'G', letter:'G', label:'Gait' },
-        { key:'A', letter:'A', label:'Allergies' },
-        { key:'1', letter:'1', label:'Air' },
-        { key:'2', letter:'2', label:'Food' },
-        { key:'3', letter:'3', label:'Water' },
-        { key:'4', letter:'4', label:'Safety' },
-        { key:'5', letter:'5', label:'Hygiene' },
-        { key:'6', letter:'6', label:'Pain' },
-        { key:'7', letter:'7', label:'Sleep' }
-    ];
+    // Word-form wording shared with cap-pdf.js (cap-modules.js FORM)
+    const OMEGA_ROWS = FORM.OMEGA_ROWS || [];
+    const MED_COLUMNS = FORM.MED_COLUMNS || [];
+    const NCSBN_ROWS = FORM.NCSBN_ROWS || [];
 
-    const MORSE_VARS = [
-        { id:'history',      name:'History of Falling', opts:[ { val:0,  label:'No' }, { val:25, label:'Yes' } ] },
-        { id:'secondary_dx', name:'Secondary Diagnosis', opts:[ { val:0,  label:'No' }, { val:15, label:'Yes' } ] },
-        { id:'ambulatory',   name:'Ambulatory Aid', opts:[ { val:0,  label:'None / bedrest / nurse assist' }, { val:15, label:'Crutches / cane / walker' }, { val:30, label:'Furniture' } ] },
-        { id:'iv',           name:'IV or IV Access', opts:[ { val:0,  label:'No' }, { val:20, label:'Yes' } ] },
-        { id:'gait',         name:'Gait', opts:[ { val:0,  label:'Normal / bedrest / wheelchair' }, { val:10, label:'Weak' }, { val:20, label:'Impaired' } ] },
-        { id:'mental',       name:'Mental Status', opts:[ { val:0,  label:'Knows own limits' }, { val:15, label:'Overestimates or forgets limits' } ] }
-    ];
-
-    const BRADEN_FACTORS = [
-        { id:'sensory', name:'Sensory Perception', defn:'Ability to respond meaningfully to pressure-related discomfort',
-          opts:[
-            { val:1, title:'Completely Limited', desc:'Unresponsive (does not moan, flinch, or grasp) to painful stimuli, due to diminished LOC or sedation, OR limited ability to feel pain over most of body surface.' },
-            { val:2, title:'Very Limited', desc:'Responds only to painful stimuli. Cannot communicate discomfort except by moaning/restlessness, OR sensory impairment limiting ability to feel pain over ½ of body.' },
-            { val:3, title:'Slightly Limited', desc:'Responds to verbal commands but cannot always communicate discomfort or need to be turned, OR some sensory impairment in 1–2 extremities.' },
-            { val:4, title:'No Impairment', desc:'Responds to verbal commands. No sensory deficit that would limit ability to feel or voice pain.' }
-          ] },
-        { id:'moisture', name:'Moisture', defn:'Degree to which skin is exposed to moisture',
-          opts:[
-            { val:1, title:'Constantly Moist', desc:'Skin kept moist almost constantly by perspiration, urine, etc. Dampness detected every time resident is moved or turned.' },
-            { val:2, title:'Often Moist', desc:'Skin often but not always moist. Linen must be changed at least once a shift.' },
-            { val:3, title:'Occasionally Moist', desc:'Skin occasionally moist, requiring an extra linen change approximately once a day.' },
-            { val:4, title:'Rarely Moist', desc:'Skin usually dry; linen only requires changing at routine intervals.' }
-          ] },
-        { id:'activity', name:'Activity', defn:'Degree of physical activity',
-          opts:[
-            { val:1, title:'Bedfast', desc:'Confined to bed.' },
-            { val:2, title:'Chairfast', desc:'Ability to walk severely limited or nonexistent. Cannot bear own weight and/or must be assisted into chair or wheelchair.' },
-            { val:3, title:'Walks Occasionally', desc:'Walks occasionally during day but very short distances, with or without assistance. Majority of shift in bed or chair.' },
-            { val:4, title:'Walks Frequently', desc:'Walks outside the room ≥2x/day and inside room at least once every 2 hours during waking hours.' }
-          ] },
-        { id:'mobility', name:'Mobility', defn:'Ability to change and control body position',
-          opts:[
-            { val:1, title:'Completely Immobile', desc:'Does not make even slight changes in body or extremity position without assistance.' },
-            { val:2, title:'Very Limited', desc:'Makes occasional slight changes in body or extremity position but unable to make frequent or significant changes independently.' },
-            { val:3, title:'Slightly Limited', desc:'Makes frequent though slight changes in body or extremity position independently.' },
-            { val:4, title:'No Limitations', desc:'Makes major and frequent changes in position without assistance.' }
-          ] },
-        { id:'nutrition', name:'Nutrition', defn:'Usual food intake pattern',
-          opts:[
-            { val:1, title:'Very Poor', desc:'Never eats a complete meal. Rarely eats more than ⅓ of any food offered. ≤2 servings protein/day. Takes fluids poorly. No liquid supplement, OR NPO/clear liquids/IV >5 days.' },
-            { val:2, title:'Probably Inadequate', desc:'Rarely eats complete meal; ½ of food offered. 3 servings protein/day. Occasional supplement OR less than optimum liquid diet/tube feeding.' },
-            { val:3, title:'Adequate', desc:'Eats over half of most meals. 4 servings protein/day. Occasionally refuses a meal but will usually take supplement, OR tube feeding/TPN meeting most needs.' },
-            { val:4, title:'Excellent', desc:'Eats most of every meal. Never refuses. Usually ≥4 servings meat/dairy. Occasionally eats between meals. No supplementation required.' }
-          ] },
-        { id:'friction', name:'Friction and Shear', defn:'Movement and positioning',
-          opts:[
-            { val:1, title:'Problem', desc:'Requires moderate to maximum assistance moving. Complete lifting without sliding impossible. Frequently slides down in bed/chair. Spasticity/contractures/agitation → near-constant friction.' },
-            { val:2, title:'Potential Problem', desc:'Moves feebly or requires minimum assistance. Skin probably slides to some extent against sheets/chair/restraints. Maintains relatively good position most of the time, occasionally slides down.' },
-            { val:3, title:'No Apparent Problem', desc:'Moves in bed and chair independently with sufficient muscle strength to lift up completely during move. Maintains good position at all times.' }
-          ] }
-    ];
+    // Scored tools: wording, options and points live in cap-modules.js FORM
+    // (shared with the PDF); read/score helpers there too (CAP.readBraden…).
+    const BRADEN = FORM.BRADEN || { FACTORS: [], COLS: [] };
+    const MORSE = FORM.MORSE || { VARS: [], COLS: [], BANDS: [] };
+    const HENDRICH = FORM.HENDRICH || { FACTORS: [], GUG: [] };
+    const MINICOG = FORM.MINICOG || { WORDS: [], STEPS: [] };
+    const LAB_GROUPS = FORM.LAB_GROUPS || [];
+    const LAB_COLUMNS = FORM.LAB_COLUMNS || [];
 
     // ---- Screening tools ported from /app/ (RN Notes) ----
     // PHQ-9 — depression. 9 items, scored 0-3 each (0-27 total).
@@ -257,20 +219,6 @@
         return { label: 'Negative — delirium unlikely', cls: 'low' };
     }
 
-    function morseRiskLabel(score) {
-        if (score >= 45) return { label: 'High Risk (45+)', cls: 'high' };
-        if (score >= 25) return { label: 'Moderate Risk (25–44)', cls: 'moderate' };
-        return { label: 'Low Risk (0–24)', cls: 'low' };
-    }
-    function bradenRiskLabel(score) {
-        if (!score) return { label: 'Not scored', cls: '' };
-        if (score <= 9)  return { label: 'Severe Risk (≤9)', cls: 'high' };
-        if (score <= 12) return { label: 'High Risk (10–12)', cls: 'high' };
-        if (score <= 14) return { label: 'Moderate Risk (13–14)', cls: 'moderate' };
-        if (score <= 18) return { label: 'Mild Risk (15–18)', cls: 'low' };
-        return { label: 'No significant risk (19+)', cls: 'low' };
-    }
-
     // ============================================================
     // RENDERERS
     // ============================================================
@@ -279,8 +227,8 @@
     // ---------- INFO ----------
     R.info = function (rootEl, state, onChange) {
         rootEl.innerHTML = panelHint(
-            'Student & Resident Information',
-            'De-identify all resident data — initials only, no names.',
+            'Student & ' + Who() + ' Information',
+            'De-identify all ' + who() + ' data — initials only, no names.',
             '<div class="cap-grid g2">' +
                 field('Student Name', 'student_name', { tag: 'input' }) +
                 field('Date', 'date', { tag: 'input', type: 'date' }) +
@@ -296,7 +244,7 @@
                     '<option>12-hour</option>'
                 }) +
             '</div>' +
-            '<h4 class="cap-subhead">Resident</h4>' +
+            '<h4 class="cap-subhead">' + Who() + '</h4>' +
             '<div class="cap-grid g4">' +
                 field('Initials', 'res_initials', { tag: 'input' }) +
                 field('Age', 'res_age', { tag: 'input', type: 'number', min: 0, max: 120 }) +
@@ -312,17 +260,19 @@
     };
 
     // ---------- OMEGA 1234567 ----------
-    R.omega = function (rootEl, state, onChange) {
+    // ctx (4th arg) is set when called for a second instance (omega2).
+    R.omega = function (rootEl, state, onChange, ctx) {
+        ctx = ctx || {};
         const rows = OMEGA_ROWS.map(function (r) {
             return '<tr>' +
-                '<td class="cap-omega-key"><span class="cap-omega-letter">' + r.letter + '</span></td>' +
-                '<td class="cap-omega-label">' + r.label + '</td>' +
-                '<td><textarea data-cap-field="' + r.key + '" rows="2" class="cap-tf"></textarea></td>' +
+                '<td class="cap-omega-key"><span class="cap-omega-letter">' + esc(r.letter) + '</span></td>' +
+                '<td class="cap-omega-label">' + esc(r.label) + '</td>' +
+                '<td><textarea data-cap-field="' + esc(r.key) + '" rows="2" class="cap-tf" aria-label="' + esc(r.letter + ' ' + r.label) + '"></textarea></td>' +
             '</tr>';
         }).join('');
         rootEl.innerHTML = panelHint(
-            'OMEGA-7 Assessment',
-            'Systematic assessment framework. One row per domain.',
+            ctx.title || 'OMEGA-7 Assessment',
+            (ctx.hint ? esc(ctx.hint) + ' ' : '') + 'Systematic assessment framework. One row per domain.',
             '<table class="cap-omega-table"><tbody>' + rows + '</tbody></table>'
         );
         bindFields(rootEl, state, onChange);
@@ -332,30 +282,27 @@
     R.meds = function (rootEl, state, onChange) {
         if (!Array.isArray(state.rows)) state.rows = [emptyMed()];
         function emptyMed() { return { order:'', time:'', class:'', indication:'', sideEffects:'', implications:'' }; }
+        const COL_W = { order:'18%', time:'10%', class:'15%', indication:'15%', sideEffects:'17%', implications:'21%' };
         function render() {
             const rowsHtml = state.rows.map(function (r, i) {
                 return '<tr>' +
-                    '<td><textarea data-row="' + i + '" data-col="order"        rows="2" class="cap-tf">' + esc(r.order) + '</textarea></td>' +
-                    '<td><textarea data-row="' + i + '" data-col="time"         rows="2" class="cap-tf">' + esc(r.time) + '</textarea></td>' +
-                    '<td><textarea data-row="' + i + '" data-col="class"        rows="2" class="cap-tf">' + esc(r.class) + '</textarea></td>' +
-                    '<td><textarea data-row="' + i + '" data-col="indication"   rows="2" class="cap-tf">' + esc(r.indication) + '</textarea></td>' +
-                    '<td><textarea data-row="' + i + '" data-col="sideEffects"  rows="2" class="cap-tf">' + esc(r.sideEffects) + '</textarea></td>' +
-                    '<td><textarea data-row="' + i + '" data-col="implications" rows="2" class="cap-tf">' + esc(r.implications) + '</textarea></td>' +
+                    MED_COLUMNS.map(function (c) {
+                        return '<td><textarea data-row="' + i + '" data-col="' + esc(c.key) + '" rows="2" class="cap-tf" aria-label="' +
+                            esc(c.title + (c.caption ? ' (' + c.caption + ')' : '') + ', row ' + (i + 1)) + '">' + esc(r[c.key]) + '</textarea></td>';
+                    }).join('') +
                     '<td class="cap-meds-del"><button class="cap-row-del" data-del="' + i + '" title="Delete row">&times;</button></td>' +
                 '</tr>';
             }).join('');
             rootEl.innerHTML = panelHint(
                 'Medications',
-                'Current medications the resident is on. One row per med.',
+                'Current medications the ' + who() + ' is on. One row per med.',
                 '<div class="cap-meds-wrap">' +
                     '<table class="cap-meds-table">' +
                         '<thead><tr>' +
-                            '<th style="width:18%">Physician\'s Order<br><small>(Trade &amp; Generic)</small></th>' +
-                            '<th style="width:10%">Time Admin</th>' +
-                            '<th style="width:14%">Drug Class</th>' +
-                            '<th style="width:16%">Indication</th>' +
-                            '<th style="width:18%">Major Side Effects</th>' +
-                            '<th style="width:20%">Nursing Implications</th>' +
+                            MED_COLUMNS.map(function (c) {
+                                return '<th style="width:' + (COL_W[c.key] || 'auto') + '">' + esc(c.title) +
+                                    (c.caption ? '<small>' + esc(c.caption) + '</small>' : '') + '</th>';
+                            }).join('') +
                             '<th style="width:36px"></th>' +
                         '</tr></thead>' +
                         '<tbody>' + rowsHtml + '</tbody>' +
@@ -395,120 +342,354 @@
         render();
     };
 
+    // ---------- Dated score columns (Braden 1–4, Morse Admission/Review) ----------
+    // The Word forms score each assessment in its own column. The editor shows
+    // one column at a time (picked with these tabs) and a read-only summary
+    // grid of all columns underneath.
+    function fmtDate(v) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v == null ? '' : v));
+        return m ? (+m[2]) + '/' + (+m[3]) + '/' + m[1] : String(v == null ? '' : v);
+    }
+    // cols: [{ key, title, sub }]
+    function colTabsHtml(cols, activeKey, label) {
+        return '<div class="cap-assess-tabs" role="tablist" aria-label="' + esc(label) + '">' + cols.map(function (c) {
+            const on = c.key === activeKey;
+            return '<button type="button" class="cap-assess-tab' + (on ? ' active' : '') + '" role="tab" aria-selected="' + on + '" data-col-tab="' + esc(c.key) + '">' +
+                '<strong>' + esc(c.title) + '</strong>' +
+                '<small>' + esc(c.sub) + '</small>' +
+            '</button>';
+        }).join('') + '</div>';
+    }
+    // Small tags on an option naming the OTHER columns that picked it
+    function pickBadges(names) {
+        return names.map(function (n) { return ' <span class="cap-pick-badge">' + esc(n) + '</span>'; }).join('');
+    }
+    // Read-only grid: rows = [{ head, cells[], cls }], cols = [{ title, active }]
+    function summaryTableHtml(cornerLabel, cols, rows) {
+        return '<div class="cap-sum-wrap"><table class="cap-sum-table">' +
+            '<thead><tr><th scope="col">' + esc(cornerLabel) + '</th>' + cols.map(function (c) {
+                return '<th scope="col"' + (c.active ? ' class="active"' : '') + '>' + esc(c.title) + '</th>';
+            }).join('') + '</tr></thead><tbody>' +
+            rows.map(function (r) {
+                return '<tr' + (r.cls ? ' class="' + r.cls + '"' : '') + '><th scope="row">' + esc(r.head) + '</th>' +
+                    r.cells.map(function (v, i) {
+                        return '<td' + (cols[i] && cols[i].active ? ' class="active"' : '') + '>' + esc(v) + '</td>';
+                    }).join('') + '</tr>';
+            }).join('') +
+        '</tbody></table></div>';
+    }
+    function confirmThen(title, msg, fn) {
+        if (typeof window.showConfirmModal === 'function') window.showConfirmModal(title, msg, fn, { confirmText: 'Clear', danger: true });
+        else fn();
+    }
+    // A re-render replaces the control the student just used; put focus back
+    // on its replacement (matched by attribute value, so no selector
+    // escaping), or the next Tab would start from the top of the page.
+    function refocus(rootEl, sel, attrs) {
+        const list = rootEl.querySelectorAll(sel);
+        const keys = Object.keys(attrs || {});
+        for (let i = 0; i < list.length; i++) {
+            const el = list[i];
+            const hit = keys.every(function (k) {
+                return String(k === 'value' ? el.value : el.getAttribute(k)) === String(attrs[k]);
+            });
+            if (!hit) continue;
+            try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+            return;
+        }
+    }
+
     // ---------- MORSE FALL SCALE ----------
+    // Three dated columns (Admission, Review 1, Review 2), each scoring every
+    // variable with its own Total and Signature & Status. Stored as
+    // state.cols{admit,review1,review2} (schema 4); an old single score set is
+    // shown in the Admission column (CAP.readMorse) and only rewritten in the
+    // new shape when the student edits this module.
     R.morse = function (rootEl, state, onChange) {
-        if (!state.choices) state.choices = {};
+        const view = CAP.readMorse(state);
+        let active = MORSE.COLS.length ? MORSE.COLS[0].key : 'admit';
+        function commit() {
+            if (state.cols !== view.cols) { state.cols = view.cols; state._schema = 4; }
+            if (typeof onChange === 'function') onChange();
+        }
+        function meta(key) { return MORSE.COLS.filter(function (c) { return c.key === key; })[0] || { key: key, label: key, short: key }; }
+        function tabs() {
+            return MORSE.COLS.map(function (c) {
+                const col = view.cols[c.key];
+                const sc = CAP.scoreMorse(col.choices);
+                return { key: c.key, title: c.short,
+                         sub: (col.date ? fmtDate(col.date) : 'No date') + ' · ' + (sc.n ? 'Total ' + sc.total + (sc.complete ? '' : ' (' + sc.n + '/' + sc.of + ')') : 'Not scored') };
+            });
+        }
+        function summary() {
+            const cols = MORSE.COLS.map(function (c) { return { title: c.short, active: c.key === active }; });
+            function each(fn) { return MORSE.COLS.map(function (c) { return fn(view.cols[c.key]); }); }
+            const rows = [{ head: 'Date', cells: each(function (col) { return col.date ? fmtDate(col.date) : '—'; }) }];
+            MORSE.VARS.forEach(function (v) {
+                rows.push({ head: v.name, cells: each(function (col) {
+                    const x = col.choices[v.id];
+                    if (x == null) return '—';
+                    const o = v.opts.filter(function (op) { return op.val === x; })[0];
+                    return x + (o ? ' (' + o.label + ')' : '');
+                }) });
+            });
+            rows.push({ head: 'Total', cls: 'cap-sum-total', cells: each(function (col) { const s = CAP.scoreMorse(col.choices); return s.n ? String(s.total) : '—'; }) });
+            rows.push({ head: 'Risk', cells: each(function (col) { return CAP.scoreMorse(col.choices).label; }) });
+            rows.push({ head: MORSE.SIGNATURE, cells: each(function (col) { return col.signature || '—'; }) });
+            return summaryTableHtml('Variables', cols, rows);
+        }
+        function refreshPassive() {
+            const t = tabs();
+            rootEl.querySelectorAll('[data-col-tab]').forEach(function (b, i) {
+                const sm = b.querySelector('small');
+                if (sm && t[i]) sm.textContent = t[i].sub;
+            });
+            const w = rootEl.querySelector('.cap-sum-wrap');
+            if (w) w.outerHTML = summary();
+        }
         function render() {
-            let total = 0;
-            const rowsHtml = MORSE_VARS.map(function (v) {
+            const col = view.cols[active];
+            const cm = meta(active);
+            const sc = CAP.scoreMorse(col.choices);
+            const varsHtml = MORSE.VARS.map(function (v) {
                 const optsHtml = v.opts.map(function (o) {
-                    const isOn = state.choices[v.id] === o.val;
-                    if (isOn) total += o.val;
+                    const isOn = col.choices[v.id] === o.val;
+                    const others = MORSE.COLS.filter(function (c) {
+                        return c.key !== active && view.cols[c.key].choices[v.id] === o.val;
+                    }).map(function (c) { return c.short; });
                     return '<label class="cap-morse-opt' + (isOn ? ' selected' : '') + '">' +
                         '<input type="radio" name="morse_' + v.id + '" value="' + o.val + '" data-morse="' + v.id + '"' + (isOn ? ' checked' : '') + '>' +
-                        '<span>' + esc(o.label) + '</span>' +
-                        '<span class="cap-morse-pts">+' + o.val + '</span>' +
+                        '<span>' + esc(o.label) + pickBadges(others) + '</span>' +
+                        '<span class="cap-morse-pts">' + o.val + '</span>' +
                     '</label>';
                 }).join('');
                 return '<div class="cap-morse-var">' +
                     '<h4>' + esc(v.name) + '</h4>' +
-                    '<div class="cap-morse-opts">' + optsHtml + '</div>' +
+                    '<div class="cap-morse-opts" role="radiogroup" aria-label="' + esc(v.name + ' — ' + cm.label) + '">' + optsHtml + '</div>' +
                 '</div>';
             }).join('');
-            const risk = morseRiskLabel(total);
+            const migratedNote = (view.migrated && state.cols !== view.cols)
+                ? '<p class="cap-fineprint cap-ncsbn-migrated">Your earlier Morse score, admission date and signature are in the Admission column; your earlier review dates are in the two Review columns.</p>'
+                : '';
             rootEl.innerHTML = panelHint(
-                'Morse Fall Scale',
-                'Select one option per variable. Complete on admission, change of condition, transfer, or after a fall.',
-                rowsHtml +
-                scoreBlock(total, 'Total Morse Score', risk.label, risk.cls) +
-                '<p class="cap-fineprint">0–24 Low Risk · 25–44 Moderate Risk · 45+ High Risk</p>' +
-                '<div class="cap-grid g3" style="margin-top:14px;">' +
-                    field('Admission Date', 'admit_date', { tag: 'input', type: 'date' }) +
-                    field('Review Date', 'review1', { tag: 'input', type: 'date' }) +
-                    field('Review Date 2', 'review2', { tag: 'input', type: 'date' }) +
+                MORSE.TITLE,
+                esc(MORSE.INTRO),
+                migratedNote +
+                colTabsHtml(tabs(), active, 'Morse assessment column') +
+                '<div class="cap-grid g2">' +
+                    '<div class="cap-field"><label class="cap-label" for="capMorseDate">' + esc(cm.label) + '</label>' +
+                        '<input type="date" id="capMorseDate" class="cap-tf" data-col-field="date"></div>' +
+                    '<div class="cap-field"><label class="cap-label" for="capMorseSig">' + esc(MORSE.SIGNATURE) + ' — ' + esc(cm.short) + '</label>' +
+                        '<input id="capMorseSig" class="cap-tf" data-col-field="signature"></div>' +
                 '</div>' +
-                field('Signature & Status', 'signature', { tag: 'input' })
+                varsHtml +
+                scoreBlock(sc.n ? sc.total : '—', 'Total — ' + cm.label, sc.label, sc.cls) +
+                '<p class="cap-fineprint">' + esc(MORSE.HOWTO) + '</p>' +
+                '<div class="cap-assess-actions"><button type="button" class="cap-btn-sm" id="capMorseClear">Clear ' + esc(cm.short) + ' scores</button></div>' +
+                '<h4 class="cap-subhead">All columns</h4>' +
+                summary() +
+                '<table class="cap-sum-table cap-band-table"><thead><tr><th scope="col" colspan="2">Morse Fall Score</th></tr></thead><tbody>' +
+                    MORSE.BANDS.map(function (b) { return '<tr><th scope="row">' + esc(b.label) + '</th><td>' + esc(b.range) + '</td></tr>'; }).join('') +
+                '</tbody></table>'
             );
-            // Wire radio choices
-            rootEl.querySelectorAll('input[type="radio"][data-morse]').forEach(function (r) {
-                r.addEventListener('change', function () {
-                    state.choices[r.dataset.morse] = parseInt(r.value, 10);
-                    if (typeof onChange === 'function') onChange();
-                    render();  // re-render to update score + selected styling
+            rootEl.querySelectorAll('[data-col-tab]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    const key = b.getAttribute('data-col-tab');
+                    active = key;
+                    render();
+                    refocus(rootEl, '[data-col-tab]', { 'data-col-tab': key });
                 });
             });
-            // Bind regular fields
-            bindFields(rootEl, state, onChange);
+            rootEl.querySelectorAll('[data-col-field]').forEach(function (el) {
+                const f = el.getAttribute('data-col-field');
+                el.value = col[f] || '';
+                el.addEventListener('input', function () {
+                    view.cols[active][f] = el.value;
+                    commit();
+                    refreshPassive();
+                });
+            });
+            rootEl.querySelectorAll('input[type="radio"][data-morse]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    const id = r.dataset.morse, val = r.value;
+                    view.cols[active].choices[id] = parseInt(val, 10);
+                    commit();
+                    render();  // re-render to update score + selected styling
+                    refocus(rootEl, 'input[type="radio"][data-morse]', { 'data-morse': id, value: val });
+                });
+            });
+            const clr = rootEl.querySelector('#capMorseClear');
+            if (clr) clr.addEventListener('click', function () {
+                if (!Object.keys(view.cols[active].choices).length) return;
+                confirmThen('Clear scores?', 'Clear the ' + cm.short + ' column\'s Morse scores? The date and signature stay.', function () {
+                    view.cols[active].choices = {};
+                    commit();
+                    render();
+                    refocus(rootEl, '#capMorseClear', {});
+                });
+            });
         }
         render();
     };
 
     // ---------- BRADEN SCALE ----------
+    // TABLE 5: four dated assessments (Assess 1–4), each with its own six
+    // factor scores, total and evaluator signature/title. Stored as
+    // state.cols{a1..a4} (schema 4); an old single assessment
+    // (state.choices/date/evaluator) is shown as Assess 1 (CAP.readBraden).
     R.braden = function (rootEl, state, onChange) {
-        if (!state.choices) state.choices = {};
+        const view = CAP.readBraden(state);
+        let active = BRADEN.COLS.length ? BRADEN.COLS[0].key : 'a1';
+        function commit() {
+            if (state.cols !== view.cols) { state.cols = view.cols; state._schema = 4; }
+            if (typeof onChange === 'function') onChange();
+        }
+        function meta(key) { return BRADEN.COLS.filter(function (c) { return c.key === key; })[0] || { key: key, num: key }; }
+        function tabs() {
+            return BRADEN.COLS.map(function (c) {
+                const col = view.cols[c.key];
+                const sc = CAP.scoreBraden(col.choices);
+                return { key: c.key, title: 'Assess ' + c.num,
+                         sub: (col.date ? fmtDate(col.date) : 'No date') + ' · ' + (sc.n ? 'Total ' + sc.total + (sc.complete ? '' : ' (' + sc.n + '/' + sc.of + ')') : 'Not scored') };
+            });
+        }
+        function summary() {
+            const cols = BRADEN.COLS.map(function (c) { return { title: 'Assess ' + c.num, active: c.key === active }; });
+            function each(fn) { return BRADEN.COLS.map(function (c) { return fn(view.cols[c.key]); }); }
+            const rows = [{ head: 'Date of assess', cells: each(function (col) { return col.date ? fmtDate(col.date) : '—'; }) }];
+            BRADEN.FACTORS.forEach(function (f) {
+                rows.push({ head: f.name, cells: each(function (col) {
+                    const x = col.choices[f.id];
+                    return x == null ? '—' : String(x);
+                }) });
+            });
+            rows.push({ head: 'Total score', cls: 'cap-sum-total', cells: each(function (col) { const s = CAP.scoreBraden(col.choices); return s.n ? String(s.total) : '—'; }) });
+            rows.push({ head: 'Risk', cells: each(function (col) { return CAP.scoreBraden(col.choices).label; }) });
+            rows.push({ head: BRADEN.EVALUATOR, cells: each(function (col) { return col.evaluator || '—'; }) });
+            return summaryTableHtml('Risk factor', cols, rows);
+        }
+        function refreshPassive() {
+            const t = tabs();
+            rootEl.querySelectorAll('[data-col-tab]').forEach(function (b, i) {
+                const sm = b.querySelector('small');
+                if (sm && t[i]) sm.textContent = t[i].sub;
+            });
+            const w = rootEl.querySelector('.cap-sum-wrap');
+            if (w) w.outerHTML = summary();
+        }
         function render() {
-            let total = 0;
-            const factorsHtml = BRADEN_FACTORS.map(function (f) {
+            const col = view.cols[active];
+            const cm = meta(active);
+            const sc = CAP.scoreBraden(col.choices);
+            const factorsHtml = BRADEN.FACTORS.map(function (f) {
                 const optsHtml = f.opts.map(function (o) {
-                    const isOn = state.choices[f.id] === o.val;
-                    if (isOn) total += o.val;
+                    const isOn = col.choices[f.id] === o.val;
+                    const others = BRADEN.COLS.filter(function (c) {
+                        return c.key !== active && view.cols[c.key].choices[f.id] === o.val;
+                    }).map(function (c) { return 'A' + c.num; });
                     return '<label class="cap-braden-opt' + (isOn ? ' selected' : '') + '">' +
                         '<input type="radio" name="braden_' + f.id + '" value="' + o.val + '" data-braden="' + f.id + '"' + (isOn ? ' checked' : '') + '>' +
-                        '<strong>' + o.val + ' — ' + esc(o.title) + '</strong>' +
+                        '<strong>' + o.val + '. ' + esc(o.title) + ' –' + pickBadges(others) + '</strong>' +
                         '<span class="cap-braden-desc">' + esc(o.desc) + '</span>' +
                     '</label>';
                 }).join('');
                 return '<div class="cap-braden-factor">' +
                     '<h4>' + esc(f.name) + '</h4>' +
-                    '<p class="cap-braden-defn">' + esc(f.defn) + '</p>' +
-                    '<div class="cap-braden-opts cols-' + f.opts.length + '">' + optsHtml + '</div>' +
+                    (f.defn ? '<p class="cap-braden-defn">' + esc(f.defn) + '</p>' : '') +
+                    '<div class="cap-braden-opts cols-' + f.opts.length + '" role="radiogroup" aria-label="' + esc(f.name + ' — Assess ' + cm.num) + '">' + optsHtml + '</div>' +
+                    (f.footnotes ? '<p class="cap-fineprint">' + esc(BRADEN.FOOTNOTES.join('  ')) + '</p>' : '') +
                 '</div>';
             }).join('');
-            // A partial sum reads as a falsely severe tier (one "4" = "Severe"),
-            // so only interpret the total once every factor is scored.
-            const nScored = BRADEN_FACTORS.filter(function (f) { return state.choices[f.id] != null; }).length;
-            const risk = nScored === BRADEN_FACTORS.length ? bradenRiskLabel(total)
-                : (nScored ? { label: 'Incomplete (' + nScored + '/' + BRADEN_FACTORS.length + ' scored)', cls: '' } : bradenRiskLabel(0));
+            const migratedNote = (view.migrated && state.cols !== view.cols)
+                ? '<p class="cap-fineprint cap-ncsbn-migrated">Your earlier Braden assessment (scores, date and evaluator) is now Assess 1.</p>'
+                : '';
             rootEl.innerHTML = panelHint(
-                'Braden Scale — Pressure Sore Risk',
-                'Select one option per factor. Total auto-calculates. ≤12 = HIGH RISK.',
-                factorsHtml +
-                scoreBlock(total || '—', 'Total Braden Score', risk.label, risk.cls) +
-                '<p class="cap-fineprint">9 Severe · 10–12 High · 13–14 Moderate · 15–18 Mild · 19+ No significant risk</p>' +
-                '<div class="cap-grid g3" style="margin-top:14px;">' +
-                    field('Assessment Date', 'date', { tag: 'input', type: 'date' }) +
-                    field('Evaluator Signature / Title', 'evaluator', { tag: 'input' }) +
+                BRADEN.TITLE,
+                'Up to four assessments. Pick an assessment, then one description per risk factor. ' + esc(BRADEN.HIGH_RISK) + '.',
+                migratedNote +
+                '<p class="cap-fineprint cap-braden-legend">' + esc(BRADEN.LEGEND) + '</p>' +
+                colTabsHtml(tabs(), active, 'Braden assessment') +
+                '<div class="cap-grid g2">' +
+                    '<div class="cap-field"><label class="cap-label" for="capBradenDate">Date of Assess ' + esc(cm.num) + '</label>' +
+                        '<input type="date" id="capBradenDate" class="cap-tf" data-col-field="date"></div>' +
+                    '<div class="cap-field"><label class="cap-label" for="capBradenEval">' + esc(BRADEN.EVALUATOR) + ' — Assess ' + esc(cm.num) + '</label>' +
+                        '<input id="capBradenEval" class="cap-tf" data-col-field="evaluator"></div>' +
                 '</div>' +
-                '<p class="cap-fineprint" style="margin-top:14px;font-style:italic;">Source: Barbara Braden &amp; Nancy Bergstrom. Copyright 1988. Reprinted with permission. www.bradenscale.com</p>'
+                factorsHtml +
+                scoreBlock(sc.n ? sc.total : '—', 'Total Score — Assess ' + cm.num, sc.label, sc.cls) +
+                '<p class="cap-fineprint">' + esc(BRADEN.HIGH_RISK) + '</p>' +
+                '<div class="cap-assess-actions"><button type="button" class="cap-btn-sm" id="capBradenClear">Clear Assess ' + esc(cm.num) + ' scores</button></div>' +
+                '<h4 class="cap-subhead">All assessments</h4>' +
+                summary() +
+                '<p class="cap-fineprint" style="margin-top:14px;font-style:italic;">' + esc(BRADEN.COPYRIGHT) + '</p>'
             );
-            rootEl.querySelectorAll('input[type="radio"][data-braden]').forEach(function (r) {
-                r.addEventListener('change', function () {
-                    state.choices[r.dataset.braden] = parseInt(r.value, 10);
-                    if (typeof onChange === 'function') onChange();
+            rootEl.querySelectorAll('[data-col-tab]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    const key = b.getAttribute('data-col-tab');
+                    active = key;
                     render();
+                    refocus(rootEl, '[data-col-tab]', { 'data-col-tab': key });
                 });
             });
-            bindFields(rootEl, state, onChange);
+            rootEl.querySelectorAll('[data-col-field]').forEach(function (el) {
+                const f = el.getAttribute('data-col-field');
+                el.value = col[f] || '';
+                el.addEventListener('input', function () {
+                    view.cols[active][f] = el.value;
+                    commit();
+                    refreshPassive();
+                });
+            });
+            rootEl.querySelectorAll('input[type="radio"][data-braden]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    const id = r.dataset.braden, val = r.value;
+                    view.cols[active].choices[id] = parseInt(val, 10);
+                    commit();
+                    render();
+                    refocus(rootEl, 'input[type="radio"][data-braden]', { 'data-braden': id, value: val });
+                });
+            });
+            const clr = rootEl.querySelector('#capBradenClear');
+            if (clr) clr.addEventListener('click', function () {
+                if (!Object.keys(view.cols[active].choices).length) return;
+                confirmThen('Clear scores?', 'Clear the Braden scores for Assess ' + cm.num + '? The date and evaluator stay.', function () {
+                    view.cols[active].choices = {};
+                    commit();
+                    render();
+                    refocus(rootEl, '#capBradenClear', {});
+                });
+            });
         }
         render();
     };
 
     // ---------- MINI-COG ----------
+    // "Patient Cognitive Assessment Form". state: { words{ocean,desk,tractor},
+    // recall, clock, notes, clockPng }. Ticking words sets recall to the count
+    // (state.recall is kept in sync so older readers stay right); a packet
+    // with only a legacy recall number keeps it editable until words are ticked.
     R.minicog = function (rootEl, state, onChange) {
-        // state: { recall, clock, notes, clockPng (base64) }
+        function person(t) { return who() === 'patient' ? t : String(t).replace(/\bpatient\b/g, who()); }
+        const view0 = CAP.readMinicog(state);
+        const wordsHtml = MINICOG.WORDS.map(function (w) {
+            return '<label class="cap-word-opt' + (view0.words[w.key] ? ' selected' : '') + '">' +
+                '<input type="checkbox" data-minicog-word="' + esc(w.key) + '"' + (view0.words[w.key] ? ' checked' : '') + '>' +
+                '<span>' + esc(w.label) + '</span>' +
+            '</label>';
+        }).join('');
+        const legacy = !view0.wordsTicked && view0.recall != null && !(state.words && typeof state.words === 'object');
         rootEl.innerHTML = panelHint(
-            'Mini-Cog — Cognitive Assessment',
-            'Rapid dementia screen (~3 min). Three steps: register three words, draw a clock, recall the words.',
+            MINICOG.TITLE,
+            'Rapid dementia screen (~3 min). Tick the words the ' + who() + ' recalled; the scores total automatically.',
             '<div class="cap-careplan-box">' +
                 '<h4>Step 1 — 3-Word Registration</h4>' +
-                '<p>Ask the resident to listen carefully, remember, and repeat back: ' +
-                '<strong style="font-size:15px;letter-spacing:0.5px;">Ocean · Desk · Tractor</strong></p>' +
+                '<p>1. ' + esc(person(MINICOG.STEPS[0])).replace(/Ocean Desk Tractor$/, '<strong style="font-size:15px;letter-spacing:0.5px;">Ocean · Desk · Tractor</strong>') + '</p>' +
             '</div>' +
             '<div class="cap-careplan-box">' +
                 '<h4>Step 2 — Clock Drawing Test</h4>' +
-                '<p class="cap-hint">Instruct the resident to draw the face of a clock, including the <strong>numbers</strong>, with hands pointing to <strong>8:20</strong>. Move on after 3 minutes if incomplete.</p>' +
+                '<p class="cap-hint">2. ' + esc(person(MINICOG.STEPS[1])) + '</p>' +
                 '<div class="cap-clock-wrap">' +
-                    '<canvas id="capClockCanvas" width="400" height="400" style="border:1px solid var(--clx-border);border-radius:4px;touch-action:none;display:block;margin:0 auto;max-width:100%;cursor:crosshair;background:#fff;"></canvas>' +
+                    '<canvas id="capClockCanvas" width="400" height="400" aria-label="Clock drawing area" style="border:1px solid var(--clx-border);border-radius:4px;touch-action:none;display:block;margin:0 auto;max-width:100%;cursor:crosshair;background:#fff;"></canvas>' +
                     '<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">' +
                         '<button type="button" class="cap-btn-sm" id="capClockClear">Clear drawing</button>' +
                     '</div>' +
@@ -516,18 +697,28 @@
             '</div>' +
             '<div class="cap-careplan-box">' +
                 '<h4>Step 3 — Word Recall</h4>' +
-                '<div class="cap-grid g2">' +
-                    field('Word Recall Score (0–3) — 1 pt per word', 'recall', { tag: 'select', optionsHtml:
+                '<p>3. ' + esc(person(MINICOG.STEPS[2])) + '</p>' +
+            '</div>' +
+            '<div class="cap-careplan-box">' +
+                '<h4>Scoring</h4>' +
+                '<p>1. ' + esc(MINICOG.SCORE_WORDS) + '</p>' +
+                '<div class="cap-word-opts" role="group" aria-label="Words remembered">' + wordsHtml + '</div>' +
+                (legacy ? '<p class="cap-fineprint" id="capMinicogLegacy">A recall score of ' + esc(view0.recall) + ' was entered earlier without the words. Tick the words remembered to record which ones — the score then follows the ticks.</p>' : '') +
+                '<div class="cap-grid g2" style="margin-top:10px;">' +
+                    field(MINICOG.RECALL_LABEL, 'recall', { tag: 'select', optionsHtml:
                         '<option value="">—</option>' +
-                        '<option value="0">0 — none recalled</option>' +
-                        '<option value="1">1 word recalled</option>' +
-                        '<option value="2">2 words recalled</option>' +
-                        '<option value="3">3 words recalled</option>'
+                        '<option value="0">0</option>' +
+                        '<option value="1">1</option>' +
+                        '<option value="2">2</option>' +
+                        '<option value="3">3</option>'
                     }) +
-                    field('Clock Drawing Score', 'clock', { tag: 'select', optionsHtml:
+                '</div>' +
+                '<p style="margin-top:10px;">2. ' + esc(MINICOG.SCORE_CLOCK) + '</p>' +
+                '<div class="cap-grid g2" style="margin-top:8px;">' +
+                    field(MINICOG.CLOCK_LABEL, 'clock', { tag: 'select', optionsHtml:
                         '<option value="">—</option>' +
-                        '<option value="0">0 — Abnormal</option>' +
-                        '<option value="2">2 — Normal</option>'
+                        '<option value="2">2 — Normal</option>' +
+                        '<option value="0">0 — Abnormal</option>'
                     }) +
                 '</div>' +
             '</div>' +
@@ -535,32 +726,66 @@
             field('Additional observations / notes', 'notes', { rows: 3 })
         );
         bindFields(rootEl, state, onChange);
+        const recallSel = rootEl.querySelector('[data-cap-field="recall"]');
 
-        function updateScore() {
-            const r = parseInt(state.recall || '', 10);
-            const c = parseInt(state.clock || '', 10);
-            const block = document.getElementById('capMinicogScore');
-            if (isNaN(r) && isNaN(c)) { block.innerHTML = ''; return; }
-            const total = (isNaN(r) ? 0 : r) + (isNaN(c) ? 0 : c);
-            let risk = 'Not scored';
-            let cls = '';
-            if (!isNaN(r) && !isNaN(c)) {
-                if (total <= 2) { risk = 'Positive screen for dementia (0–2)'; cls = 'high'; }
-                else { risk = 'Negative screen (3–5)'; cls = 'low'; }
+        function syncRecall() {
+            const v = CAP.readMinicog(state);
+            if (recallSel) {
+                // The ticks decide the score once any word is ticked
+                recallSel.disabled = v.wordsTicked;
+                // With no word ticked the dropdown is in charge: show what is stored
+                recallSel.value = v.wordsTicked ? String(v.recall) : (state.recall == null ? '' : String(state.recall));
             }
-            block.innerHTML = scoreBlock(total, 'Mini-Cog Total (0–5)', risk, cls) +
-                '<p class="cap-fineprint">0–2 = Positive screen for dementia · 3–5 = Negative screen</p>';
         }
+        function updateScore() {
+            const v = CAP.readMinicog(state);
+            const block = document.getElementById('capMinicogScore');
+            if (!block) return;
+            if (v.total == null) { block.innerHTML = '<p class="cap-fineprint">' + esc(MINICOG.TOTAL_LABEL) + ': —</p>'; return; }
+            block.innerHTML = scoreBlock(v.total, 'Mini-Cog Total (0–5)', v.label, v.cls) +
+                '<p class="cap-fineprint">' + esc(MINICOG.TOTAL_LABEL) + '</p>';
+        }
+        rootEl.querySelectorAll('input[type="checkbox"][data-minicog-word]').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                if (!state.words || typeof state.words !== 'object') state.words = {};
+                MINICOG.WORDS.forEach(function (w) { if (state.words[w.key] == null) state.words[w.key] = false; });
+                const before = MINICOG.WORDS.filter(function (w) { return state.words[w.key]; }).length;
+                // First tick: keep the recall number the dropdown held (e.g. a
+                // legacy score) so unticking every word gives it back.
+                if (before === 0 && cb.checked) state.recallLegacy = state.recall == null ? '' : String(state.recall);
+                state.words[cb.getAttribute('data-minicog-word')] = cb.checked;
+                const lbl = cb.closest('.cap-word-opt');
+                if (lbl) lbl.classList.toggle('selected', cb.checked);
+                const n = MINICOG.WORDS.filter(function (w) { return state.words[w.key]; }).length;
+                state.recall = n ? String(n) : (state.recallLegacy == null ? '0' : String(state.recallLegacy));
+                const note = document.getElementById('capMinicogLegacy');
+                if (note) note.remove();
+                syncRecall();
+                updateScore();
+                if (typeof onChange === 'function') onChange();
+            });
+        });
         ['recall', 'clock'].forEach(function (k) {
             const el = rootEl.querySelector('[data-cap-field="' + k + '"]');
             if (el) el.addEventListener('change', updateScore);
         });
+        syncRecall();
         updateScore();
 
-        // Canvas drawing
+        // Canvas drawing. A light circle guide is drawn like the printed
+        // form's; it becomes part of the saved drawing once the student draws.
         const canvas = document.getElementById('capClockCanvas');
         if (canvas) {
             const ctx = canvas.getContext('2d');
+            function guide() {
+                ctx.save();
+                ctx.strokeStyle = '#9aa7b6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2 - 24, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.strokeStyle = '#1a3a5c';
@@ -569,6 +794,8 @@
                 const img = new Image();
                 img.onload = function () { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
                 img.src = state.clockPng;
+            } else {
+                guide();
             }
             let drawing = false;
             function pos(ev) {
@@ -596,6 +823,7 @@
             const clearBtn = document.getElementById('capClockClear');
             if (clearBtn) clearBtn.addEventListener('click', function () {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                guide();
                 state.clockPng = null;
                 if (typeof onChange === 'function') onChange();
             });
@@ -635,7 +863,7 @@
                 '<div class="cap-grid g3">' +
                     field('Pain (0–10)', 'pain_level', { tag: 'input', type: 'number', min: 0, max: 10 }) +
                     field('Pain location', 'pain_location', { tag: 'input' }) +
-                    field('Resident description', 'pain_description', { tag: 'input' }) +
+                    field(Who() + ' description', 'pain_description', { tag: 'input' }) +
                 '</div>' +
                 '<div class="cap-grid g2">' +
                     field('IV access', 'iv', { tag: 'input' }) +
@@ -776,38 +1004,43 @@
     };
 
     // ---------- NCSBN CLINICAL JUDGMENT MODEL ----------
-    const NCSBN_STEPS = [
-        { step:'Step 1: Recognize Cues',         prompt:'What data are RELEVANT and must be interpreted as clinically significant?' },
-        { step:'Step 2: Analyze Cues',           prompt:'Interpret relevant clinical data and identify the most likely problem(s). Is additional data needed?' },
-        { step:'Step 3: Prioritize Hypotheses',  prompt:'Rank the most likely problems by urgency. Which problem is most likely present? Most concerning? Why?' },
-        { step:'Step 4: Generate Solutions',     prompt:'Based on the most pressing problem, what are the priority actions?' },
-        { step:'Step 5: Take Action',            prompt:'What actions did you take?' },
-        { step:'Step 6: Evaluate Outcomes',      prompt:'Evaluate the resident\'s response. Has status improved, declined, or remained unchanged? If not improved, what else may be present and what interventions should be considered?' }
-    ];
+    // Seven answer boxes, one per row of the Word form's TABLE 6
+    // (FORM.NCSBN_ROWS). Stored as state.boxes{s1..s6b} with state._schema = 3.
+    // Packets saved with the old six boxes (state.steps[0..5]) are shown
+    // through CAP_MODULES.readNcsbn() and only rewritten in the new shape
+    // when the student edits a box; state.steps itself is left untouched.
     R.ncsbn = function (rootEl, state, onChange) {
-        if (!state.steps) state.steps = {};
-        const stepsHtml = NCSBN_STEPS.map(function (s, i) {
+        const isNew = state._schema >= 3 || (state.boxes && typeof state.boxes === 'object');
+        const view = CAP.readNcsbn ? CAP.readNcsbn(state) : {};
+        const migrated = !isNew && NCSBN_ROWS.some(function (r) { return String(view[r.key] || '').trim(); });
+        const stepsHtml = NCSBN_ROWS.map(function (s) {
             return '<div class="cap-ncsbn-step">' +
-                '<div class="cap-ncsbn-num">' + (i + 1) + '</div>' +
+                '<div class="cap-ncsbn-num' + (s.num.length > 1 ? ' wide' : '') + '">' + esc(s.num) + '</div>' +
                 '<div class="cap-ncsbn-body">' +
                     '<h4>' + esc(s.step) + '</h4>' +
                     '<p class="cap-hint" style="margin-bottom:6px;">' + esc(s.prompt) + '</p>' +
-                    '<textarea data-cap-field="step_' + i + '" rows="3" class="cap-tf"></textarea>' +
+                    '<textarea data-ncsbn="' + esc(s.key) + '" rows="3" class="cap-tf" aria-label="' + esc(s.step + ' — ' + s.prompt) + '"></textarea>' +
                 '</div>' +
             '</div>';
         }).join('');
         rootEl.innerHTML = panelHint(
             'Six Steps of the NCSBN Clinical Judgment Model',
-            'Work through the six steps for this resident.',
+            'Work through the six steps for this ' + who() + '. One box per row of the program form.',
+            (migrated
+                ? '<p class="cap-fineprint cap-ncsbn-migrated">Your earlier answers were moved into the matching rows of the program form. ' +
+                  'The old Step 3 answer is in the first Step 3 box, Step 4 and Step 5 share one box, and the old Evaluate answer is in the first Step 6 box.</p>'
+                : '') +
             stepsHtml
         );
-        // Map step_0..step_5 fields to state.steps[0..5]
-        rootEl.querySelectorAll('[data-cap-field]').forEach(function (el) {
-            const k = el.getAttribute('data-cap-field'); // step_N
-            const idx = k.replace('step_', '');
-            if (state.steps[idx] != null) el.value = state.steps[idx];
+        rootEl.querySelectorAll('textarea[data-ncsbn]').forEach(function (el) {
+            const key = el.getAttribute('data-ncsbn');
+            el.value = view[key] || '';
             el.addEventListener('input', function () {
-                state.steps[idx] = el.value;
+                // First edit: write the whole migrated set in the new shape
+                if (!state.boxes || typeof state.boxes !== 'object') state.boxes = Object.assign({}, view);
+                state._schema = 3;
+                state.boxes[key] = el.value;
+                view[key] = el.value;
                 if (typeof onChange === 'function') onChange();
             });
         });
@@ -925,120 +1158,443 @@
             'Nursing Care Plan',
             'NANDA diagnostic structure with SMART goals and Assess / Do / Teach interventions.',
             box('OMEGA-7 / Assessment Finding',
-                'Identified issue that can be modified to help resident outcome.<br><em>Example: Air — Resident is on 2L O₂, normally on room air at home.</em>',
+                'Identified issue that can be modified to help ' + who() + ' outcome.<br><em>Example: Air — ' + Who() + ' is on 2L O₂, normally on room air at home.</em>',
                 field('', 'finding', { rows: 2 })) +
             box('Nursing Diagnostic Statement',
                 'NANDA Dx r/t problem [secondary to medical Dx] aeb signs/symptoms.<br><em>Example: Impaired gas exchange r/t airway obstruction secondary to COPD aeb wheezing, fatigue after 10 ft walking, SpO₂ &lt;88% with exertion.</em>',
                 field('', 'dx', { rows: 2 })) +
             box('Short-Term Goal',
-                'End of shift or within a week. Begin with the resident. SMART: Specific, Measurable, Achievable, Relevant, Timebound.',
+                'End of shift or within a week. Begin with the ' + who() + '. SMART: Specific, Measurable, Achievable, Relevant, Timebound.',
                 field('Goal', 'st_goal', { rows: 2 }) +
                 intervention('Assess', 'st_assess') +
                 intervention('Do',     'st_do') +
                 intervention('Teach',  'st_teach')) +
             box('Long-Term Goal',
-                'Weeks to months. Begin with the resident. SMART.',
+                'Weeks to months. Begin with the ' + who() + '. SMART.',
                 field('Goal', 'lt_goal', { rows: 2 }) +
                 intervention('Assess', 'lt_assess') +
                 intervention('Do',     'lt_do') +
                 intervention('Teach',  'lt_teach')) +
             box('Summary of Care',
-                'Current interventions/treatments moving resident toward discharge, focused on primary dx.',
+                'Current interventions/treatments moving ' + who() + ' toward discharge, focused on primary dx.',
                 field('', 'summary', { rows: 4 }))
         );
         bindFields(rootEl, state, onChange);
     };
 
     // ---------- HEAD-TO-TOE ASSESSMENT ----------
-    const H2T_SYSTEMS = [
-        { key:'neuro',      label:'Neurological',      hint:'LOC, orientation, pupils (PERRLA), EOM, cranial nerves, MAE, GCS, sensation/motor.' },
-        { key:'heent',      label:'HEENT',              hint:'Hair/scalp, eyes, ears, nose/smell, mouth/oral mucosa, dentition.' },
-        { key:'cardio',     label:'Cardiovascular',     hint:'Heart sounds (S1/S2 RRR), apical pulse, peripheral pulses (radial/DP/PT), edema, cap refill.' },
-        { key:'resp',       label:'Respiratory',        hint:'Breath sounds (CTA bilat), effort, O2/SpO₂, cough/sputum, chest expansion.' },
-        { key:'gi',         label:'Gastrointestinal',   hint:'Bowel sounds (BS x4 quads), abdomen (soft / NT / ND), last BM, diet/intake, N/V.' },
-        { key:'gu',         label:'Genitourinary',      hint:'Voiding pattern, Foley if applicable, urine color/clarity, output.' },
-        { key:'msk',        label:'Musculoskeletal',    hint:'ROM (active/passive), gait, grip strength, balance, fall risk, ambulation.' },
-        { key:'skin',       label:'Skin / Integumentary', hint:'Color, warmth, turgor, intact / wounds / pressure injuries, IV sites, Braden score reference.' },
-        { key:'psych',      label:'Psychosocial',       hint:'Mood, affect, behavior, support system, cognition (ref Mini-Cog), safety concerns.' }
-    ];
-    R.headToToe = function (rootEl, state, onChange) {
-        const sysHtml = H2T_SYSTEMS.map(function (s) {
-            return '<div class="cap-h2t-row">' +
-                '<label class="cap-label">' + esc(s.label) + '</label>' +
-                '<p class="cap-fineprint" style="margin:-2px 0 4px;">' + esc(s.hint) + '</p>' +
-                '<textarea data-cap-field="' + s.key + '" rows="3" class="cap-tf"></textarea>' +
+    // The Word form's regions and items (FORM.H2T in cap-modules.js) in its
+    // two-column layout (stacked on phones), with the body diagram in Skin.
+    // Each item is stored under its own key (schema 5; state._schema = 5 is
+    // stamped on the first edit). An old packet's 9 free-text systems stay
+    // under their old keys and show — still editable — as "Previous notes"
+    // in the matching region (CAP.readHeadToToe), so nothing is lost.
+    // ctx (4th arg) is set when called for the Day 2 instance (headToToe2):
+    // ctx.title is the heading, ctx.moduleId keeps element ids distinct.
+    const H2T = FORM.H2T || { REGIONS: [], LEGACY: [], BODY: { VIEWS: [], VIEW_BY_KEY: {} } };
+    // Where each body view sits in the editor's SVG (viewBox 230 × 352)
+    let h2tResizeHandler = null;  // the open H2T editor's resize listener
+    const BODY_POS = { front: { x: 5, y: 4 }, back: { x: 125, y: 4 }, head: { x: 5, y: 236 }, feet: { x: 125, y: 236 } };
+    function svgNum(n) { return String(Math.round(n * 100) / 100); }
+    function bodyShapeSvg(sh) {
+        if (sh.e) {
+            return '<ellipse class="cap-body-line" cx="' + svgNum(sh.e[0]) + '" cy="' + svgNum(sh.e[1]) + '" rx="' + svgNum(sh.e[2]) + '" ry="' + svgNum(sh.e[3]) + '"/>';
+        }
+        if (sh.l) {
+            return '<polyline class="cap-body-line" points="' + sh.l.map(function (p) { return svgNum(p[0]) + ',' + svgNum(p[1]); }).join(' ') + '"/>';
+        }
+        if (sh.p && CAP.bodyCurves) {
+            const d = 'M' + svgNum(sh.p[0][0]) + ' ' + svgNum(sh.p[0][1]) + CAP.bodyCurves(sh.p, sh.closed).map(function (s) {
+                return ' C' + svgNum(s.c1[0]) + ' ' + svgNum(s.c1[1]) + ' ' + svgNum(s.c2[0]) + ' ' + svgNum(s.c2[1]) + ' ' + svgNum(s.p[0]) + ' ' + svgNum(s.p[1]);
+            }).join('') + (sh.closed ? ' Z' : '');
+            return '<path class="cap-body-line" d="' + d + '"/>';
+        }
+        return '';
+    }
+    R.headToToe = function (rootEl, state, onChange, ctx) {
+        ctx = ctx || {};
+        const uid = 'h2t' + (ctx.moduleId ? '-' + String(ctx.moduleId).replace(/[^A-Za-z0-9_-]/g, '') : '');
+        const view = CAP.readHeadToToe ? CAP.readHeadToToe(state) : { values: {}, markers: [], legacy: [], isNew: false };
+        const vals = view.values;
+        const markers = view.markers;
+        const VIEWS = H2T.BODY.VIEWS;
+        const legacyByRegion = {};
+        view.legacy.forEach(function (l) { (legacyByRegion[l.region] = legacyByRegion[l.region] || []).push(l); });
+        const regionTitle = {};
+        H2T.REGIONS.forEach(function (r) { regionTitle[r.id] = r.title; });
+
+        function changed() {
+            state._schema = 5;
+            if (typeof onChange === 'function') onChange();
+        }
+        // Grow a textarea to its content (border included) so answers never clip
+        function grow(ta) {
+            if (!ta || ta.tagName !== 'TEXTAREA') return;
+            ta.style.height = 'auto';
+            const border = ta.offsetHeight - ta.clientHeight;
+            if (ta.scrollHeight) ta.style.height = (ta.scrollHeight + Math.max(0, border)) + 'px';
+        }
+        // Column widths settle after the first layout (and change on resize /
+        // rotation), so size every box again then.
+        function regrowAll() { rootEl.querySelectorAll('textarea.cap-h2t-tf').forEach(grow); }
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(regrowAll);
+        const onResize = function () {
+            if (!rootEl.querySelector('.cap-h2t-cols')) { window.removeEventListener('resize', onResize); return; }
+            regrowAll();
+        };
+        if (h2tResizeHandler) window.removeEventListener('resize', h2tResizeHandler);
+        h2tResizeHandler = onResize;
+        window.addEventListener('resize', onResize);
+        function fid(key) { return uid + '-' + key; }
+        function tf(id, ariaLabel, cls) {
+            return '<textarea id="' + fid(id) + '" rows="1" class="cap-tf cap-h2t-tf' + (cls ? ' ' + cls : '') + '" data-h2t="' + esc(id) + '"' +
+                (ariaLabel ? ' aria-label="' + esc(ariaLabel) + '"' : '') + '>' + esc(vals[id] || '') + '</textarea>';
+        }
+        // ctxLabel: region (and group) name, so a screen reader hears
+        // "Upper Extremities, ROM: Left" rather than just "Left".
+        function textHtml(it, sub) {
+            return '<div class="cap-h2t-item' + (sub || it.sub ? ' sub' : '') + '">' +
+                '<label class="cap-h2t-lbl" for="' + fid(it.id) + '">' + esc(it.label) + '</label>' +
+                tf(it.id) +
             '</div>';
-        }).join('');
+        }
+        function checksHtml(it, sub, ctxLabel) {
+            const v = vals[it.id];
+            const name = [ctxLabel, it.label || it.opts.map(function (o) { return o.label; }).join(' / ')].filter(Boolean).join(', ') +
+                (it.single ? ' (choose one)' : '');
+            return '<div class="cap-h2t-item' + (sub || it.sub ? ' sub' : '') + '">' +
+                '<span class="cap-h2t-lbl" aria-hidden="true">' + esc(it.label) + '</span>' +
+                '<div class="cap-h2t-checks" role="group" aria-label="' + esc(name) + '">' +
+                    it.opts.map(function (o) {
+                        const on = it.single ? v === o.key : !!(v && v[o.key]);
+                        return '<label class="cap-h2t-chk' + (on ? ' selected' : '') + '">' +
+                            '<input type="checkbox" data-h2t-chk="' + esc(it.id) + '" data-opt="' + esc(o.key) + '"' +
+                                (it.single ? ' data-single="1"' : '') + (on ? ' checked' : '') + '>' +
+                            '<span>' + esc(o.label) + '</span>' +
+                        '</label>';
+                    }).join('') +
+                '</div>' +
+            '</div>';
+        }
+        function inlineHtml(it) {
+            return '<div class="cap-h2t-item cap-h2t-inline">' +
+                '<span class="cap-h2t-lbl">' + esc(it.label) + '</span>' +
+                '<div class="cap-h2t-fields">' + it.fields.map(function (f) {
+                    if (f.ids) {
+                        const aria = f.aria || [f.label, f.label];
+                        return '<span class="cap-h2t-mini cap-h2t-split"><label for="' + fid(f.ids[0]) + '">' + esc(f.label) + '</label>' +
+                            tf(f.ids[0], aria[0]) + '<span class="cap-h2t-sep" aria-hidden="true">' + esc(f.sep || '/') + '</span>' + tf(f.ids[1], aria[1]) +
+                        '</span>';
+                    }
+                    return '<span class="cap-h2t-mini"><label for="' + fid(f.id) + '">' + esc(f.label) + '</label>' + tf(f.id) + '</span>';
+                }).join('') + '</div>' +
+            '</div>';
+        }
+        function gridHtml(it, ctxLabel) {
+            return '<div class="cap-h2t-group" role="group" aria-label="' + esc(ctxLabel + ', ' + it.label) + '">' +
+                '<div class="cap-h2t-lbl cap-h2t-grouplbl" aria-hidden="true">' + esc(it.label) + '</div>' +
+                '<div class="cap-h2t-grid2">' + it.fields.map(function (f) {
+                    return '<div class="cap-h2t-cell"><label class="cap-h2t-lbl" for="' + fid(f.id) + '">' + esc(f.label) + '</label>' + tf(f.id) + '</div>';
+                }).join('') + '</div>' +
+            '</div>';
+        }
+        function itemHtml(it, ctxLabel, sub) {
+            if (it.type === 'text') return textHtml(it, sub);
+            if (it.type === 'checks') return checksHtml(it, sub, ctxLabel);
+            if (it.type === 'inline') return inlineHtml(it);
+            if (it.type === 'grid') return gridHtml(it, ctxLabel);
+            if (it.type === 'group') {
+                return '<div class="cap-h2t-group">' +
+                    '<div class="cap-h2t-lbl cap-h2t-grouplbl">' + esc(it.label) + '</div>' +
+                    it.items.map(function (x) { return itemHtml(x, ctxLabel + ', ' + it.label.replace(/:$/, ''), true); }).join('') +
+                '</div>';
+            }
+            if (it.type === 'body') return '<div class="cap-body" id="' + fid('body') + '"></div>';
+            return '';
+        }
+        function legacyHtml(regionId) {
+            return (legacyByRegion[regionId] || []).map(function (l) {
+                return '<div class="cap-h2t-prev">' +
+                    '<label class="cap-h2t-lbl" for="' + fid('prev-' + l.key) + '">Previous notes — ' + esc(l.label) + '</label>' +
+                    '<textarea id="' + fid('prev-' + l.key) + '" rows="2" class="cap-tf cap-h2t-tf" data-h2t="' + esc(l.key) + '">' + esc(l.text) + '</textarea>' +
+                '</div>';
+            }).join('');
+        }
+        function regionHtml(r) {
+            return '<section class="cap-h2t-region" aria-labelledby="' + fid('r-' + r.id) + '">' +
+                '<h4 id="' + fid('r-' + r.id) + '">' + esc(r.title) + '</h4>' +
+                r.items.map(function (it) { return itemHtml(it, r.title, false); }).join('') +
+                legacyHtml(r.id) +
+            '</section>';
+        }
+        function colHtml(col) {
+            return '<div class="cap-h2t-col">' + H2T.REGIONS.filter(function (r) { return r.col === col; }).map(regionHtml).join('') + '</div>';
+        }
+        const migratedNote = (view.legacy.length && !view.isNew)
+            ? '<p class="cap-fineprint cap-ncsbn-migrated">This Head-to-Toe now follows the program\'s form. What you wrote earlier is kept as "Previous notes" in the matching section: ' +
+              esc(view.legacy.map(function (l) { return l.label + ' → ' + (regionTitle[l.region] || l.region); }).join(' · ')) + '.</p>'
+            : '';
+
         rootEl.innerHTML = panelHint(
-            'Head-to-Toe Assessment',
-            'Comprehensive systems assessment. One textarea per system — paste your assessment findings (normal + abnormal).',
-            sysHtml
+            ctx.title || H2T.TITLE || 'Head-to-Toe Assessment',
+            (ctx.hint ? esc(ctx.hint) + ' ' : '') + 'Laid out like the program\'s form. Tick what applies and fill in the blanks — anything left empty prints as a blank line for your instructor.',
+            migratedNote +
+            '<div class="cap-h2t-cols">' + colHtml('L') + colHtml('R') + '</div>'
         );
-        bindFields(rootEl, state, onChange);
+
+        // ---- text fields (incl. "Previous notes", bound to their old keys) ----
+        rootEl.querySelectorAll('textarea[data-h2t]').forEach(function (ta) {
+            grow(ta);
+            ta.addEventListener('input', function () {
+                state[ta.getAttribute('data-h2t')] = ta.value;
+                grow(ta);
+                changed();
+            });
+        });
+        // ---- checkboxes: single-select groups behave like radios that can be
+        // cleared again; multi-select store { option: true } ----
+        rootEl.querySelectorAll('input[type="checkbox"][data-h2t-chk]').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                const id = cb.getAttribute('data-h2t-chk');
+                const opt = cb.getAttribute('data-opt');
+                const group = rootEl.querySelectorAll('input[type="checkbox"][data-h2t-chk="' + id + '"]');
+                if (cb.hasAttribute('data-single')) {
+                    group.forEach(function (o) { if (o !== cb) o.checked = false; });
+                    state[id] = cb.checked ? opt : '';
+                } else {
+                    const cur = (state[id] && typeof state[id] === 'object') ? state[id] : {};
+                    const next = {};
+                    Object.keys(cur).forEach(function (k) { if (cur[k]) next[k] = true; });
+                    if (cb.checked) next[opt] = true; else delete next[opt];
+                    if (Object.keys(next).length) state[id] = next; else delete state[id];
+                }
+                group.forEach(function (o) {
+                    const lbl = o.closest('.cap-h2t-chk');
+                    if (lbl) lbl.classList.toggle('selected', o.checked);
+                });
+                changed();
+            });
+        });
+
+        // ---- body diagram (Skin) ----
+        const bodyItem = (function () {
+            let found = null;
+            H2T.REGIONS.forEach(function (r) { r.items.forEach(function (it) { if (it.type === 'body') found = it; }); });
+            return found;
+        })();
+        const bodyEl = document.getElementById(fid('body'));
+        if (!bodyItem || !bodyEl) return;
+
+        function commitMarkers() {
+            state[bodyItem.id] = markers.map(function (m) { return { view: m.view, x: m.x, y: m.y, note: m.note }; });
+            changed();
+        }
+        function round4(n) { return Math.round(Math.max(0, Math.min(1, n)) * 10000) / 10000; }
+        function viewLabel(key) { const v = H2T.BODY.VIEW_BY_KEY[key]; return v ? v.label : key; }
+        function svgHtml() {
+            let s = '<svg class="cap-body-svg" viewBox="0 0 230 352" xmlns="http://www.w3.org/2000/svg" role="img" aria-describedby="' + fid('body-help') + '"' +
+                ' aria-label="Body diagram: front, back, top of head and soles of feet, with ' + markers.length + ' marker' + (markers.length === 1 ? '' : 's') + '">';
+            VIEWS.forEach(function (v) {
+                const o = BODY_POS[v.key] || { x: 0, y: 0 };
+                s += '<g transform="translate(' + o.x + ' ' + o.y + ')">' +
+                    '<rect class="cap-body-hit" x="0" y="0" width="' + v.w + '" height="' + v.h + '"/>' +
+                    v.shapes.map(bodyShapeSvg).join('') +
+                    (v.sides ? '<text class="cap-body-side" x="3" y="60">' + esc(v.sides[0]) + '</text>' +
+                               '<text class="cap-body-side" x="' + (v.w - 3) + '" y="60" text-anchor="end">' + esc(v.sides[1]) + '</text>' : '') +
+                    '<text class="cap-body-lbl" x="' + (v.w / 2) + '" y="' + (v.h + 8) + '" text-anchor="middle">' + esc(v.label) + '</text>' +
+                '</g>';
+            });
+            markers.forEach(function (m, i) {
+                const v = H2T.BODY.VIEW_BY_KEY[m.view];
+                const o = BODY_POS[m.view];
+                if (!v || !o || m.x == null || m.y == null) return; // list-only marker
+                const cx = svgNum(o.x + m.x * v.w), cy = svgNum(o.y + m.y * v.h);
+                s += '<g class="cap-body-marker" data-mk="' + i + '">' +
+                    '<circle cx="' + cx + '" cy="' + cy + '" r="5.5"/>' +
+                    '<text x="' + cx + '" y="' + cy + '" dy="2.1" text-anchor="middle">' + (i + 1) + '</text>' +
+                '</g>';
+            });
+            return s + '</svg>';
+        }
+        function listHtml() {
+            const opts = function (sel) {
+                return VIEWS.map(function (v) {
+                    return '<option value="' + esc(v.key) + '"' + (v.key === sel ? ' selected' : '') + '>' + esc(v.label) + '</option>';
+                }).join('');
+            };
+            return (markers.length
+                ? '<ol class="cap-body-list">' + markers.map(function (m, i) {
+                    const n = i + 1;
+                    const off = m.x == null || m.y == null;
+                    return '<li class="cap-body-mk' + (off ? ' unplaced' : '') + '" data-mk-row="' + i + '">' +
+                        '<span class="cap-body-num" aria-hidden="true"' + (off ? ' title="Not on the diagram — listed only"' : '') + '>' + n + '</span>' +
+                        '<select class="cap-tf" data-mk-view="' + i + '" aria-label="Marker ' + n + ' — view' + (off ? ' (not on the diagram)' : '') + '">' + opts(m.view) + '</select>' +
+                        '<textarea class="cap-tf cap-h2t-tf" rows="1" data-mk-note="' + i + '" aria-label="Marker ' + n + ' — finding"' +
+                            ' placeholder="Finding, e.g. stage 2 pressure injury 2 × 3 cm">' + esc(m.note) + '</textarea>' +
+                        '<button type="button" class="cap-row-del" data-mk-del="' + i + '" title="Remove marker ' + n + '" aria-label="Remove marker ' + n + '">&times;</button>' +
+                    '</li>';
+                }).join('') + '</ol>'
+                : '<p class="cap-fineprint">No markers yet.</p>') +
+                '<button type="button" class="cap-add-row" data-mk-add>+ Add a marker without the diagram</button>';
+        }
+        function setActive(i) {
+            bodyEl.querySelectorAll('.cap-body-marker').forEach(function (g) {
+                g.classList.toggle('active', g.getAttribute('data-mk') === String(i));
+            });
+        }
+        function focusNote(i) {
+            const ta = bodyEl.querySelector('textarea[data-mk-note="' + i + '"]');
+            if (ta) { ta.focus(); setActive(i); }
+        }
+        function renderBody() {
+            bodyEl.innerHTML =
+                '<div class="cap-h2t-lbl cap-h2t-grouplbl">' + esc(bodyItem.label) + '</div>' +
+                '<p class="cap-fineprint" id="' + fid('body-help') + '">Tap the diagram where a finding is to place a numbered marker, then describe it below. ' +
+                    'Without the diagram: add a marker, pick its view and describe where it is — it is listed (dashed number) but not drawn on the figure.</p>' +
+                svgHtml() +
+                listHtml();
+            const svg = bodyEl.querySelector('svg');
+            svg.addEventListener('click', function (ev) {
+                const hit = ev.target && ev.target.closest ? ev.target.closest('[data-mk]') : null;
+                if (hit) { focusNote(parseInt(hit.getAttribute('data-mk'), 10)); return; }
+                const rect = svg.getBoundingClientRect();
+                if (!rect.width || !rect.height) return;
+                const px = (ev.clientX - rect.left) * 230 / rect.width;
+                const py = (ev.clientY - rect.top) * 352 / rect.height;
+                let placed = null;
+                VIEWS.forEach(function (v) {
+                    const o = BODY_POS[v.key];
+                    if (!o || placed) return;
+                    if (px >= o.x && px <= o.x + v.w && py >= o.y && py <= o.y + v.h) {
+                        placed = { view: v.key, x: round4((px - o.x) / v.w), y: round4((py - o.y) / v.h), note: '' };
+                    }
+                });
+                if (!placed) return;
+                markers.push(placed);
+                commitMarkers();
+                renderBody();
+                focusNote(markers.length - 1);
+            });
+            bodyEl.querySelectorAll('textarea[data-mk-note]').forEach(function (ta) {
+                grow(ta);
+                const i = parseInt(ta.getAttribute('data-mk-note'), 10);
+                ta.addEventListener('focus', function () { setActive(i); });
+                ta.addEventListener('input', function () {
+                    if (!markers[i]) return;
+                    markers[i].note = ta.value;
+                    grow(ta);
+                    commitMarkers();
+                });
+            });
+            bodyEl.querySelectorAll('select[data-mk-view]').forEach(function (sel) {
+                const i = parseInt(sel.getAttribute('data-mk-view'), 10);
+                sel.addEventListener('focus', function () { setActive(i); });
+                sel.addEventListener('change', function () {
+                    if (!markers[i] || !H2T.BODY.VIEW_BY_KEY[sel.value]) return;
+                    markers[i].view = sel.value;
+                    commitMarkers();
+                    renderBody();
+                    const again = bodyEl.querySelector('select[data-mk-view="' + i + '"]');
+                    if (again) { again.focus(); setActive(i); }
+                });
+            });
+            bodyEl.querySelectorAll('[data-mk-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const i = parseInt(btn.getAttribute('data-mk-del'), 10);
+                    if (!markers[i]) return;
+                    function remove() {
+                        markers.splice(i, 1);
+                        commitMarkers();
+                        renderBody();
+                        const next = bodyEl.querySelector('[data-mk-del="' + Math.min(i, markers.length - 1) + '"]') || bodyEl.querySelector('[data-mk-add]');
+                        if (next) next.focus();
+                    }
+                    if (String(markers[i].note || '').trim() && typeof window.showConfirmModal === 'function') {
+                        window.showConfirmModal('Remove marker ' + (i + 1) + '?', 'Its note (' + viewLabel(markers[i].view) + ') will be deleted and the markers after it renumbered.', remove, { confirmText: 'Remove', danger: true });
+                    } else {
+                        remove();
+                    }
+                });
+            });
+            const add = bodyEl.querySelector('[data-mk-add]');
+            if (add) add.addEventListener('click', function () {
+                // No position: a list-only marker is never drawn on the figure,
+                // so it can't point the instructor at the wrong spot.
+                markers.push({ view: 'front', x: null, y: null, note: '' });
+                commitMarkers();
+                renderBody();
+                focusNote(markers.length - 1);
+            });
+        }
+        renderBody();
     };
 
     // ---------- HENDRICH II FALL MODEL ----------
-    const HENDRICH_FACTORS = [
-        { id:'confusion',      label:'Confusion / Disorientation / Impulsivity', pts:4 },
-        { id:'depression',     label:'Symptomatic Depression',                   pts:2 },
-        { id:'elimination',    label:'Altered Elimination',                      pts:1 },
-        { id:'dizziness',      label:'Dizziness / Vertigo',                      pts:1 },
-        { id:'male',           label:'Male Gender',                              pts:1 },
-        { id:'antiepileptics', label:'Any Administered Antiepileptics',          pts:2 },
-        { id:'benzos',         label:'Any Administered Benzodiazepines',         pts:1 }
-    ];
-    const GET_UP_GO_OPTS = [
-        { val:0, label:'Able to rise in a single movement — no loss of balance with steps' },
-        { val:1, label:'Pushes up, successful in one attempt' },
-        { val:3, label:'Multiple attempts, but successful' },
-        { val:4, label:'Unable to rise without assistance during test' }
-    ];
+    // Factor checkboxes with a findings column beside each (state.notes[id],
+    // additive — older packets simply have none), then the Get Up & Go Test.
     R.hendrich = function (rootEl, state, onChange) {
         if (!state.factors) state.factors = {};
         if (state.getUpGo == null) state.getUpGo = '';
         function render() {
-            let total = 0;
-            const factorsHtml = HENDRICH_FACTORS.map(function (f) {
+            const notes = (state.notes && typeof state.notes === 'object') ? state.notes : {};
+            const factorsHtml = HENDRICH.FACTORS.map(function (f) {
                 const isOn = !!state.factors[f.id];
-                if (isOn) total += f.pts;
-                return '<label class="cap-hendrich-row' + (isOn ? ' selected' : '') + '">' +
-                    '<input type="checkbox" data-hendrich="' + f.id + '"' + (isOn ? ' checked' : '') + '>' +
-                    '<span class="cap-hendrich-label">' + esc(f.label) + '</span>' +
-                    '<span class="cap-hendrich-pts">+' + f.pts + '</span>' +
-                '</label>';
+                return '<div class="cap-hendrich-item">' +
+                    '<label class="cap-hendrich-row' + (isOn ? ' selected' : '') + '">' +
+                        '<input type="checkbox" data-hendrich="' + f.id + '"' + (isOn ? ' checked' : '') + '>' +
+                        '<span class="cap-hendrich-label">' + esc(f.label) + '</span>' +
+                        '<span class="cap-hendrich-pts">' + f.pts + '</span>' +
+                    '</label>' +
+                    '<textarea class="cap-tf cap-hendrich-note" rows="1" data-hnote="' + f.id + '" placeholder="Findings" aria-label="' + esc('Findings — ' + f.label) + '">' + esc(notes[f.id]) + '</textarea>' +
+                '</div>';
             }).join('');
-            const ugVal = parseInt(state.getUpGo, 10);
-            if (!isNaN(ugVal)) total += ugVal;
-            const ugHtml = GET_UP_GO_OPTS.map(function (o) {
-                const isOn = state.getUpGo == String(o.val);
+            const ugHtml = HENDRICH.GUG.map(function (o) {
+                const isOn = state.getUpGo !== '' && state.getUpGo != null && String(state.getUpGo) === String(o.val);
                 return '<label class="cap-morse-opt' + (isOn ? ' selected' : '') + '">' +
                     '<input type="radio" name="cap-hendrich-ug" value="' + o.val + '" data-ug' + (isOn ? ' checked' : '') + '>' +
-                    '<span>' + esc(o.label) + '</span>' +
-                    '<span class="cap-morse-pts">+' + o.val + '</span>' +
+                    '<span>' + esc(o.label) +
+                        (o.qualifier ? '<small class="cap-ug-qual">' + esc(o.qualifier) + '</small>' : '') +
+                        (o.note ? '<small class="cap-ug-qual">' + esc(o.note) + '</small>' : '') +
+                    '</span>' +
+                    '<span class="cap-morse-pts">' + o.val + '</span>' +
                 '</label>';
             }).join('');
-            const risk = total >= 5 ? { label: 'High Risk for Falling (≥5)', cls: 'high' } : { label: 'Lower Risk (<5)', cls: 'low' };
+            const sc = CAP.scoreHendrich(state);
             rootEl.innerHTML = panelHint(
-                'Hendrich II Fall Risk Model',
-                'Check applicable risk factors and pick a Get-Up-and-Go score. Total ≥5 = High Risk for falling.',
+                HENDRICH.TITLE,
+                'Check each risk factor present and note the findings beside it, then score the Get Up &amp; Go Test. ' + esc(HENDRICH.HIGH) + '.',
+                '<div class="cap-hendrich-head" aria-hidden="true"><span>Risk factor · points</span><span>Findings</span></div>' +
                 '<div class="cap-hendrich-list">' + factorsHtml + '</div>' +
-                '<h4 style="margin:14px 0 6px;font-size:13px;color:var(--clx-text-primary);">Get-Up-and-Go Test</h4>' +
-                '<div class="cap-morse-opts">' + ugHtml + '</div>' +
-                scoreBlock(total, 'Total Hendrich II Score', risk.label, risk.cls) +
-                '<p class="cap-fineprint">Score interpretation: 0–4 lower risk · ≥5 high risk for falling.</p>'
+                '<h4 style="margin:14px 0 6px;font-size:13px;color:var(--clx-text-primary);">' + esc(HENDRICH.GUG_TITLE) + '</h4>' +
+                '<div class="cap-morse-opts" role="radiogroup" aria-label="' + esc(HENDRICH.GUG_TITLE) + '">' + ugHtml + '</div>' +
+                scoreBlock(sc.scored ? sc.total : '—', 'Total Score', sc.label, sc.cls) +
+                '<p class="cap-fineprint">' + esc(HENDRICH.HIGH) + '</p>'
             );
             rootEl.querySelectorAll('input[type="checkbox"][data-hendrich]').forEach(function (cb) {
                 cb.addEventListener('change', function () {
-                    state.factors[cb.dataset.hendrich] = cb.checked;
+                    const id = cb.dataset.hendrich;
+                    state.factors[id] = cb.checked;
                     if (typeof onChange === 'function') onChange();
                     render();
+                    refocus(rootEl, 'input[type="checkbox"][data-hendrich]', { 'data-hendrich': id });
                 });
             });
             rootEl.querySelectorAll('input[type="radio"][data-ug]').forEach(function (r) {
                 r.addEventListener('change', function () {
-                    state.getUpGo = r.value;
+                    const val = r.value;
+                    state.getUpGo = val;
                     if (typeof onChange === 'function') onChange();
                     render();
+                    refocus(rootEl, 'input[type="radio"][data-ug]', { value: val });
+                });
+            });
+            rootEl.querySelectorAll('textarea[data-hnote]').forEach(function (ta) {
+                autoGrow(ta);
+                ta.addEventListener('input', function () {
+                    if (!state.notes || typeof state.notes !== 'object') state.notes = {};
+                    state.notes[ta.getAttribute('data-hnote')] = ta.value;
+                    autoGrow(ta);
+                    if (typeof onChange === 'function') onChange();
                 });
             });
         }
@@ -1088,72 +1644,321 @@
         render();
     };
 
-    // ---------- CONCEPT MAP ----------
+    // ---------- NURSING CONCEPT MAP (Word form, page 1) ----------
+    // The form's boxes (FORM.CONCEPT_MAP) laid out as the map on wide screens
+    // (each box placed on a 3 x 3 grid, Diagnosis / PMH / HPI in the centre,
+    // connectors drawn in an SVG overlay), stacked row by row on phones.
+    // Below it, the optional "Care plan detail" block: the pre-6/24 problem
+    // list (state.problems), unchanged.
+    // Old packets are read through CAP.readConceptMap(): nothing is written
+    // until the student edits; the first edit adopts the migrated values in
+    // the new shape (state._schema = 6). state.problems / state.center are
+    // never deleted — center shows as "Previous notes" in the Diagnosis box.
+    const CONCEPT_MAP = FORM.CONCEPT_MAP || { BOXES: [], CONNECT: [], TEXT_KEYS: [], PROBLEM_FIELDS: [] };
     R.conceptMap = function (rootEl, state, onChange) {
-        if (!Array.isArray(state.problems)) state.problems = [emptyProblem()];
+        const CM = CONCEPT_MAP;
+        let view = null;
+        let m = null;            // { dx: [], problems: [] } — the lists the inputs edit
+        let detailOpen = null;   // remembered across re-renders once toggled
+        let ro = null;
+        let mapEl = null;
+        function changed() { if (typeof onChange === 'function') onChange(); }
         function emptyProblem() {
             return { name:'', data:'', dx:'', goals:'', interventions:'', evaluation:'' };
         }
-        function render() {
-            const problemsHtml = state.problems.map(function (p, i) {
-                return '<div class="cap-cm-problem">' +
-                    '<div class="cap-cm-head">' +
-                        '<input type="text" data-cm="' + i + '" data-col="name" value="' + esc(p.name) + '" placeholder="Problem name (e.g., Impaired Skin Integrity)" class="cap-tf cap-cm-name">' +
-                        '<button class="cap-row-del" data-del="' + i + '" title="Remove problem">&times;</button>' +
-                    '</div>' +
-                    '<div class="cap-cm-grid">' +
-                        '<div class="cap-field"><label class="cap-label">Supporting Data (assessment cues)</label><textarea data-cm="' + i + '" data-col="data" rows="2" class="cap-tf">' + esc(p.data) + '</textarea></div>' +
-                        '<div class="cap-field"><label class="cap-label">NANDA Diagnosis</label><textarea data-cm="' + i + '" data-col="dx" rows="2" class="cap-tf">' + esc(p.dx) + '</textarea></div>' +
-                        '<div class="cap-field"><label class="cap-label">Goals / Outcomes</label><textarea data-cm="' + i + '" data-col="goals" rows="2" class="cap-tf">' + esc(p.goals) + '</textarea></div>' +
-                        '<div class="cap-field"><label class="cap-label">Interventions &amp; Rationales</label><textarea data-cm="' + i + '" data-col="interventions" rows="2" class="cap-tf">' + esc(p.interventions) + '</textarea></div>' +
-                        '<div class="cap-field"><label class="cap-label">Evaluation Criteria</label><textarea data-cm="' + i + '" data-col="evaluation" rows="2" class="cap-tf">' + esc(p.evaluation) + '</textarea></div>' +
-                    '</div>' +
-                '</div>';
-            }).join('');
-            rootEl.innerHTML = panelHint(
-                'Concept Map',
-                'Place the resident at the center; map their key problems. For each: supporting data → NANDA dx → goals → interventions + rationales → evaluation criteria. (For a hand-drawn map, use PPT/Canva/Word and submit alongside the packet.)',
-                '<div class="cap-cm-center">' +
-                    '<label class="cap-label">Resident summary (center node)</label>' +
-                    '<textarea data-cap-field="center" rows="2" class="cap-tf" placeholder="e.g., 78 y/o male, post-CVA with L-sided hemiplegia, T2DM, Stage II sacral pressure injury. Resides in LTC."></textarea>' +
-                '</div>' +
-                problemsHtml +
-                '<button class="cap-add-row" id="cap-cm-add">+ Add problem</button>'
-            );
-            // bind center
-            const center = rootEl.querySelector('[data-cap-field="center"]');
-            if (center) {
-                center.value = state.center || '';
-                center.addEventListener('input', function () {
-                    state.center = center.value;
-                    if (typeof onChange === 'function') onChange();
-                });
+        function strv(v) { return v == null ? '' : String(v); }
+        // Another module's state slice (Patient Info, Medications), when the
+        // editor provides it
+        function other(id) {
+            const s = typeof CTX.getState === 'function' ? CTX.getState(id) : null;
+            return s && typeof s === 'object' ? s : {};
+        }
+        // First edit of an old-shape slice: write the migrated view in the
+        // new shape. Old keys are left as they are.
+        function adopt() {
+            if (state._schema >= 6) return;
+            CM.TEXT_KEYS.forEach(function (k) {
+                if (state[k] == null) state[k] = view.fields[k];
+            });
+            state.nursingDx = m.dx;
+            state.problems = m.problems;
+            state._schema = 6;
+        }
+        function problemHasData(p) {
+            return ['name'].concat(CM.PROBLEM_FIELDS.map(function (f) { return f.key; }))
+                .some(function (k) { return strv(p[k]).trim() !== ''; });
+        }
+        function medNames() {
+            const rows = other('meds').rows;
+            const list = Array.isArray(rows) ? rows : (rows && typeof rows === 'object'
+                ? Object.keys(rows).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return rows[k]; }) : []);
+            return list.map(function (r) {
+                return r && typeof r === 'object' ? strv(r.order).split('\n')[0].trim() : '';
+            }).filter(function (t) { return t !== ''; });
+        }
+
+        function fieldHtml(f) {
+            const id = 'capCm-' + f.key;
+            if (f.multi) {
+                return '<div class="cap-cm-lbl" id="' + id + '-lbl">' + esc(f.label) + '</div>' +
+                    '<ol class="cap-cm-list" aria-labelledby="' + id + '-lbl">' +
+                    m.dx.map(function (t, i) {
+                        return '<li class="cap-cm-item">' +
+                            '<span class="cap-cm-num" aria-hidden="true">' + (i + 1) + '.</span>' +
+                            '<textarea data-cmdx="' + i + '" rows="2" class="cap-tf cap-cm-tf" aria-label="Nursing diagnosis ' + (i + 1) + '">' + esc(t) + '</textarea>' +
+                            '<button type="button" class="cap-row-del" data-cmdx-del="' + i + '" title="Remove nursing diagnosis" aria-label="Remove nursing diagnosis ' + (i + 1) + '">&times;</button>' +
+                        '</li>';
+                    }).join('') +
+                    '</ol>' +
+                    '<button type="button" class="cap-add-row cap-cm-add" data-cmdx-add="1">+ Add nursing diagnosis</button>';
             }
-            // problem rows
-            rootEl.querySelectorAll('[data-cm]').forEach(function (el) {
-                const i = parseInt(el.dataset.cm, 10);
-                const col = el.dataset.col;
-                el.addEventListener('input', function () {
-                    if (!state.problems[i]) return;
-                    state.problems[i][col] = el.value;
-                    if (typeof onChange === 'function') onChange();
+            let extra = '';
+            const cur = view.fields[f.key] || '';
+            if (f.key === 'diagnosis' && !cur.trim()) {
+                const dx = strv(other('info').res_dx).trim();
+                if (dx) {
+                    extra = '<button type="button" class="cap-btn-sm cap-cm-copy" data-cm-copy="diagnosis">' +
+                        '<span>Use Primary Diagnosis from Patient Info: <strong>' + esc(dx.length > 60 ? dx.slice(0, 57) + '…' : dx) + '</strong></span></button>';
+                }
+            }
+            if (f.key === 'medications' && !cur.trim()) {
+                const n = medNames().length;
+                if (n) {
+                    extra = '<button type="button" class="cap-btn-sm cap-cm-copy" data-cm-copy="medications">' +
+                        'Copy names from Medications (' + n + ')</button>';
+                }
+            }
+            return '<label class="cap-cm-lbl" for="' + id + '">' + esc(f.label) + '</label>' +
+                '<textarea id="' + id + '" data-cmf="' + esc(f.key) + '" rows="3" class="cap-tf cap-cm-tf">' + esc(cur) + '</textarea>' +
+                extra;
+        }
+
+        function boxHtml(b) {
+            let inner = b.fields.map(fieldHtml).join('');
+            if (b.center && view.center.trim()) {
+                inner += '<div class="cap-cm-prev">' +
+                    '<label class="cap-cm-lbl" for="capCm-center">' + esc(CM.PREVIOUS_CENTER) + '</label>' +
+                    '<textarea id="capCm-center" data-cmc="1" rows="2" class="cap-tf cap-cm-tf">' + esc(view.center) + '</textarea>' +
+                '</div>';
+            }
+            return '<div class="cap-cm-box' + (b.center ? ' center' : '') + '" data-box="' + esc(b.id) + '"' +
+                ' style="--cm-row:' + (b.row | 0) + ';--cm-col:' + (b.col | 0) + ';">' + inner + '</div>';
+        }
+
+        function problemHtml(p, i) {
+            return '<div class="cap-cm-problem">' +
+                '<div class="cap-cm-head">' +
+                    '<input type="text" data-cm="' + i + '" data-col="name" value="' + esc(p.name) + '" placeholder="Problem name (e.g., Impaired Skin Integrity)" class="cap-tf cap-cm-name" aria-label="Problem ' + (i + 1) + ' name">' +
+                    '<button type="button" class="cap-row-del" data-cm-del="' + i + '" title="Remove problem" aria-label="Remove problem ' + (i + 1) + '">&times;</button>' +
+                '</div>' +
+                '<div class="cap-cm-grid">' +
+                    CM.PROBLEM_FIELDS.map(function (f) {
+                        const id = 'capCmP' + i + '-' + f.key;
+                        return '<div class="cap-field"><label class="cap-label" for="' + id + '">' + esc(f.label) + '</label>' +
+                            '<textarea id="' + id + '" data-cm="' + i + '" data-col="' + esc(f.key) + '" rows="2" class="cap-tf">' + esc(p[f.key]) + '</textarea></div>';
+                    }).join('') +
+                '</div>' +
+            '</div>';
+        }
+
+        // Connectors between the boxes (wide layout only). Each line runs
+        // centre to centre, clipped at both boxes' borders.
+        function drawLinks() {
+            const map = mapEl;
+            const svg = map && map.querySelector('.cap-cm-links');
+            if (!map || !svg || !map.isConnected) { if (ro) ro.disconnect(); return; }
+            if (window.getComputedStyle(svg).display === 'none') return;
+            const mr = map.getBoundingClientRect();
+            const boxes = {};
+            map.querySelectorAll('.cap-cm-box[data-box]').forEach(function (el) {
+                const r = el.getBoundingClientRect();
+                boxes[el.getAttribute('data-box')] = { cx: r.left - mr.left + r.width / 2, cy: r.top - mr.top + r.height / 2, hw: r.width / 2, hh: r.height / 2 };
+            });
+            function edge(b, dx, dy) {
+                const t = Math.min(dx ? b.hw / Math.abs(dx) : Infinity, dy ? b.hh / Math.abs(dy) : Infinity);
+                return [b.cx + dx * t, b.cy + dy * t];
+            }
+            let lines = '';
+            (CM.CONNECT || []).forEach(function (c) {
+                const a = boxes[c[0]], b = boxes[c[1]];
+                if (!a || !b) return;
+                const dx = b.cx - a.cx, dy = b.cy - a.cy;
+                if (!dx && !dy) return;
+                const p = edge(a, dx, dy), q = edge(b, -dx, -dy);
+                lines += '<line x1="' + p[0].toFixed(1) + '" y1="' + p[1].toFixed(1) + '" x2="' + q[0].toFixed(1) + '" y2="' + q[1].toFixed(1) + '"' +
+                    (c[2] ? ' marker-end="url(#capCmArrow)"' : '') + '></line>';
+            });
+            svg.setAttribute('viewBox', '0 0 ' + Math.max(1, mr.width).toFixed(0) + ' ' + Math.max(1, mr.height).toFixed(0));
+            svg.innerHTML = '<defs><marker id="capCmArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+                '<path d="M0,0 L10,5 L0,10 z" class="cap-cm-arrowhead"></path></marker></defs>' + lines;
+        }
+
+        function render() {
+            if (ro) { ro.disconnect(); ro = null; }
+            view = CAP.readConceptMap ? CAP.readConceptMap(state)
+                : { fields: {}, nursingDx: [], problems: [], center: '', isNew: true, migrated: false };
+            if (view.isNew) {
+                // Normalised in memory (RTDB may hand lists back as objects)
+                state.nursingDx = view.nursingDx.slice();
+                state.problems = view.problems;
+                m = { dx: state.nursingDx, problems: state.problems };
+            } else {
+                m = { dx: view.nursingDx.slice(), problems: view.problems };
+            }
+            if (!m.dx.length) m.dx.push('');
+            const anyDetail = m.problems.some(problemHasData);
+            const open = detailOpen != null ? detailOpen : anyDetail;
+
+            rootEl.innerHTML = panelHint(
+                CM.TITLE || 'Nursing Concept Map',
+                'Put the ' + who() + '\'s primary diagnosis at the center and fill in each box of the program form. ' +
+                'The map prints on its own landscape page; anything too long for a box continues on the next page.',
+                (view.migrated
+                    ? '<p class="cap-fineprint cap-ncsbn-migrated">This concept map now follows the program\'s form. ' +
+                      'Your earlier nursing diagnoses and interventions were copied into <strong>Nursing Diagnoses</strong> and <strong>Nursing Interventions</strong>; ' +
+                      'every problem you wrote is still below under <strong>Care plan detail</strong>.</p>'
+                    : '') +
+                '<div class="cap-cm-map">' +
+                    '<svg class="cap-cm-links" aria-hidden="true" focusable="false"></svg>' +
+                    // Row by row, as the wide map (and the printed form)
+                    // reads, so Tab / screen-reader order follows the layout
+                    CM.BOXES.slice().sort(function (a, b) { return (a.row - b.row) || (a.col - b.col); }).map(boxHtml).join('') +
+                '</div>' +
+                '<details class="cap-cm-detail"' + (open ? ' open' : '') + '>' +
+                    '<summary>' + esc(CM.DETAIL_TITLE || 'Care plan detail') + ' <span class="cap-cm-opt">(optional)</span></summary>' +
+                    '<div class="cap-cm-detail-body">' +
+                        '<p class="cap-hint">For each problem: supporting data → NANDA diagnosis → goals → interventions and rationales → evaluation criteria. Prints after the map.</p>' +
+                        m.problems.map(problemHtml).join('') +
+                        '<button type="button" class="cap-add-row" data-cm-add="1">+ Add problem</button>' +
+                    '</div>' +
+                '</details>'
+            );
+
+            // Map text boxes
+            rootEl.querySelectorAll('textarea[data-cmf]').forEach(function (ta) {
+                const key = ta.getAttribute('data-cmf');
+                autoGrow(ta);
+                ta.addEventListener('input', function () {
+                    adopt();
+                    state[key] = ta.value;
+                    autoGrow(ta);
+                    changed();
                 });
             });
-            rootEl.querySelectorAll('[data-del]').forEach(function (btn) {
+            // Nursing Diagnoses entries
+            rootEl.querySelectorAll('textarea[data-cmdx]').forEach(function (ta) {
+                const i = parseInt(ta.getAttribute('data-cmdx'), 10);
+                autoGrow(ta);
+                ta.addEventListener('input', function () {
+                    adopt();
+                    m.dx[i] = ta.value;
+                    autoGrow(ta);
+                    changed();
+                });
+            });
+            rootEl.querySelectorAll('[data-cmdx-del]').forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    const i = parseInt(btn.dataset.del, 10);
-                    state.problems.splice(i, 1);
-                    if (!state.problems.length) state.problems.push(emptyProblem());
-                    if (typeof onChange === 'function') onChange();
+                    const i = parseInt(btn.getAttribute('data-cmdx-del'), 10);
+                    adopt();
+                    m.dx.splice(i, 1);
+                    changed();
                     render();
                 });
             });
-            const addBtn = rootEl.querySelector('#cap-cm-add');
+            const dxAdd = rootEl.querySelector('[data-cmdx-add]');
+            if (dxAdd) dxAdd.addEventListener('click', function () {
+                adopt();
+                m.dx.push('');
+                changed();
+                render();
+                const last = rootEl.querySelector('textarea[data-cmdx="' + (m.dx.length - 1) + '"]');
+                if (last) last.focus();
+            });
+            // Previous notes (old center summary), bound to its old key
+            const prev = rootEl.querySelector('textarea[data-cmc]');
+            if (prev) {
+                autoGrow(prev);
+                prev.addEventListener('input', function () {
+                    adopt();
+                    state.center = prev.value;
+                    autoGrow(prev);
+                    changed();
+                });
+            }
+            // Copy from Patient Info / Medications
+            rootEl.querySelectorAll('[data-cm-copy]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const key = btn.getAttribute('data-cm-copy');
+                    const text = key === 'diagnosis' ? strv(other('info').res_dx).trim() : medNames().join('\n');
+                    if (!text) return;
+                    adopt();
+                    state[key] = text;
+                    changed();
+                    render();
+                });
+            });
+            // Care plan detail
+            const det = rootEl.querySelector('.cap-cm-detail');
+            if (det) det.addEventListener('toggle', function () { detailOpen = det.open; });
+            rootEl.querySelectorAll('[data-cm][data-col]').forEach(function (el) {
+                const i = parseInt(el.getAttribute('data-cm'), 10);
+                const col = el.getAttribute('data-col');
+                el.addEventListener('input', function () {
+                    if (!m.problems[i]) return;
+                    adopt();
+                    m.problems[i][col] = el.value;
+                    changed();
+                });
+            });
+            rootEl.querySelectorAll('[data-cm-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const i = parseInt(btn.getAttribute('data-cm-del'), 10);
+                    adopt();
+                    m.problems.splice(i, 1);
+                    changed();
+                    render();
+                });
+            });
+            const addBtn = rootEl.querySelector('[data-cm-add]');
             if (addBtn) addBtn.addEventListener('click', function () {
-                state.problems.push(emptyProblem());
-                if (typeof onChange === 'function') onChange();
+                adopt();
+                m.problems.push(emptyProblem());
+                detailOpen = true;
+                changed();
                 render();
             });
+
+            // Connectors: redraw whenever a box changes size
+            mapEl = rootEl.querySelector('.cap-cm-map');
+            drawLinks();
+            if (typeof window.ResizeObserver === 'function') {
+                ro = new window.ResizeObserver(function (entries) {
+                    // A box that changed width (breakpoint, rotation, sidebar)
+                    // re-wraps its text: size its text boxes again, next frame
+                    // so the observer can't loop.
+                    let rewrap = false;
+                    entries.forEach(function (en) {
+                        const t = en.target;
+                        if (!t.classList || !t.classList.contains('cap-cm-box')) return;
+                        const w = String(Math.round(en.contentRect.width));
+                        const was = t.getAttribute('data-cm-w');
+                        if (was != null && was !== w) rewrap = true;
+                        t.setAttribute('data-cm-w', w);
+                    });
+                    drawLinks();
+                    if (rewrap && typeof window.requestAnimationFrame === 'function') {
+                        window.requestAnimationFrame(function () {
+                            if (!mapEl || !mapEl.isConnected) return;
+                            mapEl.querySelectorAll('textarea.cap-cm-tf').forEach(autoGrow);
+                            drawLinks();
+                        });
+                    }
+                });
+                if (mapEl) {
+                    ro.observe(mapEl);
+                    mapEl.querySelectorAll('.cap-cm-box').forEach(function (el) { ro.observe(el); });
+                }
+            }
         }
         render();
     };
@@ -1224,7 +2029,7 @@
             '<details class="cap-cs-section">' +
                 '<summary><span class="cap-cs-num">7</span>Patient and Family Education</summary>' +
                 '<div class="cap-cs-body">' +
-                    '<p class="cap-hint">Teaching points for the resident and family.</p>' +
+                    '<p class="cap-hint">Teaching points for the ' + who() + ' and family.</p>' +
                     field('Pressure injury prevention / repositioning', 'edu_skin', { rows: 2 }) +
                     field('Nutrition and hydration', 'edu_nutrition', { rows: 2 }) +
                     field('Emotional health and social engagement', 'edu_psych', { rows: 2 }) +
@@ -1297,7 +2102,7 @@
         renderScored04(rootEl, state, onChange, {
             id: 'phq9',
             title: 'PHQ-9 — Depression Screening',
-            hint: 'Over the last 2 weeks, how often has the resident been bothered by the following? 0–4 None · 5–9 Mild · 10–14 Moderate · 15–19 Mod-Severe · 20+ Severe.',
+            hint: 'Over the last 2 weeks, how often has the ' + who() + ' been bothered by the following? 0–4 None · 5–9 Mild · 10–14 Moderate · 15–19 Mod-Severe · 20+ Severe.',
             questions: PHQ9_QUESTIONS,
             optsList: PHQ9_OPTS,
             severityFn: phq9Severity,
@@ -1309,7 +2114,7 @@
         renderScored04(rootEl, state, onChange, {
             id: 'gad7',
             title: 'GAD-7 — Anxiety Screening',
-            hint: 'Over the last 2 weeks, how often has the resident been bothered by the following? 0–4 Minimal · 5–9 Mild · 10–14 Moderate · 15+ Severe.',
+            hint: 'Over the last 2 weeks, how often has the ' + who() + ' been bothered by the following? 0–4 Minimal · 5–9 Mild · 10–14 Moderate · 15+ Severe.',
             questions: GAD7_QUESTIONS,
             optsList: PHQ9_OPTS,  // same 0-3 scale
             severityFn: gad7Severity
@@ -1339,7 +2144,7 @@
             const tri = cssrsTriage(state.answers);
             rootEl.innerHTML = panelHint(
                 'C-SSRS — Suicide Severity Rating',
-                'Six yes/no questions asked of the resident. Use the most-severe positive answer to drive the triage level. Document immediately if any escalating answer is positive.',
+                'Six yes/no questions asked of the ' + who() + '. Use the most-severe positive answer to drive the triage level. Document immediately if any escalating answer is positive.',
                 rowsHtml +
                 '<div class="cap-score-block ' + tri.cls + '" style="margin-top:14px;">' +
                     '<span class="cap-score-num">⚠</span>' +
@@ -1455,6 +2260,156 @@
             bindFields(rootEl, state, onChange);
         }
         render();
+    };
+
+    // ---------- LAB VALUES (TABLE 3) ----------
+    // Fixed rows in Word order (FORM.LAB_GROUPS) stored as
+    // state.rows[labId] = { normal, date, result, interp }; rows the student
+    // adds under Other are state.extra[] = { lab, normal, date, result, interp }.
+    // Notes typed into the earlier placeholder (state._sandboxText) stay
+    // visible and editable as "Previous notes".
+    // Fit a textarea to its text (border included, as grow() does in the
+    // H2T editor). Every box sized this way is sized again when the window
+    // width changes: rotation or a breakpoint re-wraps the text, and these
+    // boxes are overflow:hidden.
+    function autoGrow(el) {
+        if (!el || el.tagName !== 'TEXTAREA') return;
+        el.setAttribute('data-cap-grow', '');
+        bindRegrow();
+        el.style.height = 'auto';
+        const border = el.offsetHeight - el.clientHeight;
+        if (el.scrollHeight) el.style.height = (el.scrollHeight + Math.max(0, border)) + 'px';
+    }
+    let regrowBound = false;
+    function bindRegrow() {
+        if (regrowBound || typeof window.addEventListener !== 'function') return;
+        regrowBound = true;
+        let lastW = window.innerWidth, pending = false;
+        function regrow() {
+            pending = false;
+            document.querySelectorAll('textarea[data-cap-grow]').forEach(autoGrow);
+        }
+        window.addEventListener('resize', function () {
+            // Height-only resizes (mobile URL bar) re-wrap nothing
+            if (window.innerWidth === lastW || pending) return;
+            lastW = window.innerWidth;
+            pending = true;
+            if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(regrow);
+            else setTimeout(regrow, 50);
+        });
+    }
+    R.labs = function (rootEl, state, onChange) {
+        function emptyExtra() { return { lab:'', normal:'', date:'', result:'', interp:'' }; }
+        // RTDB can hand an array back as an integer-keyed object (or with
+        // null gaps); normalise without dropping anything.
+        if (state.extra && !Array.isArray(state.extra) && typeof state.extra === 'object') {
+            const e = state.extra;
+            state.extra = Object.keys(e).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return e[k]; });
+        }
+        if (Array.isArray(state.extra)) state.extra = state.extra.filter(function (r) { return r && typeof r === 'object'; });
+        function cellsHtml(attr, labLabel, vals) {
+            return LAB_COLUMNS.map(function (c) {
+                return '<td data-label="' + esc(c.title) + '"><textarea rows="1" class="cap-tf" ' + attr + ' data-col="' + esc(c.key) + '" aria-label="' +
+                    esc((labLabel || 'Added lab') + ' — ' + c.title) + '">' + esc(vals[c.key]) + '</textarea></td>';
+            }).join('');
+        }
+        function render() {
+            const rows = (state.rows && typeof state.rows === 'object') ? state.rows : {};
+            const extra = Array.isArray(state.extra) ? state.extra : [];
+            let body = '';
+            LAB_GROUPS.forEach(function (g, gi) {
+                body += '<tr class="cap-labs-group"><th colspan="' + (LAB_COLUMNS.length + 2) + '" scope="colgroup">' + esc(g.group) + '</th></tr>';
+                g.rows.forEach(function (r) {
+                    body += '<tr><th scope="row" class="cap-labs-name">' + esc(r.label) + '</th>' +
+                        cellsHtml('data-lab="' + esc(r.id) + '"', r.label, rows[r.id] || {}) +
+                        '<td class="cap-labs-act"></td></tr>';
+                });
+                if (gi === LAB_GROUPS.length - 1) {
+                    extra.forEach(function (x, i) {
+                        body += '<tr class="cap-labs-extra"><th scope="row" class="cap-labs-name">' +
+                            '<textarea rows="1" class="cap-tf" data-extra="' + i + '" data-col="lab" placeholder="Lab name" aria-label="Added lab ' + (i + 1) + ' — Lab">' + esc(x.lab) + '</textarea></th>' +
+                            cellsHtml('data-extra="' + i + '"', x.lab || ('Added lab ' + (i + 1)), x) +
+                            '<td class="cap-labs-act"><button type="button" class="cap-row-del" data-del-extra="' + i + '" title="Delete row" aria-label="Delete added lab ' + (i + 1) + '">&times;</button></td></tr>';
+                    });
+                    body += '<tr class="cap-labs-addrow"><td colspan="' + (LAB_COLUMNS.length + 2) + '"><button type="button" class="cap-add-row" id="capLabsAdd">+ Add lab under Other</button></td></tr>';
+                }
+            });
+            const prev = String(state._sandboxText || '').trim()
+                ? '<div class="cap-field" style="margin-top:14px;"><label class="cap-label" for="capLabsPrev">Previous notes</label>' +
+                  '<textarea id="capLabsPrev" data-cap-field="_sandboxText" rows="4" class="cap-tf"></textarea></div>'
+                : '';
+            rootEl.innerHTML = panelHint(
+                'Lab Values',
+                'Use your facility\'s normal values. Blank rows print as blank lines for your instructor.',
+                '<div class="cap-labs-wrap"><table class="cap-labs-table">' +
+                    '<thead><tr><th scope="col">Lab</th>' +
+                        LAB_COLUMNS.map(function (c) { return '<th scope="col">' + esc(c.title) + '</th>'; }).join('') +
+                        '<th scope="col" class="cap-labs-act"><span class="cap-sr">Actions</span></th></tr></thead>' +
+                    '<tbody>' + body + '</tbody>' +
+                '</table></div>' +
+                prev
+            );
+            bindFields(rootEl, state, onChange);
+            rootEl.querySelectorAll('.cap-labs-table textarea').forEach(function (ta) {
+                autoGrow(ta);
+                ta.addEventListener('input', function () {
+                    const col = ta.getAttribute('data-col');
+                    if (ta.hasAttribute('data-lab')) {
+                        const id = ta.getAttribute('data-lab');
+                        if (!state.rows || typeof state.rows !== 'object') state.rows = {};
+                        if (!state.rows[id] || typeof state.rows[id] !== 'object') state.rows[id] = {};
+                        state.rows[id][col] = ta.value;
+                    } else {
+                        const i = parseInt(ta.getAttribute('data-extra'), 10);
+                        if (!Array.isArray(state.extra) || !state.extra[i]) return;
+                        state.extra[i][col] = ta.value;
+                    }
+                    autoGrow(ta);
+                    if (typeof onChange === 'function') onChange();
+                });
+            });
+            rootEl.querySelectorAll('[data-del-extra]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const i = parseInt(btn.getAttribute('data-del-extra'), 10);
+                    if (!Array.isArray(state.extra)) return;
+                    state.extra.splice(i, 1);
+                    if (typeof onChange === 'function') onChange();
+                    render();
+                });
+            });
+            const add = rootEl.querySelector('#capLabsAdd');
+            if (add) add.addEventListener('click', function () {
+                if (!Array.isArray(state.extra)) state.extra = [];
+                state.extra.push(emptyExtra());
+                if (typeof onChange === 'function') onChange();
+                render();
+                const last = rootEl.querySelector('textarea[data-extra="' + (state.extra.length - 1) + '"][data-col="lab"]');
+                if (last) last.focus();
+            });
+        }
+        render();
+    };
+
+    // ---------- Second instances (catalog `base`) ----------
+    // Looked up at call time so a later rebuild of the base renderer applies
+    // to its Day 2 copy too.
+    (CAP.MODULE_CATALOG || []).forEach(function (m) {
+        if (!m.base || R[m.id]) return;
+        R[m.id] = function (rootEl, state, onChange) {
+            const base = R[m.base];
+            if (typeof base !== 'function') return;
+            return base(rootEl, state, onChange, {
+                moduleId: m.id,
+                title: m.label,
+                day: m.day || 2,
+                hint: 'Second assessment day (Disregard for Five-Week Courses).'
+            });
+        };
+    });
+
+    // Wording context, set by the editor before rendering.
+    R.setContext = function (c) {
+        CTX = Object.assign({ person: 'patient' }, c || {});
     };
 
     window.CAP_RENDERERS = R;

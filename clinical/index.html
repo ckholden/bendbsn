@@ -188,6 +188,13 @@
             cursor: pointer;
         }
         .cap-preset-pill:hover { background: var(--clx-accent, #0f7490); color: #fff; border-color: var(--clx-accent, #0f7490); }
+        .cap-preset-pill.active {
+            border-color: var(--clx-accent, #0f7490);
+            color: var(--clx-accent, #0f7490);
+            background: var(--clx-bg-surface, #fff);
+            box-shadow: inset 0 0 0 1px var(--clx-accent, #0f7490);
+        }
+        .cap-preset-pill.active:hover { color: #fff; background: var(--clx-accent, #0f7490); }
         .cap-module-picker {
             border: 1px solid var(--clx-border, #d1dce8);
             border-radius: 6px;
@@ -383,7 +390,7 @@
 
             <div class="cap-modal-row">
                 <div>
-                    <label for="np_initials">Resident Initials</label>
+                    <label for="np_initials">Patient Initials</label>
                     <input type="text" id="np_initials" maxlength="5">
                 </div>
                 <div>
@@ -684,27 +691,42 @@
             _creatingPacket = false;
             const createBtn = document.getElementById('np_createBtn');
             if (createBtn) createBtn.disabled = false;
-            renderPresetPills();
-            renderModulePicker(['info', 'notes']); // start with just always-on
+            // Default: the program's Clinical Assessment Packet form
+            renderPresetPills(DEFAULT_PRESET);
+            renderModulePicker((MODULE_PRESETS[DEFAULT_PRESET] || ['info', 'notes']).slice());
             document.getElementById('newPacketOverlay').classList.add('visible');
             setTimeout(function () { document.getElementById('np_title').focus(); }, 50);
         }
 
-        function renderPresetPills() {
+        // The preset the student started from. Recorded as meta.templateId
+        // (drives "patient" vs "resident" wording) even if they then adjust
+        // the checkboxes.
+        const DEFAULT_PRESET = 'program-cap';
+        let _selectedPreset = DEFAULT_PRESET;
+        function renderPresetPills(activeId) {
             const pills = document.getElementById('np_presetPills');
             const presets = [
+                { id: 'program-cap',          label: 'Clinical Assessment Packet (program form)' },
                 { id: 'memory-care-default',  label: 'Memory Care' },
                 { id: 'acute-care-default',   label: 'Acute Care' },
                 { id: 'peds-default',         label: 'Pediatrics' },
                 { id: 'mental-health-default', label: 'Mental Health' },
-                { id: 'custom',               label: 'Clear all' }
+                { id: 'custom',               label: 'Basics only' }
             ];
+            _selectedPreset = activeId || null;
             pills.innerHTML = presets.map(function (p) {
-                return '<button type="button" class="cap-preset-pill" data-preset="' + p.id + '">' + p.label + '</button>';
+                const on = p.id === _selectedPreset;
+                return '<button type="button" class="cap-preset-pill' + (on ? ' active' : '') + '" data-preset="' + esc(p.id) + '" aria-pressed="' + on + '">' + esc(p.label) + '</button>';
             }).join('');
             pills.querySelectorAll('[data-preset]').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     const ids = (MODULE_PRESETS[btn.dataset.preset] || ['info', 'notes']).slice();
+                    _selectedPreset = btn.dataset.preset;
+                    pills.querySelectorAll('[data-preset]').forEach(function (b) {
+                        const on = b === btn;
+                        b.classList.toggle('active', on);
+                        b.setAttribute('aria-pressed', String(on));
+                    });
                     renderModulePicker(ids);
                 });
             });
@@ -772,14 +794,18 @@
             const course = document.getElementById('np_course').value.trim();
             // Read enabled modules from the picker checkboxes (always-on are
             // disabled+checked so they're guaranteed in the list).
-            const enabledModules = Array.from(
+            const picked = Array.from(
                 document.querySelectorAll('#np_modulePicker input[type="checkbox"]:checked')
             ).map(function (cb) { return cb.dataset.mod; }).filter(Boolean);
+            // Stored in the Word form's section order (tabs + PDF use it too)
+            const enabledModules = (window.CAP_MODULES && window.CAP_MODULES.orderModules)
+                ? window.CAP_MODULES.orderModules(picked) : picked;
             if (!enabledModules.length) {
                 showToast('Pick at least one module before creating.', 'warning');
                 return;
             }
-            const templateId = null; // user picked modules manually — no preset to record
+            // The preset the student started from (they may have adjusted it)
+            const templateId = _selectedPreset || null;
             // In-flight guard: a double-tap would otherwise push two packets.
             if (_creatingPacket) return;
             _creatingPacket = true;

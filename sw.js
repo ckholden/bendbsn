@@ -1,6 +1,6 @@
 // BendBSN Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v222';
+const CACHE_VERSION = 'v223';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -57,6 +57,7 @@ const STALE_WHILE_REVALIDATE = [
     '/resources/index.html',
     '/clinical/index.html',
     '/clinical/packet/index.html',
+    '/clinical/cap-',             // cap-modules/renderers/pdf.js must stay in step with the packet HTML
     '/apa/index.html',
     '/sbar/index.html',
     '/careplan/index.html',
