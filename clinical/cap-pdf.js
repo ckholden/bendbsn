@@ -200,7 +200,7 @@
                 doc.text(label + ':', x, this.y);
                 const labelW = doc.getTextWidth(label + ':');
                 this.setText(TEXT, 9, 'normal');
-                const lines = doc.splitTextToSize(pdfSafe(value), cw - labelW - 4);
+                const lines = doc.splitTextToSize(pdfSafe(value), cw - (indent || 0) - labelW - 4);
                 doc.text(lines[0] || '', x + labelW + 2, this.y);
                 for (let i = 1; i < lines.length; i++) {
                     this.y += 4;
@@ -386,13 +386,7 @@
             L.doc.text(titleLines[1] + (titleLines.length > 2 ? '...' : ''), L.pw / 2, 29.5, { align: 'center' });
         }
 
-        // Word-form subtitle + which revision of the form this mirrors
-        L.setText(L.TEXT, 10.5, 'italic');
-        L.doc.text('To be turned in as the evidence for your patient concept map.', L.pw / 2, 41, { align: 'center' });
-        L.setText(L.MUTED, 8, 'normal');
-        L.doc.text(pdfSafe('Aligned to ' + FORM.NAME + ' (' + FORM.VERSION + ')'), L.pw / 2, 46, { align: 'center' });
-
-        L.y = 52;
+        L.y = 40;
 
         // Info box — sized to its rows. They are measured first because the
         // filled box has to be drawn before the text (it would cover it after).
@@ -404,13 +398,14 @@
             ['Instructor', info.instructor || ''],
             [PersonCap() + ' Initials', info.res_initials || meta.residentInitials || '']
         ];
+        const COVER_INSET = 4; // keeps the text off the box's left border
         let rowsH = 0;
         coverRows.forEach(function (r) {
             if (!r[1] && r[1] !== 0) return;
             L.setText(L.MUTED, 9, 'bold');
             const lw = L.doc.getTextWidth(pdfSafe(r[0]) + ':');
             L.setText(L.TEXT, 9, 'normal');
-            const n = L.doc.splitTextToSize(pdfSafe(r[1]), L.cw - lw - 4).length || 1;
+            const n = L.doc.splitTextToSize(pdfSafe(r[1]), L.cw - COVER_INSET - lw - 4).length || 1;
             rowsH += 5 + (n - 1) * 4; // same advance as inlineKv
         });
         const boxH = Math.max(30, rowsH + 6);
@@ -420,7 +415,7 @@
         L.doc.roundedRect(L.m, L.y, L.cw, boxH, 2, 2, 'FD');
         const startY = L.y;
         L.y += 6;
-        coverRows.forEach(function (r) { L.inlineKv(r[0], r[1]); });
+        coverRows.forEach(function (r) { L.inlineKv(r[0], r[1], COVER_INSET); });
         L.y = startY + boxH + 4;
     }
 
@@ -1589,11 +1584,6 @@
         const L = makeLayout(doc);
 
         drawCoverPage(L, packet);
-
-        // Sumner attribution (tiny footer on cover page)
-        L.setText(L.MUTED, 7.5, 'italic');
-        const attrib = 'Framework adapted from Sumner College NUR curriculum materials.';
-        doc.text(attrib, L.pw / 2, L.ph - 13, { align: 'center' }); // above the 'Page 1' footer (ph - 8)
 
         // Walk enabled modules in the Word form's order (not the order they
         // were switched on)

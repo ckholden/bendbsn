@@ -204,7 +204,9 @@
         if (!meta.templateId && !((Number(meta.schemaVersion) || 0) >= 3)) {
             const en = Array.isArray(meta.enabledModules) ? meta.enabledModules
                 : (meta.enabledModules && typeof meta.enabledModules === 'object' ? Object.keys(meta.enabledModules).map(function (k) { return meta.enabledModules[k]; }) : []);
-            if (en.indexOf('behavior') !== -1 || en.indexOf('minicog') !== -1) return 'resident';
+            // Behavior / Mini-Cog suggest a memory-care packet, but an acute-care
+            // packet can use them too; a Head-to-Toe means an acute-care patient.
+            if ((en.indexOf('behavior') !== -1 || en.indexOf('minicog') !== -1) && en.indexOf('headToToe') === -1) return 'resident';
         }
         return 'patient';
     }
