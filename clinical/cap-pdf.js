@@ -708,6 +708,29 @@
             L.h3('Teach');  L.fieldBlock('Intervention', s.lt_teach_intervention);  L.fieldBlock('Rationale', s.lt_teach_rationale);
         }
         L.fieldBlock('Summary of Care', s.summary);
+        // Schema 7 (fieldBlock skips it when empty, so older packets print as before)
+        L.fieldBlock('Discharge Plan', s.discharge);
+    };
+
+    // ---------- CONCEPT MAP ESSAY (FORM.ESSAY) ----------
+    // Plain packet style: one heading per template section (with the
+    // diagnosis name when given), then each part the student wrote. Empty
+    // parts print nothing; an essay with nothing written gets the generic
+    // "(left blank)" stub from generate().
+    R_PDF.essay = function (L, s) {
+        const E = FORM.ESSAY || { SECTIONS: [] };
+        function txt(k) { return s[k] == null ? '' : String(s[k]); }
+        L.h1('Concept Map Essay');
+        E.SECTIONS.forEach(function (sec, i) {
+            const name = sec.nameKey ? txt(sec.nameKey).replace(/\s+/g, ' ').trim() : '';
+            if (i) L.spacer(2);
+            L.h2(sec.title + (name ? ': ' + name : ''));
+            sec.fields.forEach(function (f) {
+                if (!txt(f.key).trim()) return;
+                L.h3(f.head);
+                L.para(txt(f.key));
+            });
+        });
     };
 
     R_PDF.sbar = function (L, s) {
@@ -1484,7 +1507,13 @@
     // count either, nor does the `_schema` shape marker.
     // Nested shapes (Braden/Morse cols → column → choices) are searched all the
     // way down, so an empty column object doesn't count as data.
+    // The shared copy lives in cap-modules.js (CAP.moduleHasData); this one,
+    // identical, is the fallback when that file is an older cached version.
     function moduleHasData(modState) {
+        if (CAP && typeof CAP.moduleHasData === 'function') return CAP.moduleHasData(modState);
+        return localModuleHasData(modState);
+    }
+    function localModuleHasData(modState) {
         function filled(y) { return y != null && y !== false && String(y).trim() !== ''; }
         function deep(y) {
             if (y && typeof y === 'object') return Object.keys(y).some(function (k) { return deep(y[k]); });

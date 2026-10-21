@@ -1177,10 +1177,22 @@
                 intervention('Teach',  'lt_teach')) +
             box('Summary of Care',
                 'Current interventions/treatments moving ' + who() + ' toward discharge, focused on primary dx.',
-                field('', 'summary', { rows: 4 }))
+                field('', 'summary', { rows: 4 })) +
+            // Schema 7 — the essay template's last care-plan box (its prompt,
+            // without the brackets, worded for this packet's person)
+            box('Discharge Plan',
+                esc(cpPrompt('discharge', 'Other problems identified that needs other elements of the team, further evaluation, or treatment to get patient home.')),
+                field('', 'discharge', { rows: 3 }))
         );
         bindFields(rootEl, state, onChange);
     };
+    // A care-plan prompt from the essay template (FORM.ESSAY.CARE_PLAN), outer
+    // brackets dropped and "patient" swapped for who().
+    function cpPrompt(key, fallback) {
+        const cp = FORM.ESSAY && FORM.ESSAY.CARE_PLAN && FORM.ESSAY.CARE_PLAN[key];
+        const t = String((cp && cp[1]) || fallback || '').trim().replace(/^\((.*)\)$/, '$1');
+        return t.replace(/\bpatient\b/g, who());
+    }
 
     // ---------- HEAD-TO-TOE ASSESSMENT ----------
     // The Word form's regions and items (FORM.H2T in cap-modules.js) in its
@@ -1960,6 +1972,232 @@
                 }
             }
         }
+        render();
+    };
+
+    // ---------- CONCEPT MAP ESSAY (instructor's essay template) ----------
+    // One panel per template section (FORM.ESSAY.SECTIONS) with its rubric
+    // points; each part shows the template's prompt as its hint and a live
+    // word count (updated in place, so typing never re-renders). Stored flat
+    // in the module's slice under FORM.ESSAY.KEYS.
+    // "Start from my concept map" copies the box map's text (read through
+    // CAP.readConceptMap) into EMPTY parts only (FORM.ESSAY.FROM_MAP), with
+    // Undo. Nothing the student typed is ever replaced, and nothing is
+    // written for them.
+    const ESSAY = FORM.ESSAY || { SECTIONS: [], FROM_MAP: [], KEYS: [] };
+    R.essay = function (rootEl, state, onChange) {
+        let essayEl = null;
+        function changed() { if (typeof onChange === 'function') onChange(); }
+        function strv(v) { return v == null ? '' : String(v); }
+        function other(id) {
+            const s = typeof CTX.getState === 'function' ? CTX.getState(id) : null;
+            return s && typeof s === 'object' ? s : {};
+        }
+        const countWords = CAP.countWords || function (s) {
+            return strv(s).split(/\s+/).filter(function (t) { return /[A-Za-z0-9]/.test(t); }).length;
+        };
+        function wordsLabel(n) { return n + (n === 1 ? ' word' : ' words'); }
+        const nameKeys = ESSAY.SECTIONS.map(function (sec) { return sec.nameKey; }).filter(Boolean);
+        // The essay body (the parts, not the diagnosis names)
+        function totalWords() {
+            let n = 0;
+            ESSAY.SECTIONS.forEach(function (sec) {
+                sec.fields.forEach(function (f) { n += countWords(state[f.key]); });
+            });
+            return n;
+        }
+        // Concept-map text per essay key, in FROM_MAP order: { order[], by{key: [text]} }
+        function mapSources() {
+            const cm = CAP.readConceptMap ? CAP.readConceptMap(other('conceptMap')).fields : {};
+            const out = { order: [], by: {} };
+            (ESSAY.FROM_MAP || []).forEach(function (row) {
+                const text = strv(cm[row[0]]).trim();
+                if (!text) return;
+                if (!out.by[row[1]]) { out.by[row[1]] = []; out.order.push(row[1]); }
+                out.by[row[1]].push((row[2] || '') + text);
+            });
+            return out;
+        }
+
+        function partHtml(f) {
+            const id = 'capEssay-' + f.key;
+            return '<div class="cap-essay-part">' +
+                '<div class="cap-essay-parthead">' +
+                    '<label class="cap-essay-h" for="' + id + '">' + esc(f.head) + '</label>' +
+                    '<span class="cap-pts">' + esc(f.pts) + ' pts</span>' +
+                '</div>' +
+                '<p class="cap-hint cap-essay-prompt" id="' + id + '-hint">' + esc(f.prompt) +
+                    (f.note ? '<em class="cap-essay-note">' + esc(f.note) + '</em>' : '') +
+                '</p>' +
+                '<textarea id="' + id + '" data-cap-field="' + esc(f.key) + '" class="cap-tf cap-essay-tf" rows="6"' +
+                    ' spellcheck="true" lang="en-US" autocapitalize="sentences" aria-describedby="' + id + '-hint"></textarea>' +
+                '<div class="cap-wc" data-wc="' + esc(f.key) + '">' + wordsLabel(countWords(state[f.key])) + '</div>' +
+            '</div>';
+        }
+
+        function sectionHtml(sec) {
+            const nameId = sec.nameKey ? 'capEssay-' + sec.nameKey : '';
+            return '<section class="cap-panel cap-essay-sec" data-essay-sec="' + esc(sec.id) + '">' +
+                '<header class="cap-panel-head cap-essay-head"><h3>' + esc(sec.title) + '</h3>' +
+                    '<span class="cap-pts">' + esc(sec.points) + ' pts</span></header>' +
+                '<div class="cap-panel-body">' +
+                    (sec.nameKey
+                        ? '<div class="cap-field cap-essay-name">' +
+                              '<label class="cap-label" for="' + nameId + '">' + esc(sec.title) + ' name</label>' +
+                              '<input type="text" id="' + nameId + '" data-cap-field="' + esc(sec.nameKey) + '" class="cap-tf"' +
+                              ' placeholder="' + esc(sec.namePrompt || '') + '" spellcheck="true" lang="en-US" autocapitalize="sentences">' +
+                          '</div>'
+                        : '') +
+                    sec.fields.map(partHtml).join('') +
+                '</div>' +
+            '</section>';
+        }
+
+        function render() {
+            const src = mapSources();
+            const dx = strv(other('info').res_dx).trim();
+            const showDx = !!dx && !strv(state.p_name).trim();
+            rootEl.innerHTML = panelHint(
+                'Concept Map Essay',
+                'Write each part in full sentences. Cite your sources in APA (Author, Year) under every part that used one; list them in APA References.',
+                // The template goes on past these four sections; point at the
+                // tabs that hold the rest (neither is in the program-cap preset)
+                '<p class="cap-fineprint cap-essay-refnote">Next in the template: the Nursing Care Plan (with Summary of Care and Discharge Plan) is in the ' +
+                    '<button type="button" class="cap-essay-link" data-essay-tab="carePlan">Care Plan</button> tab, and your reference list is in the ' +
+                    '<button type="button" class="cap-essay-link" data-essay-tab="references">APA References</button> tab.</p>' +
+                '<div class="cap-essay-bar">' +
+                    '<span class="cap-essay-total" data-wc-total="1">' + wordsLabel(totalWords()) + '</span>' +
+                    '<div class="cap-essay-actions">' +
+                        (src.order.length
+                            ? '<button type="button" class="cap-btn-sm" data-essay-map="1" aria-describedby="capEssayMapNote" title="Copies your concept-map boxes into the essay parts that are still empty">Start from my concept map</button>'
+                            : '') +
+                        (dx
+                            ? '<button type="button" class="cap-btn-sm" data-essay-dx="1"' + (showDx ? '' : ' hidden') + '>' +
+                                  '<span>Use diagnosis from Patient Info: <strong>' + esc(dx.length > 60 ? dx.slice(0, 57) + '…' : dx) + '</strong></span></button>'
+                            : '') +
+                    '</div>' +
+                '</div>' +
+                // Said up front, not only in a tooltip (touch shows none)
+                (src.order.length
+                    ? '<p class="cap-fineprint cap-essay-mapnote" id="capEssayMapNote">Start from my concept map copies your box text into parts that are still empty. It never replaces what you wrote, and you can Undo.</p>'
+                    : '')
+            ) + '<div class="cap-essay">' + ESSAY.SECTIONS.map(sectionHtml).join('') + '</div>';
+            essayEl = rootEl.querySelector('.cap-essay');
+            // Lets an Undo from an earlier render (or tab visit) redraw
+            // whichever essay view is on screen now
+            if (essayEl) essayEl._capRender = render;
+            bindFields(rootEl, state, onChange);
+
+            const totalEl = rootEl.querySelector('[data-wc-total]');
+            rootEl.querySelectorAll('textarea.cap-essay-tf').forEach(function (ta) {
+                const key = ta.getAttribute('data-cap-field');
+                const wc = rootEl.querySelector('[data-wc="' + key + '"]');
+                autoGrow(ta);
+                ta.addEventListener('input', function () {
+                    autoGrow(ta);
+                    if (wc) wc.textContent = wordsLabel(countWords(ta.value));
+                    if (totalEl) totalEl.textContent = wordsLabel(totalWords());
+                });
+            });
+            // The Patient Info button only shows while the primary name is empty
+            const dxBtn = rootEl.querySelector('[data-essay-dx]');
+            const pName = rootEl.querySelector('input[data-cap-field="p_name"]');
+            if (pName && dxBtn) pName.addEventListener('input', function () { dxBtn.hidden = !!pName.value.trim(); });
+            if (dxBtn) dxBtn.addEventListener('click', function () {
+                const text = strv(other('info').res_dx).trim();
+                if (text && !strv(state.p_name).trim()) {
+                    state.p_name = text.replace(/\s+/g, ' ');
+                    changed();
+                }
+                render();
+            });
+            const mapBtn = rootEl.querySelector('[data-essay-map]');
+            if (mapBtn) mapBtn.addEventListener('click', startFromMap);
+            // Links to the template's other tabs: switch when the tab is on,
+            // otherwise say where to turn it on
+            const TAB_OFF = {
+                carePlan: 'Turn on Care Plan under ⚙️ Modules to write the Nursing Care Plan.',
+                references: 'Turn on APA References under ⚙️ Modules to add your reference list.'
+            };
+            rootEl.querySelectorAll('[data-essay-tab]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const id = btn.getAttribute('data-essay-tab');
+                    const doc = rootEl.ownerDocument || document;
+                    if (doc.querySelector('.cap-tab[data-mod="' + id + '"]') && typeof window.switchTab === 'function') {
+                        window.switchTab(id);
+                    } else if (TAB_OFF[id] && typeof window.showToast === 'function') {
+                        window.showToast(TAB_OFF[id], 'info');
+                    }
+                });
+            });
+        }
+
+        // Redraw the essay view on screen (this one, or a later one if the
+        // student switched tabs and came back); none when another tab is open.
+        function redraw() {
+            if (essayEl && essayEl.isConnected) { render(); return; }
+            const live = rootEl.querySelector('.cap-essay');
+            if (live && typeof live._capRender === 'function') live._capRender();
+        }
+
+        function startFromMap() {
+            const src = mapSources();
+            if (!src.order.length) {
+                if (typeof window.showToast === 'function') window.showToast('Your concept map has no text to copy yet.', 'info');
+                return;
+            }
+            const snapshot = JSON.parse(JSON.stringify(state));
+            const filled = {};   // essay key → the text copied into it
+            // Both counts are essay parts (one part can take several boxes)
+            let skipped = 0;
+            src.order.forEach(function (key) {
+                if (strv(state[key]).trim()) { skipped++; return; }
+                let text = src.by[key].join('\n\n');
+                // A diagnosis name is one line
+                if (nameKeys.indexOf(key) !== -1) text = text.replace(/\s+/g, ' ').trim();
+                state[key] = text;
+                filled[key] = text;
+            });
+            const copied = Object.keys(filled).length;
+            if (!copied) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Nothing copied — every essay part your concept map fills already has text.', 'info');
+                }
+                return;
+            }
+            changed();
+            render();
+            const msg = (skipped ? 'Skipped ' + skipped + ' part' + (skipped === 1 ? '' : 's') + ' that already had text. ' : '') +
+                'These are starting notes — rewrite them as full paragraphs.';
+            const title = 'Filled ' + copied + ' essay part' + (copied === 1 ? '' : 's') + ' from your concept map';
+            if (typeof window.showToastAction === 'function') {
+                window.showToastAction({
+                    type: 'success',
+                    title: title,
+                    message: msg,
+                    duration: 10000,
+                    actions: [{ label: 'Undo', onClick: function () {
+                        // Put the copied parts back as they were in the snapshot,
+                        // in place (the editor saves this object). A part edited
+                        // since the copy, and every other part, is left alone.
+                        let kept = 0;
+                        Object.keys(filled).forEach(function (k) {
+                            if (strv(state[k]) !== filled[k]) { kept++; return; }
+                            if (Object.prototype.hasOwnProperty.call(snapshot, k)) state[k] = snapshot[k];
+                            else delete state[k];
+                        });
+                        changed();
+                        redraw();
+                        if (kept && typeof window.showToast === 'function') {
+                            window.showToast('Kept ' + kept + ' part' + (kept === 1 ? '' : 's') + ' you edited after copying.', 'info');
+                        }
+                    } }]
+                });
+            } else if (typeof window.showToast === 'function') {
+                window.showToast(title + '. ' + msg, 'success');
+            }
+        }
+
         render();
     };
 

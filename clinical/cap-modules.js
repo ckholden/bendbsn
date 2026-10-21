@@ -66,12 +66,16 @@
          readConceptMap() migrates at read time: each old problem's diagnosis
          → nursingDx, its interventions → nursingInterventions. The editor
          writes the new keys (and state._schema = 6) on the first edit only.
+     7 — additive: the Concept Map Essay module (state.essay — flat text keys
+         from FORM.ESSAY: p_name, p_definition, …, data_meds) and the care
+         plan's Discharge Plan (carePlan.discharge). Nothing is migrated; a
+         packet without them reads and prints as before.
 */
 (function () {
     'use strict';
     if (window.CAP_MODULES) return;
 
-    const SCHEMA_VERSION = 6;
+    const SCHEMA_VERSION = 7;
     // Revision of the program's Word form this packet mirrors.
     const FORM_VERSION = '6/24';
     const FORM_NAME = 'Clinical Assessment Packet Forms';
@@ -120,6 +124,9 @@
         { id: 'minicog',       label: 'Mini-Cog',                     category: 'Memory care / AL', printBlank: true, icon: '🧠' },
         { id: 'behavior',      label: 'Behavior (ABC)',               category: 'Memory care / AL',                 icon: '🎭' },
 
+        // The instructor's "Concept Map Template (Rubric focused)", written as
+        // an essay (FORM.ESSAY). Not in any preset yet.
+        { id: 'essay',         label: 'Concept Map Essay',            tabLabel: 'Essay', category: 'Academic',      icon: '🖋️' },
         { id: 'caseStudy',     label: 'Case Study',                   category: 'Academic',                         icon: '🎓' },
         { id: 'references',    label: 'APA References',               category: 'Academic',                         icon: '📚' }
     ];
@@ -154,9 +161,11 @@
     };
 
     // Section order of the turned-in PDF (and of the editor's tabs): the Word
-    // form's order first, then everything the Word form doesn't have.
+    // form's order first, then everything the Word form doesn't have. The
+    // Concept Map Essay (not on the Word form) sits next to the box map it
+    // is written from.
     const PDF_ORDER = [
-        'info', 'conceptMap', 'headToToe', 'omega', 'headToToe2', 'omega2',
+        'info', 'conceptMap', 'essay', 'headToToe', 'omega', 'headToToe2', 'omega2',
         'labs', 'meds', 'morse', 'hendrich', 'braden', 'minicog', 'ncsbn',
         // extras (not on the Word form)
         'sbar', 'progressNotes', 'carePlan',
@@ -473,6 +482,129 @@
         b.fields.forEach(function (f) { if (!f.multi) CONCEPT_MAP.TEXT_KEYS.push(f.key); });
     });
     CONCEPT_MAP.BOX_BY_ID = CONCEPT_MAP.BOXES.reduce(function (a, b) { a[b.id] = b; return a; }, {});
+
+    // ------------------------------------------------------------------
+    // Concept Map Essay — the instructor's "Essay Template for Concept Map"
+    // (Word, Calibri 12, Letter, 1" margins). Headings and prompts verbatim,
+    // the template's own wording and typos included. Each SECTION is one
+    // rubric criterion (`points` = its rubric points, each field's `pts` its
+    // share); `nameKey` is the one-line diagnosis name under the heading;
+    // `center` = the heading is centred on the template. Every `key` is a
+    // flat text key in state.essay; never rename one.
+    // CARE_PLAN = the template's Nursing Care Plan headings + prompts for the
+    // carePlan module's keys ([heading, prompt]; '' = none).
+    // FROM_MAP = [readConceptMap().fields key, essay key, prefix?] for
+    // "Start from my concept map" (fills empty essay fields only; several
+    // sources for one field join with a blank line, in this order).
+    // ------------------------------------------------------------------
+    const ESSAY_ST = {
+        assess: '(Intervention will start with Assess, Measure, Evaluate, etc. Overall goal to gather some sort of information with how often you will do this to help reach goal.)',
+        doIt:   '(Intervention will start with Perform, Encourage, Give, etc. Overall goal to do something or to get patient to do something with how often you will do this to meet goal.)',
+        teach:  '(Intervention with start with Teach, Educate, Demonstrate, etc. Overall goal to get patient to understand something with how often you will do this to reach goal.)',
+        why:    'Rationale: (Why this will help)'
+    };
+    const ESSAY = {
+        TITLE: 'Concept Map Template (Rubric focused)',
+        HEADER: [['Student Name', 'student_name'], ['Course', 'course'], ['Instructor', 'instructor']],
+        SECTIONS: [
+            { id: 'primary', title: 'Primary Diagnosis', center: true, points: 12,
+              nameKey: 'p_name', namePrompt: '(Please place Primary Diagnosis here)',
+              fields: [
+                { key: 'p_definition', head: 'Definition', pts: 2,
+                  prompt: '(What is it)' },
+                { key: 'p_patho', head: 'Pathophysiology', pts: 6,
+                  prompt: '(How does it affect the body and how did it form, please include how it formed in your patient as best you can.)' },
+                { key: 'p_risk', head: 'Risk Factors', pts: 2,
+                  prompt: '(Include all risk factors and then state what risk factors your patient had. Please feel free to add risk factors after critically thinking about what could cause it not all sources have all the answers.)' },
+                { key: 'p_signs', head: 'Signs and Symptoms', pts: 2,
+                  prompt: '(Please list the signs and symptoms and reflect what your patient shows.)' }
+              ] },
+            { id: 'secondary', title: 'Secondary Diagnosis', points: 12,
+              nameKey: 's_name', namePrompt: '(Please place Secondary Diagnosis here)',
+              fields: [
+                { key: 's_definition', head: 'Definition', pts: 2,
+                  prompt: '(What is it)' },
+                { key: 's_patho', head: 'Pathophysiology', pts: 6,
+                  prompt: '(How does it affect the body and how did it form, please include how it formed in your patient as best you can.) (Please also relate this diagnosis to the primary by explaining why the two are related to each other through development, exacerbation, or other factors.)' },
+                { key: 's_risk', head: 'Risk Factors', pts: 2,
+                  prompt: '(Include all risk factors and then state what risk factors your patient had. Please feel free to add risk factors after critically thinking about what could cause it not all books have all the answers.)' },
+                { key: 's_signs', head: 'Signs and Symptoms', pts: 2,
+                  prompt: '(Please list all the signs and symptoms and reflect what your patient shows.)' }
+              ] },
+            { id: 'hpi', title: 'History of Present Illness', points: 8,
+              fields: [
+                { key: 'hpi_explanation', head: 'Patient Explanation or Chart Review', pts: 2,
+                  prompt: '(Patients explanation or charts explanation including if possible length of time patient has had condition)' },
+                { key: 'hpi_manifestations', head: 'Manifestations', pts: 2,
+                  prompt: '(Signs and symptoms of onset for this admit and any other contributing factors)' },
+                // `note` prints in italics on the template
+                { key: 'hpi_treatment', head: 'Treatment', pts: 2,
+                  prompt: '(What is nursing doing to help this patient get better. Could be applying ice, monitoring labs, ensuring ambulation etc.) (What orders are being carried out surgery, medication etc. )',
+                  note: 'Disclosure: Do not go into depth with medications or labs just what kinds of medications HTN, GI, no names needed this will be covered under medications)' },
+                { key: 'hpi_impact', head: 'Patient Impact', pts: 2,
+                  prompt: '(Think Maslow\'s Hierarchy of needs. How are these impacted with the patient\'s current disease process and should social work be involved with helping this patient at home. It is easier to get resources involved at this level then when they discharge home. Remember nursing is holistic care, utilize the team.)' }
+              ] },
+            { id: 'data', title: 'Pertinent Data Collection', center: true, points: 10,
+              fields: [
+                { key: 'data_labs', head: 'Abnormal Lab Results', pts: 5,
+                  prompt: '(Please don\'t include all labs just the abnormal labs you think are involved with the disease process you selected as your primary. Don\'t just copy and paste your labs from the assessment packet think how they are influenced by the disease process or treatment plan.)' },
+                { key: 'data_meds', head: 'Medications', pts: 5,
+                  prompt: '(Please include medications patient is taking directly related to primary diagnosis. Also list labs you are watching closely due to medications the patient is taking. For example, if a patient was taking digoxin, how you would be watching the potassium levels?) Always feel comfortable reaching out to me anytime you have a question this one can be tricky, but we want you critically thinking.' }
+              ] }
+        ],
+        CARE_PLAN_TITLE: 'Nursing Care Plan',
+        CARE_PLAN: {
+            finding:  ['Omega 7 /Assessment Finding', '(Identified issue you see that can be modified to help patient outcome) Example. Air: Patient is on 2L of oxygen and is normally on room air at home.'],
+            dx:       ['Nursing Diagnostic Statement', '(Nanda Nursing Diagnosis r/t problem identified [secondary to medical diagnosis] aeb signs and symptoms the patient exhibits) Example: Impaired gas exchange r/t airway obstruction secondary to COPD aeb wheezing, fatigue after 10 feet of walking, and SpO2 decrease <88% with exertion.'],
+            st_goal:  ['Short-Term Goal typically short is by end of shift or within a week. Relative to patient', '(This statement should begin with the patient, what you want them to do to get better over a short period of time. Please make all goals SMART- [Specific, Measurable, Achievable, Relevant, Timebound].)'],
+            st_assess_intervention: ['Assess Intervention', ESSAY_ST.assess],
+            st_assess_rationale:    [ESSAY_ST.why, ''],
+            st_do_intervention:     ['Do Intervention', ESSAY_ST.doIt],
+            st_do_rationale:        [ESSAY_ST.why, ''],
+            st_teach_intervention:  ['Teach Intervention', ESSAY_ST.teach],
+            st_teach_rationale:     [ESSAY_ST.why, ''],
+            lt_goal:  ['Long-Term Goal typically long is a few weeks to months. Relative to patient.', '(This statement should begin with the patient, what you want them to do to get better over a long period of time. Please make all goals SMART- [Specific, Measurable, Achievable, Relevant, Timebound].)'],
+            lt_assess_intervention: ['Assess Intervention', ESSAY_ST.assess],
+            lt_assess_rationale:    [ESSAY_ST.why, ''],
+            lt_do_intervention:     ['Do Intervention', ESSAY_ST.doIt],
+            lt_do_rationale:        [ESSAY_ST.why, ''],
+            lt_teach_intervention:  ['Teach Intervention', ESSAY_ST.teach],
+            lt_teach_rationale:     [ESSAY_ST.why, ''],
+            summary:   ['Summary of Care', '(What interventions and treatments patient currently receiving to move them closer to discharge with focus on primary diagnosis.)'],
+            discharge: ['Discharge Plan', '(Other problems identified that needs other elements of the team, further evaluation, or treatment to get patient home.)']
+        },
+        REFERENCES: ['References', '(Alphabetical order, indented correctly, should be able to use your references to find the information provided when refences are used.)'],
+        FROM_MAP: [
+            ['diagnosis',              'p_name'],
+            ['patho',                  'p_patho'],
+            ['riskFactors',            'p_risk'],
+            ['signsSymptoms',          'p_signs'],
+            ['secondaryDx',            's_name'],
+            ['pmh',                    'hpi_explanation', 'Past medical history: '],
+            ['hpi',                    'hpi_explanation'],
+            // Treatment asks what nursing is doing for the whole admission;
+            // the secondary box's interventions follow, labelled as its own
+            ['nursingInterventions',   'hpi_treatment'],
+            ['secondaryInterventions', 'hpi_treatment', 'Secondary diagnosis interventions: '],
+            ['diagnostics',            'data_labs'],
+            ['medications',            'data_meds']
+        ]
+    };
+    // Every stored essay key (diagnosis names + text fields), in template order
+    ESSAY.KEYS = [];
+    ESSAY.SECTIONS.forEach(function (sec) {
+        if (sec.nameKey) ESSAY.KEYS.push(sec.nameKey);
+        sec.fields.forEach(function (f) { ESSAY.KEYS.push(f.key); });
+    });
+
+    // Word count as a word processor shows it: whitespace-separated runs that
+    // hold at least one letter or digit ("8.3", "r/t", "120/80" are one word
+    // each; a lone "-" or "—" is none).
+    function countWords(s) {
+        return String(s == null ? '' : s).split(/\s+/).filter(function (t) {
+            return /[A-Za-z0-9]/.test(t);
+        }).length;
+    }
 
     // ------------------------------------------------------------------
     // Head-to-Toe Assessment — the Word form's regions and items, labels as
@@ -1030,6 +1162,37 @@
         return { values: values, markers: markers, legacy: legacy, isNew: state._schema >= 5 };
     }
 
+    // Has the student entered anything in this module? Collections hold either
+    // row objects (meds, notes…) or bare values — RTDB returns integer-keyed
+    // objects such as PHQ-9/GAD-7 `choices` as arrays of numbers — so values
+    // are tested directly (a 0 score counts; '', null and an unticked
+    // checkbox don't). A row's `format` alone (Progress Notes default) doesn't
+    // count either, nor does the `_schema` shape marker.
+    // Nested shapes (Braden/Morse cols → column → choices) are searched all the
+    // way down, so an empty column object doesn't count as data.
+    // (Moved here from cap-pdf.js, unchanged, so the editor can use it too.)
+    function moduleHasData(modState) {
+        function filled(y) { return y != null && y !== false && String(y).trim() !== ''; }
+        function deep(y) {
+            if (y && typeof y === 'object') return Object.keys(y).some(function (k) { return deep(y[k]); });
+            return filled(y);
+        }
+        return Object.keys(modState || {}).some(function (k) {
+            if (k === '_schema') return false;
+            const v = modState[k];
+            if (v && typeof v === 'object') {
+                return Object.keys(v).some(function (kk) {
+                    const x = v[kk];
+                    if (x && typeof x === 'object') {
+                        return Object.keys(x).some(function (f) { return f !== 'format' && deep(x[f]); });
+                    }
+                    return filled(x);
+                });
+            }
+            return filled(v);
+        });
+    }
+
     window.CAP_MODULES = {
         CATEGORY_ORDER: CATEGORY_ORDER,
         MODULE_CATALOG: MODULE_CATALOG,
@@ -1052,8 +1215,11 @@
             HENDRICH: HENDRICH,
             MINICOG: MINICOG,
             H2T: H2T,
-            CONCEPT_MAP: CONCEPT_MAP
+            CONCEPT_MAP: CONCEPT_MAP,
+            ESSAY: ESSAY
         },
+        countWords: countWords,
+        moduleHasData: moduleHasData,
         readNcsbn: readNcsbn,
         readConceptMap: readConceptMap,
         readHeadToToe: readHeadToToe,
@@ -1066,6 +1232,6 @@
         scoreBraden: scoreBraden,
         scoreMorse: scoreMorse,
         scoreHendrich: scoreHendrich,
-        SCHEMA_VERSION: SCHEMA_VERSION  // 6 = Word-form Nursing Concept Map (see header)
+        SCHEMA_VERSION: SCHEMA_VERSION  // 7 = Concept Map Essay + Discharge Plan (see header)
     };
 })();
