@@ -192,20 +192,72 @@
             color: var(--clx-text-muted, #718096);
             padding: 12px 18px 4px;
         }
+        /* One row per module: the on/off toggle (a <label>), then — for an
+           enabled module — its "In PDF" select on a line of its own, outside
+           the label so using it never toggles the checkbox. */
         .cap-drawer-row {
-            display: flex; align-items: center; gap: 10px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
             padding: 8px 18px;
-            cursor: pointer;
         }
         .cap-drawer-row:hover { background: var(--clx-bg-hover, #f7fafd); }
-        .cap-drawer-row input[type="checkbox"] {
-            width: 16px; height: 16px; accent-color: var(--clx-accent, #0f7490);
+        .cap-drawer-toggle {
+            flex: 1 1 100%; min-width: 0; margin: 0;
+            display: flex; align-items: center; gap: 10px;
             cursor: pointer;
         }
-        .cap-drawer-row.locked { opacity: 0.7; }
-        .cap-drawer-row.locked input { cursor: not-allowed; }
-        .cap-drawer-row .icon { font-size: 16px; width: 22px; text-align: center; }
-        .cap-drawer-row .label { flex: 1; font-size: 13px; color: var(--clx-text-primary, #1a3a5c); }
+        .cap-drawer-toggle.static { cursor: default; }
+        .cap-drawer-row input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: var(--clx-accent, #0f7490);
+            cursor: pointer; flex: none; margin: 0;
+        }
+        .cap-drawer-row.locked .cap-drawer-toggle { opacity: 0.7; }
+        .cap-drawer-row.locked input[type="checkbox"] { cursor: not-allowed; }
+        .cap-drawer-row .icon { font-size: 16px; width: 22px; text-align: center; flex: none; }
+        .cap-drawer-row .label { flex: 1; min-width: 0; font-size: 13px; color: var(--clx-text-primary, #1a3a5c); overflow-wrap: anywhere; }
+        .cap-drawer-print {
+            flex: 1 1 100%; min-width: 0;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+            padding-left: 58px; /* checkbox + icon: lines up with the module name */
+        }
+        .cap-drawer-page .cap-drawer-print { padding-left: 32px; }
+        .cap-print-lbl {
+            flex: none;
+            font-size: 10.5px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--clx-text-muted, #718096);
+        }
+        /* Compact: beats clinical-ui's global select/input padding + size */
+        .cap-drawer select.cap-print-mode {
+            flex: 0 1 auto; min-width: 0; max-width: 100%;
+            margin: 0;
+            font-family: inherit;
+            font-size: 12.5px !important;
+            padding: 3px 8px !important;
+            border-radius: 5px !important;
+            cursor: pointer;
+        }
+        .cap-drawer select.cap-print-mode[data-mode="na"] { color: var(--clx-warning-text, #92400e) !important; }
+        .cap-drawer select.cap-print-mode[data-mode="omit"] { color: var(--clx-text-secondary, #4a5568) !important; }
+        .cap-drawer input.cap-print-reason {
+            flex: 1 1 100%; min-width: 0; margin: 0;
+            font-size: 12.5px !important;
+            padding: 5px 8px !important;
+        }
+        .cap-drawer input.cap-print-reason[hidden] { display: none; }
+        /* Course profile line at the top of the drawer */
+        .cap-drawer-profile {
+            margin: 10px 18px 6px;
+            padding: 10px 12px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-radius: 6px;
+            background: var(--clx-bg-surface-2, #f7f9fc);
+        }
+        .cap-drawer-profile-text { font-size: 13px; color: var(--clx-text-primary, #1a3a5c); overflow-wrap: anywhere; }
+        .cap-drawer-profile-sub {
+            font-size: 11.5px; line-height: 1.45;
+            color: var(--clx-text-muted, #718096);
+            margin: 4px 0 8px;
+        }
         .cap-drawer-row .lock-tag {
             font-size: 9.5px; text-transform: uppercase;
             color: var(--clx-text-muted, #718096);
@@ -219,6 +271,30 @@
             font-size: 11.5px;
             color: var(--clx-text-muted, #718096);
         }
+
+        /* One-time course-profile offer, above the tab content */
+        .cap-offer-slot {
+            width: 100%; max-width: 1080px;
+            margin: 0 auto;
+            padding: 16px 20px 0;
+        }
+        .cap-offer-slot:empty { padding: 0; }
+        .cap-offer {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+            padding: 12px 14px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-left: 3px solid var(--clx-accent, #0f7490);
+            border-radius: 8px;
+            background: var(--clx-bg-surface, #fff);
+        }
+        .cap-offer-text {
+            flex: 1 1 280px; min-width: 0;
+            margin: 0;
+            font-size: 13px; line-height: 1.5;
+            color: var(--clx-text-secondary, #4a5568);
+        }
+        .cap-offer-text strong { color: var(--clx-text-primary, #1a3a5c); }
+        .cap-offer-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
         /* ────────── Renderer-shared UI ────────── */
         .cap-panel {
@@ -407,6 +483,11 @@
             cursor: pointer;
         }
         .cap-btn-sm:hover { background: var(--clx-bg-hover, #e6edf5); }
+        .cap-btn-sm.primary {
+            background: var(--clx-accent, #0f7490); border-color: var(--clx-accent, #0f7490);
+            color: #fff; font-weight: 600;
+        }
+        .cap-btn-sm.primary:hover { background: var(--clx-accent-hover, #0c6478); }
 
         /* SBAR */
         .cap-sbar-block {
@@ -953,7 +1034,8 @@
             font-size: 11px; color: var(--clx-text-muted, #718096);
             font-variant-numeric: tabular-nums;
         }
-        @media print { .cap-essay-actions, .cap-essay-refnote, .cap-essay-mapnote { display: none; } }
+        .cap-essay-profnote { margin: 0 0 8px; line-height: 1.6; }
+        @media print { .cap-essay-actions, .cap-essay-refnote, .cap-essay-mapnote, .cap-essay-profnote { display: none; } }
 
         /* Case Study — collapsible numbered sections */
         .cap-cs-section {
@@ -998,6 +1080,9 @@
             .cap-tab { padding: 9px 10px; font-size: 12px; }
             .cap-content { padding: 14px 12px 60px; }
             .cap-drawer { width: 88vw; }
+            .cap-drawer-print, .cap-drawer-page .cap-drawer-print { padding-left: 26px; }
+            .cap-drawer select.cap-print-mode { flex: 1 1 auto; }
+            .cap-offer-slot { padding: 12px 12px 0; }
             .cap-modal.wide { max-width: 100%; }
             .cap-pn-row { grid-template-columns: 1fr; }
             .cap-pn-letter { padding: 4px 8px; flex-direction: row; gap: 6px; }
@@ -1017,6 +1102,14 @@
             }
             .cap-row-del, .cap-drawer-close { min-width: 44px; min-height: 44px; }
             .cap-drawer-row { min-height: 44px; }
+            .cap-drawer-toggle { min-height: 36px; }
+            /* 16px keeps iOS from zooming in on focus */
+            .cap-drawer select.cap-print-mode,
+            .cap-drawer input.cap-print-reason {
+                min-height: 44px;
+                font-size: 16px !important;
+                padding: 6px 10px !important;
+            }
             input.cap-tf, select.cap-tf { min-height: 44px; }
             .cap-assess-tab, .cap-word-opt, .cap-morse-opt, .cap-hendrich-row { min-height: 44px; }
             .cap-hendrich-note, .cap-labs-table textarea { min-height: 44px; }
@@ -1038,6 +1131,7 @@
             .cap-tabs,
             .cap-drawer,
             .cap-drawer-backdrop,
+            .cap-offer-slot,
             #toastContainer,
             .bsn-offline-banner { display: none !important; }
             body { background: #fff !important; }
@@ -1092,6 +1186,10 @@
         [data-theme="dark"] .cap-cm-prev,
         [data-theme="dark"] .cap-cm-detail summary { background: rgba(255, 255, 255, 0.03); }
         [data-theme="dark"] .cap-pts { background: rgba(255, 255, 255, 0.04); }
+        [data-theme="dark"] .cap-drawer-profile { background: rgba(255, 255, 255, 0.03); }
+        [data-theme="dark"] .cap-offer { background: var(--clx-bg-surface, #1a202c); }
+        /* white on the bright dark-theme accent is under 3:1 */
+        [data-theme="dark"] .cap-btn-sm.primary { color: var(--clx-bg-surface, #1a202c); }
         [data-theme="dark"] .cap-h2t-chk,
         [data-theme="dark"] .cap-body-svg { background: rgba(255, 255, 255, 0.04); }
         [data-theme="dark"] .cap-h2t-chk.selected { background: rgba(var(--clx-accent-rgb, 34, 168, 196), 0.12); }
@@ -1127,6 +1225,9 @@
     <nav class="cap-tabs" id="capTabs" role="tablist"></nav>
     </div><!-- /cap-sticky -->
 
+    <!-- One-time course-profile offer (filled by renderOffer) -->
+    <div class="cap-offer-slot" id="capOfferSlot" role="status"></div>
+
     <main class="cap-content" id="capContent" role="main"></main>
 
     <!-- Module toggle drawer -->
@@ -1138,7 +1239,7 @@
         </div>
         <div class="cap-drawer-body" id="capDrawerBody"></div>
         <div class="cap-drawer-foot">
-            Toggling a module OFF wipes its data after a confirmation. Toggle back ON gives you a clean section.
+            Turning a module off deletes its data (after a confirmation). To keep the data but leave it out of the PDF, use 'Leave out'.
         </div>
     </aside>
 
@@ -1318,6 +1419,12 @@
             if (!p.meta || typeof p.meta !== 'object') p.meta = {};
             if (!p.state || typeof p.state !== 'object') p.state = {};
             if (!Array.isArray(p.meta.enabledModules)) p.meta.enabledModules = ['info', 'notes'];
+            // Print-mode overrides + N/A reasons ({id: value}) are optional;
+            // anything that isn't a plain object is dropped (read as none).
+            ['printModes', 'naReasons'].forEach(function (k) {
+                const v = p.meta[k];
+                if (v != null && (typeof v !== 'object' || Array.isArray(v))) delete p.meta[k];
+            });
             return p;
         }
 
@@ -1344,15 +1451,7 @@
                 const mk = INFO_META_MAP[k];
                 if (!packet.state.info[k] && packet.meta[mk]) packet.state.info[k] = packet.meta[mk];
             });
-            // "patient" (Word form) or "resident" (memory-care packets)
-            if (window.CAP_RENDERERS && window.CAP_RENDERERS.setContext) {
-                window.CAP_RENDERERS.setContext({
-                    person: CAP.personWord ? CAP.personWord(packet.meta) : 'patient',
-                    // Read-only look at another module's slice (the concept map
-                    // offers to copy the diagnosis / med names from them)
-                    getState: function (id) { return (packet && packet.state && packet.state[id]) || null; }
-                });
-            }
+            setRendererContext();
             // Title
             const titleEl = document.getElementById('capTitle');
             titleEl.value = packet.meta.title || '';
@@ -1367,6 +1466,25 @@
             // Tabs
             renderTabs();
             renderActiveTab();
+            renderOffer();
+        }
+
+        // Renderer context: "patient" (Word form) or "resident" (memory-care
+        // packets), and the packet's course profile (or null). Re-run after
+        // the profile changes, before re-rendering the tab.
+        function setRendererContext() {
+            if (!window.CAP_RENDERERS || !window.CAP_RENDERERS.setContext) return;
+            window.CAP_RENDERERS.setContext({
+                person: CAP.personWord ? CAP.personWord(packet.meta) : 'patient',
+                profile: currentProfile(),
+                // Read-only look at another module's slice (the concept map
+                // offers to copy the diagnosis / med names from them)
+                getState: function (id) { return (packet && packet.state && packet.state[id]) || null; }
+            });
+        }
+
+        function currentProfile() {
+            return (packet && CAP.profileFor) ? CAP.profileFor(packet.meta) : null;
         }
 
         function packetFallbackTitle() {
@@ -1378,9 +1496,11 @@
         }
 
         // Tabs follow the Word form's section order (same as the PDF), not the
-        // order modules were switched on. Display only — stored order is kept.
+        // order modules were switched on; a course profile puts its own tab
+        // order first. Display only — stored order is kept.
         function orderedModules() {
             const ids = packet.meta.enabledModules || [];
+            if (CAP.orderModulesFor) return CAP.orderModulesFor(packet.meta, ids);
             return CAP.orderModules ? CAP.orderModules(ids) : ids.slice();
         }
 
@@ -1427,7 +1547,11 @@
             const renderer = window.CAP_RENDERERS && window.CAP_RENDERERS[activeTab];
             if (renderer) {
                 const modId = activeTab;
-                renderer(contentEl, modState, function () { queueAutosave(modId); });
+                renderer(contentEl, modState, function () {
+                    queueAutosave(modId);
+                    // Typing the course on Patient Info can bring up the profile offer
+                    if (modId === 'info') renderOffer();
+                });
             } else {
                 contentEl.innerHTML =
                     '<div class="cap-tab-empty">' +
@@ -1525,6 +1649,206 @@
             }
         });
 
+        // ─── Course profile (meta.profile) ───
+        // A profile (CAP.COURSE_PROFILES) adds its modules, orders the tabs and
+        // prints the PDF in its rubric's order. Applying never removes a
+        // module; removing it changes nothing but meta.profile.
+        const PROFILE_OFFER_TEXT = {
+            nur311: 'Apply the Patient Care Assignment profile? It adds the Concept Map Essay (and Day 2 forms if missing) and prints the packet in rubric order with the rubric on the front. Nothing is deleted — you can remove the profile anytime.'
+        };
+        let offerFor = null; // id of the profile the banner is offering, or null
+
+        // The profile to offer: none set yet, the offer not turned down, and
+        // the Course (Patient Info or the packet's meta) matches its pattern.
+        function offeredProfile() {
+            if (!packet || !CAP.COURSE_PROFILES || currentProfile()) return null;
+            if (packet.meta.profileOffer === 'dismissed') return null;
+            const info = (packet.state && packet.state.info) || {};
+            const course = [info.course, packet.meta.course].filter(function (s) { return s; }).join(' ');
+            if (!course) return null;
+            const ids = Object.keys(CAP.COURSE_PROFILES);
+            for (let i = 0; i < ids.length; i++) {
+                const P = CAP.COURSE_PROFILES[ids[i]];
+                let re = null;
+                try { re = P.offerMatch ? new RegExp(P.offerMatch, 'i') : null; } catch (e) { re = null; }
+                if (re && re.test(String(course))) return P;
+            }
+            return null;
+        }
+
+        function renderOffer() {
+            const slot = document.getElementById('capOfferSlot');
+            if (!slot) return;
+            const P = offeredProfile();
+            const id = P ? P.id : null;
+            if (id === offerFor) return; // unchanged — don't re-announce it
+            offerFor = id;
+            if (!P) { slot.innerHTML = ''; return; }
+            slot.innerHTML =
+                '<div class="cap-offer">' +
+                    '<p class="cap-offer-text"><strong>This looks like ' + esc(P.code) + '.</strong> ' +
+                        esc(PROFILE_OFFER_TEXT[P.id] ||
+                            ('Apply the ' + P.label + ' profile? It prints the packet in the course\'s order. Nothing is deleted — you can remove the profile anytime.')) +
+                    '</p>' +
+                    '<div class="cap-offer-actions">' +
+                        '<button type="button" class="cap-btn-sm primary" data-offer="apply">Apply profile</button>' +
+                        '<button type="button" class="cap-btn-sm" data-offer="dismiss">Not now</button>' +
+                    '</div>' +
+                '</div>';
+        }
+        document.getElementById('capOfferSlot').addEventListener('click', function (ev) {
+            const b = ev.target.closest('[data-offer]');
+            if (!b || !packet || !offerFor) return;
+            if (b.getAttribute('data-offer') === 'apply') {
+                applyCourseProfile(offerFor);
+            } else {
+                packet.meta.profileOffer = 'dismissed';
+                dirtyMeta.add('profileOffer');
+                queueAutosave();
+                renderOffer();
+                showToast('You can apply the course profile later under ⚙️ Modules.', 'info');
+            }
+            // The banner is gone: keep keyboard focus somewhere sensible
+            const t = document.querySelector('.cap-tab.active');
+            if (t) t.focus();
+        });
+
+        // Re-render everything that depends on the profile
+        function refreshForProfile() {
+            setRendererContext();
+            if (!activeTab || packet.meta.enabledModules.indexOf(activeTab) === -1) activeTab = orderedModules()[0] || null;
+            renderTabs();
+            renderActiveTab();
+            renderOffer();
+            if (document.getElementById('capDrawer').classList.contains('visible')) renderDrawer();
+        }
+
+        function applyCourseProfile(id) {
+            const res = CAP.applyProfile ? CAP.applyProfile(packet.meta, id) : null;
+            if (!res) { showToast('That course profile isn\'t available. Reload the page and try again.', 'error'); return; }
+            const before = (packet.meta.enabledModules || []).slice();
+            Object.assign(packet.meta, res);
+            dirtyMeta.add('profile');
+            dirtyMeta.add('enabledModules');
+            queueAutosave();
+            refreshForProfile();
+            const P = CAP.COURSE_PROFILES[id];
+            const added = packet.meta.enabledModules.filter(function (m) { return before.indexOf(m) === -1; })
+                .map(function (m) { const c = CAP.MODULE_BY_ID[m]; return c ? (c.tabLabel || c.label) : m; });
+            showToast(P.code + ' profile applied.' + (added.length ? ' Added: ' + added.join(', ') + '.' : '') +
+                ' The PDF now prints in rubric order.', 'success');
+        }
+
+        function removeCourseProfile() {
+            const prev = packet.meta.profile;
+            if (!currentProfile()) return;
+            packet.meta.profile = null;
+            dirtyMeta.add('profile');
+            // The offer has been answered — don't bring the banner back
+            if (packet.meta.profileOffer !== 'dismissed') {
+                packet.meta.profileOffer = 'dismissed';
+                dirtyMeta.add('profileOffer');
+            }
+            queueAutosave();
+            refreshForProfile();
+            const undo = function () {
+                if (!packet || packet.meta.profile) return;
+                packet.meta.profile = prev;
+                dirtyMeta.add('profile');
+                queueAutosave();
+                refreshForProfile();
+            };
+            if (window.showToastAction) {
+                showToastAction({
+                    title: 'Course profile removed',
+                    message: 'Every module and all your data are still here. The PDF prints in the standard form order again.',
+                    type: 'info',
+                    actions: [{ label: 'Undo', onClick: undo }]
+                });
+            } else {
+                showToast('Course profile removed. Your modules and data are unchanged.', 'info');
+            }
+        }
+
+        // ─── Print modes (meta.printModes / meta.naReasons) ───
+        // What the PDF does with a module or print-only page: Include, N/A
+        // (+ reason) or Leave out. Never touches packet.state. Only overrides
+        // are stored — a choice equal to the default (the profile's, else
+        // Include) removes the key.
+        const PRINT_MODE_LABEL = { include: 'Include', na: 'N/A', omit: 'Leave out' };
+        function printModeOf(id, profile) {
+            return CAP.printModeFor ? CAP.printModeFor(packet.meta, id, profile) : 'include';
+        }
+        function printDefaultOf(id, profile) {
+            return CAP.printModeFor ? CAP.printModeFor(null, id, profile) : 'include';
+        }
+        // Editable copy of a meta map ({id: value})
+        function metaMap(k) {
+            const out = {};
+            const v = packet.meta[k];
+            if (v && typeof v === 'object') Object.keys(v).forEach(function (x) { out[x] = v[x]; });
+            return out;
+        }
+        // Store a meta map whole (an empty one is removed); saved by the next autosave
+        function putMetaMap(k, map) {
+            if (Object.keys(map).length) packet.meta[k] = map; else delete packet.meta[k];
+            dirtyMeta.add(k);
+        }
+        function setPrintMode(id, mode) {
+            const pm = metaMap('printModes');
+            if (mode === printDefaultOf(id, currentProfile())) delete pm[id]; else pm[id] = mode;
+            putMetaMap('printModes', pm);
+            queueAutosave();
+        }
+        function setNaReason(id, text) {
+            const nr = metaMap('naReasons');
+            const v = String(text == null ? '' : text).trim();
+            if (v) nr[id] = v; else delete nr[id];
+            putMetaMap('naReasons', nr);
+            queueAutosave();
+        }
+
+        // "In PDF" select (+ N/A reason box) for one module or print page
+        function printModeHtml(id, label, profile, isPage) {
+            const cur = printModeOf(id, profile);
+            const def = printDefaultOf(id, profile);
+            const modes = isPage ? ['include', 'omit'] : ['include', 'na', 'omit'];
+            const opts = modes.map(function (v) {
+                return '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' +
+                    esc(PRINT_MODE_LABEL[v] + (profile && v === def ? ' (course default)' : '')) + '</option>';
+            }).join('');
+            return '<div class="cap-drawer-print">' +
+                '<span class="cap-print-lbl" aria-hidden="true">In PDF</span>' +
+                '<select class="cap-print-mode" data-print-id="' + esc(id) + '" data-mode="' + esc(cur) + '"' +
+                    ' aria-label="In PDF: ' + esc(label) + '">' + opts + '</select>' +
+                (isPage ? '' :
+                    '<input type="text" class="cap-tf cap-print-reason" data-na-id="' + esc(id) + '" maxlength="160"' +
+                    ' value="' + esc(CAP.naReasonFor ? CAP.naReasonFor(packet.meta, id) : '') + '"' +
+                    ' placeholder="Why N/A? (prints in the PDF)" aria-label="Why N/A: ' + esc(label) + '"' +
+                    (cur === 'na' ? '' : ' hidden') + '>') +
+            '</div>';
+        }
+
+        function profileLineHtml(profile) {
+            if (!CAP.COURSE_PROFILES) return '';
+            if (profile) {
+                return '<div class="cap-drawer-profile">' +
+                    '<div class="cap-drawer-profile-text">Course profile: <strong>' + esc(profile.label) + '</strong></div>' +
+                    '<p class="cap-drawer-profile-sub">Tabs and PDF follow the rubric\'s order. Removing the profile keeps every module and all your data.</p>' +
+                    '<button type="button" class="cap-btn-sm" data-profile-remove="1">Remove profile</button>' +
+                '</div>';
+            }
+            return '<div class="cap-drawer-profile">' +
+                '<div class="cap-drawer-profile-text">Course profile: <strong>none</strong></div>' +
+                Object.keys(CAP.COURSE_PROFILES).map(function (id) {
+                    const P = CAP.COURSE_PROFILES[id];
+                    return '<p class="cap-drawer-profile-sub">' + esc(P.label) +
+                            ': adds the Concept Map Essay and puts the tabs and PDF in rubric order. Nothing is deleted.</p>' +
+                        '<button type="button" class="cap-btn-sm" data-profile-apply="' + esc(id) + '">Apply ' + esc(P.code) + ' profile</button>';
+                }).join('') +
+            '</div>';
+        }
+
         // ─── Module toggle drawer ───
         window.openModuleDrawer = function () {
             if (!packet) { showToast('Packet not loaded yet.', 'warning'); return; }
@@ -1542,11 +1866,27 @@
             }
         });
 
-        function renderDrawer() {
+        // focusMod: module id whose checkbox gets focus back after the redraw
+        function renderDrawer(focusMod) {
             const body = document.getElementById('capDrawerBody');
+            const scrollTop = body.scrollTop;
             const enabled = new Set(packet.meta.enabledModules || []);
             const grouped = CAP.modulesByCategory();
-            let html = '';
+            const profile = currentProfile();
+            let html = profileLineHtml(profile);
+            // The profile's print-only pages (rubric, divider): Include / Leave out
+            if (profile && profile.pages && profile.pages.length) {
+                html += '<div class="cap-drawer-cat">Extra pages</div>';
+                profile.pages.forEach(function (pg) {
+                    html += '<div class="cap-drawer-row cap-drawer-page">' +
+                        '<div class="cap-drawer-toggle static">' +
+                            '<span class="icon" aria-hidden="true">📄</span>' +
+                            '<span class="label">' + esc(pg.label) + '</span>' +
+                        '</div>' +
+                        printModeHtml(pg.id, pg.label, profile, true) +
+                    '</div>';
+                });
+            }
             CAP.CATEGORY_ORDER.forEach(function (cat) {
                 const mods = grouped[cat];
                 if (!mods || !mods.length) return;
@@ -1554,21 +1894,57 @@
                 mods.forEach(function (m) {
                     const isOn = enabled.has(m.id);
                     const locked = !!m.alwaysOn;
-                    html += '<label class="cap-drawer-row' + (locked ? ' locked' : '') + '">' +
-                        '<input type="checkbox" data-mod="' + esc(m.id) + '" ' +
-                            (isOn ? 'checked ' : '') + (locked ? 'disabled' : '') + '>' +
-                        '<span class="icon">' + m.icon + '</span>' +
-                        '<span class="label">' + esc(m.label) + '</span>' +
-                        (locked ? '<span class="lock-tag">always on</span>' : '') +
-                    '</label>';
+                    html += '<div class="cap-drawer-row' + (locked ? ' locked' : '') + '">' +
+                        '<label class="cap-drawer-toggle">' +
+                            '<input type="checkbox" data-mod="' + esc(m.id) + '" ' +
+                                (isOn ? 'checked ' : '') + (locked ? 'disabled' : '') + '>' +
+                            '<span class="icon">' + m.icon + '</span>' +
+                            '<span class="label">' + esc(m.label) + '</span>' +
+                            (locked ? '<span class="lock-tag">always on</span>' : '') +
+                        '</label>' +
+                        // Outside the <label>, so using it never toggles the module.
+                        // Without a profile the standard cover always prints the
+                        // Patient Info, so it has no "In PDF" choice.
+                        (isOn && (profile || m.id !== 'info') ? printModeHtml(m.id, m.label, profile, false) : '') +
+                    '</div>';
                 });
             });
             body.innerHTML = html;
+            body.scrollTop = scrollTop;
             // Wire toggles
             body.querySelectorAll('input[type="checkbox"][data-mod]').forEach(function (cb) {
                 cb.addEventListener('change', function () { handleModuleToggle(cb); });
+                if (focusMod && cb.dataset.mod === focusMod) cb.focus();
             });
         }
+
+        // Print-mode selects, N/A reasons and the profile buttons (delegated:
+        // the drawer body is redrawn often)
+        (function () {
+            const body = document.getElementById('capDrawerBody');
+            body.addEventListener('change', function (ev) {
+                const sel = ev.target.closest('select.cap-print-mode[data-print-id]');
+                if (!sel || !packet) return;
+                setPrintMode(sel.getAttribute('data-print-id'), sel.value);
+                sel.setAttribute('data-mode', sel.value);
+                const reason = sel.parentNode.querySelector('.cap-print-reason');
+                if (reason) reason.hidden = sel.value !== 'na';
+            });
+            body.addEventListener('input', function (ev) {
+                const inp = ev.target.closest('input.cap-print-reason[data-na-id]');
+                if (!inp || !packet) return;
+                setNaReason(inp.getAttribute('data-na-id'), inp.value);
+            });
+            body.addEventListener('click', function (ev) {
+                const b = ev.target.closest('[data-profile-apply], [data-profile-remove]');
+                if (!b || !packet) return;
+                if (b.hasAttribute('data-profile-remove')) removeCourseProfile();
+                else applyCourseProfile(b.getAttribute('data-profile-apply'));
+                // The drawer was redrawn: put focus on the new profile button
+                const nb = body.querySelector('[data-profile-apply], [data-profile-remove]');
+                if (nb) nb.focus();
+            });
+        })();
 
         function handleModuleToggle(cb) {
             const modId = cb.dataset.mod;
@@ -1580,6 +1956,7 @@
                 enabled.add(modId);
                 packet.meta.enabledModules = Array.from(enabled);
                 if (activeTab === null || !packet.meta.enabledModules.includes(activeTab)) activeTab = modId;
+                renderDrawer(modId); // shows the module's "In PDF" select
                 renderTabs();
                 renderActiveTab();
                 dirtyMeta.add('enabledModules');
@@ -1592,8 +1969,16 @@
                 enabled.delete(modId);
                 packet.meta.enabledModules = Array.from(enabled);
                 if (packet.state) delete packet.state[modId];
+                // A clean section: its print-mode choice and N/A reason go too
+                ['printModes', 'naReasons'].forEach(function (k) {
+                    const map = metaMap(k);
+                    if (Object.prototype.hasOwnProperty.call(map, modId)) {
+                        delete map[modId];
+                        putMetaMap(k, map);
+                    }
+                });
                 if (activeTab === modId) activeTab = orderedModules()[0] || null;
-                renderDrawer();
+                renderDrawer(modId);
                 renderTabs();
                 renderActiveTab();
                 dirtyMeta.add('enabledModules');
@@ -1606,7 +1991,7 @@
             cb.checked = true;
             if (window.showConfirmModal) {
                 showConfirmModal('Hide ' + m.label + '?',
-                    'This will delete the data you\'ve entered in this module. Continue?',
+                    'This will delete the data you\'ve entered in this module. Continue? Tip: to keep the data but drop it from the PDF, use Leave out instead.',
                     proceed,
                     { danger: true, confirmText: 'Delete + hide' });
             } else if (confirm('Delete data in ' + m.label + '?')) {

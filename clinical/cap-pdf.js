@@ -6,6 +6,11 @@
    this). Each enabled module renders via a per-module function in
    R_PDF; the main loop walks packet.meta.enabledModules and calls
    the matching renderer.
+
+   A packet on a course profile (meta.profile, CAP_MODULES.COURSE_PROFILES)
+   goes to generateProfile() instead: the profile's print plan (rubric
+   order), the essay as prose (R_ESSAY), then the forms. Packets without
+   one print exactly as before.
 */
 (function () {
     'use strict';
@@ -52,10 +57,16 @@
     // Page size tracks the current page: addPage('landscape') swaps pw/ph/cw
     // (and L.pw/L.ph/L.cw), so helpers and renderers must read them at draw
     // time, never cache them across a page break.
+    // Margins: side m, top mt (where a new page's text starts) and bottom mb
+    // (the lowest a line may reach), 18 mm each unless L.box() changes them
+    // (course-profile essay pages use 1"). Form renderers always run at the
+    // default 18/18/18 box.
     function makeLayout(doc) {
         let pw = doc.internal.pageSize.getWidth();
         let ph = doc.internal.pageSize.getHeight();
-        const m = 18;              // margin in mm
+        let m = 18;                // side margin in mm
+        let mt = 18;               // top: first line on a new page
+        let mb = 18;               // bottom limit
         let cw = pw - m * 2;       // content width
         const ACCENT = [31, 78, 121];  // #1F4E79-ish
         const TEXT = [26, 58, 92];
@@ -64,7 +75,7 @@
 
         const L = {
             doc: doc,
-            pw: pw, ph: ph, m: m, cw: cw,
+            pw: pw, ph: ph, m: m, cw: cw, mt: mt, mb: mb,
             y: 30,
             ACCENT: ACCENT,
             TEXT: TEXT,
@@ -77,21 +88,41 @@
             // Orientation for pages added mid-module (a landscape module that
             // overflows continues on landscape pages). generate() sets it per module.
             orientation: 'portrait',
+            // What addPage() draws at the top of a new page: 'strip' (the
+            // branded bar, default), 'plain' (muted headerText + hairline) or
+            // 'none'.
+            headerStyle: 'strip',
+            headerText: '',
+            // true = addPage() draws no footer; the caller numbers the pages
+            // ("Page i of n") once the document is complete.
+            deferFooter: false,
+            // First / last page a prose helper drew on (see touch())
+            touchFirst: null,
+            touchLast: null,
 
             // Checkbox glyph that the standard (WinAnsi) fonts render reliably
             cb: function (on) { return on ? '[x]' : '[ ]'; },
 
-            setText: function (rgb, size, style) {
+            // family: 'helvetica' (default) or 'times' (profile essay pages)
+            setText: function (rgb, size, style, family) {
                 doc.setTextColor(rgb[0], rgb[1], rgb[2]);
                 if (size) doc.setFontSize(size);
-                if (style) doc.setFont('helvetica', style);
+                if (style) doc.setFont(family || 'helvetica', style);
                 // Remember the current text style so addPage() can restore it
                 const prev = this._txt || {};
-                this._txt = { rgb: rgb, size: size || prev.size, style: style || prev.style };
+                this._txt = { rgb: rgb, size: size || prev.size, style: style || prev.style,
+                              family: style ? (family || 'helvetica') : prev.family };
+            },
+
+            // Margin box for the pages that follow (and this one's text width)
+            box: function (side, top, bottom) {
+                m = side; mt = top; mb = bottom;
+                cw = pw - m * 2;
+                this.m = m; this.cw = cw; this.mt = mt; this.mb = mb;
             },
 
             pageBreakIfNeeded: function (reserve) {
-                if (this.y + (reserve || 0) > ph - 18) this.addPage();
+                if (this.y + (reserve || 0) > ph - mb) this.addPage();
             },
             addPage: function (orientation) {
                 // The footer and header strip change the text style (the strip
@@ -106,9 +137,25 @@
                 cw = pw - m * 2;
                 this.pw = pw; this.ph = ph; this.cw = cw;
                 this.pageNum += 1;
-                this.y = 18;
+                this.y = mt;
+                this.drawHeader();
+                if (prev) this.setText(prev.rgb, prev.size, prev.style, prev.family);
+            },
+            // Top-of-page header per headerStyle; leaves y at the top margin
+            drawHeader: function () {
+                if (this.headerStyle === 'plain') {
+                    if (this.headerText) {
+                        this.setText(MUTED, 8, 'normal');
+                        doc.text(doc.splitTextToSize(pdfSafe(this.headerText), cw)[0] || '', m, 10);
+                    }
+                    doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+                    doc.setLineWidth(0.2);
+                    doc.line(m, 12, pw - m, 12);
+                    this.y = mt;
+                    return;
+                }
+                if (this.headerStyle === 'none') { this.y = mt; return; }
                 this.addHeaderStrip();
-                if (prev) this.setText(prev.rgb, prev.size, prev.style);
             },
             addHeaderStrip: function () {
                 // Small branding strip on subsequent pages
@@ -119,11 +166,17 @@
                 if (this.resident) {
                     doc.text(pdfSafe(this.resident), pw - m, 5.5, { align: 'right' });
                 }
-                this.y = 18;
+                this.y = mt;
             },
             addFooter: function () {
+                if (this.deferFooter) return;
                 this.setText(MUTED, 8, 'normal');
                 doc.text('Page ' + this.pageNum, pw / 2, ph - 8, { align: 'center' });
+            },
+            // Record that something was drawn on the current page
+            touch: function () {
+                if (this.touchFirst == null) this.touchFirst = this.pageNum;
+                this.touchLast = this.pageNum;
             },
 
             // Section heading
@@ -146,7 +199,7 @@
                 lines.forEach(function (ln, ix) {
                     if (ix) {
                         L.y += 5;
-                        if (L.y > ph - 18) L.addPage();
+                        if (L.y > ph - mb) L.addPage();
                     }
                     doc.text(ln, m, L.y);
                 });
@@ -176,7 +229,7 @@
                 const lines = doc.splitTextToSize(t, opts.width || cw);
                 const lh = (opts.size || 9.5) * 0.4;
                 lines.forEach(function (ln) {
-                    if (L.y + lh > ph - 18) L.addPage();
+                    if (L.y + lh > ph - mb) L.addPage();
                     doc.text(ln, opts.x != null ? opts.x : m, L.y);
                     L.y += lh;
                 });
@@ -204,7 +257,7 @@
                 doc.text(lines[0] || '', x + labelW + 2, this.y);
                 for (let i = 1; i < lines.length; i++) {
                     this.y += 4;
-                    if (this.y > ph - 18) this.addPage();
+                    if (this.y > ph - mb) this.addPage();
                     doc.text(lines[i], x + labelW + 2, this.y);
                 }
                 this.y += 5;
@@ -241,7 +294,10 @@
             //   rows still show a writable cell; boldCols: [i, ...] — body
             //   columns printed bold (row labels); groupRows: [i, ...] — body
             //   rows printed as shaded bold group headings (Lab table's
-            //   Chemistry / Hematology…); fontSize: pt, default 8.5 }.
+            //   Chemistry / Hematology…); fontSize: pt, default 8.5;
+            //   onRow: fn(rowIndex, y, h, pageNum) — called once per body row
+            //   where it is first painted (the rubric page fills cells in
+            //   afterwards) }.
             //   headers = null draws no header row (a label-column grid such
             //   as OMEGA).
             table: function (headers, rows, colWidths, opts) {
@@ -323,22 +379,30 @@
                 this.y += hdrH;
                 // Rows — measured before drawing. A row that doesn't fit moves to
                 // a new page; a row taller than a whole page is split across pages.
-                const bottom = ph - 18;
+                const bottom = ph - mb;
                 function newTablePage() {
                     L.addPage();
                     L.y += drawHeader(L.y); // re-draw header
                 }
+                const onRow = typeof opts.onRow === 'function' ? opts.onRow : null;
                 rows.forEach(function (row, ri) {
                     const kind = groupRows.indexOf(ri) !== -1 ? 'group' : 'body';
                     let wrapped = wrapCells(row, kind);
+                    let told = false;
+                    function paintAt(cells) {
+                        const y0 = L.y;
+                        const h = paintRow(cells, y0, kind, kind === 'group');
+                        if (onRow && !told) { told = true; onRow(ri, y0, h, L.pageNum); }
+                        L.y += h;
+                    }
                     for (let guard = 0; guard < 50; guard++) {
                         const need = rowHeight(wrapped, kind === 'body');
                         const avail = bottom - L.y;
-                        if (need <= avail) { L.y += paintRow(wrapped, L.y, kind, kind === 'group'); return; }
-                        const fullPage = bottom - 18 - hdrH;
+                        if (need <= avail) { paintAt(wrapped); return; }
+                        const fullPage = bottom - mt - hdrH;
                         const fit = Math.floor((avail - padY * 2) / lineH);
                         if (need <= fullPage || fit < 3) { newTablePage(); continue; }
-                        L.y += paintRow(wrapped.map(function (c) { return c.slice(0, fit); }), L.y, kind, kind === 'group');
+                        paintAt(wrapped.map(function (c) { return c.slice(0, fit); }));
                         wrapped = wrapped.map(function (c) { return c.slice(fit); });
                         newTablePage();
                     }
@@ -360,10 +424,199 @@
                 }
             },
 
+            // ---- Prose (course-profile essay pages only) ----
+            // Here L.y is the TOP of the next line (the form helpers above
+            // treat it as a baseline); a line fits when y + lineH <= ph - mb.
+            // opts on every prose helper: family ('times'), size (pt, 12),
+            // style, color, lineH (mm, single spacing by default), after
+            // (mm of space after the paragraph; the template's 8 pt,
+            // PROSE_AFTER, unless said otherwise) and, on pHeading / pPara /
+            // pBody, x (mm the whole block is indented from the margin).
+            proseFont: function (opts, style) {
+                opts = opts || {};
+                this.setText(opts.color || PROSE_INK, opts.size || PROSE_PT, style || opts.style || 'normal', opts.family || 'times');
+            },
+            proseFits: function (h) { return this.y + h <= ph - mb + 0.01; },
+            atPageTop: function () { return this.y <= mt + 0.01; },
+            // Space after a paragraph (never at the top of a page; one that
+            // runs past the bottom margin is absorbed by the next page break)
+            proseAfter: function (opts) {
+                const a = opts && opts.after != null ? opts.after : PROSE_AFTER;
+                if (a > 0 && !this.atPageTop()) this.y += a;
+            },
+            // Greedy word wrap at the current font: the first line `w1` wide,
+            // the rest `w2`. A word longer than a whole line (a URL or DOI)
+            // breaks by character. Returns pdfSafe'd lines.
+            // jsPDF's built-in Times widths are rounded (a/c/e 0.440 em where
+            // the font has 0.444), so lines are measured against 99% of the
+            // width to stay inside the margin in every viewer.
+            wrapProse: function (text, w1, w2) {
+                const words = pdfSafe(text).replace(/\s+/g, ' ').trim().split(' ');
+                const out = [];
+                let line = '';
+                function width() { return (out.length ? w2 : w1) * 0.99; }
+                function tw(s) { return doc.getTextWidth(s); }
+                words.forEach(function (word) {
+                    if (!word) return;
+                    const cand = line ? line + ' ' + word : word;
+                    if (tw(cand) <= width()) { line = cand; return; }
+                    if (line) { out.push(line); line = ''; }
+                    let rest = word;
+                    while (rest.length > 1 && tw(rest) > width()) {
+                        let n = 1;
+                        while (n < rest.length - 1 && tw(rest.slice(0, n + 1)) <= width()) n++;
+                        out.push(rest.slice(0, n));
+                        rest = rest.slice(n);
+                    }
+                    line = rest;
+                });
+                if (line) out.push(line);
+                return out;
+            },
+            // One line at the current prose font: align 'center' (in the
+            // text column) or left at m + x. Advances y by lh.
+            proseText: function (t, align, lh, x) {
+                this.touch();
+                const base = this.y + doc.getFontSize() * 25.4 / 72 * 0.85;
+                if (align === 'center') doc.text(t, m + cw / 2, base, { align: 'center' });
+                else doc.text(t, m + (x || 0), base);
+                this.y += lh;
+            },
+            // Paragraph lines: line 0 at m + x0, the rest at m + x1 (marker =
+            // list bullet/number, right-aligned just left of line 0). Starts
+            // on a new page unless two lines (all, if fewer) fit here; then
+            // breaks between lines.
+            proseLines: function (lines, x0, x1, lh, marker) {
+                const need = Math.min(lines.length, 2) * lh;
+                if (!this.proseFits(need) && !this.atPageTop()) this.addPage();
+                lines.forEach(function (ln, i) {
+                    if (!L.proseFits(lh) && !L.atPageTop()) L.addPage();
+                    if (i === 0 && marker) {
+                        L.touch();
+                        doc.text(marker, m + x0 - 1.5, L.y + doc.getFontSize() * 25.4 / 72 * 0.85, { align: 'right' });
+                    }
+                    L.proseText(ln, 'left', lh, i ? x1 : x0);
+                });
+            },
+            // Plain line(s), wrapped, no indent (header lines, names, titles):
+            // one paragraph
+            pLine: function (text, opts) {
+                opts = opts || {};
+                const lh = opts.lineH || PROSE_LH;
+                this.proseFont(opts);
+                const lines = this.wrapProse(text, cw, cw);
+                lines.forEach(function (ln) {
+                    if (!L.proseFits(lh) && !L.atPageTop()) L.addPage();
+                    L.proseText(ln, opts.align, lh, 0);
+                });
+                if (lines.length) this.proseAfter(opts);
+            },
+            // Heading (bold unless opts.bold === false), centred or flush
+            // left (at m + opts.x). Keep-with-next: the heading, its space
+            // after, opts.keep (default 2) lines of keepLineH and
+            // opts.keepGaps (default 0) paragraph gaps between those lines
+            // must fit, else it starts a new page.
+            pHeading: function (text, opts) {
+                opts = opts || {};
+                const lh = opts.lineH || PROSE_LH;
+                const x = opts.x || 0;
+                const after = opts.after != null ? opts.after : PROSE_AFTER;
+                const style = opts.bold === false ? (opts.style || 'normal') : 'bold';
+                this.proseFont(opts, style);
+                const lines = this.wrapProse(text, cw - x, cw - x);
+                const keep = opts.keep == null ? 2 : opts.keep;
+                const need = lines.length * lh + after + keep * (opts.keepLineH || lh) + (opts.keepGaps || 0) * PROSE_AFTER;
+                if (!this.proseFits(need) && !this.atPageTop()) this.addPage();
+                this.proseFont(opts, style);
+                lines.forEach(function (ln) {
+                    if (!L.proseFits(lh) && !L.atPageTop()) L.addPage();
+                    L.proseText(ln, opts.align === 'center' ? 'center' : 'left', lh, x);
+                });
+                if (lines.length) this.proseAfter(opts);
+            },
+            // One paragraph with a first-line indent (opts.indent, 0.5"),
+            // the whole block opts.x in from the margin
+            pPara: function (text, opts) {
+                opts = opts || {};
+                const lh = opts.lineH || PROSE_LH;
+                const x = opts.x || 0;
+                const ind = opts.indent == null ? PROSE_INDENT : opts.indent;
+                this.proseFont(opts);
+                const lines = this.wrapProse(text, cw - x - ind, cw - x);
+                if (!lines.length) return;
+                this.proseLines(lines, x + ind, x, lh);
+                this.proseAfter(opts);
+            },
+            // Student text: every non-empty line is a paragraph (first-line
+            // indent, PROSE_AFTER below it, so blank lines between paragraphs
+            // add nothing); "- ", "• ", "* ", "1." and "1)" lines are list
+            // items (text at the paragraph indent, a 5 mm hanging indent for
+            // the marker), with no space between items of one run and the
+            // paragraph space after its last item (a blank line also ends
+            // the run). opts.x indents the whole block. Empty →
+            // opts.emptyText in muted italic.
+            pBody: function (text, opts) {
+                opts = opts || {};
+                const lh = opts.lineH || PROSE_LH;
+                const x = opts.x || 0;
+                const ind = opts.indent == null ? PROSE_INDENT : opts.indent;
+                const t = String(text == null || typeof text === 'object' ? '' : text)
+                    .replace(/\r\n?/g, '\n').replace(/\t/g, ' ').trim();
+                if (!t) {
+                    if (opts.emptyText) this.pPara(opts.emptyText, { indent: ind, x: x, lineH: lh, after: opts.after, style: 'italic', color: MUTED });
+                    return;
+                }
+                const listX = x + Math.max(ind, 5);
+                const LIST_RE = [/^([-•*])\s+(\S.*)$/, /^(\d{1,3}[.)])\s+(\S.*)$/];
+                function listItem(ln) { return LIST_RE[0].exec(ln) || LIST_RE[1].exec(ln); }
+                // Non-empty lines, each with whether a blank line follows it
+                const items = [];
+                t.split('\n').forEach(function (raw) {
+                    const ln = raw.trim();
+                    if (!ln) { if (items.length) items[items.length - 1].blank = true; return; }
+                    items.push({ ln: ln, li: listItem(ln), blank: false });
+                });
+                items.forEach(function (it, i) {
+                    if (it.li) {
+                        L.proseFont(opts);
+                        const lines = L.wrapProse(it.li[2], cw - listX, cw - listX);
+                        L.proseLines(lines, listX, listX, lh, /\d/.test(it.li[1]) ? it.li[1] : '•');
+                        const next = items[i + 1];
+                        if (!next || !next.li || it.blank) L.proseAfter(opts);
+                    } else {
+                        L.pPara(it.ln, { indent: ind, x: x, lineH: lh, after: opts.after, color: opts.color, style: opts.style });
+                    }
+                });
+            },
+            // Hanging indent (references): first line flush left, the rest
+            // `indent` mm in. No space after unless opts.after says so (the
+            // reference list is double spaced instead).
+            pHanging: function (text, indent, opts) {
+                opts = opts || {};
+                const lh = opts.lineH || PROSE_LH;
+                this.proseFont(opts);
+                const lines = this.wrapProse(text, cw, cw - indent);
+                if (!lines.length) return;
+                this.proseLines(lines, 0, indent, lh);
+                this.proseAfter({ after: opts.after || 0 });
+            },
+
             spacer: function (amt) { this.y += amt || 4; }
         };
         return L;
     }
+
+    // Course-profile essay pages: Times 12, single spaced (Word's 1.15 line
+    // for Times) with the template's 8 pt after each paragraph, 0.5"
+    // first-line indent, 1" margins, black text; the reference list double
+    // spaced with no extra space.
+    const PROSE_PT = 12;
+    const PROSE_LH = PROSE_PT * 1.15 * 25.4 / 72;   // ≈ 4.87 mm
+    const PROSE_LH2 = PROSE_PT * 2 * 25.4 / 72;     // ≈ 8.47 mm
+    const PROSE_INDENT = 12.7;                      // 0.5"
+    const PROSE_AFTER = 8 * 25.4 / 72;              // ≈ 2.82 mm: the template's 8 pt after each paragraph
+    const PROSE_INK = [0, 0, 0];
+    const ESSAY_MARGIN = 25.4;                      // 1"
 
     // ------------------------------------------------------------------
     // Title page / header
@@ -433,13 +686,25 @@
     // ------------------------------------------------------------------
     const R_PDF = {};
 
-    R_PDF.info = function (L, s) {
+    R_PDF.info = function (L, s, ctx) {
         // Student, Date, Course, Site, Instructor and Patient Initials are
         // already in the cover box printed directly above — only add the rest.
+        // A course-profile PDF has no cover (ctx.profile; ctx.meta = the
+        // packet's meta), so there they print here, as the cover box would.
+        const full = !!(ctx && ctx.profile);
+        const meta = (ctx && ctx.meta) || {};
         L.h1('Patient Info');
+        if (full) {
+            L.inlineKv('Student', s.student_name);
+            L.inlineKv('Date', s.date || meta.date);
+            L.inlineKv('Course', s.course || meta.course);
+            L.inlineKv('Site', s.site || meta.site);
+            L.inlineKv('Instructor', s.instructor);
+        }
         L.inlineKv('Shift', s.shift);
         L.spacer(4);
         L.h3(PersonCap());
+        if (full) L.inlineKv('Initials', s.res_initials || meta.residentInitials);
         L.inlineKv('Age', s.res_age);
         L.inlineKv('DOB', s.res_dob);
         L.inlineKv('Room', s.res_room);
@@ -1576,12 +1841,14 @@
 
     // ---------- Second instances (catalog `base`) ----------
     // Resolved at call time so a rebuilt base renderer applies to Day 2 too.
+    // The caller's ctx (course-profile export: { profile }) is passed along;
+    // the instance's own moduleId / title / day win.
     ((CAP && CAP.MODULE_CATALOG) || []).forEach(function (m) {
         if (!m.base || R_PDF[m.id]) return;
-        R_PDF[m.id] = function (L, s) {
+        R_PDF[m.id] = function (L, s, ctx) {
             const base = R_PDF[m.base];
             if (typeof base !== 'function') return;
-            return base(L, s, { moduleId: m.id, title: m.label, day: m.day || 2 });
+            return base(L, s, Object.assign({}, ctx || {}, { moduleId: m.id, title: m.label, day: m.day || 2 }));
         };
     });
 
@@ -1600,6 +1867,356 @@
         return (CAP && CAP.orderModules) ? CAP.orderModules(ids) : (ids || []).slice();
     }
 
+    function naText(reason) {
+        const r = String(reason == null ? '' : reason).replace(/\s+/g, ' ').trim();
+        return 'Not applicable' + (r ? ' — ' + r : '');
+    }
+
+    // ------------------------------------------------------------------
+    // COURSE-PROFILE PDF (meta.profile — CAP_MODULES.COURSE_PROFILES)
+    // The turned-in assignment, in the profile's print plan (its rubric's
+    // order): an optional rubric front page, the essay written like the
+    // instructor's Word template (Times 12, 1" margins, no running header),
+    // a "Clinical Assessment Packet" divider, then the forms (the standard
+    // renderers, with a plain header naming the student and course — never
+    // the patient code). "Page i of n" on every page.
+    // R_ESSAY renders the prose blocks; packets without a profile never
+    // reach any of this.
+    // ------------------------------------------------------------------
+    const R_ESSAY = {};
+    function essayStr(v) { return v == null || typeof v === 'object' ? '' : String(v); }
+    function oneLine(v) { return essayStr(v).replace(/\s+/g, ' ').trim(); }
+
+    // Student Name / Course / Instructor (lines with a value), a blank
+    // line, then the template's title, centred
+    R_ESSAY.essayHeader = function (L, packet, profile) {
+        const info = (packet.state && packet.state.info) || {};
+        const meta = packet.meta || {};
+        const E = profile.essay || {};
+        let any = false;
+        (E.headerLines || []).forEach(function (h) {
+            let v = oneLine(info[h[1]]);
+            if (!v && h[1] === 'course') v = oneLine(meta.course);
+            if (!v) return;
+            L.pLine(h[0] + ': ' + v);
+            any = true;
+        });
+        if (any) L.y += PROSE_LH;
+        L.pLine(E.title || 'Concept Map', { align: 'center' });
+    };
+
+    // One FORM.ESSAY section (ctx.part = its id; none = all of them):
+    // centred bold title, the diagnosis name centred under it, then each
+    // part as a bold flush-left heading and the student's paragraphs.
+    R_ESSAY.essay = function (L, s, ctx) {
+        const E = FORM.ESSAY || { SECTIONS: [] };
+        const part = ctx && ctx.part;
+        E.SECTIONS.filter(function (sec) { return !part || sec.id === part; }).forEach(function (sec, i) {
+            if (i) L.y += PROSE_LH;
+            // Kept with: the name, the first sub-heading and two body lines
+            L.pHeading(sec.title, { align: 'center', keep: (sec.nameKey ? 1 : 0) + 3, keepGaps: (sec.nameKey ? 1 : 0) + 1 });
+            if (sec.nameKey) {
+                const name = oneLine(s[sec.nameKey]);
+                if (name) L.pLine(name, { align: 'center' });
+                else L.pLine('[diagnosis not entered]', { align: 'center', style: 'italic', color: L.MUTED });
+            }
+            sec.fields.forEach(function (f) {
+                L.pHeading(f.head, { align: 'left' });
+                L.pBody(s[f.key], { emptyText: '[Not completed]' });
+            });
+        });
+    };
+
+    // The template's care-plan headings for the carePlan module's keys
+    const CP_ESSAY = {
+        plan: [
+            ['finding', 'Omega 7 / Assessment Finding'],
+            ['dx', 'Nursing Diagnostic Statement'],
+            ['st_goal', 'Short-Term Goal'],
+            ['st_assess_intervention', 'Assess Intervention'], ['st_assess_rationale', 'Rationale:'],
+            ['st_do_intervention', 'Do Intervention'],         ['st_do_rationale', 'Rationale:'],
+            ['st_teach_intervention', 'Teach Intervention'],   ['st_teach_rationale', 'Rationale:'],
+            ['lt_goal', 'Long-Term Goal'],
+            ['lt_assess_intervention', 'Assess Intervention'], ['lt_assess_rationale', 'Rationale:'],
+            ['lt_do_intervention', 'Do Intervention'],         ['lt_do_rationale', 'Rationale:'],
+            ['lt_teach_intervention', 'Teach Intervention'],   ['lt_teach_rationale', 'Rationale:']
+        ],
+        discharge: [
+            ['summary', 'Summary of Care'],
+            ['discharge', 'Discharge Plan']
+        ]
+    };
+    // The Assess / Do / Teach interventions and their rationales sit 0.5"
+    // in under each goal, as a block (the template's left indent; no
+    // first-line indent)
+    const CP_NESTED = /^(st|lt)_(assess|do|teach)_(intervention|rationale)$/;
+    // ctx.part 'plan' (title + finding … long-term interventions) or
+    // 'discharge' (Summary of Care + Discharge Plan); none = both
+    R_ESSAY.carePlan = function (L, s, ctx) {
+        const part = ctx && ctx.part;
+        if (part !== 'discharge') {
+            L.pHeading((FORM.ESSAY && FORM.ESSAY.CARE_PLAN_TITLE) || 'Nursing Care Plan', { align: 'center', keep: 3, keepGaps: 1 });
+        }
+        CP_ESSAY.plan.concat(CP_ESSAY.discharge).forEach(function (r, i) {
+            const inPlan = i < CP_ESSAY.plan.length;
+            if (part === 'plan' && !inPlan) return;
+            if (part === 'discharge' && inPlan) return;
+            if (CP_NESTED.test(r[0])) {
+                L.pHeading(r[1], { align: 'left', x: PROSE_INDENT });
+                L.pBody(s[r[0]], { emptyText: '[Not completed]', x: PROSE_INDENT, indent: 0 });
+                return;
+            }
+            L.pHeading(r[1], { align: 'left' });
+            L.pBody(s[r[0]], { emptyText: '[Not completed]' });
+        });
+    };
+
+    // state.refs (an array, or an RTDB integer-keyed object), trimmed,
+    // blanks dropped, alphabetical ignoring case and any leading
+    // punctuation / quotes
+    function sortedRefs(v) {
+        const list = Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.keys(v).map(function (k) { return v[k]; }) : []);
+        return list.map(oneLine).filter(Boolean).map(function (r, i) {
+            return { r: r, i: i, k: r.replace(/^[^A-Za-z0-9]+/, '').toLowerCase() };
+        }).sort(function (a, b) {
+            return a.k < b.k ? -1 : (a.k > b.k ? 1 : a.i - b.i);
+        }).map(function (x) { return x.r; });
+    }
+    // Centred bold "References", then each entry double spaced with a 0.5"
+    // hanging indent
+    R_ESSAY.references = function (L, s) {
+        L.pHeading('References', { align: 'center', lineH: PROSE_LH2, keep: 1, after: 0 });
+        const refs = sortedRefs(s && s.refs);
+        if (!refs.length) {
+            L.pPara('[No references entered]', { indent: 0, lineH: PROSE_LH2, after: 0, style: 'italic', color: L.MUTED });
+            return;
+        }
+        refs.forEach(function (r) { L.pHanging(r, PROSE_INDENT, { lineH: PROSE_LH2 }); });
+    };
+
+    // Front page: the rubric's criteria and points, with the page each
+    // section is on (filled in at the end) and a blank Score column.
+    // Returns where the Page cells are, for fillRubricPages().
+    function drawRubricPage(L, packet, profile) {
+        const doc = L.doc;
+        const info = (packet.state && packet.state.info) || {};
+        const meta = packet.meta || {};
+        const rubric = profile.rubric || [];
+        const total = profile.totalPoints || rubric.reduce(function (a, r) { return a + (Number(r.points) || 0); }, 0);
+        let y = L.mt + 5;
+        // One line if it fits at 12–15 pt, else wrapped at 15
+        const title = pdfSafe(profile.code + ' ' + profile.name + ' — ' + profile.assignment);
+        let tsize = 15;
+        L.setText(L.ACCENT, tsize, 'bold');
+        while (tsize > 12 && doc.getTextWidth(title) > L.cw) L.setText(L.ACCENT, --tsize, 'bold');
+        if (doc.getTextWidth(title) > L.cw) L.setText(L.ACCENT, 15, 'bold');
+        doc.splitTextToSize(title, L.cw).forEach(function (ln) {
+            doc.text(ln, L.m, y);
+            y += 6.5;
+        });
+        y -= 3.5;
+        doc.setDrawColor(L.ACCENT[0], L.ACCENT[1], L.ACCENT[2]);
+        doc.setLineWidth(0.4);
+        doc.line(L.m, y, L.m + L.cw, y);
+        y += 5.5;
+        const who = [
+            ['Student', oneLine(info.student_name)],
+            ['Instructor', oneLine(info.instructor)],
+            ['Date', pdfDate(oneLine(info.date || meta.date))]
+        ].filter(function (p) { return p[1]; }).map(function (p) { return p[0] + ': ' + p[1]; });
+        if (who.length) {
+            L.setText(L.TEXT, 9.5, 'normal');
+            doc.text(doc.splitTextToSize(pdfSafe(who.join('   ·   ')), L.cw)[0] || '', L.m, y);
+            y += 5.5;
+        }
+        L.y = y + 2;
+
+        const widths = scaleRow([7, 52, 72, 14, 17, 18], L.cw);
+        const rows = rubric.map(function (r) {
+            return [String(r.n), r.label,
+                (r.parts || []).map(function (p) { return p[0] + ' (' + p[1] + ')'; }).join('; '),
+                String(r.points), '', ''];
+        });
+        rows.push(['', 'Total', '', String(total), '', '']);
+        const at = [];
+        L.table(['#', 'Criterion', 'Components (points)', 'Points', 'Page', 'Score'], rows, widths, {
+            fontSize: 9, boldCols: [0], groupRows: [rows.length - 1], minRowH: 9,
+            onRow: function (ri, ry, rh, page) { at[ri] = { y: ry, h: rh, page: page }; }
+        });
+        return { rows: at, x: L.m + widths[0] + widths[1] + widths[2] + widths[3] };
+    }
+    // Page column: "3", "11–12", or "N/A" (left out, N/A, or not enabled)
+    function fillRubricPages(L, profile, where, pages) {
+        const doc = L.doc;
+        (profile.rubric || []).forEach(function (r, i) {
+            const at = where.rows[i];
+            if (!at) return;
+            const p = pages[r.id];
+            const t = !p ? 'N/A' : (p.first === p.last ? String(p.first) : p.first + '–' + p.last);
+            doc.setPage(at.page);
+            L.setText(L.TEXT, 9, 'normal');
+            doc.text(t, where.x + 1.5, at.y + 2.5 + 3);
+        });
+    }
+
+    // "Clinical Assessment Packet" divider before the forms
+    function drawDividerPage(L, student, profile) {
+        const doc = L.doc;
+        const cy = L.ph * 0.4;
+        L.setText(PROSE_INK, 26, 'bold');
+        doc.text('Clinical Assessment Packet', L.pw / 2, cy, { align: 'center' });
+        const sub = [student, profile.code].filter(Boolean).join(' · ');
+        L.setText(L.MUTED, 11, 'normal');
+        doc.text(doc.splitTextToSize(pdfSafe(sub), L.cw)[0] || '', L.pw / 2, cy + 10, { align: 'center' });
+        L.y = cy + 16;
+    }
+
+    function generateProfile(packet, profile) {
+        const jsPDF = window.jspdf.jsPDF;
+        const doc = new jsPDF({ unit: 'mm', format: PAGE_FORMAT, orientation: 'portrait' });
+        PERSON = (CAP && CAP.personWord) ? CAP.personWord(packet.meta) : 'patient';
+        const L = makeLayout(doc);
+        L.deferFooter = true;
+        const state = packet.state || {};
+        const info = state.info || {};
+        const student = oneLine(info.student_name);
+        // Form-page header: the student and the assignment, no patient code
+        L.headerText = (student ? student + ' — ' : '') + profile.code + ' ' + profile.assignment;
+        const plan = CAP.buildPrintPlan(packet, profile);
+
+        let flow = null;          // what the current page holds: 'essay' | 'form' | 'page'
+        let fresh = true;         // page 1 not used yet
+        let dropFirst = false;    // page 1 never used (the first block wanted landscape)
+        let afterHeader = false;  // the essay header was the last block
+        let rubricAt = null;
+        const pages = {};         // rubric row id → { first, last }
+        const naShown = {};
+
+        function modLabel(id) {
+            const mod = CAP.MODULE_BY_ID && CAP.MODULE_BY_ID[id];
+            return (mod && mod.label) || id;
+        }
+        function record(rid, first, last) {
+            if (!rid || first == null) return;
+            if (last == null) last = first;
+            const p = pages[rid];
+            if (!p) { pages[rid] = { first: first, last: last }; return; }
+            p.first = Math.min(p.first, first);
+            p.last = Math.max(p.last, last);
+        }
+        // Essay pages: 1" box, no header; forms: the standard 18 mm box
+        // under the plain header; rubric / divider: 18 mm, no header.
+        function startPage(kind, orient) {
+            orient = orient === 'landscape' ? 'landscape' : 'portrait';
+            if (kind === 'essay') L.box(ESSAY_MARGIN, ESSAY_MARGIN, ESSAY_MARGIN);
+            else L.box(18, 18, 18);
+            L.headerStyle = kind === 'form' ? 'plain' : 'none';
+            if (fresh && orient === 'portrait') {
+                L.orientation = 'portrait';
+                L.drawHeader();
+            } else {
+                if (fresh) dropFirst = true;
+                L.addPage(orient);
+            }
+            fresh = false;
+            flow = kind;
+        }
+        // One-line form stub ("(left blank)", "Not applicable — …") under the
+        // module's heading: on the current form page when it fits there,
+        // else on a new portrait form page. Returns the page it is on.
+        function formStub(id, text) {
+            afterHeader = false;
+            if (flow !== 'form' || L.y + 24 > L.ph - L.mb) startPage('form');
+            L.spacer(4);
+            L.h1(modLabel(id));
+            const page = L.pageNum;
+            L.para(text, { color: L.MUTED, style: 'italic' });
+            return page;
+        }
+        // Prose continues on the current essay page (a line apart), or
+        // starts a fresh one
+        function enterEssay(newPage) {
+            const wasHeader = afterHeader;
+            afterHeader = false;
+            if (flow !== 'essay' || newPage) { startPage('essay'); return; }
+            if (!wasHeader && !L.atPageTop()) L.y += PROSE_LH;
+        }
+
+        plan.forEach(function (b) {
+            try {
+                if (b.kind === 'page') {
+                    afterHeader = false;
+                    startPage('page');
+                    if (b.id === 'rubric') rubricAt = drawRubricPage(L, packet, profile);
+                    else if (b.id === 'divider') drawDividerPage(L, student, profile);
+                    return;
+                }
+                if (b.kind === 'essayHeader') {
+                    enterEssay(false);
+                    R_ESSAY.essayHeader(L, packet, profile);
+                    afterHeader = true;
+                    return;
+                }
+                if (b.kind === 'na') {
+                    // One note per module (a multi-part module has a block per part)
+                    if (naShown[b.mod]) return;
+                    naShown[b.mod] = true;
+                    if (b.style === 'essay') {
+                        enterEssay(false);
+                        L.pHeading(b.mod === 'references' ? 'References'
+                            : (b.mod === 'carePlan' ? ((FORM.ESSAY && FORM.ESSAY.CARE_PLAN_TITLE) || 'Nursing Care Plan') : modLabel(b.mod)),
+                            { align: 'center', keep: 1 });
+                        L.pPara(naText(b.reason), { style: 'italic', color: L.MUTED });
+                    } else {
+                        formStub(b.mod, naText(b.reason));
+                    }
+                    return;
+                }
+                const modState = (state[b.mod] && typeof state[b.mod] === 'object') ? state[b.mod] : {};
+                if (b.kind === 'essay' && R_ESSAY[b.mod]) {
+                    enterEssay(b.newPage);
+                    L.touchFirst = null; L.touchLast = null;
+                    R_ESSAY[b.mod](L, modState, { part: b.part, profile: profile });
+                    record(b.rubric, L.touchFirst, L.touchLast);
+                    return;
+                }
+                // Form block (as in the standard packet)
+                afterHeader = false;
+                const renderer = R_PDF[b.mod];
+                if (!renderer) return;
+                const mod = CAP.MODULE_BY_ID && CAP.MODULE_BY_ID[b.mod];
+                if (b.mod !== 'info' && !(mod && mod.printBlank) && !moduleHasData(modState)) {
+                    const at = formStub(b.mod, '(left blank)');
+                    record(b.rubric, at, L.pageNum);
+                    return;
+                }
+                startPage('form', orientationFor(b.mod));
+                const first = L.pageNum;
+                renderer(L, modState, { profile: profile, meta: packet.meta || {} });
+                record(b.rubric, first, L.pageNum);
+            } catch (e) {
+                console.error('[CAP PDF] render failed for block ' + (b.mod || b.id || b.kind), e);
+                L.para('(error rendering ' + (b.mod || b.id || b.kind) + ': ' + (e.message || e) + ')', { color: [180, 30, 30], style: 'italic' });
+            }
+        });
+
+        if (dropFirst) {
+            doc.deletePage(1);
+            Object.keys(pages).forEach(function (k) { pages[k].first -= 1; pages[k].last -= 1; });
+        }
+        if (rubricAt) fillRubricPages(L, profile, rubricAt, pages);
+        // "Page i of n", centred on each page's own width (landscape too)
+        const n = doc.getNumberOfPages();
+        for (let i = 1; i <= n; i++) {
+            doc.setPage(i);
+            const w = doc.internal.pageSize.getWidth();
+            const h = doc.internal.pageSize.getHeight();
+            L.setText(L.MUTED, 8, 'normal');
+            doc.text('Page ' + i + ' of ' + n, w / 2, h - 8, { align: 'center' });
+        }
+        doc.save(CAP.profileFileName(profile, info) + '.pdf');
+    }
+
     // ------------------------------------------------------------------
     // Main generate()
     // ------------------------------------------------------------------
@@ -1607,6 +2224,10 @@
         if (!window.jspdf || !window.jspdf.jsPDF) {
             throw new Error('jsPDF not loaded — editor must lazy-load it before calling CAP_PDF.generate()');
         }
+        // A course-profile packet (meta.profile) prints in its own order and
+        // style; everything below is the standard packet, unchanged.
+        const profile = (CAP && typeof CAP.profileFor === 'function') ? CAP.profileFor(packet && packet.meta) : null;
+        if (profile) return generateProfile(packet, profile);
         const jsPDF = window.jspdf.jsPDF;
         const doc = new jsPDF({ unit: 'mm', format: PAGE_FORMAT, orientation: 'portrait' });
         PERSON = (CAP && CAP.personWord) ? CAP.personWord(packet.meta) : 'patient';
@@ -1623,6 +2244,19 @@
             if (!renderer) continue;
             const modState = (packet.state && packet.state[modId]) || {};
             const mod = CAP && CAP.MODULE_BY_ID && CAP.MODULE_BY_ID[modId];
+            // Print mode (meta.printModes; 'include' unless the packet set one):
+            // Leave out = skip; N/A = a one-line stub like "(left blank)".
+            // Patient Info always prints here: the cover box above already
+            // shows it (a mode left over from a removed course profile is
+            // ignored; the editor offers no choice for it without one).
+            const mode = (modId !== 'info' && CAP && typeof CAP.printModeFor === 'function') ? CAP.printModeFor(packet.meta, modId, null) : 'include';
+            if (mode === 'omit') continue;
+            if (mode === 'na') {
+                L.spacer(4);
+                L.h1((mod && mod.label) || modId);
+                L.para(naText(CAP.naReasonFor ? CAP.naReasonFor(packet.meta, modId) : ''), { color: L.MUTED, style: 'italic' });
+                continue;
+            }
             // A module the student left blank gets a one-line stub on the current
             // page instead of its own page — no blank "(none)" pages and no
             // misleading "Total 0 / Low Risk" score boxes — while still showing

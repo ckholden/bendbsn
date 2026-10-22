@@ -97,9 +97,20 @@
         }
         .cap-row-head:hover { background: var(--clx-bg-surface-2, #f7f9fc); }
         .cap-row-title { display: flex; flex-direction: column; min-width: 0; }
+        .cap-row-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
         .cap-row-title strong {
+            min-width: 0;
             font-size: 14px; color: var(--clx-text-primary, #1a3a5c);
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        /* Course-profile packets (meta.profile) */
+        .cap-profile-chip {
+            flex: none;
+            font-size: 10.5px; font-weight: 700; line-height: 1.6; letter-spacing: 0.02em;
+            padding: 0 6px; border-radius: 999px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            background: var(--clx-accent-subtle, #e0f2f8);
+            color: var(--clx-accent, #0f7490);
         }
         .cap-row-title small {
             font-size: 11px; color: var(--clx-text-muted, #718096);
@@ -139,7 +150,12 @@
             z-index: 10010; padding: 20px;
         }
         .cap-modal-overlay.visible { display: flex; }
+        /* A modal taller than the screen (New Packet on a phone) scrolls
+           instead of being cut off top and bottom; margin:auto still centers
+           one that fits. */
+        .cap-modal-overlay { align-items: flex-start; overflow-y: auto; }
         .cap-modal {
+            margin: auto;
             background: var(--clx-bg-surface, #fff);
             border-radius: 12px; padding: 22px;
             width: 100%; max-width: 460px;
@@ -208,11 +224,17 @@
             letter-spacing: 0.04em; color: var(--clx-text-muted, #718096);
             padding: 8px 12px 4px;
         }
-        .cap-pick-row {
+        /* .cap-modal-scoped so the modal's uppercase field-label style
+           (.cap-modal label) doesn't turn each row into a stacked caps block */
+        .cap-pick-row,
+        .cap-modal .cap-pick-row {
             display: flex; align-items: center; gap: 8px;
             padding: 5px 12px;
+            margin: 0;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 13px; font-weight: 400;
+            text-transform: none; letter-spacing: normal;
+            color: var(--clx-text-primary, #1a3a5c);
         }
         .cap-pick-row:hover { background: var(--clx-bg-hover, #e6edf5); }
         .cap-pick-row input[type="checkbox"] {
@@ -556,6 +578,7 @@
                         site: meta.site || '',
                         course: meta.course || '',
                         templateId: meta.templateId || null,
+                        profile: typeof meta.profile === 'string' ? meta.profile : null,
                         enabledModules: meta.enabledModules || [],
                         createdAt: meta.createdAt || 0,
                         updatedAt: meta.updatedAt || 0
@@ -637,10 +660,16 @@
                 return;
             }
 
+            const profiles = (window.CAP_MODULES && window.CAP_MODULES.COURSE_PROFILES) || {};
             const rowsHtml = allPackets.map(function (p) {
+                const prof = p.profile ? (Object.prototype.hasOwnProperty.call(profiles, p.profile) ? profiles[p.profile] : null) : null;
+                const chip = p.profile
+                    ? '<span class="cap-profile-chip"' + (prof ? ' title="Course profile: ' + esc(prof.label) + '"' : '') + '>' +
+                          esc(prof ? prof.code : p.profile) + '</span>'
+                    : '';
                 return '<div class="cap-row" data-packet-id="' + esc(p.id) + '">' +
                     '<div class="cap-row-title">' +
-                        '<strong>' + esc(packetDisplayTitle(p)) + '</strong>' +
+                        '<div class="cap-row-name"><strong>' + esc(packetDisplayTitle(p)) + '</strong>' + chip + '</div>' +
                         '<small>' + esc(p.course || '') + (p.course && p.site ? ' · ' : '') + esc(p.site || '') + '</small>' +
                     '</div>' +
                     '<div class="cap-row-cell">' + esc(fmtDate(p.date)) + '</div>' +
@@ -688,6 +717,7 @@
             document.getElementById('np_date').value = todayISO();
             document.getElementById('np_site').value = '';
             document.getElementById('np_course').value = '';
+            _autoCourse = '';
             _creatingPacket = false;
             const createBtn = document.getElementById('np_createBtn');
             if (createBtn) createBtn.disabled = false;
@@ -703,9 +733,32 @@
         // the checkboxes.
         const DEFAULT_PRESET = 'program-cap';
         let _selectedPreset = DEFAULT_PRESET;
+        // A preset that is also a course profile (COURSE_PROFILES) puts the
+        // new packet on that profile (meta.profile) and offers a Course name.
+        function presetProfile(id) {
+            const all = (window.CAP_MODULES && window.CAP_MODULES.COURSE_PROFILES) || {};
+            return (id && Object.prototype.hasOwnProperty.call(all, id)) ? all[id] : null;
+        }
+        function profileCourseName(P) { return P.code + ' ' + P.name; } // "NUR311 Clinical Nursing V"
+        // Course text this modal filled in itself (cleared again if the student
+        // switches to another preset without editing it)
+        let _autoCourse = '';
+        function syncPresetCourse() {
+            const el = document.getElementById('np_course');
+            const P = presetProfile(_selectedPreset);
+            const v = el.value.trim();
+            if (P && !v) {
+                _autoCourse = profileCourseName(P);
+                el.value = _autoCourse;
+            } else if (!P && _autoCourse && v === _autoCourse) {
+                el.value = '';
+                _autoCourse = '';
+            }
+        }
         function renderPresetPills(activeId) {
             const pills = document.getElementById('np_presetPills');
             const presets = [
+                { id: 'nur311',               label: 'NUR311 Patient Care Assignment (essay)' },
                 { id: 'program-cap',          label: 'Clinical Assessment Packet (program form)' },
                 { id: 'memory-care-default',  label: 'Memory Care' },
                 { id: 'acute-care-default',   label: 'Acute Care' },
@@ -728,6 +781,7 @@
                         b.setAttribute('aria-pressed', String(on));
                     });
                     renderModulePicker(ids);
+                    syncPresetCourse();
                 });
             });
         }
@@ -791,15 +845,21 @@
             const initials = document.getElementById('np_initials').value.trim().toUpperCase();
             const date = document.getElementById('np_date').value || todayISO();
             const site = document.getElementById('np_site').value.trim();
-            const course = document.getElementById('np_course').value.trim();
+            // A course-profile preset (e.g. NUR311) records the profile and,
+            // when Course was left blank, the course's name
+            const profile = presetProfile(_selectedPreset);
+            const course = document.getElementById('np_course').value.trim() || (profile ? profileCourseName(profile) : '');
             // Read enabled modules from the picker checkboxes (always-on are
             // disabled+checked so they're guaranteed in the list).
             const picked = Array.from(
                 document.querySelectorAll('#np_modulePicker input[type="checkbox"]:checked')
             ).map(function (cb) { return cb.dataset.mod; }).filter(Boolean);
-            // Stored in the Word form's section order (tabs + PDF use it too)
-            const enabledModules = (window.CAP_MODULES && window.CAP_MODULES.orderModules)
-                ? window.CAP_MODULES.orderModules(picked) : picked;
+            // Stored in the Word form's section order (tabs + PDF use it too);
+            // a profile packet in its profile's tab order
+            const CM = window.CAP_MODULES || {};
+            const enabledModules = (profile && CM.orderModulesFor)
+                ? CM.orderModulesFor({ profile: profile.id }, picked)
+                : (CM.orderModules ? CM.orderModules(picked) : picked);
             if (!enabledModules.length) {
                 showToast('Pick at least one module before creating.', 'warning');
                 return;
@@ -827,6 +887,7 @@
                 createdAt: now,
                 updatedAt: now
             };
+            if (profile) meta.profile = profile.id;
             newRef.set({ meta: meta, state: {} }).then(function () {
                 closeNewPacketModal();
                 window.location.href = '/clinical/packet/?id=' + encodeURIComponent(packetId);

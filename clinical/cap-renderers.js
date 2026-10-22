@@ -15,9 +15,10 @@
    with a 4th argument ctx = { moduleId, title, day, hint }. Renderers that
    can be a base must take their heading from ctx.title when given.
 
-   Wording: the editor calls CAP_RENDERERS.setContext({ person }) before
-   rendering; who()/Who() give "patient" (default, as on the Word form) or
-   "resident" (memory-care packets).
+   Wording: the editor calls CAP_RENDERERS.setContext({ person, profile })
+   before rendering; who()/Who() give "patient" (default, as on the Word
+   form) or "resident" (memory-care packets). CTX.profile is the packet's
+   course profile (CAP_MODULES.COURSE_PROFILES entry) or null.
 */
 (function () {
     'use strict';
@@ -26,7 +27,7 @@
     const CAP = window.CAP_MODULES || {};
     const FORM = CAP.FORM || {};
 
-    let CTX = { person: 'patient' };
+    let CTX = { person: 'patient', profile: null };
     function who() { return CTX.person === 'resident' ? 'resident' : 'patient'; }
     function Who() { const w = who(); return w.charAt(0).toUpperCase() + w.slice(1); }
 
@@ -2057,9 +2058,16 @@
             const src = mapSources();
             const dx = strv(other('info').res_dx).trim();
             const showDx = !!dx && !strv(state.p_name).trim();
+            const prof = CTX.profile || null;
             rootEl.innerHTML = panelHint(
                 'Concept Map Essay',
                 'Write each part in full sentences. Cite your sources in APA (Author, Year) under every part that used one; list them in APA References.',
+                // Course-profile packets print the essay in rubric order
+                (prof
+                    ? '<p class="cap-fineprint cap-essay-profnote">Prints in rubric order as "' +
+                          esc((prof.essay && prof.essay.title) || 'Concept Map') +
+                          '" (instructor\'s essay template). Nursing Care Plan, NCSBN and References print right after it.</p>'
+                    : '') +
                 // The template goes on past these four sections; point at the
                 // tabs that hold the rest (neither is in the program-cap preset)
                 '<p class="cap-fineprint cap-essay-refnote">Next in the template: the Nursing Care Plan (with Summary of Care and Discharge Plan) is in the ' +
@@ -2645,9 +2653,10 @@
         };
     });
 
-    // Wording context, set by the editor before rendering.
+    // Wording + course-profile context, set by the editor before rendering:
+    // { person, profile, getState }.
     R.setContext = function (c) {
-        CTX = Object.assign({ person: 'patient' }, c || {});
+        CTX = Object.assign({ person: 'patient', profile: null }, c || {});
     };
 
     window.CAP_RENDERERS = R;

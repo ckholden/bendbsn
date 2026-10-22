@@ -70,6 +70,12 @@
          from FORM.ESSAY: p_name, p_definition, …, data_meds) and the care
          plan's Discharge Plan (carePlan.discharge). Nothing is migrated; a
          packet without them reads and prints as before.
+       still 7 — additive meta keys for course profiles (COURSE_PROFILES), no
+         migration: meta.profile (a COURSE_PROFILES id, e.g. 'nur311'),
+         meta.printModes{id: 'include'|'na'|'omit'} (overrides only — module
+         and print-page ids), meta.naReasons{id: text}, meta.profileOffer
+         (the editor's record that its one-time "apply this course profile"
+         offer was answered). A packet without meta.profile prints as before.
 */
 (function () {
     'use strict';
@@ -125,7 +131,8 @@
         { id: 'behavior',      label: 'Behavior (ABC)',               category: 'Memory care / AL',                 icon: '🎭' },
 
         // The instructor's "Concept Map Template (Rubric focused)", written as
-        // an essay (FORM.ESSAY). Not in any preset yet.
+        // an essay (FORM.ESSAY). Only the nur311 preset (COURSE_PROFILES)
+        // turns it on.
         { id: 'essay',         label: 'Concept Map Essay',            tabLabel: 'Essay', category: 'Academic',      icon: '🖋️' },
         { id: 'caseStudy',     label: 'Case Study',                   category: 'Academic',                         icon: '🎓' },
         { id: 'references',    label: 'APA References',               category: 'Academic',                         icon: '📚' }
@@ -207,8 +214,11 @@
     // started from the memory-care preset. Packets made before schema 3 never
     // recorded their preset (templateId null) and always said "resident", so
     // an old one with a memory-care-only module (behavior, minicog) keeps it.
+    // A course profile's own word wins over all of that.
     function personWord(meta) {
         if (!meta) return 'patient';
+        const profile = profileFor(meta);
+        if (profile) return profile.person;
         if (meta.templateId === 'memory-care-default') return 'resident';
         if (!meta.templateId && !((Number(meta.schemaVersion) || 0) >= 3)) {
             const en = Array.isArray(meta.enabledModules) ? meta.enabledModules
@@ -218,6 +228,274 @@
             if ((en.indexOf('behavior') !== -1 || en.indexOf('minicog') !== -1) && en.indexOf('headToToe') === -1) return 'resident';
         }
         return 'patient';
+    }
+
+    // ------------------------------------------------------------------
+    // Course profiles — one course's own packet: the modules it turns on,
+    // its tab order, the order its turned-in PDF follows (the grading
+    // rubric's), what that PDF leaves out by default, and the rubric itself.
+    // A packet opts in with meta.profile = '<id>'. A packet without one never
+    // reaches any of this and prints exactly as before.
+    //
+    // Print modes: meta.printModes{id: 'include' | 'na' | 'omit'} (+ the
+    // N/A text in meta.naReasons{id}) say what the PDF does with a module or
+    // a print-only page. This is separate from switching a module off, which
+    // deletes its data. Only overrides are stored: the profile's
+    // printDefaults fill the rest, then 'include'. Pages (profile.pages) take
+    // Include / Leave out only.
+    //
+    // printOrder entries, walked in order by buildPrintPlan():
+    //   { kind:'page', id }     a print-only page (profile.pages)
+    //   { kind:'essayHeader' }  Student Name / Course / Instructor + title
+    //   { mod, part, style, rubric, newPage }
+    //                           one module, or one `part` of it; style
+    //                           'essay' = prose, otherwise the module's form;
+    //                           newPage = start on a fresh page
+    //   { rest:true }           every other enabled module, in PDF_ORDER
+    // `rubric` = id of the rubric row the block is graded under.
+    // rubric rows: { id, n, label, points, parts:[[component, points]] }.
+    // offerMatch = RegExp source (case-insensitive) tested against
+    // meta.course / info.course to offer the profile.
+    // ------------------------------------------------------------------
+    function dxParts() {
+        return [['Definition', 2], ['Pathophysiology', 6], ['Risk Factors', 2], ['Signs and Symptoms', 2]];
+    }
+    const NUR311 = {
+        id: 'nur311',
+        code: 'NUR311',
+        name: 'Clinical Nursing V',
+        assignment: 'Patient Care Assignment with Essay Template',
+        label: 'NUR311 Patient Care Assignment (essay)',
+        totalPoints: 100,
+        person: 'patient',
+        offerMatch: '\\bNUR\\s*-?\\s*311\\b',
+        modules: [
+            'info', 'essay', 'carePlan', 'ncsbn', 'references',
+            'headToToe', 'headToToe2', 'omega', 'omega2', 'labs', 'meds',
+            'braden', 'hendrich', 'morse', 'minicog', 'notes'
+        ],
+        // Tabs: these first (when enabled), anything else after in
+        // orderModules order, 'notes' last
+        tabOrder: [
+            'info', 'essay', 'conceptMap', 'carePlan', 'ncsbn', 'references',
+            'headToToe', 'headToToe2', 'omega', 'omega2', 'labs', 'meds',
+            'braden', 'hendrich', 'morse', 'minicog'
+        ],
+        pages: [
+            { id: 'rubric',  label: 'Rubric (front page)' },
+            { id: 'divider', label: '"Clinical Assessment Packet" divider page' }
+        ],
+        // Left out of the PDF unless switched back to Include (data kept)
+        printDefaults: {
+            info: 'omit', notes: 'omit', conceptMap: 'omit', sbar: 'omit',
+            progressNotes: 'omit', behavior: 'omit', caseStudy: 'omit'
+        },
+        essay: {
+            title: 'Concept Map',
+            headerLines: [['Student Name', 'student_name'], ['Course', 'course'], ['Instructor', 'instructor']]
+        },
+        printOrder: [
+            { kind: 'page', id: 'rubric' },
+            { kind: 'essayHeader' },
+            { mod: 'essay',      part: 'primary',   style: 'essay', rubric: 'primary' },
+            { mod: 'essay',      part: 'secondary', style: 'essay', rubric: 'secondary' },
+            { mod: 'essay',      part: 'hpi',       style: 'essay', rubric: 'hpi' },
+            { mod: 'essay',      part: 'data',      style: 'essay', rubric: 'data' },
+            { mod: 'carePlan',   part: 'plan',      style: 'essay', rubric: 'careplan' },
+            { mod: 'carePlan',   part: 'discharge', style: 'essay', rubric: 'discharge' },
+            // NCSBN as its form table, kept with the care plan (rubric row 5)
+            { mod: 'ncsbn',                         style: 'form',  rubric: 'careplan' },
+            { mod: 'references',                    style: 'essay', rubric: 'references', newPage: true },
+            { kind: 'page', id: 'divider' },
+            { mod: 'headToToe',  rubric: 'h2t' },
+            { mod: 'headToToe2', rubric: 'h2t' },
+            { mod: 'omega',      rubric: 'omega' },
+            { mod: 'omega2',     rubric: 'omega' },
+            { mod: 'labs',       rubric: 'labs' },
+            { mod: 'meds',       rubric: 'meds' },
+            { mod: 'braden',     rubric: 'scales' },
+            { mod: 'hendrich',   rubric: 'scales' },
+            { mod: 'morse',      rubric: 'scales' },
+            { mod: 'minicog',    rubric: 'cognitive' },
+            { rest: true }
+        ],
+        // The Canvas rubric, in its order (sums to totalPoints)
+        rubric: [
+            { id: 'primary',    n: 1,  label: 'Concept Map: Primary Diagnosis', points: 12, parts: dxParts() },
+            { id: 'secondary',  n: 2,  label: 'Secondary Diagnosis',            points: 12, parts: dxParts() },
+            { id: 'hpi',        n: 3,  label: 'History of Present Illness',     points: 8,
+              parts: [['Patient Explanation/Chart Review', 2], ['Manifestations', 2], ['Treatment', 2], ['Patient Impact', 2]] },
+            { id: 'data',       n: 4,  label: 'Pertinent Data Collection',      points: 10,
+              parts: [['Abnormal Lab Results', 5], ['Medications', 5]] },
+            { id: 'careplan',   n: 5,  label: 'Nursing Care Plan',              points: 24,
+              parts: [['Assessment/OMEGA7 element that triggered the care plan', 3], ['Nursing Diagnostic Statement', 3],
+                      ['Short Term Goal', 3], ['Long Term Goal', 3], ['3 Interventions for Each Goal (Assess, Do, Teach)', 3],
+                      ['Rationale for Each Intervention', 3], ['NCSBN Clinical Judgement Model', 6]] },
+            { id: 'discharge',  n: 6,  label: 'Discharge Plan/Summary',         points: 5, parts: [] },
+            { id: 'references', n: 7,  label: 'References (definitions, pathophysiology, intervention rationales)', points: 4, parts: [] },
+            { id: 'h2t',        n: 8,  label: 'Clinical Assessment Packet: Head to Toe Assessment', points: 5, parts: [] },
+            { id: 'omega',      n: 9,  label: 'OMEGA7 Assessment',              points: 5, parts: [] },
+            { id: 'labs',       n: 10, label: 'Labs',                           points: 5, parts: [] },
+            { id: 'meds',       n: 11, label: 'Medications',                    points: 5, parts: [] },
+            { id: 'scales',     n: 12, label: 'Braden or Hendrich Assessment',  points: 3, parts: [] },
+            { id: 'cognitive',  n: 13, label: 'Cognitive Assessment',           points: 2, parts: [] }
+        ],
+        fileName: '{student} {code} CAP'
+    };
+    const COURSE_PROFILES = { nur311: NUR311 };
+    MODULE_PRESETS.nur311 = NUR311.modules.slice();
+
+    const PRINT_MODES = ['include', 'na', 'omit'];
+    // Print-only page ids of every profile ('na' doesn't apply to a page)
+    const PAGE_IDS = {};
+    Object.keys(COURSE_PROFILES).forEach(function (k) {
+        (COURSE_PROFILES[k].pages || []).forEach(function (p) { PAGE_IDS[p.id] = true; });
+    });
+
+    function own(o, k) {
+        return !!o && typeof o === 'object' && typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
+    }
+    // meta.enabledModules as a list (RTDB may hand an array back as an
+    // integer-keyed object)
+    function idList(v) {
+        if (Array.isArray(v)) return v;
+        if (v && typeof v === 'object') return Object.keys(v).map(function (k) { return v[k]; });
+        return [];
+    }
+
+    function profileFor(meta) {
+        const id = meta && meta.profile;
+        return own(COURSE_PROFILES, id) ? COURSE_PROFILES[id] : null;
+    }
+
+    // 'include' | 'na' | 'omit' for a module or print-page id: the packet's
+    // own override, else the profile's default, else 'include'. A page set
+    // to 'na' prints (pages are Include / Leave out only).
+    function printModeFor(meta, id, profile) {
+        const set = meta && meta.printModes;
+        let mode = own(set, id) ? set[id] : null;
+        if (PRINT_MODES.indexOf(mode) === -1) {
+            const d = profile && own(profile.printDefaults, id) ? profile.printDefaults[id] : null;
+            mode = PRINT_MODES.indexOf(d) !== -1 ? d : 'include';
+        }
+        if (mode === 'na' && own(PAGE_IDS, id)) return 'include';
+        return mode;
+    }
+
+    function naReasonFor(meta, id) {
+        const set = meta && meta.naReasons;
+        return own(set, id) && set[id] != null && typeof set[id] !== 'object' ? String(set[id]) : '';
+    }
+
+    // Tab order: without a profile, orderModules(). With one, its tabOrder
+    // ids first (those in `ids`), then the rest in orderModules order, with
+    // 'notes' last.
+    function orderModulesFor(meta, ids) {
+        const profile = profileFor(meta);
+        const list = orderModules(ids);
+        if (!profile) return list;
+        const head = profile.tabOrder.filter(function (id) { return list.indexOf(id) !== -1; });
+        const rest = list.filter(function (id) { return head.indexOf(id) === -1 && id !== 'notes'; });
+        return head.concat(rest, list.indexOf('notes') !== -1 ? ['notes'] : []);
+    }
+
+    // The meta changes that put a packet on a profile: { profile,
+    // enabledModules } — the packet's modules plus the profile's, in the
+    // profile's tab order. Pure; never removes a module, never writes print
+    // modes. null for an unknown profile id.
+    function applyProfile(meta, profileId) {
+        if (!own(COURSE_PROFILES, profileId)) return null;
+        const ids = idList(meta && meta.enabledModules).concat(COURSE_PROFILES[profileId].modules);
+        return { profile: profileId, enabledModules: orderModulesFor({ profile: profileId }, ids) };
+    }
+
+    // One print-plan block. Every block has the same keys:
+    //   kind    'form' | 'essay' | 'na' | 'page' | 'essayHeader'
+    //   mod     module id (null for page / essayHeader)
+    //   part    module part ('primary', 'plan', …) or null
+    //   rubric  rubric row id or null
+    //   newPage start the block on a fresh page
+    //   id      print-page id (kind 'page') or null
+    //   reason  N/A text (kind 'na'; '' when none given) or null
+    //   style   'essay' | 'form' for module blocks (an 'na' block keeps the
+    //           style its section would have printed in), else null
+    function planBlock(kind, o) {
+        return {
+            kind: kind,
+            mod: o.mod || null,
+            part: o.part || null,
+            rubric: o.rubric || null,
+            newPage: !!o.newPage,
+            id: o.id || null,
+            reason: o.reason != null ? o.reason : null,
+            style: o.style || null
+        };
+    }
+    function modBlock(meta, profile, id, entry) {
+        const mode = printModeFor(meta, id, profile);
+        if (mode === 'omit') return null;
+        const style = entry.style === 'essay' ? 'essay' : 'form';
+        const o = { mod: id, part: entry.part, rubric: entry.rubric, newPage: entry.newPage, style: style };
+        if (mode === 'na') {
+            o.reason = naReasonFor(meta, id);
+            return planBlock('na', o);
+        }
+        return planBlock(style, o);
+    }
+
+    // What the PDF prints, in order. Without a profile: every enabled module
+    // as a form block in orderModules() order (print modes applied; with no
+    // meta.printModes that is exactly the enabled list). With a profile: its
+    // printOrder (see above). A module that isn't enabled is skipped, one
+    // set to 'omit' is dropped, one set to 'na' becomes an 'na' block (one
+    // per printOrder entry, so a multi-part module gives one per part).
+    function buildPrintPlan(packet, profile) {
+        const meta = (packet && packet.meta) || {};
+        const enabled = orderModules(idList(meta.enabledModules));
+        const out = [];
+        function push(b) { if (b) out.push(b); }
+        if (!profile) {
+            enabled.forEach(function (id) { push(modBlock(meta, null, id, {})); });
+            return out;
+        }
+        const on = {}, placed = {};
+        enabled.forEach(function (id) { on[id] = true; });
+        (profile.printOrder || []).forEach(function (e) {
+            if (e.rest) {
+                enabled.forEach(function (id) {
+                    if (placed[id]) return;
+                    placed[id] = true;
+                    push(modBlock(meta, profile, id, {}));
+                });
+            } else if (e.kind === 'page') {
+                if (printModeFor(meta, e.id, profile) !== 'omit') push(planBlock('page', { id: e.id }));
+            } else if (e.kind === 'essayHeader') {
+                if (on.essay && printModeFor(meta, 'essay', profile) !== 'omit') push(planBlock('essayHeader', {}));
+            } else if (e.mod) {
+                if (!on[e.mod]) return;
+                placed[e.mod] = true;
+                push(modBlock(meta, profile, e.mod, e));
+            }
+        });
+        return out;
+    }
+
+    // '{student} {code} CAP' (profile.fileName) → e.g. 'Christian Holden
+    // NUR311 CAP'. Accents are dropped first ('Zoë' → 'Zoe'), then only
+    // letters, digits, space, '_' and '-' survive; no '.pdf' (the caller
+    // adds it).
+    function profileFileName(profile, info) {
+        function clean(s) {
+            let t = String(s == null ? '' : s);
+            if (typeof t.normalize === 'function') t = t.normalize('NFD').replace(/[̀-ͯ]/g, '');
+            return t.replace(/\s+/g, ' ')
+                .replace(/[^A-Za-z0-9 _-]/g, '').replace(/ {2,}/g, ' ').trim();
+        }
+        const student = clean(info && info.student_name) || 'Student';
+        const code = clean(profile && profile.code);
+        const tpl = (profile && profile.fileName) || '{student} {code} CAP';
+        return clean(tpl.replace(/\{student\}/g, function () { return student; })
+                        .replace(/\{code\}/g, function () { return code; })) || 'Student CAP';
     }
 
     // ------------------------------------------------------------------
@@ -1202,6 +1480,16 @@
         modulesByCategory: modulesByCategory,
         orderModules: orderModules,
         personWord: personWord,
+        // Course profiles (see "Course profiles" above)
+        COURSE_PROFILES: COURSE_PROFILES,
+        PRINT_MODES: PRINT_MODES,
+        profileFor: profileFor,
+        printModeFor: printModeFor,
+        naReasonFor: naReasonFor,
+        orderModulesFor: orderModulesFor,
+        applyProfile: applyProfile,
+        buildPrintPlan: buildPrintPlan,
+        profileFileName: profileFileName,
         FORM: {
             NAME: FORM_NAME,
             VERSION: FORM_VERSION,
@@ -1232,6 +1520,6 @@
         scoreBraden: scoreBraden,
         scoreMorse: scoreMorse,
         scoreHendrich: scoreHendrich,
-        SCHEMA_VERSION: SCHEMA_VERSION  // 7 = Concept Map Essay + Discharge Plan (see header)
+        SCHEMA_VERSION: SCHEMA_VERSION  // 7 = Concept Map Essay + Discharge Plan, + course-profile meta keys (see header)
     };
 })();
