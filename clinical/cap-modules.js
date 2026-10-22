@@ -76,6 +76,13 @@
          and print-page ids), meta.naReasons{id: text}, meta.profileOffer
          (the editor's record that its one-time "apply this course profile"
          offer was answered). A packet without meta.profile prints as before.
+       still 7 — additive data-quality keys, no migration: info.sex
+         ('male' | 'female' | '', read by patientSex()), minicog.status
+         (a MINICOG_STATUS key: 'patient' | 'practice') + minicog.reason (the
+         student's explanation), omega2.noChange (Day 2 "No change in
+         assessment/condition from Day 1" checkbox). Lab H / L / ? flags are
+         computed from the stored text at read time (labView / flagLab, with
+         FORM.LAB_REF textbook ranges as the fallback), never stored.
 */
 (function () {
     'use strict';
@@ -585,6 +592,97 @@
         ] }
     ];
 
+    // Textbook adult reference ranges for TABLE 3 (common nursing lab
+    // references, Pagana / ATI conventions). Keys are LAB_GROUPS row ids.
+    // Read by refFor() / labView(); a Normal Values range the student typed
+    // (their facility's) always wins over these.
+    //   range        one range for everyone ('136-145', '<200')
+    //   male/female  sex-specific ranges instead (Patient Info sex picks one)
+    //   unit, note   printed after the range: '<200 mg/dL (desirable)'
+    //   alias        words that name the lab in prose (labMentioned()). An
+    //                all-lowercase alias matches in any case; an alias written
+    //                with a capital letter matches only exactly as written
+    //                ('PT', so "pt" = patient doesn't count).
+    //   guard        flagLab()'s units guard as { lo, hi } factors (0 = off;
+    //                default 20 / 20): off where a real result can sit far
+    //                outside the range (neutropenic WBC, suppressed TSH,
+    //                liver enzymes in the thousands).
+    const LAB_REF = {
+        na:          { range:'136-145',   unit:'mEq/L',
+                       alias:['sodium', 'Na', 'NA+', 'hyponatremia', 'hypernatremia'] },
+        k:           { range:'3.5-5.0',   unit:'mEq/L',
+                       alias:['potassium', 'K', 'K+', 'hypokalemia', 'hyperkalemia'] },
+        cl:          { range:'98-106',    unit:'mEq/L',
+                       alias:['chloride', 'Cl', 'CL', 'hypochloremia', 'hyperchloremia'] },
+        co2:         { range:'23-30',     unit:'mEq/L',
+                       alias:['co2', 'tco2', 'bicarbonate', 'bicarb', 'hco3', 'carbon dioxide'] },
+        bun:         { range:'10-20',     unit:'mg/dL',
+                       alias:['bun', 'blood urea nitrogen', 'urea', 'azotemia'] },
+        creatinine:  { male:'0.6-1.2', female:'0.5-1.1', unit:'mg/dL',
+                       alias:['creatinine', 'creat', 'Cr', 'SCr', 'sCr', 'Scr'] },
+        cholesterol: { range:'<200',      unit:'mg/dL', note:'desirable',
+                       alias:['cholesterol', 'chol', 'hypercholesterolemia'] },
+        albumin:     { range:'3.5-5.0',   unit:'g/dL',
+                       alias:['albumin', 'alb', 'hypoalbuminemia'] },
+        rbc:         { male:'4.7-6.1', female:'4.2-5.4', unit:'x10^6/uL',
+                       alias:['rbc', 'rbcs', 'red blood cell', 'red blood cells', 'red cell count', 'erythrocyte', 'erythrocytes'] },
+        wbc:         { range:'5.0-10.0',  unit:'x10^3/uL', guard:{ lo:0, hi:20 },
+                       alias:['wbc', 'wbcs', 'white blood cell', 'white blood cells', 'white count', 'leukocyte', 'leukocytes', 'leukocytosis', 'leukopenia'] },
+        hct:         { male:'42-52', female:'37-47', unit:'%',
+                       alias:['hct', 'hematocrit', 'haematocrit', 'h&h', 'h/h'] },
+        hgb:         { male:'14-18', female:'12-16', unit:'g/dL',
+                       alias:['hgb', 'hemoglobin', 'haemoglobin', 'hb', 'h&h', 'h/h'] },
+        pt:          { range:'11.0-12.5', unit:'sec',
+                       alias:['PT', 'prothrombin', 'protime', 'pro time'] },
+        ptt:         { range:'30-40',     unit:'sec', note:'aPTT',
+                       alias:['ptt', 'aptt', 'partial thromboplastin'] },
+        inr:         { range:'0.8-1.1', note:'2.0-3.0 therapeutic on warfarin',
+                       alias:['inr', 'international normalized ratio'] },
+        tsh:         { range:'0.5-5.0',   unit:'uU/mL', guard:{ lo:0, hi:20 },
+                       alias:['tsh', 'thyroid stimulating hormone', 'thyrotropin'] },
+        alt:         { range:'4-36',      unit:'U/L', guard:{ lo:20, hi:0 },
+                       alias:['ALT', 'sgpt', 'alanine aminotransferase', 'alanine transaminase', 'lft', 'lfts', 'liver enzymes'] },
+        ast:         { range:'0-35',      unit:'U/L', guard:{ lo:20, hi:0 },
+                       alias:['AST', 'sgot', 'aspartate aminotransferase', 'aspartate transaminase', 'lft', 'lfts', 'liver enzymes'] }
+    };
+    // Rows the student adds under Other (labs.extra[].lab), recognised by
+    // name: `match` must and `not` must not hit the lab name ("Alk Phos" is
+    // not phosphorus, "LDH" is not lactate, "Ionized Ca" has its own range).
+    // `key` identifies the entry (refFor(key) works too); other keys as in
+    // LAB_REF.
+    const LAB_EXTRA_REF = [
+        { key:'platelets', label:'Platelets', range:'150-400', unit:'x10^3/uL', guard:{ lo:0, hi:20 },
+          match:/platelet|plt/i, not:/mean platelet|\bmpv\b|platelet function|aggregation/i,
+          alias:['platelet', 'platelets', 'plt', 'plts', 'thrombocytopenia', 'thrombocytosis'] },
+        // A fasting range: a random / point-of-care value above 110 may be
+        // expected, so the note says which range this is
+        { key:'glucose', label:'Glucose', range:'70-110', unit:'mg/dL', note:'fasting',
+          match:/glucose|blood\s*sugar|\b(?:bg|bgl|cbg|fsbg|fsbs|bs)\b/i, not:/urine|\bua\b|csf|tolerance|\bo?gtt\b/i,
+          alias:['glucose', 'blood glucose', 'blood sugar', 'bg', 'cbg', 'hyperglycemia', 'hypoglycemia'] },
+        { key:'calcium', label:'Calcium', range:'9.0-10.5', unit:'mg/dL',
+          match:/calcium|^\s*ca(?![a-z])/i, not:/ionized|\bi-?ca\b|urine|\bca\s*-?\s*(?:125|19|15|27)\b/i,
+          alias:['calcium', 'Ca+', 'Ca++', 'Ca2+', 'hypocalcemia', 'hypercalcemia'] },
+        // In mg/dL, the unit US hospital labs report; the note gives the same
+        // textbook range in mEq/L (×20 units guard can't tell a 1.2× unit
+        // difference apart, so the range must be in the unit results come in)
+        { key:'magnesium', label:'Magnesium', range:'1.6-2.6', unit:'mg/dL', note:'1.3-2.1 mEq/L',
+          match:/magnesium|^\s*mg(?![a-z])/i, not:/urine/i,
+          alias:['magnesium', 'Mg', 'hypomagnesemia', 'hypermagnesemia'] },
+        { key:'phosphorus', label:'Phosphorus', range:'3.0-4.5', unit:'mg/dL',
+          match:/phosph(?:orus|ate)|^\s*(?:phos|po4)(?![a-z])/i, not:/alk|phosphatase|urine/i,
+          alias:['phosphorus', 'phosphate', 'phos', 'PO4', 'hypophosphatemia', 'hyperphosphatemia'] },
+        { key:'bnp', label:'BNP', range:'<100', unit:'pg/mL', guard:{ lo:20, hi:0 },
+          match:/\bbnp\b|natriuretic/i, not:/nt-?\s*pro|probnp/i,
+          alias:['bnp', 'b-type natriuretic peptide', 'brain natriuretic peptide'] },
+        { key:'lactate', label:'Lactate', range:'0.5-2.2', unit:'mmol/L',
+          match:/lact(?:ate|ic)/i, not:/dehydrogenase|\bldh?\b/i,
+          alias:['lactate', 'lactic acid', 'lactic'] },
+        { key:'a1c', label:'HbA1c', range:'<5.7', unit:'%',
+          match:/a1c|glyc(?:at|osylat)ed\s*h/i,
+          alias:['a1c', 'hba1c', 'hgba1c', 'hemoglobin a1c', 'glycated hemoglobin', 'glycosylated hemoglobin'] }
+    ];
+    const LAB_REF_SOURCE = 'Textbook adult range (common nursing lab references) — use your facility\'s range if it differs.';
+
     // TABLE 5 — Braden Scale (Briggs form 3166P), descriptors verbatim.
     // Option titles are printed in capitals, as on the form.
     const BRADEN = {
@@ -710,6 +808,15 @@
         CLOCK_LABEL: 'CLOCK DRAWING SCORE (Normal 2, abnormal 0)',
         TOTAL_LABEL: 'TOTAL SCORE (0–2 indicates positive screen for dementia, 3–5 negative screen)'
     };
+    // Who the Mini-Cog was done with (minicog.status; minicog.reason holds
+    // the student's explanation for 'practice'), per the essay template's
+    // Additional Comments (STATUS_NOTE, verbatim).
+    const MINICOG_STATUS = {
+        patient:  'Performed with my patient',
+        practice: 'Not appropriate / unable with my patient — performed with a fellow nursing student for practice'
+    };
+    MINICOG.STATUS = MINICOG_STATUS;
+    MINICOG.STATUS_NOTE = 'If the Cognitive Assessment Form is unable to be assessed on a patient or you think it\'s inappropriate, please explain and perform with another nursing student for further practice.';
 
     // ------------------------------------------------------------------
     // Nursing Concept Map — the Word form's page 1. BOXES are listed in the
@@ -1263,6 +1370,407 @@
         };
     }
 
+    // ------------------------------------------------------------------
+    // Lab values — reading the student's Normal Values / Patient Result
+    // text, and the H / L / ? flags. Pure; flags are computed, never stored.
+    // Nothing here writes a cell: the editor's buttons (Fill blank Normal
+    // Values, Not drawn) are explicit and offer Undo.
+    // ------------------------------------------------------------------
+
+    // 'male' | 'female' | '' from any spelling ('M', 'Female', …)
+    function normSex(s) {
+        const t = str(s).trim().toLowerCase();
+        if (/^(?:m|male|man)$/.test(t)) return 'male';
+        if (/^(?:f|female|woman)$/.test(t)) return 'female';
+        return '';
+    }
+    // Patient Info's sex (info.sex) → 'male' | 'female' | ''
+    function patientSex(info) {
+        return normSex(info && typeof info === 'object' ? info.sex : info);
+    }
+
+    // Text as the parsers read it: every dash / minus is '-', ≤ ≥ are
+    // <= >=, and thousands separators go (150,000 → 150000).
+    function labText(s) {
+        let t = str(s).replace(/[‐-―−]/g, '-').replace(/≤/g, '<=').replace(/≥/g, '>=');
+        let prev;
+        do { prev = t; t = t.replace(/(\d),(\d{3})(?!\d)/g, '$1$2'); } while (t !== prev);
+        return t;
+    }
+    // Numbers in the text with their positions. A number glued to a letter
+    // or '^' is part of a name or a unit (CO2, A1c, x10^3), not a value —
+    // except, with `sexGlue` (Normal Values), a lone M / F label written
+    // against its range ('M14-18, F12-16').
+    function labNums(t, sexGlue) {
+        const re = /\d+(?:\.\d+)?|\.\d+/g;
+        const out = [];
+        let m;
+        while ((m = re.exec(t))) {
+            const before = m.index ? t.charAt(m.index - 1) : '';
+            if (/[A-Za-z^]/.test(before) &&
+                !(sexGlue && /[MFmf]/.test(before) && !/[A-Za-z0-9^]/.test(m.index > 1 ? t.charAt(m.index - 2) : ''))) continue;
+            out.push({ v: parseFloat(m[0]), start: m.index, end: m.index + m[0].length });
+        }
+        return out;
+    }
+    // Dates and clock times out of a result ('8.3 (10/4)', '10/04/26 0600')
+    function stripDateTime(t) {
+        return t
+            .replace(/(^|[^\d.])\d{4}-\d{1,2}-\d{1,2}(?![\d.])/g, '$1 ')
+            .replace(/(^|[^\d.])\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}(?![\d.])/g, '$1 ')
+            .replace(/(^|[^\d.])\d{1,2}\/\d{1,2}(?![\d.\/])/g, '$1 ')
+            .replace(/(^|[^\d.])\d{1,2}:\d{2}(?::\d{2})?(?:\s*[ap]\.?m\b\.?)?/gi, '$1 ')
+            .replace(/(?:@|\bat\b)\s*\d{3,4}\b(?:\s*h(?:rs?|ours)?\b)?/gi, ' ')
+            .replace(/\b\d{4}\s*h(?:rs?|ours)?\b/gi, ' ');
+    }
+    const LAB_SEX_RE = /(^|[^A-Za-z])(males?|men|man|females?|women|woman|m|f)(?![A-Za-z\/])/gi;
+
+    // A Normal Values text → a range:
+    //   {lo, hi}                       '136-145', '3.5 to 5.0', '150,000–400,000'
+    //   {hi, op:'lt'} / {lo, op:'gt'}  '<200', 'less than 100', '>60'
+    //                                  (+ incl:true for '<=' / '≤' / 'up to')
+    //   {male:{lo,hi}, female:{lo,hi}} 'M 14-18; F 12-16', '14-18 (M), 12-16 (F)'
+    //   null                           no range in it
+    // Units and notes are ignored; the first two-sided range wins
+    // ('0.8-1.1 (2.0-3.0 on warfarin)' → 0.8-1.1). With `sex`, a
+    // sex-labelled text gives that sex's {lo, hi} (an unlabelled range in the
+    // same text stands for both; null when neither applies). Unlabelled
+    // ranges side by side with nothing but a separator and units between
+    // them ('14-18 / 12-16', male / female without the M / F) can't be told
+    // apart, so they give their union: a result is flagged only outside
+    // all of them.
+    function parseRange(text, sex) {
+        if (text == null || typeof text === 'object') return null;
+        const t = labText(text);
+        const nums = labNums(t, true);
+        if (!nums.length) return null;
+        sex = normSex(sex);
+        const ranges = [], loose = [];
+        for (let i = 0; i < nums.length; i++) {
+            if (i + 1 < nums.length && /^\s*(?:-|to)\s*$/i.test(t.slice(nums[i].end, nums[i + 1].start))) {
+                const a = nums[i].v, b = nums[i + 1].v;
+                ranges.push({ lo: Math.min(a, b), hi: Math.max(a, b), start: nums[i].start, end: nums[i + 1].end, sex: '' });
+                i++;
+            } else loose.push(nums[i]);
+        }
+        // A one-sided range ('<200') that comes before every two-sided one
+        let oneSided = null;
+        for (let i = 0; i < loose.length && !oneSided; i++) {
+            if (ranges.length && loose[i].start > ranges[0].start) break;
+            const before = t.slice(0, loose[i].start);
+            let m = before.match(/(?:(<=|=<|<)|(?:^|[^A-Za-z])(less\s+than(?:\s+or\s+equal\s+to)?|below|under|up\s+to|max(?:imum)?))\s*:?\s*$/i);
+            if (m) {
+                oneSided = { hi: loose[i].v, op: 'lt' };
+                if (/=|equal|up\s+to|max/i.test(m[1] || m[2])) oneSided.incl = true;
+                break;
+            }
+            m = before.match(/(?:(>=|=>|>)|(?:^|[^A-Za-z])(greater\s+than(?:\s+or\s+equal\s+to)?|more\s+than|above|over|at\s+least|min(?:imum)?))\s*:?\s*$/i);
+            if (m) {
+                oneSided = { lo: loose[i].v, op: 'gt' };
+                if (/=|equal|at\s+least|min/i.test(m[1] || m[2])) oneSided.incl = true;
+            }
+        }
+        if (oneSided) return oneSided;
+        if (ranges.length) {
+            const labels = [];
+            LAB_SEX_RE.lastIndex = 0;
+            let m;
+            while ((m = LAB_SEX_RE.exec(t))) {
+                labels.push({ at: m.index + m[1].length, sex: /^m/i.test(m[2]) ? 'male' : 'female' });
+            }
+            if (!labels.length) {
+                // '14-18 / 12-16 g/dL': only a unit and a / , ; | between
+                // the ranges, and only a unit after the last one
+                const UNIT = '(?:[A-Za-z%µμ^\\/.\\d]+\\s*)?';
+                const sep = new RegExp('^\\s*' + UNIT + '[\\/,;|]\\s*$');
+                const tail = new RegExp('^\\s*' + UNIT + '$');
+                const pair = ranges.length > 1 && tail.test(t.slice(ranges[ranges.length - 1].end)) &&
+                    ranges.every(function (r, i) { return !i || sep.test(t.slice(ranges[i - 1].end, r.start)); });
+                if (pair) {
+                    return {
+                        lo: Math.min.apply(null, ranges.map(function (r) { return r.lo; })),
+                        hi: Math.max.apply(null, ranges.map(function (r) { return r.hi; }))
+                    };
+                }
+                return { lo: ranges[0].lo, hi: ranges[0].hi };
+            }
+            // Labels lead ('M 14-18, F 12-16') when the first one comes
+            // before the first range, else they follow ('14-18 (M), …').
+            const lead = labels[0].at < ranges[0].start;
+            ranges.forEach(function (r, i) {
+                const from = lead ? (i ? ranges[i - 1].end : 0) : r.end;
+                const to = lead ? r.start : (i + 1 < ranges.length ? ranges[i + 1].start : t.length);
+                const hits = labels.filter(function (l) { return l.at >= from && l.at < to; });
+                if (hits.length) r.sex = (lead ? hits[hits.length - 1] : hits[0]).sex;
+            });
+            if (!ranges.some(function (r) { return r.sex; })) return { lo: ranges[0].lo, hi: ranges[0].hi };
+            const general = ranges.filter(function (r) { return !r.sex; })[0] || null;
+            const pick = function (s) {
+                const r = ranges.filter(function (x) { return x.sex === s; })[0] || general;
+                return r ? { lo: r.lo, hi: r.hi } : null;
+            };
+            if (sex) return pick(sex);
+            return { male: pick('male'), female: pick('female') };
+        }
+        return null;
+    }
+
+    // A Patient Result text → {value, cmp} (cmp '<' / '>' for '<0.5', else
+    // null), {notDrawn:true} ('Not drawn', 'not ordered', 'ND', 'N/A', '—'),
+    // or null (empty / no number). Dates and times are dropped first, so
+    // '8.3 (10/4)' is 8.3; '.72' is 0.72; '7,500' is 7500.
+    function parseResult(text) {
+        if (text == null) return null;
+        if (typeof text === 'number') return isFinite(text) ? { value: text, cmp: null } : null;
+        if (typeof text !== 'string') return null;
+        let t = labText(text).trim();
+        if (!t) return null;
+        if (/^-+$/.test(t) || /^(?:n\/?a|nd|n\.d\.)\.?$/i.test(t) ||
+            /\bnot\s+(?:drawn|ordered|collected|done|obtained|available|tested|resulted|performed|checked)\b/i.test(t)) {
+            return { notDrawn: true };
+        }
+        t = stripDateTime(t);
+        const n = labNums(t)[0];
+        if (!n) return null;
+        const before = t.slice(0, n.start);
+        let cmp = null;
+        if (/(?:<=?|=<|(?:^|[^A-Za-z])(?:less\s+than|below|under))\s*$/i.test(before)) cmp = '<';
+        else if (/(?:>=?|=>|(?:^|[^A-Za-z])(?:greater\s+than|more\s+than|above|over))\s*$/i.test(before)) cmp = '>';
+        const neg = !cmp && /(^|[\s(:])-$/.test(before);
+        return { value: neg ? -n.v : n.v, cmp: cmp };
+    }
+
+    // H / L / N for a result against a range (parseRange() shapes; text is
+    // parsed too), '?' when the result looks like other units, '' when there
+    // is nothing to say:
+    //   ''  range or result missing, not drawn, or a '<' / '>' result
+    //   '?' units guard (checked first): value > hi × 20 or < lo ÷ 20
+    //       (`guard` = {lo, hi} factors, 0 = off — LAB_REF[id].guard)
+    //   bounds are inclusive: 136 vs 136-145 is N; '<200' is strict (200 is
+    //       H), '<=200' / 'up to 200' inclusive
+    //   sex-specific range + unknown sex: H / L only outside the UNION of
+    //       both ranges, otherwise '' (it may be normal for one sex only);
+    //       with the sex known, that sex's range (none → '')
+    function flagLab(range, result, sex, guard) {
+        sex = normSex(sex);
+        if (typeof range === 'string') range = parseRange(range, sex);
+        if (typeof result === 'string' || typeof result === 'number') result = parseResult(result);
+        if (!range || typeof range !== 'object' || !result || result.notDrawn || result.cmp) return '';
+        const v = result.value;
+        if (typeof v !== 'number' || !isFinite(v)) return '';
+        let r = range, union = false;
+        if (own(range, 'male') || own(range, 'female')) {
+            if (sex) r = range[sex];
+            else {
+                const list = [range.male, range.female].filter(function (x) {
+                    return x && typeof x.lo === 'number' && typeof x.hi === 'number';
+                });
+                r = list.length ? {
+                    lo: Math.min.apply(null, list.map(function (x) { return x.lo; })),
+                    hi: Math.max.apply(null, list.map(function (x) { return x.hi; }))
+                } : null;
+                union = true;
+            }
+            if (!r) return '';
+        }
+        const g = guard && typeof guard === 'object' ? guard : {};
+        const gLo = typeof g.lo === 'number' ? g.lo : 20;
+        const gHi = typeof g.hi === 'number' ? g.hi : 20;
+        const hasLo = typeof r.lo === 'number', hasHi = typeof r.hi === 'number';
+        if (!hasLo && !hasHi) return '';
+        if (gHi && hasHi && r.hi > 0 && v > r.hi * gHi) return '?';
+        if (gLo && hasLo && r.lo > 0 && v < r.lo / gLo) return '?';
+        let flag;
+        if (r.op === 'lt') flag = (r.incl ? v > r.hi : v >= r.hi) ? 'H' : 'N';
+        else if (r.op === 'gt') flag = (r.incl ? v < r.lo : v <= r.lo) ? 'L' : 'N';
+        else if (hasLo && hasHi) flag = v < r.lo ? 'L' : (v > r.hi ? 'H' : 'N');
+        else return '';
+        return union && flag === 'N' ? '' : flag;
+    }
+
+    function labRefEntry(id) {
+        if (own(LAB_REF, id)) return LAB_REF[id];
+        for (let i = 0; i < LAB_EXTRA_REF.length; i++) if (LAB_EXTRA_REF[i].key === id) return LAB_EXTRA_REF[i];
+        return null;
+    }
+    function labRefText(ref, sex) {
+        const sexSpecific = !!(ref.male || ref.female);
+        const r = !sexSpecific ? ref.range
+            : (sex ? ref[sex] : 'M ' + ref.male + ', F ' + ref.female);
+        const unit = ref.unit || '';
+        return r + (unit ? (unit === '%' ? '' : ' ') + unit : '') + (ref.note ? ' (' + ref.note + ')' : '');
+    }
+    // Textbook reference for a LAB_GROUPS row id (or a LAB_EXTRA_REF key) →
+    // { text, unit, sexSpecific, note, range } | null. text is what [Fill
+    // blank Normal Values] writes: '136-145 mEq/L'; a sex-specific lab gives
+    // that sex's range when `sex` is known, else both ('M 14-18, F 12-16
+    // g/dL'). range = parseRange(text, sex).
+    function refFor(id, sex) {
+        const ref = labRefEntry(id);
+        if (!ref) return null;
+        sex = normSex(sex);
+        const text = labRefText(ref, sex);
+        return { text: text, unit: ref.unit || '', sexSpecific: !!(ref.male || ref.female), note: ref.note || '', range: parseRange(text, sex) };
+    }
+    // LAB_EXTRA_REF entry for a student-added lab name, or null
+    function extraRefEntry(name) {
+        const s = str(name).trim();
+        if (!s) return null;
+        for (let i = 0; i < LAB_EXTRA_REF.length; i++) {
+            const e = LAB_EXTRA_REF[i];
+            if (e.match.test(s) && !(e.not && e.not.test(s))) return e;
+        }
+        return null;
+    }
+    // refFor() for an added lab's name ('Platelets', 'Mg') + { key, label }
+    function extraRefFor(name, sex) {
+        const e = extraRefEntry(name);
+        const r = e ? refFor(e.key, sex) : null;
+        if (r) { r.key = e.key; r.label = e.label; }
+        return r;
+    }
+
+    // TABLE 3 as rows: the standard rows (LAB_GROUPS order), then the
+    // student's added rows (labs.extra — an array, or the integer-keyed
+    // object RTDB may hand back; `index` = its position as the editor
+    // numbers it). Each row:
+    //   { id, index, label, group, isExtra, refKey,
+    //     normal (stored text), refText (textbook text for `sex`, '' if none),
+    //     date, result (stored text), value, cmp, interp,
+    //     notDrawn, flag ('H'|'L'|'N'|'?'|''),
+    //     flagSource ('entered' | 'textbook' | '' when no flag),
+    //     rangeSource (the range a result is read against, flag or not) }
+    // The stored Normal Values text is used when it parses (the facility's
+    // range), else the textbook range.
+    function labView(labs, sex) {
+        labs = labs && typeof labs === 'object' ? labs : {};
+        sex = normSex(sex);
+        const rows = labs.rows && typeof labs.rows === 'object' ? labs.rows : {};
+        const out = [];
+        function view(base, row, ref) {
+            const normal = str(row.normal), result = str(row.result);
+            const res = parseResult(result);
+            const notDrawn = row.notDrawn === true || !!(res && res.notDrawn);
+            let range = parseRange(normal, sex), src = range ? 'entered' : '';
+            if (!range && ref) {
+                range = parseRange(labRefText(ref, sex), sex);
+                src = range ? 'textbook' : '';
+            }
+            const flag = notDrawn ? '' : flagLab(range, res, sex, ref && ref.guard);
+            base.normal = normal;
+            base.refText = ref ? labRefText(ref, sex) : '';
+            base.date = str(row.date);
+            base.result = result;
+            base.value = res && !res.notDrawn ? res.value : null;
+            base.cmp = res && !res.notDrawn ? res.cmp : null;
+            base.interp = str(row.interp);
+            base.notDrawn = notDrawn;
+            base.flag = flag;
+            base.flagSource = flag ? src : '';
+            base.rangeSource = src;
+            return base;
+        }
+        LAB_GROUPS.forEach(function (g) {
+            g.rows.forEach(function (r) {
+                const row = rows[r.id] && typeof rows[r.id] === 'object' ? rows[r.id] : {};
+                out.push(view({ id: r.id, index: null, label: r.label, group: g.group, isExtra: false, refKey: own(LAB_REF, r.id) ? r.id : null },
+                    row, own(LAB_REF, r.id) ? LAB_REF[r.id] : null));
+            });
+        });
+        let extra = labs.extra;
+        if (extra && !Array.isArray(extra) && typeof extra === 'object') {
+            extra = Object.keys(extra).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return labs.extra[k]; });
+        }
+        (Array.isArray(extra) ? extra : []).filter(function (x) { return x && typeof x === 'object'; }).forEach(function (x, i) {
+            const ref = extraRefEntry(x.lab);
+            out.push(view({ id: 'extra-' + i, index: i, label: str(x.lab).trim() || ('Added lab ' + (i + 1)), group: 'Other',
+                isExtra: true, refKey: ref ? ref.key : null }, x, ref));
+        });
+        return out;
+    }
+
+    function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&'); }
+    // Aliases that are also everyday words or units, counted only in a
+    // lab's context:
+    //   K   potassium only with a value after it ('K 3.1', 'K: 3.1', 'K of
+    //       3.1'), not 'WBC 7.6 K/uL', 'Plt 98 K' or 'vitamin K'
+    //   PT  not physical therapy ('PT/OT', 'PT eval', 'seen by PT')
+    const ALIAS_CONTEXT = {
+        K: {
+            after: /^\s*(?:(?:[:=]|of|was|is|at|level)\s*)*[<>]?\s*(?:\d|\.\d)/i,
+            notBefore: /vitamin\s*$/i
+        },
+        PT: {
+            notAfter: /^\s*(?:(?:\/|&|\+|and)\s*OT\b|eval|consult|session|referral|recs?\b|recommend|therapy|visit|treatment|tx\b|goals?\b|work(?:ed|ing|s)?\s+with)/i,
+            notBefore: /(?:\bOT\s*(?:\/|&|\+|and)\s*|\b(?:with|by|per|from|to)\s+)$/i
+        }
+    };
+    // Does `t` name the lab by alias `a`, as a word? (an alias with a capital
+    // letter only exactly as written — LAB_REF alias rules)
+    function aliasIn(t, a) {
+        const body = String(a).trim().split(/\s+/).map(escRe).join('[\\s-]+');
+        if (!body) return false;
+        const re = new RegExp('(^|[^A-Za-z0-9])(' + body + ')(?![A-Za-z])', /[A-Z]/.test(a) ? 'g' : 'gi');
+        const rule = own(ALIAS_CONTEXT, a) ? ALIAS_CONTEXT[a] : null;
+        let m;
+        while ((m = re.exec(t))) {
+            if (!rule) return true;
+            const start = m.index + m[1].length, end = start + m[2].length;
+            const before = t.slice(0, start), after = t.slice(end);
+            if (rule.after && !rule.after.test(after)) continue;
+            if (rule.notAfter && rule.notAfter.test(after)) continue;
+            if (rule.notBefore && rule.notBefore.test(before)) continue;
+            return true;
+        }
+        return false;
+    }
+    // Does `text` (the student's prose) mention this lab? A labView() row
+    // (or a row id). True when one of its aliases appears as a word
+    // (aliasIn; an added lab also by its own name), or when its exact
+    // result number does WITH the lab's unit ('8.3 g/dL', '.72 mg/dL',
+    // '29.9%') — a bare number is too often a vital sign, an age or a dose
+    // (BP 134/82, RR 32) — and only for a result of 2+ digits.
+    function labMentioned(text, row) {
+        const t = labText(text);
+        if (!t.trim() || row == null) return false;
+        if (typeof row === 'string') row = { id: row };
+        let aliases = [], ref = null;
+        if (!row.isExtra && own(LAB_REF, row.id)) {
+            ref = LAB_REF[row.id];
+            aliases = ref.alias.slice();
+        } else {
+            ref = row.refKey ? labRefEntry(row.refKey) : extraRefEntry(row.label);
+            if (ref && ref.alias) aliases = ref.alias.slice();
+            const name = str(row.label).trim();
+            if (row.isExtra && name.length >= 2 && !/^Added lab \d+$/.test(name)) {
+                // A short abbreviation keeps its casing, so an added 'Mg' is
+                // not the 'mg' of '25 mg' or 'mg/dL'; a longer name matches
+                // in any case. A lowercase abbreviation is left to the
+                // textbook entry's aliases when one matched ('mg', 'ca').
+                if (name.replace(/[^A-Za-z]/g, '').length > 4) aliases.push(name.toLowerCase());
+                else if (/[A-Z]/.test(name) || !ref) aliases.push(name);
+            }
+        }
+        if (aliases.some(function (a) { return aliasIn(t, a); })) return true;
+        const unit = ref && ref.unit ? String(ref.unit).replace(/[µμ]/g, 'u') : '';
+        if (!unit) return false;
+        const v = row.value != null ? row.value : (function () {
+            const r = parseResult(row.result);
+            return r && !r.notDrawn ? r.value : null;
+        })();
+        if (typeof v !== 'number' || !isFinite(v)) return false;
+        if (String(Math.abs(v)).replace(/^0*\.?0*/, '').replace(/\D/g, '').length < 2) return false;
+        const unitRe = new RegExp('^\\s*' + escRe(unit) + '(?![A-Za-z])', 'i');
+        const re = /\d+(?:\.\d+)?|\.\d+/g;
+        const s = stripDateTime(t).replace(/[µμ]/g, 'u');
+        let m;
+        while ((m = re.exec(s))) {
+            if (m.index && /[A-Za-z^]/.test(s.charAt(m.index - 1))) continue;
+            if (parseFloat(m[0]) === Math.abs(v) && unitRe.test(s.slice(m.index + m[0].length))) return true;
+        }
+        return false;
+    }
+
     // NCSBN: returns { s1, s2, s3a, s3b, s45, s6a, s6b } (strings) for any
     // stored shape. New shape (_schema >= 3 or a `boxes` object) is read as
     // is. Old shape: steps[0..5] — Recognize, Analyze, Prioritize (both
@@ -1498,6 +2006,10 @@
             NCSBN_ROWS: NCSBN_ROWS,
             LAB_COLUMNS: LAB_COLUMNS,
             LAB_GROUPS: LAB_GROUPS,
+            LAB_REF: LAB_REF,
+            LAB_EXTRA_REF: LAB_EXTRA_REF,
+            LAB_REF_SOURCE: LAB_REF_SOURCE,
+            MINICOG_STATUS: MINICOG_STATUS,
             BRADEN: BRADEN,
             MORSE: MORSE,
             HENDRICH: HENDRICH,
@@ -1520,6 +2032,17 @@
         scoreBraden: scoreBraden,
         scoreMorse: scoreMorse,
         scoreHendrich: scoreHendrich,
+        // Lab values + data-quality helpers (see "Lab values" above)
+        LAB_REF_SOURCE: LAB_REF_SOURCE,
+        MINICOG_STATUS: MINICOG_STATUS,
+        patientSex: patientSex,
+        refFor: refFor,
+        extraRefFor: extraRefFor,
+        parseRange: parseRange,
+        parseResult: parseResult,
+        flagLab: flagLab,
+        labView: labView,
+        labMentioned: labMentioned,
         SCHEMA_VERSION: SCHEMA_VERSION  // 7 = Concept Map Essay + Discharge Plan, + course-profile meta keys (see header)
     };
 })();

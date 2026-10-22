@@ -686,6 +686,14 @@
     // ------------------------------------------------------------------
     const R_PDF = {};
 
+    // info.sex as printed: 'Female' / 'Male' (any spelling patientSex()
+    // reads), other text as typed, '' when not set (the line is skipped)
+    function sexText(v) {
+        const sx = (CAP && typeof CAP.patientSex === 'function') ? CAP.patientSex({ sex: v }) : '';
+        if (sx) return sx === 'female' ? 'Female' : 'Male';
+        return v == null || typeof v === 'object' ? '' : String(v).trim();
+    }
+
     R_PDF.info = function (L, s, ctx) {
         // Student, Date, Course, Site, Instructor and Patient Initials are
         // already in the cover box printed directly above — only add the rest.
@@ -706,6 +714,7 @@
         L.h3(PersonCap());
         if (full) L.inlineKv('Initials', s.res_initials || meta.residentInitials);
         L.inlineKv('Age', s.res_age);
+        L.inlineKv('Sex', sexText(s.sex));
         L.inlineKv('DOB', s.res_dob);
         L.inlineKv('Room', s.res_room);
         L.inlineKv('Attending Physician', s.res_physician);
@@ -713,7 +722,9 @@
     };
 
     // TABLE 1 / TABLE 2 — all 12 rows as a 3-column grid, blanks included.
-    // ctx (3rd arg) is set for the Day 2 instance (omega2).
+    // ctx (3rd arg) is set for the Day 2 instance (omega2). Day 2 with the
+    // "No change … from Day 1" box ticked (omega2.noChange) says so under
+    // the heading, and prints the grid only when a row has text.
     R_PDF.omega = function (L, s, ctx) {
         ctx = ctx || {};
         L.h1(ctx.day ? 'OMEGA-7 Assessment — Day ' + ctx.day + ' (Disregard for Five-Week Courses)' : 'OMEGA-7 Assessment');
@@ -722,6 +733,11 @@
             const v = s[r.key];
             return [r.letter, r.label, v == null ? '' : String(v)];
         });
+        if (ctx.day && (s.noChange === true || s.noChange === 'true')) {
+            L.para('No change in assessment/condition from Day 1.', { style: 'bold' });
+            if (!rows.some(function (r) { return r[2].trim() !== ''; })) return;
+            L.spacer(1);
+        }
         L.table(null, rows, scaleRow([10, 28, 136], L.cw), { minRowH: 12, boldCols: [0, 1] });
     };
 
@@ -730,7 +746,12 @@
     R_PDF.meds = function (L, s) {
         L.h1('Medications');
         const COLS = FORM.MED_COLUMNS;
-        const rows = (s.rows || []).filter(function (r) {
+        // RTDB may hand the rows back as an integer-keyed object
+        const src = Array.isArray(s.rows) ? s.rows
+            : (s.rows && typeof s.rows === 'object'
+                ? Object.keys(s.rows).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return s.rows[k]; })
+                : []);
+        const rows = src.filter(function (r) {
             return r && COLS.some(function (c) { return r[c.key] != null && String(r[c.key]).trim() !== ''; });
         });
         const tableRows = rows.map(function (r) {
@@ -841,10 +862,21 @@
 
     // Mini-Cog — every line of the Patient Cognitive Assessment Form, the
     // words remembered as checkboxes, and each score (or '—').
+    // minicog.status 'practice' (done with a fellow nursing student because
+    // it could not or should not be done with the patient) prints that and
+    // the student's reason under the title, ahead of the clock and scores;
+    // 'patient' or no status prints as before.
     R_PDF.minicog = function (L, s) {
         const MC = FORM.MINICOG;
         const v = CAP.readMinicog(s);
         L.h1(MC.TITLE);
+        if (s && s.status === 'practice') {
+            const reason = s.reason == null || typeof s.reason === 'object' ? '' : String(s.reason).trim();
+            L.para(personText('Not performed with the patient.'), { style: 'bold' });
+            L.inlineKv('Reason', reason || '(not given)');
+            L.para('Scores below are from a practice administration with a fellow nursing student.', { size: 9, style: 'italic' });
+            L.spacer(1);
+        }
         MC.STEPS.forEach(function (t, i) { L.para((i + 1) + '. ' + personText(t), { size: 9 }); });
         L.h3('Clock Drawing');
         if (s.clockPng) L.image(s.clockPng, 70, 70);
@@ -1804,7 +1836,10 @@
     // The full grid: group headings, every analyte row (blank cells when not
     // filled in), then the student's added rows under Other. Notes typed into
     // the earlier placeholder print after the grid as "Previous notes".
-    R_PDF.labs = function (L, s) {
+    // A course-profile PDF (ctx.profile) adds ' (H)' / ' (L)' to a result
+    // outside the Normal Values range the student entered in that row
+    // (labPdfFlags); the standard packet prints the cells as typed.
+    R_PDF.labs = function (L, s, ctx) {
         L.h1('Lab Values');
         const COLS = FORM.LAB_COLUMNS || [];
         const GROUPS = FORM.LAB_GROUPS || [];
@@ -1813,12 +1848,28 @@
         if (extra && !Array.isArray(extra) && typeof extra === 'object') {
             extra = Object.keys(extra).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return extra[k]; });
         }
+        // Each added row keeps its position among the stored rows (labView's
+        // `index`), so its flag can be found after the blank ones are dropped
         extra = (Array.isArray(extra) ? extra : []).filter(function (x) {
-            return x && typeof x === 'object' && ['lab'].concat(COLS.map(function (c) { return c.key; })).some(function (k) {
+            return x && typeof x === 'object';
+        }).map(function (x, i) { return { x: x, i: i }; }).filter(function (e) {
+            const x = e.x;
+            return ['lab'].concat(COLS.map(function (c) { return c.key; })).some(function (k) {
                 return x[k] != null && String(x[k]).trim() !== '';
             });
         });
+        const flags = (ctx && ctx.profile) ? labPdfFlags(s, ctx.sex) : null;
+        let flagged = 0;
         function cell(v) { return v == null ? '' : String(v); }
+        function cells(v, flagKey) {
+            const f = flags && flags[flagKey];
+            return COLS.map(function (c) {
+                const t = cell(v[c.key]);
+                if (c.key !== 'result' || !f || resultHasFlag(t)) return t;
+                flagged++;
+                return t.replace(/\s+$/, '') + ' (' + f + ')';
+            });
+        }
         const out = [];
         const groupRows = [];
         GROUPS.forEach(function (g, gi) {
@@ -1826,18 +1877,45 @@
             out.push([g.group].concat(COLS.map(function () { return ''; })));
             g.rows.forEach(function (r) {
                 const v = saved[r.id] || {};
-                out.push([r.label].concat(COLS.map(function (c) { return cell(v[c.key]); })));
+                out.push([r.label].concat(cells(v, r.id)));
             });
             if (gi === GROUPS.length - 1) {
-                extra.forEach(function (x) {
-                    out.push([cell(x.lab) || '(lab not named)'].concat(COLS.map(function (c) { return cell(x[c.key]); })));
+                extra.forEach(function (e) {
+                    out.push([cell(e.x.lab) || '(lab not named)'].concat(cells(e.x, 'extra-' + e.i)));
                 });
             }
         });
         L.table(['Lab'].concat(COLS.map(function (c) { return c.title; })), out,
             scaleRow([30, 30, 24, 28, 68], L.cw), { groupRows: groupRows, boldCols: [0], minRowH: 8 });
+        if (flagged) {
+            L.spacer(1);
+            L.para('(H) / (L): the result is above / below the Normal Values entered in the same row.', { size: 8, color: L.MUTED, style: 'italic' });
+        }
         if (s._sandboxText && String(s._sandboxText).trim()) L.fieldBlock('Previous notes', s._sandboxText);
     };
+    // { rowId | 'extra-N': 'H' | 'L' } for the rows whose stored Normal Values
+    // text parses and whose result is outside it (CAP.labView with the
+    // patient's sex; '?' units-guard hits, '' and N are left alone). Never
+    // from the textbook range: a row read against FORM.LAB_REF is skipped.
+    function labPdfFlags(s, sex) {
+        const out = {};
+        if (!CAP || typeof CAP.labView !== 'function') return out;
+        try {
+            CAP.labView(s, sex || '').forEach(function (r) {
+                if (r.flagSource === 'entered' && (r.flag === 'H' || r.flag === 'L')) out[r.id] = r.flag;
+            });
+        } catch (e) {
+            console.error('[CAP PDF] lab flags', e);
+        }
+        return out;
+    }
+    // The student already marked the result: H / L / HH / LL as a word
+    // (not the L of mEq/L or g/dL), high / low / elevated / decreased, or ↑ ↓
+    function resultHasFlag(t) {
+        return /(^|[^A-Za-z\/])(?:H|L|HH|LL)(?![A-Za-z])/.test(t) ||
+            /(^|[^A-Za-z])(?:high|low|elevated|decreased|abnormal)(?![A-Za-z])/i.test(t) ||
+            /[\u2191\u2193]/.test(t);
+    }
 
     // ---------- Second instances (catalog `base`) ----------
     // Resolved at call time so a rebuilt base renderer applies to Day 2 too.
@@ -2080,6 +2158,9 @@
         const state = packet.state || {};
         const info = state.info || {};
         const student = oneLine(info.student_name);
+        // Patient Info's sex ('male' | 'female' | ''): which range of a
+        // sex-labelled Normal Values text the lab flags read
+        const sex = (CAP && typeof CAP.patientSex === 'function') ? CAP.patientSex(info) : '';
         // Form-page header: the student and the assignment, no patient code
         L.headerText = (student ? student + ' — ' : '') + profile.code + ' ' + profile.assignment;
         const plan = CAP.buildPrintPlan(packet, profile);
@@ -2192,7 +2273,7 @@
                 }
                 startPage('form', orientationFor(b.mod));
                 const first = L.pageNum;
-                renderer(L, modState, { profile: profile, meta: packet.meta || {} });
+                renderer(L, modState, { profile: profile, meta: packet.meta || {}, sex: sex });
                 record(b.rubric, first, L.pageNum);
             } catch (e) {
                 console.error('[CAP PDF] render failed for block ' + (b.mod || b.id || b.kind), e);

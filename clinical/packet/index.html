@@ -849,9 +849,10 @@
             background: var(--clx-bg-surface-2, #f7f9fc); font-weight: 700;
             color: var(--clx-accent, #0f7490); font-size: 11.5px;
         }
-        .cap-labs-table thead th:nth-child(1) { width: 17%; }
-        .cap-labs-table thead th:nth-child(2) { width: 17%; }
-        .cap-labs-table thead th:nth-child(3) { width: 15%; }
+        /* Normal Values wide enough for a one-line 'Textbook: …' suggestion */
+        .cap-labs-table thead th:nth-child(1) { width: 15%; }
+        .cap-labs-table thead th:nth-child(2) { width: 22%; }
+        .cap-labs-table thead th:nth-child(3) { width: 12%; }
         .cap-labs-table thead th:nth-child(4) { width: 15%; }
         .cap-labs-name { font-weight: 600; color: var(--clx-text-primary, #1a3a5c); padding-top: 9px !important; }
         .cap-labs-group th {
@@ -864,6 +865,8 @@
             background: transparent; resize: vertical; overflow: hidden;
         }
         .cap-labs-extra .cap-labs-name textarea { font-weight: 600; }
+        /* the textbook range in a blank cell is a suggestion, not a value */
+        .cap-labs-table textarea[data-col="normal"]::placeholder { font-style: italic; }
         .cap-labs-act { width: 40px; text-align: center; }
         .cap-labs-addrow td { border: none; padding: 0; }
         .cap-sr {
@@ -999,14 +1002,14 @@
         .cap-essay-refnote { margin: 0 0 12px; line-height: 1.7; }
         /* Links inside a sentence: opt out of the shared ≤768px 44px button
            height, which split the sentence into gapped lines */
-        .cap-essay-link {
+        .cap-essay-link, .cap-link-btn {
             min-height: 0;
             padding: 0; border: 0; background: none; font: inherit;
             color: var(--clx-accent, #0f7490);
             text-decoration: underline; text-underline-offset: 2px;
             cursor: pointer;
         }
-        .cap-essay-link:hover { text-decoration-thickness: 2px; }
+        .cap-essay-link:hover, .cap-link-btn:hover { text-decoration-thickness: 2px; }
         .cap-essay-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
         .cap-essay-total {
             margin-right: auto;
@@ -1036,6 +1039,126 @@
         }
         .cap-essay-profnote { margin: 0 0 8px; line-height: 1.6; }
         @media print { .cap-essay-actions, .cap-essay-refnote, .cap-essay-mapnote, .cap-essay-profnote { display: none; } }
+
+        /* ────────── Data-quality helpers ──────────
+           Labs: textbook ranges, H / L / ? flags (letters, never colour
+           alone), Not drawn. Hendrich / Mini-Cog / OMEGA Day 2 checks and
+           the essay's Pertinent Data inserts. */
+        .cap-labs-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 8px; }
+        .cap-labs-tools .cap-fineprint { margin: 0; flex: 1 1 240px; min-width: 0; }
+        .cap-labs-sexhint { margin: 0 0 10px; }
+        .cap-lab-resline { display: flex; align-items: flex-start; gap: 4px; }
+        .cap-lab-resline textarea { flex: 1 1 auto; min-width: 0; }
+        .cap-lab-flag {
+            flex: none; display: inline-flex; align-items: center; justify-content: center;
+            min-width: 20px; height: 20px; padding: 0 5px; margin-top: 6px; box-sizing: border-box;
+            border-radius: 999px; border: 1px solid transparent;
+            font-size: 11px; font-weight: 800; line-height: 1; cursor: help;
+        }
+        .cap-lab-flag:empty { display: none; }
+        /* centred on a one-line result box (taller there: shared ≤768px padding) */
+        @media (max-width: 768px) { .cap-lab-flag { margin-top: 12px; } }
+        .cap-lab-flag[data-flag="H"] {
+            background: var(--clx-danger-bg, #fef2f2); color: var(--clx-danger-text, #991b1b);
+            border-color: var(--clx-danger, #dc2626);
+        }
+        .cap-lab-flag[data-flag="L"] {
+            background: var(--clx-info-bg, #e0f2fe); color: var(--clx-info-text, #0c4a6e);
+            border-color: var(--clx-info, #0284c7);
+        }
+        .cap-lab-flag[data-flag="?"] {
+            background: transparent; color: var(--clx-text-secondary, #4a5568);
+            border: 1px dashed var(--clx-border-strong, #b0bec5);
+        }
+        /* In-cell action: smaller than the toolbar buttons (still a 24px+ target) */
+        .cap-lab-nd {
+            display: inline-block; min-height: 0; margin: 2px 0 2px 4px;
+            padding: 3px 8px; border-radius: 999px;
+            border: 1px dashed var(--clx-border-strong, #b0bec5); background: none;
+            font: inherit; font-size: 11px; font-weight: 600; line-height: 1.5;
+            color: var(--clx-text-secondary, #4a5568); cursor: pointer;
+        }
+        .cap-lab-nd:hover { background: var(--clx-bg-hover, #f7fafd); color: var(--clx-text-primary, #1a3a5c); }
+        .cap-lab-nd[hidden] { display: none !important; }
+
+        .cap-notice {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+            margin: 0 0 10px; padding: 8px 12px;
+            border: 1px solid var(--clx-border, #d1dce8); border-left: 3px solid var(--clx-info, #0284c7);
+            border-radius: 6px; background: var(--clx-info-bg, #e0f2fe);
+            color: var(--clx-info-text, #0c4a6e); font-size: 13px;
+        }
+        .cap-notice.warn { border-left-color: var(--clx-warning, #d97706); background: var(--clx-warning-bg, #fffbeb); color: var(--clx-warning-text, #92400e); }
+        .cap-notice-text { flex: 1 1 200px; min-width: 0; }
+        .cap-notice .cap-btn-sm { text-align: left; }
+        .cap-hendrich-checks { margin: 0 0 12px; }
+        .cap-hendrich-checks .cap-fineprint { margin: 0 0 4px; font-size: 12px; }
+
+        .cap-mc-status .cap-morse-opts { margin-top: 8px; }
+        .cap-mc-note { margin: 2px 0 0; }
+        .cap-mc-practice { margin-top: 12px; }
+        .cap-mc-practice[hidden] { display: none; }
+        .cap-mc-practice .cap-label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+        .cap-req {
+            font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+            padding: 0 6px; border-radius: 999px; line-height: 1.7;
+            background: var(--clx-warning-bg, #fffbeb); color: var(--clx-warning-text, #92400e);
+        }
+        /* shared clinical-ui forces textarea borders with !important */
+        .cap-mc-reason:placeholder-shown:not(:focus) { border-color: var(--clx-warning, #d97706) !important; border-left-width: 3px !important; }
+
+        .cap-check-line {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; margin: 0;
+            border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff);
+            font-size: 13px; font-weight: 600; color: var(--clx-text-primary, #1a3a5c); cursor: pointer;
+        }
+        .cap-check-line input { accent-color: var(--clx-accent, #0f7490); width: 18px; height: 18px; flex: none; margin: 0; }
+        .cap-check-line.selected {
+            border-color: var(--clx-accent, #0f7490);
+            background: rgba(var(--clx-accent-rgb, 15, 116, 144), 0.06);
+        }
+        .cap-check-note { margin: 4px 0 12px; }
+
+        /* Pertinent Data checklists: abnormal labs, medications */
+        .cap-essay-labs, .cap-essay-meds {
+            margin: 0 0 8px; border: 1px solid var(--clx-border, #d1dce8); border-radius: 6px;
+            background: var(--clx-bg-surface, #fff);
+        }
+        .cap-essay-labs > summary, .cap-essay-meds > summary {
+            padding: 6px 10px; cursor: pointer; border-radius: 6px;
+            font-size: 12px; font-weight: 600; color: var(--clx-text-primary, #1a3a5c);
+        }
+        .cap-essay-labs > summary:hover, .cap-essay-meds > summary:hover { background: var(--clx-bg-hover, #f7fafd); }
+        .cap-essay-labs[open] > summary, .cap-essay-meds[open] > summary { border-bottom: 1px solid var(--clx-border, #d1dce8); border-radius: 6px 6px 0 0; }
+        .cap-essay-meds-body { padding: 10px; }
+        .cap-essay-meds-body > .cap-fineprint { margin: 0 0 8px; line-height: 1.5; }
+        .cap-essay-meds-body > :last-child { margin-bottom: 0; }
+        .cap-essay-meds-actions + .cap-essay-labnote { margin-top: 10px; }
+        .cap-essay-medlist { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+        .cap-essay-medopt {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 6px 10px; border: 1px solid var(--clx-border, #d1dce8); border-radius: 5px;
+            background: var(--clx-bg-surface, #fff); cursor: pointer; font-size: 13px;
+        }
+        .cap-essay-medopt input { accent-color: var(--clx-accent, #0f7490); width: 16px; height: 16px; flex: none; margin: 2px 0 0; }
+        .cap-essay-medopt.selected {
+            border-color: var(--clx-accent, #0f7490);
+            background: rgba(var(--clx-accent-rgb, 15, 116, 144), 0.06);
+        }
+        .cap-essay-medtext { min-width: 0; overflow-wrap: anywhere; }
+        .cap-essay-medname { font-weight: 600; color: var(--clx-text-primary, #1a3a5c); }
+        .cap-essay-medsub { display: block; font-size: 11.5px; color: var(--clx-text-muted, #718096); }
+        .cap-essay-medin {
+            font-size: 10.5px; font-weight: 600; padding: 0 6px; border-radius: 999px; white-space: nowrap;
+            background: var(--clx-success-bg, #ecfdf5); color: var(--clx-success-text, #065f46);
+        }
+        .cap-essay-meds-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        @media print {
+            .cap-labs-tools, .cap-labs-sexhint, .cap-lab-nd, .cap-hendrich-checks,
+            .cap-essay-labs, .cap-essay-meds, .cap-check-note { display: none !important; }
+        }
 
         /* Case Study — collapsible numbered sections */
         .cap-cs-section {
@@ -1119,6 +1242,12 @@
             .cap-body-num { margin-top: 10px; }
             .cap-cm-copy, .cap-cm-detail summary { min-height: 44px; }
             .cap-cm-item { grid-template-columns: 20px minmax(0, 1fr) 44px; }
+            /* In-cell Not drawn stays compact (28px) so 18 lab rows don't
+               double in height; everything else gets the 44px target */
+            .cap-lab-nd { padding: 4px 10px; }
+            .cap-check-line, .cap-essay-medopt { min-height: 44px; }
+            .cap-essay-labs > summary, .cap-essay-meds > summary { padding: 12px 10px; min-height: 44px; box-sizing: border-box; }
+            .cap-link-btn { padding: 4px 0; }
         }
 
         /* ────────── Print stylesheet ──────────
@@ -1198,6 +1327,14 @@
         [data-theme="dark"] .cap-body-marker text { fill: var(--clx-bg-surface, #1a202c); }
         [data-theme="dark"] .cap-body-num { color: var(--clx-bg-surface, #1a202c); }
         [data-theme="dark"] .cap-body-mk.unplaced .cap-body-num { color: var(--clx-accent, #22a8c4); }
+        [data-theme="dark"] .cap-check-line,
+        [data-theme="dark"] .cap-essay-labs,
+        [data-theme="dark"] .cap-essay-meds,
+        [data-theme="dark"] .cap-essay-medopt { background: rgba(255, 255, 255, 0.04); }
+        [data-theme="dark"] .cap-check-line.selected,
+        [data-theme="dark"] .cap-essay-medopt.selected { background: rgba(var(--clx-accent-rgb, 34, 168, 196), 0.12); }
+        [data-theme="dark"] .cap-notice { border-color: rgba(255, 255, 255, 0.08); border-left-color: var(--clx-info, #38bdf8); }
+        [data-theme="dark"] .cap-notice.warn { border-left-color: var(--clx-warning, #fbbf24); }
         @media (max-width: 600px) {
             [data-theme="dark"] .cap-labs-table tbody tr { background: rgba(255, 255, 255, 0.03); }
             [data-theme="dark"] .cap-labs-table tr.cap-labs-group,

@@ -255,15 +255,74 @@
             '<div class="cap-grid g2">' +
                 field('Attending Physician', 'res_physician', { tag: 'input' }) +
                 field('Primary Diagnosis / Reason for Admission', 'res_dx', { tag: 'input' }) +
+            '</div>' +
+            // info.sex (CAP.patientSex): picks the sex-specific lab ranges
+            // (Hgb, Hct, RBC, creatinine) and checks Hendrich II Male Gender.
+            '<div class="cap-grid g2">' +
+                field('Sex (for lab ranges and Hendrich II)', 'sex', { tag: 'select', optionsHtml:
+                    '<option value="">—</option>' +
+                    '<option value="female">Female</option>' +
+                    '<option value="male">Male</option>'
+                }) +
             '</div>'
         );
         bindFields(rootEl, state, onChange);
     };
 
+    // Another module's slice (read-only look; the editor passes
+    // CTX.getState), {} when there is none.
+    function otherState(id) {
+        const s = typeof CTX.getState === 'function' ? CTX.getState(id) : null;
+        return s && typeof s === 'object' ? s : {};
+    }
+    // Patient Info's sex → 'male' | 'female' | ''
+    function infoSex() {
+        return typeof CAP.patientSex === 'function' ? CAP.patientSex(otherState('info')) : '';
+    }
+    // Switch to another tab when it is on; otherwise say where to turn it on.
+    function gotoTab(rootEl, id, offMsg) {
+        const doc = rootEl.ownerDocument || document;
+        if (doc.querySelector('.cap-tab[data-mod="' + id + '"]') && typeof window.switchTab === 'function') {
+            window.switchTab(id);
+        } else if (offMsg && typeof window.showToast === 'function') {
+            window.showToast(offMsg, 'info');
+        }
+    }
+    function wireTabLinks(rootEl) {
+        rootEl.querySelectorAll('[data-goto-tab]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                gotoTab(rootEl, btn.getAttribute('data-goto-tab'), btn.getAttribute('data-goto-off') || '');
+            });
+        });
+    }
+    // Undo toast (showToastAction), or a plain toast without the action
+    function toastUndo(title, message, onUndo) {
+        if (typeof window.showToastAction === 'function') {
+            window.showToastAction({
+                type: 'success', title: title, message: message, duration: 10000,
+                actions: [{ label: 'Undo', onClick: onUndo }]
+            });
+        } else if (typeof window.showToast === 'function') {
+            window.showToast(title + (message ? '. ' + message : ''), 'success');
+        }
+    }
+    function toastInfo(msg) {
+        if (typeof window.showToast === 'function') window.showToast(msg, 'info');
+    }
+
     // ---------- OMEGA 1234567 ----------
     // ctx (4th arg) is set when called for a second instance (omega2).
+    // Day 2 adds state.noChange ("No change … from Day 1", which the
+    // instructions allow for the second OMEGA); the rows stay editable.
     R.omega = function (rootEl, state, onChange, ctx) {
         ctx = ctx || {};
+        const noChange = ctx.day === 2
+            ? '<label class="cap-check-line' + (state.noChange ? ' selected' : '') + '">' +
+                  '<input type="checkbox" data-cap-field="noChange">' +
+                  '<span>No change in assessment/condition from Day 1</span>' +
+              '</label>' +
+              '<p class="cap-fineprint cap-check-note">Tick this if Day 2 matches Day 1. You can still fill in any row below.</p>'
+            : '';
         const rows = OMEGA_ROWS.map(function (r) {
             return '<tr>' +
                 '<td class="cap-omega-key"><span class="cap-omega-letter">' + esc(r.letter) + '</span></td>' +
@@ -274,14 +333,30 @@
         rootEl.innerHTML = panelHint(
             ctx.title || 'OMEGA-7 Assessment',
             (ctx.hint ? esc(ctx.hint) + ' ' : '') + 'Systematic assessment framework. One row per domain.',
+            noChange +
             '<table class="cap-omega-table"><tbody>' + rows + '</tbody></table>'
         );
         bindFields(rootEl, state, onChange);
+        const nc = rootEl.querySelector('input[data-cap-field="noChange"]');
+        if (nc) nc.addEventListener('change', function () {
+            const line = nc.closest('.cap-check-line');
+            if (line) line.classList.toggle('selected', nc.checked);
+        });
     };
 
     // ---------- MEDICATIONS ----------
     R.meds = function (rootEl, state, onChange) {
-        if (!Array.isArray(state.rows)) state.rows = [emptyMed()];
+        // RTDB can hand the rows back as an integer-keyed object (or with
+        // null gaps); normalise without dropping any, as R.labs does
+        if (state.rows && !Array.isArray(state.rows) && typeof state.rows === 'object') {
+            const o = state.rows;
+            const list = Object.keys(o).sort(function (a, b) { return Number(a) - Number(b); })
+                .map(function (k) { return o[k]; })
+                .filter(function (r) { return r && typeof r === 'object'; });
+            state.rows = list.length ? list : [emptyMed()];
+        }
+        if (Array.isArray(state.rows)) state.rows = state.rows.filter(function (r) { return r && typeof r === 'object'; });
+        else state.rows = [emptyMed()];
         function emptyMed() { return { order:'', time:'', class:'', indication:'', sideEffects:'', implications:'' }; }
         const COL_W = { order:'18%', time:'10%', class:'15%', indication:'15%', sideEffects:'17%', implications:'21%' };
         function render() {
@@ -679,9 +754,38 @@
             '</label>';
         }).join('');
         const legacy = !view0.wordsTicked && view0.recall != null && !(state.words && typeof state.words === 'object');
+        // Who it was done with (state.status, a MINICOG_STATUS key; unset on
+        // older packets, so both options start unselected). 'practice' shows
+        // state.reason. The reason box is always in the page (hidden until
+        // practice) so picking an option never re-renders the clock canvas.
+        const STATUS = CAP.MINICOG_STATUS || MINICOG.STATUS || null;
+        const status = STATUS && (state.status === 'patient' || state.status === 'practice') ? state.status : '';
+        const statusHtml = STATUS
+            ? '<div class="cap-careplan-box cap-mc-status">' +
+                  '<h4 id="capMcStatusH">Who was it done with?</h4>' +
+                  (MINICOG.STATUS_NOTE ? '<p class="cap-hint cap-mc-note">' + esc(person(MINICOG.STATUS_NOTE)) + '</p>' : '') +
+                  '<div class="cap-morse-opts" role="radiogroup" aria-labelledby="capMcStatusH">' +
+                      ['patient', 'practice'].map(function (k) {
+                          const on = status === k;
+                          return '<label class="cap-morse-opt' + (on ? ' selected' : '') + '">' +
+                              '<input type="radio" name="minicog_status" value="' + k + '" data-mc-status' + (on ? ' checked' : '') + '>' +
+                              '<span>' + esc(person(STATUS[k])) + '</span>' +
+                          '</label>';
+                      }).join('') +
+                  '</div>' +
+                  '<div class="cap-mc-practice" data-mc-practice' + (status === 'practice' ? '' : ' hidden') + '>' +
+                      '<label class="cap-label" for="capMcReason">' + esc(person('Why it couldn\'t be done or wasn\'t appropriate with your patient')) +
+                          ' <span class="cap-req">Required</span></label>' +
+                      '<textarea id="capMcReason" data-cap-field="reason" rows="3" class="cap-tf cap-mc-reason" aria-required="true"' +
+                          ' placeholder="Explain in your own words"></textarea>' +
+                      '<p class="cap-fineprint cap-mc-practnote">The scores below are from the practice run with a fellow nursing student.</p>' +
+                  '</div>' +
+              '</div>'
+            : '';
         rootEl.innerHTML = panelHint(
             MINICOG.TITLE,
             'Rapid dementia screen (~3 min). Tick the words the ' + who() + ' recalled; the scores total automatically.',
+            statusHtml +
             '<div class="cap-careplan-box">' +
                 '<h4>Step 1 — 3-Word Registration</h4>' +
                 '<p>1. ' + esc(person(MINICOG.STEPS[0])).replace(/Ocean Desk Tractor$/, '<strong style="font-size:15px;letter-spacing:0.5px;">Ocean · Desk · Tractor</strong>') + '</p>' +
@@ -728,6 +832,26 @@
         );
         bindFields(rootEl, state, onChange);
         const recallSel = rootEl.querySelector('[data-cap-field="recall"]');
+        // Status: in place, no re-render (keeps focus and the drawing)
+        const practiceBox = rootEl.querySelector('[data-mc-practice]');
+        const reasonTa = rootEl.querySelector('textarea[data-cap-field="reason"]');
+        rootEl.querySelectorAll('input[type="radio"][data-mc-status]').forEach(function (r) {
+            r.addEventListener('change', function () {
+                if (!r.checked) return;
+                state.status = r.value;
+                rootEl.querySelectorAll('input[type="radio"][data-mc-status]').forEach(function (x) {
+                    const lbl = x.closest('.cap-morse-opt');
+                    if (lbl) lbl.classList.toggle('selected', x.checked);
+                });
+                if (practiceBox) practiceBox.hidden = r.value !== 'practice';
+                if (reasonTa && r.value === 'practice') autoGrow(reasonTa);
+                if (typeof onChange === 'function') onChange();
+            });
+        });
+        if (reasonTa) {
+            autoGrow(reasonTa);
+            reasonTa.addEventListener('input', function () { autoGrow(reasonTa); });
+        }
 
         function syncRecall() {
             const v = CAP.readMinicog(state);
@@ -1573,9 +1697,37 @@
                 '</label>';
             }).join('');
             const sc = CAP.scoreHendrich(state);
+            // Patient Info cross-checks: explicit buttons only, nothing is
+            // ticked for the student.
+            const info = otherState('info');
+            const sex = infoSex();
+            const maleOn = !!state.factors.male;
+            const ageTxt = String(info.res_age == null ? '' : info.res_age).trim();
+            const age = /^\d+(?:\.\d+)?$/.test(ageTxt) ? parseFloat(ageTxt) : NaN;
+            let checks = '';
+            if (sex === 'male' && !maleOn) {
+                checks += '<div class="cap-notice">' +
+                    '<span class="cap-notice-text">Male Gender scores 1 point and isn\'t ticked.</span>' +
+                    '<button type="button" class="cap-btn-sm" data-hendrich-male="1">Patient Info says male — tick Male Gender (+1)</button>' +
+                '</div>';
+            } else if (sex === 'female' && maleOn) {
+                checks += '<div class="cap-notice warn">' +
+                    '<span class="cap-notice-text">Patient Info says female, but Male Gender is ticked.</span>' +
+                    '<button type="button" class="cap-btn-sm" data-hendrich-male="0">Untick Male Gender (−1)</button>' +
+                '</div>';
+            }
+            if (!sex) {
+                checks += '<p class="cap-fineprint cap-hendrich-check">Set Sex in ' +
+                    '<button type="button" class="cap-link-btn" data-goto-tab="info">Patient Info</button>' +
+                    ' so Male Gender is scored correctly.</p>';
+            }
+            if (age >= 65) {
+                checks += '<p class="cap-fineprint cap-hendrich-check">Template: Hendrich II for geriatric patients, Morse for the general population.</p>';
+            }
             rootEl.innerHTML = panelHint(
                 HENDRICH.TITLE,
                 'Check each risk factor present and note the findings beside it, then score the Get Up &amp; Go Test. ' + esc(HENDRICH.HIGH) + '.',
+                (checks ? '<div class="cap-hendrich-checks">' + checks + '</div>' : '') +
                 '<div class="cap-hendrich-head" aria-hidden="true"><span>Risk factor · points</span><span>Findings</span></div>' +
                 '<div class="cap-hendrich-list">' + factorsHtml + '</div>' +
                 '<h4 style="margin:14px 0 6px;font-size:13px;color:var(--clx-text-primary);">' + esc(HENDRICH.GUG_TITLE) + '</h4>' +
@@ -1610,6 +1762,15 @@
                     if (typeof onChange === 'function') onChange();
                 });
             });
+            const maleBtn = rootEl.querySelector('[data-hendrich-male]');
+            if (maleBtn) maleBtn.addEventListener('click', function () {
+                state.factors.male = maleBtn.getAttribute('data-hendrich-male') === '1';
+                if (typeof onChange === 'function') onChange();
+                render();
+                // The button is gone; land on the box it changed
+                refocus(rootEl, 'input[type="checkbox"][data-hendrich]', { 'data-hendrich': 'male' });
+            });
+            wireTabLinks(rootEl);
         }
         render();
     };
@@ -2020,6 +2181,139 @@
             return out;
         }
 
+        // ---- Pertinent Data helpers: move the student's OWN lab table and
+        // medication rows into the text (appended, with Undo); they write
+        // no prose of their own.
+        function clean(v) { return strv(v).replace(/\s+/g, ' ').trim(); }
+        function noEnd(v) { return clean(v).replace(/[\s.;,:]+$/, ''); }
+        // Medications tab rows with any text (RTDB may hand rows back as an
+        // integer-keyed object): [{ row, i, name }]
+        function medRows() {
+            let rows = other('meds').rows;
+            if (rows && !Array.isArray(rows) && typeof rows === 'object') {
+                const o = rows;
+                rows = Object.keys(o).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return o[k]; });
+            }
+            return (Array.isArray(rows) ? rows : []).map(function (row, i) {
+                if (!row || typeof row !== 'object') return null;
+                if (!['order', 'class', 'indication', 'implications'].some(function (k) { return clean(row[k]); })) return null;
+                const first = strv(row.order).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean)[0] || '';
+                return { row: row, i: i, name: first || ('Medication row ' + (i + 1)) };
+            }).filter(Boolean);
+        }
+        // "<order> — <class>. Why: <indication>. Nursing considerations: <implications>"
+        function medLine(row) {
+            const head = [noEnd(row.order), noEnd(row['class'])].filter(Boolean).join(' — ');
+            const parts = [head];
+            if (noEnd(row.indication)) parts.push('Why: ' + noEnd(row.indication));
+            if (noEnd(row.implications)) parts.push('Nursing considerations: ' + noEnd(row.implications));
+            return parts.filter(Boolean).join('. ') + '.';
+        }
+        // The Lab Values table's high / low results (CAP.labView), split by
+        // what they were read against:
+        //   offer     the Normal Values the student entered — the same rule
+        //             the PDF flags by, so these are the only ones offered
+        //   textbook  flagged only against the textbook range (a facility
+        //             range may call them normal): named, not offered
+        //   units     marked ? (check units): named, not offered
+        function flaggedLabs() {
+            const rows = typeof CAP.labView === 'function' ? CAP.labView(other('labs'), infoSex()) : [];
+            const out = { offer: [], textbook: [], units: [] };
+            rows.forEach(function (r) {
+                if (r.flag === '?') out.units.push(r);
+                else if (r.flag === 'H' || r.flag === 'L') (r.flagSource === 'entered' ? out.offer : out.textbook).push(r);
+            });
+            return out;
+        }
+        // "<Label> <result> <unit> (<H|L>; normal <Normal Values>) — <interp>",
+        // all from the student's own row. The textbook unit goes after a
+        // bare-number result only when their Normal Values names that unit
+        // (their facility may report another one).
+        function labLine(r, sex) {
+            const ref = r.refKey && typeof CAP.refFor === 'function' ? CAP.refFor(r.refKey, sex) : null;
+            const unit = ref ? ref.unit : '';
+            const result = clean(r.result);
+            const normal = clean(r.normal);
+            const addUnit = !!unit && /^[<>]?\s*-?(?:\d[\d,]*(?:\.\d+)?|\.\d+)$/.test(result) &&
+                normal.toLowerCase().indexOf(unit.toLowerCase()) !== -1;
+            const interp = clean(r.interp);
+            return r.label + ' ' + result + (addUnit ? (unit === '%' ? '' : ' ') + unit : '') +
+                ' (' + r.flag + '; normal ' + normal + ')' + (interp ? ' — ' + interp : '');
+        }
+        function labNames(list) { return list.map(function (r) { return r.label; }).join(', '); }
+        function helperHtml(key) {
+            if (key === 'data_labs') {
+                // A checklist, nothing ticked: the template asks for the
+                // abnormal labs tied to the primary diagnosis, not all of them
+                const f = flaggedLabs();
+                const have = strv(state.data_labs);
+                const labsLink = '<button type="button" class="cap-link-btn" data-goto-tab="labs"' +
+                    ' data-goto-off="Turn on Lab Values under ⚙️ Modules to fill in your lab table.">Lab Values</button>';
+                const notes = [];
+                if (f.textbook.length) {
+                    const n = f.textbook.length;
+                    notes.push(n + (n === 1 ? ' lab is' : ' labs are') + ' flagged only against the textbook range (' + esc(labNames(f.textbook)) +
+                        ') — fill or confirm ' + (n === 1 ? 'its' : 'their') + ' Normal Values in ' + labsLink + ' first.');
+                }
+                if (f.units.length) {
+                    notes.push('Not listed: ' + esc(labNames(f.units)) + ' — marked ? (check units) in ' + labsLink + '.');
+                }
+                if (!f.offer.length && !notes.length) notes.push('No high or low results in your ' + labsLink + ' table yet.');
+                const list = f.offer.length
+                    ? '<p class="cap-fineprint">Tick the abnormal labs involved with your primary diagnosis. Each is added after your text as "lab result (H or L; normal …) — your interpretation" for you to explain.</p>' +
+                      '<ul class="cap-essay-medlist">' + f.offer.map(function (r) {
+                          const sub = ['normal ' + clean(r.normal), clean(r.interp)].filter(Boolean).join(' · ');
+                          const mentioned = typeof CAP.labMentioned === 'function' && CAP.labMentioned(have, r);
+                          return '<li><label class="cap-essay-medopt">' +
+                              '<input type="checkbox" data-lab-pick="' + esc(r.id) + '">' +
+                              '<span class="cap-essay-medtext"><span class="cap-essay-medname">' + esc(r.label + ' ' + clean(r.result) + ' (' + r.flag + ')') + '</span>' +
+                                  (mentioned ? ' <span class="cap-essay-medin">in your text</span>' : '') +
+                                  '<span class="cap-essay-medsub">' + esc(sub) + '</span>' +
+                              '</span>' +
+                          '</label></li>';
+                      }).join('') + '</ul>' +
+                      '<div class="cap-essay-meds-actions">' +
+                          '<button type="button" class="cap-btn-sm primary" data-lab-insert="1">Insert selected</button>' +
+                      '</div>'
+                    : '';
+                return '<details class="cap-essay-labs">' +
+                    '<summary>Insert abnormal labs from my lab table</summary>' +
+                    '<div class="cap-essay-meds-body">' +
+                        list +
+                        notes.map(function (h) { return '<p class="cap-fineprint cap-essay-labnote">' + h + '</p>'; }).join('') +
+                    '</div>' +
+                '</details>';
+            }
+            if (key !== 'data_meds') return '';
+            const meds = medRows();
+            const have = strv(state.data_meds).toLowerCase();
+            const list = meds.length
+                ? '<ul class="cap-essay-medlist">' + meds.map(function (m) {
+                      const word = (m.name.match(/[A-Za-z][A-Za-z-]{2,}/) || [''])[0].toLowerCase();
+                      const sub = [clean(m.row['class']), clean(m.row.indication)].filter(Boolean).join(' · ');
+                      return '<li><label class="cap-essay-medopt">' +
+                          '<input type="checkbox" data-med-pick="' + m.i + '">' +
+                          '<span class="cap-essay-medtext"><span class="cap-essay-medname">' + esc(m.name) + '</span>' +
+                              (word && have.indexOf(word) !== -1 ? ' <span class="cap-essay-medin">in your text</span>' : '') +
+                              (sub ? '<span class="cap-essay-medsub">' + esc(sub) + '</span>' : '') +
+                          '</span>' +
+                      '</label></li>';
+                  }).join('') + '</ul>' +
+                  '<div class="cap-essay-meds-actions">' +
+                      '<button type="button" class="cap-btn-sm primary" data-med-insert="1">Insert selected</button>' +
+                      '<button type="button" class="cap-btn-sm" data-med-all="1">Select all</button>' +
+                  '</div>'
+                : '<p class="cap-fineprint">No medications in your ' +
+                      '<button type="button" class="cap-link-btn" data-goto-tab="meds" data-goto-off="Turn on Medications under ⚙️ Modules to list the medications.">Medications</button> tab yet.</p>';
+            return '<details class="cap-essay-meds">' +
+                '<summary>Insert from my medication table</summary>' +
+                '<div class="cap-essay-meds-body">' +
+                    (meds.length ? '<p class="cap-fineprint">Tick the medications related to your primary diagnosis. Each is added after your text as "order — class. Why: indication. Nursing considerations: …" for you to build on.</p>' : '') +
+                    list +
+                '</div>' +
+            '</details>';
+        }
+
         function partHtml(f) {
             const id = 'capEssay-' + f.key;
             return '<div class="cap-essay-part">' +
@@ -2030,6 +2324,7 @@
                 '<p class="cap-hint cap-essay-prompt" id="' + id + '-hint">' + esc(f.prompt) +
                     (f.note ? '<em class="cap-essay-note">' + esc(f.note) + '</em>' : '') +
                 '</p>' +
+                helperHtml(f.key) +
                 '<textarea id="' + id + '" data-cap-field="' + esc(f.key) + '" class="cap-tf cap-essay-tf" rows="6"' +
                     ' spellcheck="true" lang="en-US" autocapitalize="sentences" aria-describedby="' + id + '-hint"></textarea>' +
                 '<div class="cap-wc" data-wc="' + esc(f.key) + '">' + wordsLabel(countWords(state[f.key])) + '</div>' +
@@ -2121,6 +2416,32 @@
             });
             const mapBtn = rootEl.querySelector('[data-essay-map]');
             if (mapBtn) mapBtn.addEventListener('click', startFromMap);
+            // The two checklists: the selected style follows each tick;
+            // Select all is on the medication list only
+            const wireChecklist = function (box, insertSel, onInsert) {
+                const picks = box.querySelectorAll('.cap-essay-medopt input[type="checkbox"]');
+                const allBtn = box.querySelector('[data-med-all]');
+                const syncPicks = function () {
+                    picks.forEach(function (cb) {
+                        const lbl = cb.closest('.cap-essay-medopt');
+                        if (lbl) lbl.classList.toggle('selected', cb.checked);
+                    });
+                    if (allBtn) allBtn.textContent = Array.prototype.every.call(picks, function (cb) { return cb.checked; }) ? 'Clear all' : 'Select all';
+                };
+                picks.forEach(function (cb) { cb.addEventListener('change', syncPicks); });
+                if (allBtn) allBtn.addEventListener('click', function () {
+                    const every = Array.prototype.every.call(picks, function (cb) { return cb.checked; });
+                    picks.forEach(function (cb) { cb.checked = !every; });
+                    syncPicks();
+                });
+                const insBtn = box.querySelector(insertSel);
+                if (insBtn) insBtn.addEventListener('click', onInsert);
+            };
+            const labsBox = rootEl.querySelector('.cap-essay-labs');
+            if (labsBox) wireChecklist(labsBox, '[data-lab-insert]', insertLabs);
+            const medsBox = rootEl.querySelector('.cap-essay-meds');
+            if (medsBox) wireChecklist(medsBox, '[data-med-insert]', insertMeds);
+            wireTabLinks(rootEl);
             // Links to the template's other tabs: switch when the tab is on,
             // otherwise say where to turn it on
             const TAB_OFF = {
@@ -2146,6 +2467,70 @@
             if (essayEl && essayEl.isConnected) { render(); return; }
             const live = rootEl.querySelector('.cap-essay');
             if (live && typeof live._capRender === 'function') live._capRender();
+        }
+
+        // Append `block` to a part (after a blank line when it has text) and
+        // save; returns the Undo, which puts back the exact previous text
+        // unless the part was edited since.
+        function appendText(key, block) {
+            const had = Object.prototype.hasOwnProperty.call(state, key);
+            const prev = state[key];
+            const prevText = strv(prev);
+            const next = (prevText.trim() ? prevText.replace(/\s+$/, '') + '\n\n' : '') + block;
+            state[key] = next;
+            changed();
+            return function () {
+                if (strv(state[key]) !== next) {
+                    toastInfo('Kept your text — it changed after the insert.');
+                    return;
+                }
+                if (had) state[key] = prev;
+                else delete state[key];
+                changed();
+                redraw();
+            };
+        }
+
+        // Only the labs the student ticked (flagged against their own Normal
+        // Values), in table order
+        function insertLabs() {
+            const box = rootEl.querySelector('.cap-essay-labs');
+            const picked = box ? Array.prototype.map.call(box.querySelectorAll('input[data-lab-pick]:checked'), function (cb) {
+                return cb.getAttribute('data-lab-pick');
+            }) : [];
+            if (!picked.length) { toastInfo('Tick at least one lab first.'); return; }
+            const sex = infoSex();
+            const lines = flaggedLabs().offer.filter(function (r) { return picked.indexOf(r.id) !== -1; })
+                .map(function (r) { return labLine(r, sex); });
+            if (!lines.length) { toastInfo('Those labs are no longer flagged in your lab table.'); return; }
+            const undo = appendText('data_labs', lines.join('\n'));
+            render();
+            refocus(rootEl, '.cap-essay-labs > summary', {});
+            toastUndo(
+                'Added ' + lines.length + ' abnormal lab' + (lines.length === 1 ? '' : 's') + ' to Abnormal Lab Results',
+                'Now explain how each ties to your primary diagnosis or its treatment — the template asks for more than a copy of your lab table.',
+                undo
+            );
+        }
+
+        function insertMeds() {
+            const box = rootEl.querySelector('.cap-essay-meds');
+            const picked = box ? Array.prototype.map.call(box.querySelectorAll('input[data-med-pick]:checked'), function (cb) {
+                return parseInt(cb.getAttribute('data-med-pick'), 10);
+            }) : [];
+            if (!picked.length) { toastInfo('Tick at least one medication first.'); return; }
+            const byI = {};
+            medRows().forEach(function (m) { byI[m.i] = m; });
+            const lines = picked.map(function (i) { return byI[i] ? medLine(byI[i].row) : ''; }).filter(Boolean);
+            if (!lines.length) { toastInfo('Those medication rows have no text.'); return; }
+            const undo = appendText('data_meds', lines.join('\n'));
+            render();
+            refocus(rootEl, '.cap-essay-meds > summary', {});
+            toastUndo(
+                'Added ' + lines.length + ' medication' + (lines.length === 1 ? '' : 's') + ' to Medications',
+                'Now explain how each relates to your primary diagnosis, and which labs you are watching because of it.',
+                undo
+            );
         }
 
         function startFromMap() {
@@ -2544,6 +2929,15 @@
             else setTimeout(regrow, 50);
         });
     }
+    // Data-quality helpers (flags are computed, never stored):
+    //   • a blank Normal Values cell shows the textbook range (CAP.refFor,
+    //     sex from Patient Info) as an italic 'Textbook: …' placeholder, and [Fill blank Normal
+    //     Values] writes it into blank cells only, with Undo
+    //   • an H / L / ? chip after each result (CAP.labView: the Normal
+    //     Values the student entered when they read as a range, else the
+    //     textbook range), updated in place while typing
+    //   • [Not drawn] on a standard row with no result: the instructions
+    //     still want its normal value and interpretation
     R.labs = function (rootEl, state, onChange) {
         function emptyExtra() { return { lab:'', normal:'', date:'', result:'', interp:'' }; }
         // RTDB can hand an array back as an integer-keyed object (or with
@@ -2553,28 +2947,102 @@
             state.extra = Object.keys(e).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return e[k]; });
         }
         if (Array.isArray(state.extra)) state.extra = state.extra.filter(function (r) { return r && typeof r === 'object'; });
-        function cellsHtml(attr, labLabel, vals) {
+
+        const FLAG_WORD = { H: 'High', L: 'Low', '?': 'Check units' };
+        // Fits one line in the desktop column (the full sentence is in the
+        // panel hint)
+        const INTERP_PH = 'Why drawn / what high or low means';
+        const hasRef = typeof CAP.refFor === 'function';
+        // A blank Normal Values cell shows the textbook range as a
+        // suggestion (prefixed and italic, so it doesn't read as entered —
+        // the PDF prints the cell blank); only [Fill blank Normal Values]
+        // writes it.
+        function normalPh(ref) { return ref && ref.text ? 'Textbook: ' + ref.text : ''; }
+        let tableEl = null;
+        function changed() { if (typeof onChange === 'function') onChange(); }
+        function strv(v) { return v == null ? '' : String(v); }
+        function blank(v) { return !strv(v).trim(); }
+        function oneLine(v) { return strv(v).replace(/\s+/g, ' ').trim(); }
+        function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+        function rowRef(id, sex) { return hasRef ? CAP.refFor(id, sex) : null; }
+        function extraRef(name, sex) { return typeof CAP.extraRefFor === 'function' ? CAP.extraRefFor(name, sex) : null; }
+
+        // Tooltip: which range the flag was read against
+        function flagTitle(row) {
+            const entered = row.flagSource === 'entered';
+            const against = entered
+                ? 'the Normal Values you entered (' + oneLine(row.normal) + ')'
+                : 'the textbook range ' + row.refText +
+                  (blank(row.normal) ? '' : ' (your Normal Values entry isn\'t a range that can be read)');
+            if (row.flag === '?') return 'Check units: ' + oneLine(row.result) + ' is far outside ' + against + '. Is the result in the same units?';
+            return FLAG_WORD[row.flag] + ' — read against ' + against;
+        }
+        function setChip(chip, row) {
+            const f = row && (row.flag === 'H' || row.flag === 'L' || row.flag === '?') ? row.flag : '';
+            chip.textContent = f;
+            chip.setAttribute('data-flag', f);
+            if (f) {
+                chip.setAttribute('role', 'img');
+                chip.setAttribute('aria-label', FLAG_WORD[f]);
+                chip.title = flagTitle(row);
+            } else {
+                chip.removeAttribute('role');
+                chip.removeAttribute('aria-label');
+                chip.removeAttribute('title');
+            }
+        }
+        // Every chip from the current text (labView row ids: lab ids and
+        // 'extra-<i>', i as numbered here)
+        function refreshFlags() {
+            if (typeof CAP.labView !== 'function') return;
+            CAP.labView(state, infoSex()).forEach(function (row) {
+                const chip = rootEl.querySelector('.cap-lab-flag[data-flag-for="' + row.id + '"]');
+                if (chip) setChip(chip, row);
+            });
+        }
+
+        // opts: { flagId, normalPh, ndId (standard rows only) }
+        function cellsHtml(attr, labLabel, vals, opts) {
+            opts = opts || {};
             return LAB_COLUMNS.map(function (c) {
-                return '<td data-label="' + esc(c.title) + '"><textarea rows="1" class="cap-tf" ' + attr + ' data-col="' + esc(c.key) + '" aria-label="' +
-                    esc((labLabel || 'Added lab') + ' — ' + c.title) + '">' + esc(vals[c.key]) + '</textarea></td>';
+                const ph = c.key === 'normal' ? opts.normalPh : (c.key === 'interp' ? INTERP_PH : '');
+                const ta = '<textarea rows="1" class="cap-tf" ' + attr + ' data-col="' + esc(c.key) + '"' +
+                    (ph ? ' placeholder="' + esc(ph) + '"' : '') +
+                    ' aria-label="' + esc((labLabel || 'Added lab') + ' — ' + c.title) + '">' + esc(vals[c.key]) + '</textarea>';
+                if (c.key !== 'result') return '<td data-label="' + esc(c.title) + '">' + ta + '</td>';
+                return '<td data-label="' + esc(c.title) + '" class="cap-labs-res">' +
+                    '<div class="cap-lab-resline">' + ta +
+                        '<span class="cap-lab-flag" data-flag-for="' + esc(opts.flagId) + '"></span>' +
+                    '</div>' +
+                    (opts.ndId
+                        ? '<button type="button" class="cap-lab-nd" data-nd="' + esc(opts.ndId) + '"' + (blank(vals.result) ? '' : ' hidden') +
+                              ' aria-label="' + esc('Not drawn: ' + labLabel) + '">Not drawn</button>'
+                        : '') +
+                '</td>';
             }).join('');
         }
+
         function render() {
+            const sex = infoSex();
             const rows = (state.rows && typeof state.rows === 'object') ? state.rows : {};
             const extra = Array.isArray(state.extra) ? state.extra : [];
             let body = '';
             LAB_GROUPS.forEach(function (g, gi) {
                 body += '<tr class="cap-labs-group"><th colspan="' + (LAB_COLUMNS.length + 2) + '" scope="colgroup">' + esc(g.group) + '</th></tr>';
                 g.rows.forEach(function (r) {
+                    const ref = rowRef(r.id, sex);
                     body += '<tr><th scope="row" class="cap-labs-name">' + esc(r.label) + '</th>' +
-                        cellsHtml('data-lab="' + esc(r.id) + '"', r.label, rows[r.id] || {}) +
+                        cellsHtml('data-lab="' + esc(r.id) + '"', r.label, rows[r.id] || {},
+                            { flagId: r.id, normalPh: normalPh(ref), ndId: r.id }) +
                         '<td class="cap-labs-act"></td></tr>';
                 });
                 if (gi === LAB_GROUPS.length - 1) {
                     extra.forEach(function (x, i) {
+                        const ref = extraRef(x.lab, sex);
                         body += '<tr class="cap-labs-extra"><th scope="row" class="cap-labs-name">' +
                             '<textarea rows="1" class="cap-tf" data-extra="' + i + '" data-col="lab" placeholder="Lab name" aria-label="Added lab ' + (i + 1) + ' — Lab">' + esc(x.lab) + '</textarea></th>' +
-                            cellsHtml('data-extra="' + i + '"', x.lab || ('Added lab ' + (i + 1)), x) +
+                            cellsHtml('data-extra="' + i + '"', x.lab || ('Added lab ' + (i + 1)), x,
+                                { flagId: 'extra-' + i, normalPh: normalPh(ref) }) +
                             '<td class="cap-labs-act"><button type="button" class="cap-row-del" data-del-extra="' + i + '" title="Delete row" aria-label="Delete added lab ' + (i + 1) + '">&times;</button></td></tr>';
                     });
                     body += '<tr class="cap-labs-addrow"><td colspan="' + (LAB_COLUMNS.length + 2) + '"><button type="button" class="cap-add-row" id="capLabsAdd">+ Add lab under Other</button></td></tr>';
@@ -2584,9 +3052,21 @@
                 ? '<div class="cap-field" style="margin-top:14px;"><label class="cap-label" for="capLabsPrev">Previous notes</label>' +
                   '<textarea id="capLabsPrev" data-cap-field="_sandboxText" rows="4" class="cap-tf"></textarea></div>'
                 : '';
+            // Hgb, Hct, RBC and creatinine are always in the table, so the
+            // hint shows whenever Sex is unset
+            const tools = hasRef
+                ? '<div class="cap-labs-tools">' +
+                      '<button type="button" class="cap-btn-sm" data-labs-fill="1" aria-describedby="capLabsSrc">Fill blank Normal Values</button>' +
+                      '<p class="cap-fineprint" id="capLabsSrc">' + esc(CAP.LAB_REF_SOURCE || '') + '</p>' +
+                  '</div>' +
+                  (sex ? '' : '<p class="cap-fineprint cap-labs-sexhint">Set Sex in ' +
+                      '<button type="button" class="cap-link-btn" data-goto-tab="info">Patient Info</button>' +
+                      ' for sex-specific ranges (Hgb, Hct, RBC, creatinine).</p>')
+                : '';
             rootEl.innerHTML = panelHint(
                 'Lab Values',
-                'Use your facility\'s normal values. Blank rows print as blank lines for your instructor.',
+                'Use your facility\'s normal values. Give every lab its normal value and interpretation, even one that wasn\'t drawn. Blank rows print as blank lines for your instructor.',
+                tools +
                 '<div class="cap-labs-wrap"><table class="cap-labs-table">' +
                     '<thead><tr><th scope="col">Lab</th>' +
                         LAB_COLUMNS.map(function (c) { return '<th scope="col">' + esc(c.title) + '</th>'; }).join('') +
@@ -2595,6 +3075,10 @@
                 '</table></div>' +
                 prev
             );
+            tableEl = rootEl.querySelector('.cap-labs-table');
+            // Lets an Undo from an earlier render (or tab visit) redraw
+            // whichever labs view is on screen now
+            if (tableEl) tableEl._capRender = render;
             bindFields(rootEl, state, onChange);
             rootEl.querySelectorAll('.cap-labs-table textarea').forEach(function (ta) {
                 autoGrow(ta);
@@ -2605,21 +3089,39 @@
                         if (!state.rows || typeof state.rows !== 'object') state.rows = {};
                         if (!state.rows[id] || typeof state.rows[id] !== 'object') state.rows[id] = {};
                         state.rows[id][col] = ta.value;
+                        if (col === 'result') {
+                            const nd = rootEl.querySelector('.cap-lab-nd[data-nd="' + id + '"]');
+                            if (nd) nd.hidden = !blank(ta.value);
+                        }
                     } else {
                         const i = parseInt(ta.getAttribute('data-extra'), 10);
                         if (!Array.isArray(state.extra) || !state.extra[i]) return;
                         state.extra[i][col] = ta.value;
+                        // The added lab's name picks its textbook range
+                        if (col === 'lab') {
+                            const nTa = rootEl.querySelector('textarea[data-extra="' + i + '"][data-col="normal"]');
+                            const ref = extraRef(ta.value, infoSex());
+                            if (nTa) {
+                                if (ref && ref.text) nTa.setAttribute('placeholder', normalPh(ref));
+                                else nTa.removeAttribute('placeholder');
+                                autoGrow(nTa);
+                            }
+                        }
                     }
                     autoGrow(ta);
-                    if (typeof onChange === 'function') onChange();
+                    if (col === 'result' || col === 'normal' || col === 'lab') refreshFlags();
+                    changed();
                 });
+            });
+            rootEl.querySelectorAll('.cap-lab-nd').forEach(function (btn) {
+                btn.addEventListener('click', function () { notDrawn(btn.getAttribute('data-nd')); });
             });
             rootEl.querySelectorAll('[data-del-extra]').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     const i = parseInt(btn.getAttribute('data-del-extra'), 10);
                     if (!Array.isArray(state.extra)) return;
                     state.extra.splice(i, 1);
-                    if (typeof onChange === 'function') onChange();
+                    changed();
                     render();
                 });
             });
@@ -2627,11 +3129,103 @@
             if (add) add.addEventListener('click', function () {
                 if (!Array.isArray(state.extra)) state.extra = [];
                 state.extra.push(emptyExtra());
-                if (typeof onChange === 'function') onChange();
+                changed();
                 render();
                 const last = rootEl.querySelector('textarea[data-extra="' + (state.extra.length - 1) + '"][data-col="lab"]');
                 if (last) last.focus();
             });
+            const fill = rootEl.querySelector('[data-labs-fill]');
+            if (fill) fill.addEventListener('click', fillNormals);
+            wireTabLinks(rootEl);
+            refreshFlags();
+        }
+
+        // Redraw the labs view on screen (this one, or a later one after a
+        // tab switch); none when another tab is open.
+        function redraw() {
+            if (tableEl && tableEl.isConnected) { render(); return; }
+            const live = rootEl.querySelector('.cap-labs-table');
+            if (live && typeof live._capRender === 'function') live._capRender();
+        }
+
+        // Result 'Not drawn' (only into a blank result), then on to the
+        // interpretation, which the instructions still want
+        function notDrawn(id) {
+            if (!state.rows || typeof state.rows !== 'object') state.rows = {};
+            if (!state.rows[id] || typeof state.rows[id] !== 'object') state.rows[id] = {};
+            const ta = rootEl.querySelector('textarea[data-lab="' + id + '"][data-col="result"]');
+            if (blank(state.rows[id].result)) {
+                state.rows[id].result = 'Not drawn';
+                if (ta) { ta.value = 'Not drawn'; autoGrow(ta); }
+                changed();
+            }
+            const btn = rootEl.querySelector('.cap-lab-nd[data-nd="' + id + '"]');
+            if (btn) btn.hidden = true;
+            refreshFlags();
+            const interp = rootEl.querySelector('textarea[data-lab="' + id + '"][data-col="interp"]');
+            if (interp) {
+                try { interp.focus({ preventScroll: true }); } catch (e) { interp.focus(); }
+            }
+        }
+
+        // Textbook ranges into BLANK Normal Values cells only (standard rows,
+        // and added labs whose name has one); Undo puts back only the cells
+        // still holding what was filled.
+        function fillNormals() {
+            const sex = infoSex();
+            const done = [];   // { obj, had, prev, text, createdId }
+            LAB_GROUPS.forEach(function (g) {
+                g.rows.forEach(function (r) {
+                    const ref = rowRef(r.id, sex);
+                    if (!ref || !ref.text) return;
+                    const rows = state.rows && typeof state.rows === 'object' ? state.rows : null;
+                    let obj = rows && rows[r.id] && typeof rows[r.id] === 'object' ? rows[r.id] : null;
+                    if (obj && !blank(obj.normal)) return;
+                    let createdId = null;
+                    if (!obj) {
+                        if (!rows) state.rows = {};
+                        obj = state.rows[r.id] = {};
+                        createdId = r.id;
+                    }
+                    done.push({ obj: obj, had: own(obj, 'normal'), prev: obj.normal, text: ref.text, createdId: createdId });
+                    obj.normal = ref.text;
+                });
+            });
+            (Array.isArray(state.extra) ? state.extra : []).forEach(function (x) {
+                const ref = extraRef(x.lab, sex);
+                if (!ref || !ref.text || !blank(x.normal)) return;
+                done.push({ obj: x, had: own(x, 'normal'), prev: x.normal, text: ref.text, createdId: null });
+                x.normal = ref.text;
+            });
+            if (!done.length) {
+                toastInfo('Every Normal Values cell with a textbook range already has text.');
+                return;
+            }
+            changed();
+            redraw();
+            refocus(rootEl, '[data-labs-fill]', {});
+            const n = done.length;
+            toastUndo(
+                'Filled ' + n + ' Normal Values cell' + (n === 1 ? '' : 's'),
+                'Textbook adult ranges — change any that differ from your facility\'s.' +
+                    (sex ? '' : ' Hgb, Hct, RBC and creatinine show both sexes — set Sex in Patient Info before filling to get only your patient\'s range.'),
+                function () {
+                    let kept = 0;
+                    done.forEach(function (d) {
+                        if (strv(d.obj.normal) !== d.text) { kept++; return; }
+                        if (d.had) d.obj.normal = d.prev;
+                        else delete d.obj.normal;
+                        // A row this created, still empty, goes again
+                        if (d.createdId && state.rows && state.rows[d.createdId] === d.obj &&
+                            !Object.keys(d.obj).some(function (k) { return !blank(d.obj[k]); })) {
+                            delete state.rows[d.createdId];
+                        }
+                    });
+                    changed();
+                    redraw();
+                    if (kept) toastInfo('Kept ' + kept + ' Normal Values cell' + (kept === 1 ? '' : 's') + ' you changed after filling.');
+                }
+            );
         }
         render();
     };
