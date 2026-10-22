@@ -261,6 +261,7 @@
     //   { rest:true }           every other enabled module, in PDF_ORDER
     // `rubric` = id of the rubric row the block is graded under.
     // rubric rows: { id, n, label, points, parts:[[component, points]] }.
+    // check = the pre-submit completeness check's thresholds (cap-check.js).
     // offerMatch = RegExp source (case-insensitive) tested against
     // meta.course / info.course to offer the profile.
     // ------------------------------------------------------------------
@@ -347,6 +348,26 @@
             { id: 'scales',     n: 12, label: 'Braden or Hendrich Assessment',  points: 3, parts: [] },
             { id: 'cognitive',  n: 13, label: 'Cognitive Assessment',           points: 2, parts: [] }
         ],
+        // Pre-submit completeness check (clinical/cap-check.js) thresholds:
+        // minWords = "aim for" word counts per stored text key (essay keys,
+        // carePlan keys; intervention / rationale = each of the six, ncsbn =
+        // each of the 7 boxes); minRefs / recentYears for the reference list;
+        // geriatricAge for the Hendrich II hint; h2tFill = share of H2T items
+        // filled for a day to count as done. Guidance only, never a grade.
+        check: {
+            minWords: {
+                p_definition: 25, p_patho: 120, p_risk: 40, p_signs: 40,
+                s_definition: 25, s_patho: 120, s_risk: 40, s_signs: 40,
+                hpi_explanation: 40, hpi_manifestations: 40, hpi_treatment: 40, hpi_impact: 40,
+                data_labs: 60, data_meds: 60,
+                finding: 10, dx: 15, st_goal: 12, lt_goal: 12, intervention: 6, rationale: 12,
+                summary: 50, discharge: 30, ncsbn: 15
+            },
+            minRefs: 2,
+            recentYears: 5,
+            geriatricAge: 65,
+            h2tFill: 0.6
+        },
         fileName: '{student} {code} CAP'
     };
     const COURSE_PROFILES = { nur311: NUR311 };

@@ -296,6 +296,123 @@
         .cap-offer-text strong { color: var(--clx-text-primary, #1a3a5c); }
         .cap-offer-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
+        /* Pre-submit check (course-profile packets): head button with a
+           must-fix count, and a drawer built on the Modules drawer. Status
+           is always spelled out (pill text, group headings) — colour is
+           only a second cue. */
+        .cap-check-btn { display: inline-flex; align-items: center; gap: 6px; }
+        .cap-check-btn[hidden], .cap-check-badge[hidden] { display: none !important; }
+        .cap-check-badge {
+            min-width: 18px; padding: 0 6px; box-sizing: border-box;
+            border-radius: 999px; text-align: center;
+            font-size: 11px; font-weight: 700; line-height: 18px;
+            font-variant-numeric: tabular-nums;
+            background: var(--clx-danger-bg, #fef2f2); color: var(--clx-danger-text, #991b1b);
+            border: 1px solid var(--clx-danger, #dc2626);
+        }
+        .cap-sr {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+        }
+        /* Out of the tab order and the accessibility tree while closed */
+        .cap-drawer.cap-check-drawer {
+            width: min(460px, 94vw);
+            visibility: hidden;
+            transition: transform 0.2s, visibility 0s linear 0.2s;
+        }
+        .cap-drawer.cap-check-drawer.visible { visibility: visible; transition: transform 0.2s; }
+        .cap-check-drawer:focus { outline: none; }
+        .cap-check-gate {
+            margin: 12px 18px 0; padding: 10px 12px;
+            border: 1px solid var(--clx-danger, #dc2626); border-left-width: 3px; border-radius: 6px;
+            background: var(--clx-danger-bg, #fef2f2); color: var(--clx-danger-text, #991b1b);
+            font-size: 13px; line-height: 1.45;
+        }
+        .cap-check-gate[hidden] { display: none; }
+        .cap-check-gate strong { display: block; }
+        .cap-check-gate p { margin: 2px 0 0; }
+        .cap-check-gate .cap-link-btn { color: inherit; font-weight: 600; }
+        .cap-check-summary {
+            margin: 0; padding: 10px 18px;
+            border-bottom: 1px solid var(--clx-border, #d1dce8);
+            font-size: 13px; font-weight: 600; line-height: 1.45;
+            color: var(--clx-text-primary, #1a3a5c);
+            font-variant-numeric: tabular-nums;
+        }
+        .cap-check-h { margin: 0; }
+        .cap-check-rows, .cap-check-notes, .cap-check-issues { list-style: none; margin: 0; padding: 0; }
+        .cap-check-row { padding: 8px 18px; }
+        .cap-check-row + .cap-check-row { border-top: 1px solid var(--clx-border, #e2e8f0); }
+        .cap-check-rowhead { display: flex; align-items: baseline; gap: 8px; }
+        .cap-check-n {
+            flex: none; width: 18px; text-align: right;
+            font-size: 12px; font-weight: 700; color: var(--clx-text-muted, #718096);
+            font-variant-numeric: tabular-nums;
+        }
+        .cap-check-rowlabel {
+            flex: 1; min-width: 0;
+            font-size: 13px; color: var(--clx-text-primary, #1a3a5c);
+            overflow-wrap: anywhere;
+        }
+        .cap-check-pts {
+            flex: none; white-space: nowrap;
+            font-size: 11.5px; color: var(--clx-text-muted, #718096);
+            font-variant-numeric: tabular-nums;
+        }
+        .cap-check-pill {
+            flex: none; align-self: center; white-space: nowrap;
+            font-size: 11px; font-weight: 600; line-height: 1.6;
+            padding: 0 8px; border-radius: 999px; border: 1px solid transparent;
+        }
+        .cap-check-pill[data-status="complete"] { background: var(--clx-success-bg, #ecfdf5); color: var(--clx-success-text, #065f46); border-color: var(--clx-success, #059669); }
+        .cap-check-pill[data-status="partial"]  { background: var(--clx-warning-bg, #fffbeb); color: var(--clx-warning-text, #92400e); border-color: var(--clx-warning, #d97706); }
+        .cap-check-pill[data-status="missing"]  { background: var(--clx-danger-bg, #fef2f2); color: var(--clx-danger-text, #991b1b); border-color: var(--clx-danger, #dc2626); }
+        .cap-check-pill[data-status="na"] {
+            background: var(--clx-bg-surface-2, #f7f9fc); color: var(--clx-text-secondary, #4a5568);
+            border-color: var(--clx-border, #d1dce8);
+        }
+        .cap-check-notes { margin: 4px 0 0 26px; }
+        .cap-check-notes li {
+            padding: 2px 0;
+            font-size: 12px; line-height: 1.5;
+            color: var(--clx-text-secondary, #4a5568);
+            overflow-wrap: anywhere;
+        }
+        .cap-check-notes .cap-link-btn { margin-left: 6px; font-size: 12px; white-space: nowrap; }
+        .cap-check-issues { padding: 2px 18px 6px; }
+        .cap-check-issue {
+            display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 10px;
+            margin-top: 6px; padding: 8px 10px;
+            border: 1px solid var(--clx-border, #d1dce8);
+            border-left: 3px solid var(--clx-info, #0284c7);
+            border-radius: 6px;
+            background: var(--clx-bg-surface, #fff);
+        }
+        .cap-check-issue[data-sev="block"] { border-left-color: var(--clx-danger, #dc2626); }
+        .cap-check-issue[data-sev="warn"] { border-left-color: var(--clx-warning, #d97706); }
+        .cap-check-ibody { flex: 1 1 200px; min-width: 0; }
+        .cap-check-itext {
+            margin: 0;
+            font-size: 12.5px; line-height: 1.5;
+            color: var(--clx-text-primary, #1a3a5c);
+            overflow-wrap: anywhere;
+        }
+        .cap-check-isub, .cap-check-excerpt {
+            margin: 3px 0 0;
+            font-size: 12px; line-height: 1.5;
+            color: var(--clx-text-secondary, #4a5568);
+            overflow-wrap: anywhere;
+        }
+        .cap-check-excerpt { font-style: italic; }
+        .cap-check-issue .cap-btn-sm { flex: none; }
+        .cap-check-empty {
+            margin: 0; padding: 6px 18px 10px;
+            font-size: 12.5px; color: var(--clx-text-muted, #718096);
+        }
+        .cap-check-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+        .cap-check-label { flex: 1 1 200px; min-width: 0; margin: 0; line-height: 1.45; }
+        .cap-check-foot .cap-btn-sm { flex: none; }
+
         /* ────────── Renderer-shared UI ────────── */
         .cap-panel {
             background: var(--clx-bg-surface, #fff);
@@ -1335,6 +1452,12 @@
         [data-theme="dark"] .cap-essay-medopt.selected { background: rgba(var(--clx-accent-rgb, 34, 168, 196), 0.12); }
         [data-theme="dark"] .cap-notice { border-color: rgba(255, 255, 255, 0.08); border-left-color: var(--clx-info, #38bdf8); }
         [data-theme="dark"] .cap-notice.warn { border-left-color: var(--clx-warning, #fbbf24); }
+        [data-theme="dark"] .cap-check-issue { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+        [data-theme="dark"] .cap-check-issue[data-sev="block"] { border-left-color: var(--clx-danger, #f87171); }
+        [data-theme="dark"] .cap-check-issue[data-sev="warn"] { border-left-color: var(--clx-warning, #fbbf24); }
+        [data-theme="dark"] .cap-check-issue[data-sev="info"] { border-left-color: var(--clx-info, #38bdf8); }
+        [data-theme="dark"] .cap-check-pill[data-status="na"] { background: rgba(255, 255, 255, 0.04); }
+        [data-theme="dark"] .cap-check-row + .cap-check-row { border-top-color: rgba(255, 255, 255, 0.08); }
         @media (max-width: 600px) {
             [data-theme="dark"] .cap-labs-table tbody tr { background: rgba(255, 255, 255, 0.03); }
             [data-theme="dark"] .cap-labs-table tr.cap-labs-group,
@@ -1355,6 +1478,11 @@
         <input type="text" id="capTitle" class="cap-title-input" placeholder="Untitled packet" maxlength="80">
         <span class="cap-save-status" id="capSaveStatus">Saved</span>
         <button class="cap-modules-btn" onclick="openModuleDrawer()">⚙️ Modules</button>
+        <!-- Shown for course-profile packets only (refreshCheckUi) -->
+        <button type="button" class="cap-modules-btn cap-check-btn" id="capCheckBtn" hidden aria-haspopup="dialog"
+                onclick="openCheckDrawer({ returnFocus: this })" title="Pre-submit check against the rubric and template">
+            <span aria-hidden="true">🔎</span> Check<span class="cap-check-badge" id="capCheckBadge" hidden></span>
+        </button>
         <button class="cap-modules-btn" id="capExportPdfBtn" onclick="exportPacketPdf(this)" title="Export to PDF">📄 Export PDF</button>
     </div>
 
@@ -1380,6 +1508,23 @@
         </div>
     </aside>
 
+    <!-- Pre-submit check drawer (course-profile packets; filled by renderCheckDrawer) -->
+    <div class="cap-drawer-backdrop" id="capCheckBackdrop" onclick="closeCheckDrawer()"></div>
+    <aside class="cap-drawer cap-check-drawer" id="capCheckDrawer" role="dialog" aria-modal="true"
+           aria-labelledby="capCheckTitle" aria-describedby="capCheckGate capCheckSummary" tabindex="-1">
+        <div class="cap-drawer-head">
+            <h3 id="capCheckTitle">Pre-submit check</h3>
+            <button type="button" class="cap-drawer-close" onclick="closeCheckDrawer()" aria-label="Close">&times;</button>
+        </div>
+        <div class="cap-check-gate" id="capCheckGate" role="alert" hidden></div>
+        <p class="cap-check-summary" id="capCheckSummary" aria-live="polite"></p>
+        <div class="cap-drawer-body" id="capCheckBody"></div>
+        <div class="cap-drawer-foot cap-check-foot">
+            <p class="cap-check-label" id="capCheckLabel">Completeness check against the rubric and template — not a grade.</p>
+            <button type="button" class="cap-btn-sm primary" id="capCheckExport">📄 Export PDF</button>
+        </div>
+    </aside>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -1388,6 +1533,7 @@
     <script src="/clinical/cap-modules.js"></script>
     <script src="/clinical/cap-renderers.js"></script>
     <script src="/clinical/cap-pdf.js"></script>
+    <script src="/clinical/cap-check.js"></script>
     <script>
         // ─── Theme init ───
         (function () {
@@ -1604,6 +1750,7 @@
             renderTabs();
             renderActiveTab();
             renderOffer();
+            refreshCheckUi();
         }
 
         // Renderer context: "patient" (Word form) or "resident" (memory-care
@@ -1719,6 +1866,7 @@
             writeLocalBackup();
             clearTimeout(saveTimer);
             saveTimer = setTimeout(commitSave, 400);
+            scheduleCheck(); // profile packets: refresh the Check count / open drawer
         }
         function commitSave() {
             saveTimer = null;
@@ -1858,6 +2006,7 @@
             renderActiveTab();
             renderOffer();
             if (document.getElementById('capDrawer').classList.contains('visible')) renderDrawer();
+            refreshCheckUi(); // the Check button follows the profile
         }
 
         function applyCourseProfile(id) {
@@ -1989,6 +2138,7 @@
         // ─── Module toggle drawer ───
         window.openModuleDrawer = function () {
             if (!packet) { showToast('Packet not loaded yet.', 'warning'); return; }
+            if (checkDrawerOpen()) closeCheckDrawer(false); // one drawer at a time
             renderDrawer();
             document.getElementById('capDrawer').classList.add('visible');
             document.getElementById('capDrawerBackdrop').classList.add('visible');
@@ -2001,6 +2151,7 @@
             if (ev.key === 'Escape' && document.getElementById('capDrawer').classList.contains('visible')) {
                 closeModuleDrawer();
             }
+            if (ev.key === 'Escape' && checkDrawerOpen()) closeCheckDrawer();
         });
 
         // focusMod: module id whose checkbox gets focus back after the redraw
@@ -2136,6 +2287,329 @@
             }
         }
 
+        // ─── Pre-submit check (window.CAP_CHECK, course-profile packets) ───
+        // A read-only completeness check against the profile's rubric and
+        // the template: the Check button (with the must-fix count), the
+        // Check drawer, and the export gate. Never writes to the packet.
+        // Without a profile — or with a stale cached page that has no
+        // CAP_CHECK — none of it shows and Export works as before.
+        const CHECK_LABEL_FALLBACK = 'Completeness check against the rubric and template — not a grade.';
+        const CHECK_STATUS = { complete: 'Complete', partial: 'Partial', missing: 'Missing', na: 'N/A' };
+        const CHECK_GROUPS = [['block', 'Must fix'], ['warn', 'Should fix'], ['info', 'FYI']];
+        let checkResult = null;      // last checkPacket() result (what the drawer shows)
+        let checkTimer = null;       // debounce for re-runs after edits
+        let checkGate = false;       // drawer opened by Export: banner + Export anyway
+        let checkReturnFocus = null; // where focus goes when the drawer closes
+        let checkTargets = [];       // Go to targets of the rendered drawer ([data-goto] index)
+
+        function checkAvailable() {
+            return !!(window.CAP_CHECK && typeof window.CAP_CHECK.checkPacket === 'function');
+        }
+        function checkOn() { return !!(packet && currentProfile() && checkAvailable()); }
+        function checkDrawerOpen() { return document.getElementById('capCheckDrawer').classList.contains('visible'); }
+        function runCheck() {
+            try { return window.CAP_CHECK.checkPacket(packet, currentProfile(), {}); }
+            catch (e) { console.warn('[CAP] check failed:', e); return null; }
+        }
+        function blockingOf(res) { return res && res.summary ? (res.summary.blocking || 0) : 0; }
+        function itemsNeedText(n) { return n === 1 ? '1 item needs attention' : n + ' items need attention'; }
+
+        // Button visibility + count; re-renders an open drawer. Runs on load,
+        // when the profile is applied/removed and (debounced) after edits.
+        function refreshCheckUi() {
+            clearTimeout(checkTimer);
+            checkTimer = null;
+            document.getElementById('capCheckBtn').hidden = !checkOn();
+            if (!checkOn()) {
+                checkResult = null;
+                updateCheckBadge();
+                if (checkDrawerOpen()) closeCheckDrawer(false);
+                return;
+            }
+            checkResult = runCheck();
+            updateCheckBadge();
+            if (checkDrawerOpen()) renderCheckDrawer();
+        }
+        function scheduleCheck() {
+            if (!checkOn()) return;
+            clearTimeout(checkTimer);
+            checkTimer = setTimeout(refreshCheckUi, 600);
+        }
+        function updateCheckBadge() {
+            const btn = document.getElementById('capCheckBtn');
+            const badge = document.getElementById('capCheckBadge');
+            const n = blockingOf(checkResult);
+            badge.hidden = !(n > 0);
+            badge.textContent = n > 0 ? String(n) : '';
+            if (n > 0) {
+                btn.setAttribute('aria-label', 'Check, ' + n + ' must-fix');
+                btn.title = 'Pre-submit check: ' + itemsNeedText(n);
+            } else {
+                btn.removeAttribute('aria-label');
+                btn.title = 'Pre-submit check against the rubric and template';
+            }
+        }
+
+        // opts: { gate, returnFocus, result }
+        window.openCheckDrawer = function (opts) {
+            opts = opts || {};
+            if (!packet) { showToast('Packet not loaded yet.', 'warning'); return; }
+            if (!checkOn()) { showToast('The pre-submit check is for packets with a course profile.', 'info'); return; }
+            if (document.getElementById('capDrawer').classList.contains('visible')) closeModuleDrawer();
+            const drawer = document.getElementById('capCheckDrawer');
+            const wasOpen = checkDrawerOpen();
+            clearTimeout(checkTimer);
+            checkTimer = null;
+            checkResult = opts.result || runCheck();
+            updateCheckBadge();
+            checkGate = !!opts.gate;
+            if (!wasOpen) {
+                checkReturnFocus = opts.returnFocus || document.activeElement;
+                document.getElementById('capCheckBody').scrollTop = 0;
+            }
+            renderCheckDrawer();
+            drawer.classList.add('visible');
+            document.getElementById('capCheckBackdrop').classList.add('visible');
+            if (!wasOpen) drawer.focus();
+        };
+        // restoreFocus === false: the caller moves focus itself (Go to, Export anyway)
+        window.closeCheckDrawer = function (restoreFocus) {
+            const wasOpen = checkDrawerOpen();
+            document.getElementById('capCheckDrawer').classList.remove('visible');
+            document.getElementById('capCheckBackdrop').classList.remove('visible');
+            checkGate = false;
+            const back = checkReturnFocus;
+            checkReturnFocus = null;
+            if (wasOpen && restoreFocus !== false && back && document.contains(back) && !back.hidden) back.focus();
+        };
+
+        // Where a Go to button leads: the field's tab, or the Modules drawer
+        // when the module is off (or set to N/A / Leave out and the note is
+        // about that, i.e. has no field).
+        function checkTargetKind(t) {
+            if (!t || !t.tab || !CAP.MODULE_BY_ID[t.tab] || !/^[A-Za-z0-9_-]+$/.test(t.tab)) return '';
+            if ((packet.meta.enabledModules || []).indexOf(t.tab) === -1) return 'modules';
+            if (!t.sel && printModeOf(t.tab, currentProfile()) !== 'include') return 'modules';
+            return 'tab';
+        }
+        function checkGotoHtml(t, context, asLink) {
+            const kind = checkTargetKind(t);
+            if (!kind) return '';
+            const i = checkTargets.push({ tab: t.tab, sel: t.sel || '' }) - 1;
+            const label = kind === 'modules' ? 'Open Modules' : 'Go to';
+            const ctx = String(context || '').replace(/\s+/g, ' ').trim();
+            const aria = label + (ctx ? ': ' + (ctx.length > 90 ? ctx.slice(0, 89) + '…' : ctx) : '');
+            return '<button type="button" class="' + (asLink ? 'cap-link-btn' : 'cap-btn-sm') + '" data-goto="' + i + '"' +
+                ' aria-label="' + esc(aria) + '">' + label + '</button>';
+        }
+
+        function checkSummaryText(res) {
+            if (!res) return 'The check couldn\'t run on this packet.';
+            const s = res.summary || {};
+            const rows = (res.rows || []).length;
+            const n = blockingOf(res);
+            return (s.complete || 0) + ' of ' + rows + ' rubric rows complete' +
+                (s.na ? ' · ' + s.na + ' N/A' : '') +
+                ' · ' + (n ? n + ' must-fix' : 'no must-fix items');
+        }
+
+        function checkRowsHtml(res) {
+            const rows = res.rows || [];
+            if (!rows.length) return '';
+            return '<h4 class="cap-drawer-cat cap-check-h">Rubric · ' + rows.length + ' rows</h4>' +
+                '<ol class="cap-check-rows">' + rows.map(function (r) {
+                    const status = CHECK_STATUS[r.status] ? r.status : 'missing';
+                    const notes = Array.isArray(r.notes) ? r.notes : [];
+                    return '<li class="cap-check-row" data-row-id="' + esc(r.id) + '" data-status="' + esc(status) + '">' +
+                        '<div class="cap-check-rowhead">' +
+                            '<span class="cap-check-n"><span class="cap-sr">Row </span>' + esc(r.n) + '</span>' +
+                            '<span class="cap-check-rowlabel">' + esc(r.label) + '</span>' +
+                            (r.points != null && r.points !== '' ? '<span class="cap-check-pts">' + esc(r.points) + ' pts</span>' : '') +
+                            '<span class="cap-check-pill" data-status="' + esc(status) + '">' + esc(CHECK_STATUS[status]) + '</span>' +
+                        '</div>' +
+                        (notes.length ? '<ul class="cap-check-notes">' + notes.map(function (n) {
+                            return '<li>' + esc(n.text) + checkGotoHtml(n, n.text, true) + '</li>';
+                        }).join('') + '</ul>' : '') +
+                    '</li>';
+                }).join('') + '</ol>';
+        }
+
+        // Must fix = missing rubric rows + 'block' issues (summary.blocking);
+        // Should fix = 'warn'; FYI = 'info'.
+        function checkIssuesHtml(res) {
+            const items = { block: [], warn: [], info: [] };
+            (res.issues || []).forEach(function (x) {
+                if (items[x.severity]) items[x.severity].push(x);
+            });
+            const missing = (res.rows || []).filter(function (r) { return r.status === 'missing'; });
+            let html = '';
+            let any = false;
+            CHECK_GROUPS.forEach(function (g) {
+                const sev = g[0];
+                const list = items[sev];
+                const count = list.length + (sev === 'block' ? missing.length : 0);
+                if (!count) return;
+                any = true;
+                html += '<h4 class="cap-drawer-cat cap-check-h"' + (sev === 'block' ? ' id="capCheckMustFix" tabindex="-1"' : '') + '>' +
+                    esc(g[1]) + ' · ' + count + '</h4><ul class="cap-check-issues">';
+                list.forEach(function (x) {
+                    html += '<li class="cap-check-issue" data-sev="' + sev + '" data-code="' + esc(x.code) + '">' +
+                        '<div class="cap-check-ibody">' +
+                            '<p class="cap-check-itext">' + esc(x.text) + '</p>' +
+                            (x.excerpt ? '<p class="cap-check-excerpt">“' + esc(x.excerpt) + '”</p>' : '') +
+                        '</div>' +
+                        checkGotoHtml(x, x.text, false) +
+                    '</li>';
+                });
+                if (sev === 'block') {
+                    missing.forEach(function (r) {
+                        const first = (Array.isArray(r.notes) && r.notes[0]) || null;
+                        const head = 'Missing: ' + r.label + (r.points != null && r.points !== '' ? ' (' + r.points + ' pts)' : '');
+                        html += '<li class="cap-check-issue" data-sev="block" data-code="row-missing" data-row-id="' + esc(r.id) + '">' +
+                            '<div class="cap-check-ibody">' +
+                                '<p class="cap-check-itext">' + esc(head) + '</p>' +
+                                (first && first.text ? '<p class="cap-check-isub">' + esc(first.text) + '</p>' : '') +
+                            '</div>' +
+                            (first ? checkGotoHtml(first, head, false) : '') +
+                        '</li>';
+                    });
+                }
+                html += '</ul>';
+            });
+            if (!any) html = '<h4 class="cap-drawer-cat cap-check-h">Issues</h4><p class="cap-check-empty">Nothing flagged.</p>';
+            return html;
+        }
+
+        function renderCheckDrawer() {
+            const res = checkResult;
+            const body = document.getElementById('capCheckBody');
+            const drawer = document.getElementById('capCheckDrawer');
+            const scrollTop = body.scrollTop;
+            const ae = document.activeElement;
+            const focusKey = ae && body.contains(ae) ? ae.getAttribute('data-goto') : null;
+            const n = blockingOf(res);
+            const gating = checkGate && n > 0;
+            // Gate banner (Export with blocking items)
+            const gate = document.getElementById('capCheckGate');
+            if (gating) {
+                const html = '<strong>' + esc(itemsNeedText(n)) + ' before you submit.</strong>' +
+                    '<p>Review <button type="button" class="cap-link-btn" data-check-jump="1">Must fix</button>, or use Export anyway.</p>';
+                if (gate.innerHTML !== html) gate.innerHTML = html;
+                gate.hidden = false;
+            } else {
+                gate.hidden = true;
+                gate.innerHTML = '';
+            }
+            const lbl = (window.CAP_CHECK && window.CAP_CHECK.LABEL) || CHECK_LABEL_FALLBACK;
+            const lblEl = document.getElementById('capCheckLabel');
+            if (lblEl.textContent !== lbl) lblEl.textContent = lbl;
+            document.getElementById('capCheckExport').textContent = gating ? 'Export anyway' : '📄 Export PDF';
+            // Only touch the live region when the line changes
+            const sumEl = document.getElementById('capCheckSummary');
+            const sum = checkSummaryText(res);
+            if (sumEl.textContent !== sum) sumEl.textContent = sum;
+            checkTargets = [];
+            body.innerHTML = res
+                ? checkRowsHtml(res) + checkIssuesHtml(res)
+                : '<p class="cap-check-empty">Reload the page and try again.</p>';
+            body.scrollTop = scrollTop;
+            if (focusKey !== null) {
+                const b = body.querySelector('[data-goto="' + focusKey + '"]');
+                if (b) b.focus(); else drawer.focus();
+            }
+        }
+
+        // Switch to the field's tab and focus it (closed <details> around it
+        // are opened). No selector, or no such field: the tab itself.
+        function checkGoTo(t) {
+            const kind = checkTargetKind(t);
+            closeCheckDrawer(false);
+            if (!kind) return;
+            if (kind === 'modules') {
+                window.openModuleDrawer();
+                const body = document.getElementById('capDrawerBody');
+                const el = body.querySelector('select.cap-print-mode[data-print-id="' + t.tab + '"]') ||
+                    body.querySelector('input[type="checkbox"][data-mod="' + t.tab + '"]');
+                if (el) {
+                    const row = el.closest('.cap-drawer-row') || el;
+                    row.scrollIntoView({ block: 'center' });
+                    el.focus({ preventScroll: true });
+                }
+                return;
+            }
+            if (activeTab !== t.tab) window.switchTab(t.tab);
+            const tabBtn = document.querySelector('.cap-tab.active');
+            if (tabBtn) {
+                // Bring the tab into view in a scrolled tab bar
+                const bar = tabBtn.parentNode, r = tabBtn.getBoundingClientRect(), br = bar.getBoundingClientRect();
+                if (r.left < br.left || r.right > br.right) bar.scrollLeft += r.left - br.left - 16;
+            }
+            requestAnimationFrame(function () {
+                const content = document.getElementById('capContent');
+                let el = null;
+                if (t.sel) { try { el = content.querySelector(t.sel); } catch (e) { el = null; } }
+                if (el) {
+                    for (let d = el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+                }
+                if (el && el.getClientRects().length && !el.disabled) {
+                    el.scrollIntoView({ block: 'center' });
+                    el.focus({ preventScroll: true });
+                    return;
+                }
+                window.scrollTo(0, 0);
+                if (tabBtn) tabBtn.focus({ preventScroll: true });
+            });
+        }
+
+        (function () {
+            const drawer = document.getElementById('capCheckDrawer');
+            const body = document.getElementById('capCheckBody');
+            body.addEventListener('click', function (ev) {
+                const b = ev.target.closest('[data-goto]');
+                if (!b || !packet) return;
+                const t = checkTargets[parseInt(b.getAttribute('data-goto'), 10)];
+                if (t) checkGoTo(t);
+            });
+            document.getElementById('capCheckGate').addEventListener('click', function (ev) {
+                if (!ev.target.closest('[data-check-jump]')) return;
+                const h = document.getElementById('capCheckMustFix');
+                if (h) { h.scrollIntoView({ block: 'start' }); h.focus({ preventScroll: true }); }
+            });
+            // Footer: Export anyway (gate) forces the export; Export PDF goes
+            // through the normal path, which gates if anything must be fixed.
+            document.getElementById('capCheckExport').addEventListener('click', function () {
+                if (!packet) return;
+                const headBtn = document.getElementById('capExportPdfBtn');
+                if (!(checkGate && blockingOf(checkResult) > 0) && gateExport(headBtn)) return;
+                closeCheckDrawer(false);
+                headBtn.focus();
+                window.exportPacketPdf(headBtn, true);
+            });
+            // Keep Tab inside the open dialog
+            drawer.addEventListener('keydown', function (ev) {
+                if (ev.key !== 'Tab') return;
+                const f = Array.from(drawer.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+                    .filter(function (e) { return !e.disabled && e.getClientRects().length > 0; });
+                if (!f.length) return;
+                const first = f[0], last = f[f.length - 1];
+                if (ev.shiftKey && (document.activeElement === first || document.activeElement === drawer)) {
+                    ev.preventDefault(); last.focus();
+                } else if (!ev.shiftKey && document.activeElement === last) {
+                    ev.preventDefault(); first.focus();
+                }
+            });
+        })();
+
+        // Export gate: a profile packet with must-fix items opens the drawer
+        // instead of exporting. true = gated (the caller stops).
+        function gateExport(btnEl) {
+            if (!checkOn()) return false;
+            const res = runCheck();
+            if (!(blockingOf(res) > 0)) return false;
+            window.openCheckDrawer({ gate: true, returnFocus: btnEl, result: res });
+            return true;
+        }
+
         // ─── PDF export ───
         // jsPDF is lazy-loaded (large library, only fetched when student
         // clicks Export). Once loaded, hand off to CAP_PDF.generate(packet).
@@ -2150,9 +2624,15 @@
                 document.head.appendChild(s);
             });
         }
-        window.exportPacketPdf = function (btnEl) {
+        // force === true skips the pre-submit gate (Export anyway).
+        window.exportPacketPdf = function (btnEl, force) {
             if (!packet) { showToast('Packet not loaded yet.', 'warning'); return; }
+            // Course-profile packets with must-fix items open the Check drawer
+            // first; plain packets (and a missing CAP_CHECK) export as before.
+            if (force !== true && gateExport(btnEl)) return;
             const orig = btnEl.textContent;
+            // Disabling the focused button drops focus to <body>; put it back after
+            const hadFocus = document.activeElement === btnEl;
             btnEl.disabled = true;
             btnEl.textContent = '⏳ Generating…';
             // Make sure any pending edits are flushed before exporting
@@ -2167,6 +2647,7 @@
             }).then(function () {
                 btnEl.disabled = false;
                 btnEl.textContent = orig;
+                if (hadFocus && (!document.activeElement || document.activeElement === document.body)) btnEl.focus({ preventScroll: true });
             });
         };
     </script>
