@@ -3494,6 +3494,12 @@
                 console.warn('Review flags skipped:', e);
             }
 
+            // Captured now: the student may switch format or keep typing while
+            // the save is in flight.
+            saveDraft(); // a pending autosave, so the stored draft matches the screen
+            const savedType = currentNoteType;
+            const editsAtSave = _draftEdits;
+            const savedNote = buildDraftPayload();
             const docData = {
                 noteType: currentNoteType,
                 content: fullContent,
@@ -3504,8 +3510,12 @@
 
             // If offline, queue the save and retry when back online
             if (!navigator.onLine) {
-                queueOfflineSave(docData);
-                showToast('📵 Offline — note saved locally. Will sync when back online.', 'warning');
+                if (queueOfflineSave(docData)) {
+                    draftSaved(savedType, editsAtSave, savedNote);
+                    showToast('📵 Offline — note saved locally. Will sync when back online.', 'warning');
+                } else {
+                    showToast('Offline, and this device could not store the note. Your draft is kept; save again when you are back online.', 'error');
+                }
                 return;
             }
 
@@ -3516,19 +3526,40 @@
                     return;
                 }
                 await userDocsRef.push(docData);
-                clearDraft(currentNoteType);
-                // Saved to the account: stop the interval re-creating the local
-                // draft until the student edits again.
-                _draftDirty = false;
+                draftSaved(savedType, editsAtSave, savedNote);
                 updateAutoSaveStatus('Saved to your account · ' +
                     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
                 showToast('Document saved successfully!', 'success');
             } catch (error) {
                 console.error('Error saving document:', error);
                 // On network error, queue locally
-                queueOfflineSave(docData);
-                showToast('Save failed — note queued locally and will sync when reconnected.', 'warning');
+                if (queueOfflineSave(docData)) {
+                    draftSaved(savedType, editsAtSave, savedNote);
+                    showToast('Save failed — note queued locally and will sync when reconnected.', 'warning');
+                } else {
+                    showToast('Save failed, and this device could not store the note. Your draft is kept; try saving again.', 'error');
+                }
             }
+        }
+
+        // The note is in the account (or the offline queue, which syncs it):
+        // drop its draft so it is not offered and saved twice, and stop the
+        // interval re-creating it.
+        function draftSaved(type, editsAtSave, savedNote) {
+            if (_draftPageLeaving) return;
+            // Compared on what the saved note holds: its format's sections, the
+            // header, rows and diagnoses (other formats' text is not in it).
+            const ids = ['noteDate', 'noteTime', 'unit', 'patientId', 'patientDemo', 'focus']
+                .concat((NOTE_SECTIONS[type] || []).map(s => s.id));
+            const same = d => !!d && d.noteType === type && JSON.stringify([ids.map(id => (d.fields || {})[id]), d.quick, d.dx]) ===
+                JSON.stringify([ids.map(id => savedNote.fields[id]), savedNote.quick, savedNote.dx]);
+            // An offered draft that is this very note isn't unsaved any more
+            if (same(_pendingDraft)) _pendingDraft = null;
+            // A draft of this format that changed while the save was in flight
+            // (more typing, a restore) is newer than the saved note: keep it.
+            const stored = readStoredDraft(draftKey(type));
+            if (!stored || same(stored)) clearDraft(type);
+            if (_draftEdits === editsAtSave) _draftDirty = false;
         }
 
         // ----- Offline save queue -----
@@ -3555,7 +3586,9 @@
         function queueOfflineSave(docData) {
             const q = readQueuedSaves();
             q.push({ uid: getCurrentUserUid(), doc: docData });
-            if (!writeQueuedSaves(q)) console.warn('Offline queue: could not store the note on this device');
+            if (writeQueuedSaves(q)) return true;
+            console.warn('Offline queue: could not store the note on this device');
+            return false;
         }
         let _flushingQueuedSaves = false;
         async function flushQueuedSaves() {
@@ -3571,13 +3604,14 @@
                 // failure (or a save queued meanwhile) never loses an entry.
                 for (;;) {
                     const q = readQueuedSaves();
-                    // Legacy untagged entries predate uid tagging; only the
-                    // account that is signed in when they are found can own them.
-                    const i = q.findIndex(item => item.uid === uid || !item.uid);
+                    // Only this account's notes. Untagged entries (from builds
+                    // before saves were tagged) can't be attributed and stay put,
+                    // the same rule as untagged drafts.
+                    const i = q.findIndex(item => item.uid === uid);
                     if (i === -1) break;
                     await ref.push(q[i].doc);
                     const now = readQueuedSaves();
-                    const j = now.findIndex(item => (item.uid === uid || !item.uid) &&
+                    const j = now.findIndex(item => item.uid === uid &&
                         item.doc.createdAt === q[i].doc.createdAt);
                     if (j !== -1) now.splice(j, 1);
                     writeQueuedSaves(now);
@@ -3589,8 +3623,11 @@
                 _flushingQueuedSaves = false;
             }
             if (synced) {
-                showToast(synced === 1 ? 'Back online: 1 queued note synced to your account.'
-                    : 'Back online: ' + synced + ' queued notes synced to your account.', 'success');
+                // toast.js loads after this script; the first auth callback can beat it
+                const msg = synced === 1 ? 'Back online: 1 queued note synced to your account.'
+                    : 'Back online: ' + synced + ' queued notes synced to your account.';
+                if (typeof showToast === 'function') showToast(msg, 'success');
+                else document.addEventListener('DOMContentLoaded', () => showToast(msg, 'success'));
             }
         }
         // Sync queued saves when back online (and after sign-in, see onAuthStateChanged)
@@ -3780,14 +3817,23 @@
                 showConfirmModal('Load Document', 'This will replace your current form data. Continue?', function() {
                     try {
                 const content = doc.content;
+                const t = doc.noteType || 'dar';
+                // The note on screen goes to its own type's draft first
+                saveDraft();
 
                 // Set the note type first. setNoteType (not selectNoteType) so no
                 // stale localStorage draft is offered over the loaded document.
-                setNoteType(doc.noteType || 'dar');
+                setNoteType(t);
 
-            // Load header info (replace, so the previous patient's values never linger)
-            if (content.noteRole && document.getElementById('noteRole')) { document.getElementById('noteRole').value = content.noteRole; onNoteRoleChange(true); }
-            if (content.noteYear && document.getElementById('noteYear')) document.getElementById('noteYear').value = content.noteYear;
+                resetNoteScreen();
+                // The draft toast no longer matches the screen; a still-pending
+                // draft is kept by the next save (stashPendingDraft).
+                if (_draftToast && _draftToast._dismiss) _draftToast._dismiss();
+                _draftToast = null;
+
+            // Load header info (replace, so the previous patient's values never linger).
+            // Role and year stay the profile's (hidden, like drafts): restoring the
+            // saved note's would export a past year while the bar shows the current one.
             if (content.noteDate) document.getElementById('noteDate').value = content.noteDate;
             if (content.noteTime) document.getElementById('noteTime').value = content.noteTime;
             document.getElementById('unit').value = content.unit || '';
@@ -3804,7 +3850,6 @@
             renderDiagnoses();
 
             // Load note-specific fields (keys are the element ids)
-            const t = doc.noteType;
             (NOTE_SECTIONS[t] || []).forEach(s => {
                 const el = document.getElementById(s.id);
                 if (el) el.value = content[s.id] != null ? content[s.id] : '';
@@ -3822,6 +3867,13 @@
             refreshDerivedUI();
             // Store the loaded document as this note type's draft, so a reload
             // never restores an older (possibly other-patient) draft over it.
+            // An unsaved draft of this type (not itself a copy of a saved note)
+            // moves to the earlier-draft slot instead of being overwritten.
+            adoptLegacyDraft(t);
+            const stored = readStoredDraft(draftKey(t));
+            if (stored && !stored.fromHistory && draftHasContent(stored)) writeEarlierDraft(t, stored);
+            _screenFromHistory = true;
+            _draftEdits++;
             _draftDirty = true;
             saveDraft();
 
@@ -4096,6 +4148,24 @@
         let firebaseAuthReady = false;
         auth.onAuthStateChanged((user) => {
             if (user) {
+                // Another account signed in on this browser while this tab was
+                // open: keep the owner's note under the owner, then start over
+                // as the account now signed in.
+                // (typeof: the draft code is in a later <script> that may not have run yet)
+                if (typeof _draftOwnerUid !== 'undefined' && _draftOwnerUid && user.uid !== _draftOwnerUid) {
+                    // Only if the owner was signed in on this page; otherwise the
+                    // screen may already hold the new account's typing.
+                    if (firebaseAuthReady) saveDraft();
+                    _draftDirty = false;
+                    _draftPageLeaving = true;
+                    try {
+                        localStorage.setItem('bendbsn_uid', user.uid);
+                        // The first account's name and role must not carry over
+                        ['bendbsn_user', 'bendbsn_displayName', 'bendbsn_role_v2'].forEach(k => localStorage.removeItem(k));
+                    } catch (e) {}
+                    location.reload();
+                    return;
+                }
                 console.log('Firebase Auth: Logged in as', user.email);
                 firebaseAuthReady = true;
                 currentUserUid = user.uid;
@@ -4164,6 +4234,20 @@
                     }
                 }).catch(() => {});
             } else {
+                // Signed out (in another tab, or idle logout) after this page had
+                // a user: keep the owner's note under the owner and leave, so the
+                // next student can't use a page that still files work as the first.
+                if (firebaseAuthReady && typeof _draftOwnerUid !== 'undefined' && _draftOwnerUid) {
+                    saveDraft();
+                    _draftDirty = false;
+                    _draftPageLeaving = true;
+                    // Same keys logout() clears, so the login page starts clean
+                    ['bendbsn_auth', 'bendbsn_user', 'bendbsn_displayName', 'bendbsn_uid'].forEach(k => {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                    });
+                    location.replace('/');
+                    return;
+                }
                 console.log('Firebase Auth: Not logged in, attempting silent re-auth...');
                 // If we have session but no Firebase auth, redirect to login
                 // This can happen if Firebase auth expired
@@ -7127,7 +7211,36 @@
             loadDraft(type);
         }
 
+        // shared/header.js wipes every key with this prefix on a forced logout.
         const DRAFT_PREFIX = 'bendbsn_draft_';
+        // Drafts are kept per account and note type: bendbsn_draft_u_{uid}_{type}
+        // (+ '_prev'). Older builds used bendbsn_draft_{type} for every account
+        // on the browser, and bendbsn_draft_sbar collided with /sbar/'s own
+        // draft; adoptLegacyDraft moves an account's copy over.
+        // The owner is fixed when the page loads, so a tab left open never files
+        // one student's note under the next student who signs in on this browser.
+        // Also read by the auth callback in the earlier <script> (via typeof)
+        var _draftOwnerUid = '';
+        // Set (by that callback) when the page is about to reload or leave for
+        // another account: a save finishing late must not clear the owner's draft.
+        var _draftPageLeaving = false;
+        function draftOwner() {
+            if (!_draftOwnerUid) _draftOwnerUid = getCurrentUserUid();
+            return _draftOwnerUid;
+        }
+        function draftKey(type) {
+            const uid = draftOwner();
+            return uid ? DRAFT_PREFIX + 'u_' + uid + '_' + type : '';
+        }
+        // Another account has since signed in to this tab: offer none of the
+        // owner's drafts on screen.
+        function draftAccountChanged() {
+            const cur = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser.uid : '';
+            return !!(cur && draftOwner() && cur !== draftOwner());
+        }
+        // Set while the screen holds a note loaded from History that has not
+        // been edited since; such a draft is a copy of a saved note.
+        let _screenFromHistory = false;
         const AUTOSAVE_DELAY = 800;
         const DRAFT_PREV_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
         let autosaveTimer = null;
@@ -7135,6 +7248,10 @@
         // is a no-op, so the 15 s interval and beforeunload can never overwrite
         // a stored draft with an untouched (or auto-filled) form.
         let _draftDirty = false;
+        // Bumped by every edit and every programmatic replacement of the screen
+        // (restore, load, template, undo), so a save in flight can tell whether
+        // the screen changed before it finished.
+        let _draftEdits = 0;
         // Field values right after init (auto-filled date/time, default selects
         // and checkboxes). A stored field only counts as draft content when it
         // differs from this snapshot.
@@ -7143,6 +7260,7 @@
         // Copied to the _prev slot before the first dirty save overwrites it.
         let _pendingDraft = null;
         let _draftToast = null;
+        let _draftOfferToken = 0;
 
         // Excluded from drafts: ephemeral form bits (med/IV builders) plus
         // profile-level fields. noteRole and noteYear come from the user's
@@ -7182,21 +7300,25 @@
             if (mobile) mobile.textContent = text;
         }
 
+        function buildDraftPayload() {
+            return {
+                noteType: currentNoteType,
+                timestamp: Date.now(),
+                uid: draftOwner(),
+                fields: collectDraftFields(),
+                quick: collectQuickEntry(),
+                dx: selectedDiagnoses,
+                fromHistory: _screenFromHistory
+            };
+        }
+
         function saveDraft() {
             if (!_draftDirty) return;
+            const key = draftKey(currentNoteType);
+            if (!key) return;
             try {
-                const key = DRAFT_PREFIX + currentNoteType;
                 stashPendingDraft(currentNoteType);
-                const payload = {
-                    noteType: currentNoteType,
-                    timestamp: Date.now(),
-                    // Drafts share one key per note type on this browser; the uid
-                    // keeps a previous user's draft from being offered to the next.
-                    uid: getCurrentUserUid(),
-                    fields: collectDraftFields(),
-                    quick: collectQuickEntry(),
-                    dx: selectedDiagnoses
-                };
+                const payload = buildDraftPayload();
                 localStorage.setItem(key, JSON.stringify(payload));
                 const time = new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 updateAutoSaveStatus('Saved on this device · ' + time);
@@ -7234,6 +7356,29 @@
             if (typeof updateClearButton === 'function') { try { updateClearButton(); } catch (e) {} }
         }
 
+        // Blanks every clearable field but the date and time, and hides the
+        // narrative preview and feedback banner, so nothing from the note on
+        // screen stays under the next one (Load from history, draft restore).
+        function resetNoteScreen() {
+            getClearableFields().forEach(el => {
+                if (['noteDate', 'noteTime'].includes(el.id)) return;
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    el.checked = el.defaultChecked;
+                } else if (el.tagName === 'SELECT') {
+                    const def = Array.from(el.options).findIndex(o => o.defaultSelected);
+                    el.selectedIndex = def >= 0 ? def : 0;
+                } else {
+                    el.value = '';
+                }
+            });
+            try { onLineTypeChange(); } catch (e) {}
+            // The IV infusion, site and not-given panels follow route and status
+            try { onMedRouteChange(); onMedStatusChange(); } catch (e) {}
+            if (typeof hideFeedbackBanner === 'function') hideFeedbackBanner();
+            const preview = document.getElementById('fullNarrativePreview');
+            if (preview) { preview.style.display = 'none'; preview.textContent = ''; }
+        }
+
         function restoreDraftFields(payload) {
             if (!payload || !payload.fields) return;
             // A draft belongs to one note type; show that type's fields first.
@@ -7241,6 +7386,9 @@
                 document.getElementById(payload.noteType + 'Fields')) {
                 setNoteType(payload.noteType);
             }
+            // Half-entered med/line builder inputs (never in a draft) and other
+            // leftovers belong to the note being replaced.
+            resetNoteScreen();
             Object.keys(payload.fields).forEach(id => {
                 // Same exclusion list as the writer — protects against stale
                 // drafts saved before noteRole/noteYear were excluded.
@@ -7253,16 +7401,15 @@
                     el.value = payload.fields[id];
                 }
             });
-            // Saved quick-entry rows and NANDA diagnoses are shared by every note
-            // type, so a draft only restores them when the in-memory lists are
-            // empty (fresh page load). Switching note types mid-session never
-            // swaps the current rows for an older draft's copy.
-            if (payload.quick && !hasQuickEntries()) restoreQuickEntry(payload.quick);
+            // A draft is one whole note: its saved rows and diagnoses replace the
+            // ones on screen, so they never sit under another patient's header.
+            // (The note being replaced is still in its own type's draft.)
+            restoreQuickEntry(payload.quick);
             if (!payload.quick) resetLegacyZeroScreens();
-            if (Array.isArray(payload.dx) && selectedDiagnoses.length === 0) {
-                selectedDiagnoses = payload.dx.filter(d => typeof d === 'string');
-                renderDiagnoses();
-            }
+            selectedDiagnoses = Array.isArray(payload.dx) ? payload.dx.filter(d => typeof d === 'string') : [];
+            renderDiagnoses();
+            _screenFromHistory = !!payload.fromHistory;
+            _draftEdits++;
             if (typeof onNoteRoleChange === 'function') onNoteRoleChange(false);
             if (typeof buildDocumentedBy === 'function') buildDocumentedBy();
             // Screening results, H2T completion indicators and progress bar
@@ -7293,16 +7440,86 @@
                 (Array.isArray(payload.dx) && payload.dx.length > 0);
         }
 
+        // Only a draft tagged with this page's account is ever offered; one with
+        // no uid (saved before drafts were tagged) can't be attributed.
         function readStoredDraft(key) {
+            if (!key || draftAccountChanged()) return null;
             try {
                 const raw = localStorage.getItem(key);
                 const p = raw ? JSON.parse(raw) : null;
                 if (!p || !p.fields) return null;
-                // Another account's draft (shared computer): never offer it
-                const uid = getCurrentUserUid();
-                if (p.uid && uid && p.uid !== uid) return null;
+                if (p.uid !== draftOwner()) return null;
                 return p;
             } catch (e) { return null; }
+        }
+
+        // Earlier drafts (the safety net): up to DRAFT_EARLIER_MAX per type under
+        // key + '_prev', newest first, each offered while under 7 days old.
+        // Older builds kept one payload object there.
+        const DRAFT_EARLIER_MAX = 3;
+        function readEarlierDrafts(type) {
+            const key = draftKey(type);
+            if (!key) return [];
+            let v = null;
+            try { v = JSON.parse(localStorage.getItem(key + '_prev') || 'null'); } catch (e) { return []; }
+            return (Array.isArray(v) ? v : (v ? [v] : []))
+                .filter(p => p && p.fields && p.uid === draftOwner());
+        }
+        function writeEarlierDrafts(type, list) {
+            const key = draftKey(type);
+            if (!key) return;
+            try {
+                if (list.length) localStorage.setItem(key + '_prev', JSON.stringify(list));
+                else localStorage.removeItem(key + '_prev');
+            } catch (e) {}
+        }
+        // Adds a draft without displacing another unsaved one (only the oldest
+        // beyond the limit drops off). A copy of a saved History note is never
+        // kept here: it is already in History.
+        function writeEarlierDraft(type, payload) {
+            if (!payload || payload.fromHistory) return;
+            const list = readEarlierDrafts(type).filter(p => p.timestamp !== payload.timestamp &&
+                Date.now() - (p.timestamp || 0) < DRAFT_PREV_MAX_AGE);
+            list.push(payload);
+            list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            writeEarlierDrafts(type, list.slice(0, DRAFT_EARLIER_MAX));
+        }
+        function removeEarlierDraft(type, timestamp) {
+            writeEarlierDrafts(type, readEarlierDrafts(type).filter(p => p.timestamp !== timestamp));
+        }
+
+        // Moves this account's draft of one type (and its earlier copy) from
+        // the old shared key to the per-account key, unless that key is already
+        // in use. App-format drafts only: /sbar/ keeps its own draft under
+        // bendbsn_draft_sbar. Untagged and other accounts' drafts stay put and
+        // are never offered.
+        function adoptLegacyDraft(type) {
+            const uid = draftOwner(), key = draftKey(type);
+            if (!uid || !key) return;
+            ['', '_prev'].forEach(sfx => {
+                const legacyKey = DRAFT_PREFIX + type + sfx;
+                let p = null;
+                try { p = JSON.parse(localStorage.getItem(legacyKey) || 'null'); } catch (e) { return; }
+                if (!p || !p.fields || p.noteType !== type || p.uid !== uid) return;
+                try {
+                    if (localStorage.getItem(key + sfx) !== null) return;
+                    localStorage.setItem(key + sfx, JSON.stringify(p));
+                    localStorage.removeItem(legacyKey);
+                } catch (e) {}
+            });
+        }
+
+        // Restoring a draft for a different patient than the one on screen
+        // asks first, naming both.
+        function confirmDraftRestore(payload, timeStr, then) {
+            const pid = ((payload.fields || {}).patientId || '').trim();
+            const onScreen = ((document.getElementById('patientId') || {}).value || '').trim();
+            if (!pid || !onScreen || pid.toLowerCase() === onScreen.toLowerCase()) { then(); return; }
+            showConfirmModal('Restore draft for ' + pid + '?',
+                'The note on screen is for ' + onScreen + '. Restoring replaces it with the ' +
+                draftTypeLabel(payload.noteType) + ' draft for ' + pid + ' saved ' + timeStr +
+                ', including that draft\'s saved entries and diagnoses.',
+                then, { confirmText: 'Restore' });
         }
 
         function formatDraftTime(ts) {
@@ -7324,81 +7541,106 @@
         // Deletes the offered draft only if the stored copy is still that draft;
         // a newer autosave in the main slot is left alone.
         function discardDraft(type, payload) {
-            const key = DRAFT_PREFIX + type;
+            const key = draftKey(type);
             if (_pendingDraft === payload) _pendingDraft = null;
             const main = readStoredDraft(key);
             if (main && main.timestamp === payload.timestamp) clearDraft(type);
-            const prev = readStoredDraft(key + '_prev');
-            if (prev && prev.timestamp === payload.timestamp) {
-                try { localStorage.removeItem(key + '_prev'); } catch (e) {}
-            }
+            removeEarlierDraft(type, payload.timestamp);
             updateAutoSaveStatus('Draft discarded');
+        }
+
+        // A note typed since a draft was offered is kept as an earlier draft
+        // before the offered one replaces it (not an unedited History copy).
+        function keepTypedNote(type) {
+            if (!_draftDirty || _screenFromHistory || currentNoteType !== type) return;
+            const cur = buildDraftPayload();
+            if (draftHasContent(cur)) writeEarlierDraft(type, cur);
         }
 
         function loadDraft(type) {
             if (_draftToast && _draftToast._dismiss) { _draftToast._dismiss(); }
             _draftToast = null;
             _pendingDraft = null;
+            const key = draftKey(type);
+            if (!key || draftAccountChanged()) return;
+            adoptLegacyDraft(type);
+            // Only the newest call may show its prompt (a format switch while the
+            // page is still loading would otherwise queue a second one).
+            const token = ++_draftOfferToken;
             try {
-                const key = DRAFT_PREFIX + type;
-                // Earlier draft: the one-slot safety net, offered while under 7 days old
-                let prev = readStoredDraft(key + '_prev');
-                if (prev && !(Date.now() - (prev.timestamp || 0) < DRAFT_PREV_MAX_AGE)) {
-                    try { localStorage.removeItem(key + '_prev'); } catch (e) {}
-                    prev = null;
-                }
-                if (prev && !draftHasContent(prev)) prev = null;
+                let earlier = readEarlierDrafts(type);
+                const unexpired = earlier.filter(p => Date.now() - (p.timestamp || 0) < DRAFT_PREV_MAX_AGE);
+                if (unexpired.length !== earlier.length) writeEarlierDrafts(type, unexpired);
+                earlier = unexpired.filter(p => draftHasContent(p));
                 let payload = readStoredDraft(key);
                 if (payload && !draftHasContent(payload)) payload = null;
                 // Main slot empty or blank (e.g. cleared, or overwritten by a
-                // trivial edit): offer the safety-net copy on its own.
-                if (!payload && prev) { payload = prev; prev = null; }
+                // trivial edit): offer the newest earlier draft on its own.
+                if (!payload && earlier.length) payload = earlier[0];
                 if (!payload) { updateAutoSaveStatus('Draft not saved'); return; }
-                if (prev && prev.timestamp === payload.timestamp) prev = null;
+                const prev = earlier.find(p => p.timestamp !== payload.timestamp) || null;
                 const timeStr = formatDraftTime(payload.timestamp);
                 updateAutoSaveStatus('Draft from ' + timeStr);
-                if (typeof showToastAction === 'function') {
-                    _pendingDraft = payload;
-                    const pid = (payload.fields.patientId || '').trim();
-                    const actions = [
-                        { label: 'Restore', onClick: function() {
+                // Set before the prompt shows, so typing that starts first still
+                // moves this draft to the earlier drafts instead of over it.
+                _pendingDraft = payload;
+                const pid = (payload.fields.patientId || '').trim();
+                const actions = [
+                    { label: 'Restore', onClick: function() {
+                        _draftToast = null;
+                        confirmDraftRestore(payload, timeStr, function() {
+                            // Out of the earlier drafts first (it becomes the main
+                            // draft), so keeping the typed note never pushes
+                            // another earlier draft past the limit.
+                            removeEarlierDraft(type, payload.timestamp);
+                            keepTypedNote(type);
                             _pendingDraft = null;
-                            _draftToast = null;
                             restoreDraftFields(payload);
-                            // Write it back to the main slot now, then drop the
-                            // safety-net copy if that is what was restored.
                             _draftDirty = true;
                             saveDraft();
-                            const p = readStoredDraft(key + '_prev');
-                            if (p && p.timestamp === payload.timestamp) {
-                                try { localStorage.removeItem(key + '_prev'); } catch (e) {}
-                            }
-                        } },
-                        { label: 'Discard', onClick: function() {
-                            _draftToast = null;
-                            showConfirmModal('Discard draft?', 'This deletes the draft saved at ' + timeStr + '.',
-                                function() { discardDraft(type, payload); }, { danger: true, confirmText: 'Discard' });
-                        } }
-                    ];
-                    if (prev) {
-                        actions.push({ label: 'Earlier draft', onClick: function() {
-                            // _pendingDraft is kept: the first save moves the newer
-                            // draft into the _prev slot, so neither copy is lost.
-                            _draftToast = null;
+                        });
+                    } },
+                    { label: 'Discard', onClick: function() {
+                        _draftToast = null;
+                        showConfirmModal('Discard draft?', 'This deletes the draft saved at ' + timeStr + '.',
+                            function() { discardDraft(type, payload); }, { danger: true, confirmText: 'Discard' });
+                    } }
+                ];
+                if (prev) {
+                    actions.push({ label: 'Earlier draft', onClick: function() {
+                        _draftToast = null;
+                        confirmDraftRestore(prev, formatDraftTime(prev.timestamp), function() {
+                            // As Restore: out of the earlier drafts first. The
+                            // offered newer draft (if still pending) joins them
+                            // on this save.
+                            removeEarlierDraft(type, prev.timestamp);
+                            keepTypedNote(type);
                             restoreDraftFields(prev);
                             _draftDirty = true;
                             saveDraft();
-                        } });
-                    }
-                    // Sticky (duration 0): stays until the student picks an action
-                    // or closes it; the stored draft is untouched until they type.
-                    // Plain text: shared/toast.js escapes title/message/labels.
+                        });
+                    } });
+                }
+                // Sticky (duration 0): stays until the student picks an action
+                // or closes it; the stored draft is untouched until they type.
+                // Plain text: shared/toast.js escapes title/message/labels.
+                const offer = function() {
+                    if (token !== _draftOfferToken || currentNoteType !== type) return;
                     _draftToast = showToastAction({
                         type: 'info',
                         title: 'Unsaved draft',
                         message: draftTypeLabel(type) + ' · ' + (pid || 'no patient ID') + ' · saved ' + timeStr,
                         duration: 0,
                         actions: actions
+                    });
+                };
+                if (typeof showToastAction === 'function') {
+                    offer();
+                } else if (document.readyState === 'loading') {
+                    // At page load /shared/toast.js (included after this
+                    // script) is not there yet: show the prompt once it is.
+                    document.addEventListener('DOMContentLoaded', function () {
+                        if (typeof showToastAction === 'function') offer();
                     });
                 } else {
                     restoreDraftFields(payload);
@@ -7410,6 +7652,8 @@
 
         function scheduleAutoSave() {
             _draftDirty = true;
+            _draftEdits++;
+            _screenFromHistory = false;
             updateAutoSaveStatus('Saving...');
             clearTimeout(autosaveTimer);
             autosaveTimer = setTimeout(saveDraft, AUTOSAVE_DELAY);
@@ -7430,13 +7674,15 @@
         // unresolved offered draft in the _prev slot.
         function stashPendingDraft(type) {
             if (!_pendingDraft || _pendingDraft.noteType !== type) return;
-            try { localStorage.setItem(DRAFT_PREFIX + type + '_prev', JSON.stringify(_pendingDraft)); } catch (e) {}
+            writeEarlierDraft(type, _pendingDraft);
             _pendingDraft = null;
         }
 
         function clearDraft(type) {
+            if (_draftPageLeaving) return;
             stashPendingDraft(type);
-            try { localStorage.removeItem(DRAFT_PREFIX + type); } catch (e) {}
+            const key = draftKey(type);
+            if (key) { try { localStorage.removeItem(key); } catch (e) {} }
         }
 
         // Save draft on tab close/refresh
@@ -7509,7 +7755,9 @@
 
             if (role.requires_year && role.year_options && yearSel) {
                 const prevYear = yearSel.value;
-                yearSel.innerHTML = role.year_options.map(y => `<option>${y}</option>`).join('');
+                // value attributes: the [value="…"] lookups that apply the
+                // profile's year (auth load, populateNoteRoleDropdown) need them
+                yearSel.innerHTML = role.year_options.map(y => `<option value="${escapeHtml(y)}">${escapeHtml(y)}</option>`).join('');
                 // Restore year priority: previous form value (user may have set
                 // before changing role) → cache (only if same role) → first option.
                 if (prevYear && role.year_options.includes(prevYear)) {
@@ -7517,10 +7765,11 @@
                 } else if (cachedRole.id === roleId && cachedRole.year && role.year_options.includes(cachedRole.year)) {
                     yearSel.value = cachedRole.year;
                 }
-                if (yearGroup) yearGroup.style.display = '';
-            } else if (yearGroup) {
-                yearGroup.style.display = 'none';
             }
+            // Stays hidden: the year shows in the documented-by bar and changes
+            // only through the Change Role modal. Shown alone in the encounter
+            // row it looked like a per-note field but rewrote the profile year.
+            if (yearGroup) yearGroup.style.display = 'none';
             buildDocumentedBy();
         }
 
@@ -7773,6 +8022,8 @@
         // selects/checkboxes never count as a draft.
         _draftBaseline = collectDraftFields();
         loadRolesConfig();
+        draftOwner(); // fix the account this page's drafts belong to
+        // The 'Unsaved draft' prompt itself waits for /shared/toast.js (see loadDraft)
         loadDraft(currentNoteType);
         startSessionHeartbeat();
 
@@ -7798,7 +8049,8 @@
         try {
             var pidEl = document.getElementById('patientId');
             var isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-            if (pidEl && !pidEl.value && !isTouch) {
+            // Not while a draft is being offered: typing first would start a new note
+            if (pidEl && !pidEl.value && !isTouch && !_pendingDraft) {
                 setTimeout(function () {
                     if (!pidEl.value) pidEl.focus({ preventScroll: true });
                 }, 250);  // brief delay so loadDraft has settled first
@@ -9448,7 +9700,8 @@
                 _clearFormSnapshot = {
                     fields: fields,
                     dx: JSON.parse(JSON.stringify(selectedDiagnoses)),
-                    quick: JSON.parse(JSON.stringify(collectQuickEntry()))
+                    quick: JSON.parse(JSON.stringify(collectQuickEntry())),
+                    fromHistory: _screenFromHistory
                 };
 
                 getClearableFields().forEach(el => {
@@ -9473,6 +9726,8 @@
                 // Clear the saved draft so old content doesn't restore on reload or note-type switch
                 clearDraft(currentNoteType);
                 _draftDirty = false;
+                _screenFromHistory = false;
+                _draftEdits++;
                 // Hide any loaded feedback banner and the generated narrative preview
                 if (typeof hideFeedbackBanner === 'function') hideFeedbackBanner();
                 const preview = document.getElementById('fullNarrativePreview');
@@ -9521,6 +9776,8 @@
             if (_clearFormUndoTimer) clearTimeout(_clearFormUndoTimer);
             try { updateBGStatus(); } catch (e) {}
             refreshDerivedUI();
+            _screenFromHistory = !!snap.fromHistory;
+            _draftEdits++;
             _draftDirty = true;
             saveDraft(); // Clear removed the draft; put it back
             showToast('Form restored.', 'success');
@@ -9529,14 +9786,95 @@
         // ================================================================
         //  NOTE TEMPLATES (localStorage)
         // ================================================================
+        // Per account: bendbsn_templates_{uid}. Older builds kept one list under
+        // bendbsn_templates for every account on the browser; it stays, and each
+        // account can copy it into its own list (or hide it) once.
         const TEMPLATES_KEY = 'bendbsn_templates';
         const MAX_TEMPLATES = 10;
 
+        function templatesKey() {
+            const uid = draftOwner();
+            return uid ? TEMPLATES_KEY + '_' + uid : '';
+        }
+
+        // A template is the section text of one note format (plus Focus for
+        // DAR/DARP). Never the patient, date, unit, vitals or screening answers.
+        function templateFieldIds(type) {
+            return (NOTE_SECTIONS[type] || []).map(s => s.id)
+                .concat(['dar', 'darp'].includes(type) ? ['focus'] : []);
+        }
+        function templateData(type, source) {
+            const data = {};
+            templateFieldIds(type).forEach(id => {
+                const v = source(id);
+                if (typeof v === 'string' && hasRealContent(v)) data[id] = v;
+            });
+            return data;
+        }
+
         function getTemplates() {
-            try { return JSON.parse(localStorage.getItem(TEMPLATES_KEY) || '[]'); } catch(e) { return []; }
+            const key = templatesKey();
+            if (!key) return [];
+            try {
+                const list = JSON.parse(localStorage.getItem(key) || '[]');
+                return (Array.isArray(list) ? list : []).filter(t =>
+                    t && NOTE_SECTIONS[t.noteType] && t.data && typeof t.data === 'object');
+            } catch (e) { return []; }
         }
         function saveTemplates(tmpl) {
-            localStorage.setItem(TEMPLATES_KEY, JSON.stringify(tmpl));
+            const key = templatesKey();
+            if (key) localStorage.setItem(key, JSON.stringify(tmpl));
+        }
+
+        // ----- Templates saved before they were per account -----
+        function legacyTemplatesSeenKey() { return TEMPLATES_KEY + '_legacy_seen_' + draftOwner(); }
+        function getLegacyTemplates() {
+            try {
+                const list = JSON.parse(localStorage.getItem(TEMPLATES_KEY) || '[]');
+                return Array.isArray(list) ? list.filter(t => t && typeof t === 'object') : [];
+            } catch (e) { return []; }
+        }
+        // An old template was a snapshot of the whole page: keep the section
+        // text of every format it holds, one template per format.
+        function splitLegacyTemplate(tpl) {
+            const data = (tpl.data && typeof tpl.data === 'object') ? tpl.data : {};
+            const name = String(tpl.name || 'Unnamed');
+            const parts = Object.keys(NOTE_SECTIONS)
+                .map(type => ({ noteType: type, data: templateData(type, id => data[id]) }))
+                .filter(p => NOTE_SECTIONS[p.noteType].some(s => p.data[s.id]));
+            return parts.map(p => ({
+                name: parts.length > 1 ? name + ' (' + noteTypeLabel(p.noteType) + ')' : name,
+                noteType: p.noteType, data: p.data, savedAt: tpl.savedAt || Date.now()
+            }));
+        }
+        // Copies (never moves): the list may also hold other students' templates.
+        function importLegacyTemplates() {
+            const own = getTemplates();
+            // Skip ones already imported (an earlier import that hit the limit),
+            // by content: different templates can share a name
+            const sig = t => t.noteType + '|' + JSON.stringify(t.data);
+            const have = new Set(own.map(sig));
+            const all = [].concat(...getLegacyTemplates().map(splitLegacyTemplate))
+                .filter(t => !have.has(sig(t)));
+            const room = Math.max(0, MAX_TEMPLATES - own.length);
+            const imported = all.slice(0, room);
+            const skipped = all.length - imported.length;
+            try {
+                saveTemplates(own.concat(imported));
+                // The notice stays until everything fit, so the rest can follow
+                if (!skipped) localStorage.setItem(legacyTemplatesSeenKey(), '1');
+            } catch (e) {
+                showToast('Could not import the templates on this device.', 'error');
+                return;
+            }
+            renderTemplatesList();
+            if (!imported.length && !skipped) { showToast('Those templates are already in your list.', 'info'); return; }
+            showToast(imported.length + ' template' + (imported.length === 1 ? '' : 's') + ' imported' +
+                (skipped ? '; ' + skipped + ' skipped (limit ' + MAX_TEMPLATES + ').' : '.'), skipped ? 'warning' : 'success');
+        }
+        function hideLegacyTemplates() {
+            try { localStorage.setItem(legacyTemplatesSeenKey(), '1'); } catch (e) {}
+            renderTemplatesList();
         }
 
         function openTemplatesModal() {
@@ -9547,43 +9885,55 @@
             closeModalEl(document.getElementById('templatesModal'));
         }
 
-        // Never stored in / restored from a template: per-note header values
-        // (date, time, patient), profile-owned role/year, and the draft exclusions
-        // (med/line builder fields). Filtered on load too, for templates saved
-        // before this list existed.
-        const TEMPLATE_EXCLUDE = new Set([...DRAFT_EXCLUDE,
-            'noteDate', 'noteTime', 'patientId', 'patientDemo', 'historySearch', 'modalNoteRole', 'modalNoteYear']);
-
         function saveAsTemplate() {
             const templates = getTemplates();
             if (templates.length >= MAX_TEMPLATES) {
                 showToast('Maximum ' + MAX_TEMPLATES + ' templates reached. Delete one first.', 'warning');
                 return;
             }
-            showPromptModal('Save Template', 'Enter a name for this template:', function(name) {
+            const type = currentNoteType;
+            const data = templateData(type, id => (document.getElementById(id) || {}).value);
+            if (!NOTE_SECTIONS[type].some(s => data[s.id])) {
+                showToast('Write something in the ' + noteTypeLabel(type) + ' sections first. A template saves only that text.', 'warning');
+                return;
+            }
+            showPromptModal('Save Template', 'Name this ' + noteTypeLabel(type) + ' template. It saves the section text only, not the patient, date, unit or saved entries:', function(name) {
                 if (!name || !name.trim()) return;
-                const snapshot = {};
-                document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea, select').forEach(el => {
-                    if (el.id && !TEMPLATE_EXCLUDE.has(el.id)) snapshot[el.id] = el.value;
-                });
-                templates.push({ name: name.trim(), data: snapshot, savedAt: Date.now() });
+                templates.push({ name: name.trim(), noteType: type, data: data, savedAt: Date.now() });
                 saveTemplates(templates);
                 renderTemplatesList();
                 showToast('Template "' + name.trim() + '" saved.', 'success');
             }, { placeholder: 'e.g., Med-Surg Standard Shift Note', submitText: 'Save Template' });
         }
 
+        // Fills only the sections the template has text for, in its own format.
+        // The patient, date, time, unit, saved entries and diagnoses stay.
         function loadTemplate(idx) {
             const templates = getTemplates();
             if (!templates[idx]) return;
             const tpl = templates[idx];
-            showConfirmModal('Load Template', 'Load "' + tpl.name + '"? This will overwrite your current form.', function() {
-                Object.entries(tpl.data || {}).forEach(([id, val]) => {
-                    if (TEMPLATE_EXCLUDE.has(id)) return;
+            showConfirmModal('Load Template', 'Load "' + tpl.name + '" into the ' + noteTypeLabel(tpl.noteType) +
+                ' sections? Sections it fills are replaced; the patient, date, time and saved entries stay.', function() {
+                if (tpl.noteType !== currentNoteType) {
+                    // The usual format switch: saves the current note and offers
+                    // this format's draft. The format's hidden sections hold an
+                    // earlier note (kept in its draft), not this one: blank them.
+                    // Focus was already showing when coming from DAR or DARP.
+                    const focusShown = ['dar', 'darp'].includes(currentNoteType);
+                    selectNoteType(tpl.noteType);
+                    templateFieldIds(tpl.noteType).forEach(id => {
+                        if (id in tpl.data || (id === 'focus' && focusShown)) return;
+                        const el = document.getElementById(id);
+                        if (el) el.value = '';
+                    });
+                }
+                Object.entries(tpl.data).forEach(([id, val]) => {
                     const el = document.getElementById(id);
                     if (el) el.value = val;
                 });
                 refreshDerivedUI();
+                _screenFromHistory = false;
+                _draftEdits++;
                 _draftDirty = true;
                 saveDraft();
                 closeTemplatesModal();
@@ -9607,16 +9957,29 @@
             const el = document.getElementById('templatesList');
             if (!el) return;
             const templates = getTemplates();
+            const legacy = getLegacyTemplates();
+            let seen = false;
+            try { seen = localStorage.getItem(legacyTemplatesSeenKey()) === '1'; } catch (e) {}
+            const legacyNotice = (legacy.length && !seen)
+                ? '<div style="padding:10px 12px;border:1px solid var(--clx-border);border-radius:8px;margin-bottom:10px;background:var(--clx-bg-surface-2);font-size:12px;color:var(--clx-text-primary);">' +
+                      legacy.length + ' template' + (legacy.length === 1 ? ' was' : 's were') + ' saved on this computer before templates became personal to each account. They may belong to another student: ' +
+                      legacy.map(t => '<strong>' + escapeHtml(String(t.name || 'Unnamed')) + '</strong>').join(', ') + '.' +
+                      '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+                          '<button type="button" onclick="importLegacyTemplates()" style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--clx-accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;">Import into my templates</button>' +
+                          '<button type="button" onclick="hideLegacyTemplates()" style="padding:6px 12px;font-size:12px;font-weight:600;background:none;color:var(--clx-text-primary);border:1px solid var(--clx-border);border-radius:6px;cursor:pointer;font-family:inherit;">Not mine</button>' +
+                      '</div>' +
+                  '</div>'
+                : '';
             if (!templates.length) {
-                el.innerHTML = '<p style="text-align:center;color:var(--clx-text-muted);padding:20px;font-size:13px;">No saved templates yet. Fill out a note and click "Save Current as Template".</p>';
+                el.innerHTML = legacyNotice + '<p style="text-align:center;color:var(--clx-text-muted);padding:20px;font-size:13px;">No saved templates yet. Fill out a note and click "Save Current as Template".</p>';
                 return;
             }
-            el.innerHTML = templates.map((tpl, i) => {
+            el.innerHTML = legacyNotice + templates.map((tpl, i) => {
                 const date = new Date(tpl.savedAt || 0).toLocaleDateString();
                 return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--clx-border);border-radius:8px;margin-bottom:8px;background:var(--clx-bg-surface);">' +
                     '<div style="flex:1;min-width:0;">' +
                         '<div style="font-size:13px;font-weight:600;color:var(--clx-text-primary);">' + (tpl.name || 'Unnamed').replace(/</g,'&lt;') + '</div>' +
-                        '<div style="font-size:11px;color:var(--clx-text-muted);">Saved ' + date + '</div>' +
+                        '<div style="font-size:11px;color:var(--clx-text-muted);">' + escapeHtml(noteTypeLabel(tpl.noteType)) + ' · saved ' + date + '</div>' +
                     '</div>' +
                     '<button onclick="loadTemplate(' + i + ')" style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--clx-accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;">Load</button>' +
                     '<button onclick="deleteTemplate(' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:16px;padding:4px;border-radius:4px;font-family:inherit;" aria-label="Delete template">&#128465;</button>' +
