@@ -23,7 +23,6 @@
 - `/clinical/` - Clinical Assessment Packet builder (students only)
 - `/clinical/packet/` - Clinical packet sub-page
 - `/clinical/standalone/` - Standalone AL/Memory-Care assessment packet (legacy — opts out of shared design system)
-- `/emr/` - Sim EMR (patients, orders, MAR/TAR, vitals, labs, imaging) — ~7,900 lines
 - `/careplan/` - Care Plan Builder
 - `/sbar/` - SBAR Handoff generator
 - `/rotationlog/` - Clinical rotation log
@@ -47,9 +46,9 @@ These were fixed in the July 2026 security pass. Preserve them:
    out of the registration + Google-role dropdowns via `SELF_SIGNUP_BLOCKED_ROLES`.
    Instructors are promoted from the admin panel (which writes as admin). If you add
    privileged roles, add them to that array AND to the rules `.validate`.
-3. **`emr` node** is read-by-any-authed-user but top-level writes require admin/
-   instructor; per-section child writes must be non-deleting (`newData.exists()`), so a
-   single `set()` can't wipe the shared sandbox.
+3. **`emr-clinical/packets/{uid}`** (Clinical Packet storage) is owner-only read/write.
+   The Sim EMR `emr` node was retired Nov 2026: never re-add it, and never prefix-match
+   `emr` when editing rules.
 4. **Apps Script token** (`?token=...` in index/app/admin) is a shared secret
    visible in source — see `HANDOFF-appsscript-security.md` in the PARENT `BendBSN/`
    folder (kept out of the deployed repo on purpose). `getUsers` is called
@@ -102,7 +101,7 @@ These were fixed in the July 2026 security pass. Preserve them:
 - `/shared/header.js` — Auto-sets logo href; auto-injects header; provides `showConfirmModal()`, `showPromptModal()`, offline detection banner
 
 ### Usage
-All 11 pages include:
+All 10 pages include:
 ```html
 <link rel="stylesheet" href="/shared/header.css">  <!-- in <head> -->
 <script src="/shared/header.js"></script>            <!-- before </body> -->
@@ -120,8 +119,15 @@ Header HTML is kept inline for instant render (no FOUC).
 - APA/Clinical: `https://unpkg.com/docx@8.2.2/build/index.umd.js`
 - App page: lazy-loaded from `https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js`
 
-## Retired features (Sept 24, 2026)
+## Retired features (Sept–Nov 2026)
 
+- **Sim EMR (`/emr/`)**, retired Nov 3, 2026: not used. `/emr/index.html` is the same
+  redirect stub as the other retired pages, `emr/seed-data.js` and `emr/scenarios.js` were
+  deleted, and the sidebar links, `sw.js` entries and the never-called "New: Sim EMR"
+  onboarding modal in `shared/header.js` / `header.css` are gone. The `emr` rules node was
+  removed (root deny); its RTDB data is deleted from the Firebase Console only after the
+  stub is live, because the old page re-seeded `/emr` on load. **`emr-clinical` is the
+  Clinical Assessment Packet's storage and stays.**
 - **Lab Schedule generator (`/labsched/`)**, retired Sept 25, 2026: no longer used. Same treatment as the others: the page is a redirect stub to `/home/`, the sidebar links and the `sw.js` entries are gone. It had no Firebase data or rules.
 
 The Slack-style chat (`/chat/`), the Community Hub (`/community/`) and the AI nursing

@@ -275,10 +275,9 @@ The source of truth is `database.rules.json` (deploy with `firebase deploy --onl
 | `userActions/{uid}` | Owner or admin/instructor | Owner or admin/instructor |
 | `clientErrors` (indexed on `timestamp`, `uid`) | Admin/instructor | Any signed-in user |
 | `appConfig` | `roles`: public (no auth). Other children: any signed-in user | Admin only (instructors excluded) |
-| `emr` | Any signed-in user | Top level: admin/instructor. Each `{section}`: any signed-in user, non-deleting writes only (`newData.exists()`) |
 | `emr-clinical/packets/{uid}` (indexed on `updatedAt`) | Owner | Owner |
 
-**Historical:** chat/DM/community nodes removed Sept 2026 (`chat`, `directMessages`, `community`, `groupChats`, `userFCMTokens`, `userDMs`, `userLastSeen`); they now fall under the root deny, and leftover data can be purged from the Firebase Console.
+**Historical:** chat/DM/community nodes removed Sept 2026 (`chat`, `directMessages`, `community`, `groupChats`, `userFCMTokens`, `userDMs`, `userLastSeen`); they now fall under the root deny, and leftover data can be purged from the Firebase Console. The Sim EMR `emr` node was removed the same way in Nov 2026; `emr-clinical` (Clinical Packet storage) is unrelated and stays.
 
 **To Check:** Go to Firebase Console → Realtime Database → Rules tab
 

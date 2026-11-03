@@ -245,6 +245,11 @@ bendbsn/
 
 ## Changelog
 
+### November 3, 2026 - Retired Sim EMR
+- `/emr/` replaced with the same redirect stub to `/home/` as the other retired pages; `emr/seed-data.js` and `emr/scenarios.js` deleted
+- Sidebar links, service worker entries, and the unused "New: Sim EMR" onboarding modal removed
+- Database rule for `emr` removed; leftover data can be purged from the Firebase Console. `emr-clinical` (Clinical Assessment Packet storage) is unchanged
+
 ### September 24, 2026 - Retired Chat, Community Hub, and AI Assistant
 - `/chat/`, `/community/`, and `/ai/` replaced with redirect stubs to `/home/`
 - Navigation links, service worker precache entries, and shared header chat/presence code removed

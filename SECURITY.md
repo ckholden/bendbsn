@@ -33,7 +33,7 @@ This document outlines security best practices for the BendBSN nursing documenta
 - ✅ Authentication required for all data access (`auth != null`)
 - ✅ Admin-only access for sensitive operations (`auth.token.email == "christiankholden@gmail.com"`)
 - ✅ User-scoped data access (users can only access their own documents)
-- ✅ Validation rules block role self-escalation on `userProfiles` and destructive whole-node writes on `emr`
+- ✅ Validation rules block role self-escalation on `userProfiles`
 
 **Location:** `database.rules.json`
 

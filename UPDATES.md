@@ -1,5 +1,14 @@
 # Updates Log
 
+## 2026-11-03
+
+### Feature Retirement: Sim EMR
+- Retired the Sim EMR (`/emr/`), which was not in use. The page is now a redirect stub to `/home/` like `/chat/`, `/ai/`, `/community/` and `/labsched/`; `emr/seed-data.js` and `emr/scenarios.js` were deleted.
+- Removed the Sim EMR link from the sidebar on all 10 pages, its `sw.js` precache and network-first entries, and the never-called "New: Sim EMR" onboarding modal from `shared/header.js` / `header.css`.
+- `firebase.json` now redirects `/emr` and `/labsched` to `/home/` on Firebase Hosting.
+- Removed the `emr` rule from `database.rules.json` (the path now falls under the root deny). Data under `/emr` was not deleted; purge it from the Firebase Console after the stub is live. `emr-clinical` (Clinical Assessment Packet storage) is unchanged.
+- Bumped `sw.js` `CACHE_VERSION` to `v232`.
+
 ## 2026-09-24
 
 ### Feature Retirement: Chat, Community Hub, AI Assistant

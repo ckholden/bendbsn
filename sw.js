@@ -1,6 +1,6 @@
 // BendBSN Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v231';
+const CACHE_VERSION = 'v232';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -24,9 +24,6 @@ const OFFLINE_URLS = [
     '/careplan/',
     '/rotationlog/',
     '/profile/',
-    '/emr/',
-    '/emr/seed-data.js',
-    '/emr/scenarios.js',
     '/shared/toast.css',
     '/shared/toast.js',
     '/shared/header.css',
@@ -63,8 +60,7 @@ const STALE_WHILE_REVALIDATE = [
     '/sbar/index.html',
     '/careplan/index.html',
     '/rotationlog/index.html',
-    '/profile/index.html',
-    '/emr/index.html'
+    '/profile/index.html'
 ];
 
 // Must be cached or the install fails. A failed install keeps the previous

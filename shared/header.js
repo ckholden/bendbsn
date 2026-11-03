@@ -345,82 +345,6 @@
         offlineBanner.classList.add('visible');
     }
 
-    // ── Versioned Onboarding Modal ────────────────────────
-    var CURRENT_ONBOARDING_VERSION = '3.0-sim-emr';
-
-    function initOnboarding() {
-        // Skip on login page
-        if (isLoginPage) return;
-        // Skip if user has already seen this version
-        if (localStorage.getItem('bendbsn_onboarding_version') === CURRENT_ONBOARDING_VERSION) return;
-        // Skip if user is already on the EMR page (they've discovered it)
-        if (location.pathname.indexOf('/emr') === 0) {
-            localStorage.setItem('bendbsn_onboarding_version', CURRENT_ONBOARDING_VERSION);
-            return;
-        }
-
-        var overlay = document.createElement('div');
-        overlay.id = 'bsnOnboardingOverlay';
-        overlay.className = 'bsn-onboarding-overlay';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-labelledby', 'bsnOnboardTitle');
-
-        overlay.innerHTML =
-            '<div class="bsn-onboarding-modal">' +
-                '<h2 class="bsn-onboarding-title" id="bsnOnboardTitle">🏥 New in BendBSN: Sim EMR</h2>' +
-                '<p style="font-size:14px;color:var(--clx-text-secondary,#4a5568);margin:0 0 12px;">A full simulation EMR for practicing realistic clinical workflows \u2014 you can do everything you would on a real shift, with fictional patients.</p>' +
-                '<ul class="bsn-onboarding-list">' +
-                    '<li><strong>Place &amp; acknowledge orders</strong> \u2014 medications, consults, labs, diet, activity, and more (with allergy checking).</li>' +
-                    '<li><strong>Practice the full lifecycle</strong> \u2014 ED arrivals, triage, admits, transfers (with charge-nurse acceptance), and discharge.</li>' +
-                    '<li><strong>Document realistically</strong> \u2014 SOAP / SBAR / Narrative notes with role tagging, embedded screening tools (PHQ-9, GAD-7, Morse, Braden).</li>' +
-                    '<li><strong>5 Rights med admin</strong> with allergy cross-reactivity checking (PCN \u2192 cephalosporins, ASA \u2192 NSAIDs, etc.).</li>' +
-                    '<li><strong>Care team &amp; LDAs</strong> \u2014 assign yourself as Primary RN, track lines/drains/airways with site checks.</li>' +
-                    '<li><strong>5 scenarios to load</strong> \u2014 Quiet Day, ED Surge, Night Shift, Med-Surg Steady, Empty Hospital.</li>' +
-                '</ul>' +
-                '<div class="bsn-onboarding-btns">' +
-                    '<button class="bsn-onboarding-dismiss" id="bsnOnboardDismiss">Maybe later</button>' +
-                    '<button class="bsn-onboarding-primary" id="bsnOnboardExplore">Open Sim EMR →</button>' +
-                '</div>' +
-            '</div>';
-
-        document.body.appendChild(overlay);
-
-        function dismiss() {
-            localStorage.setItem('bendbsn_onboarding_version', CURRENT_ONBOARDING_VERSION);
-            overlay.remove();
-            document.removeEventListener('keydown', onKey);
-        }
-
-        document.getElementById('bsnOnboardDismiss').addEventListener('click', dismiss);
-
-        document.getElementById('bsnOnboardExplore').addEventListener('click', function () {
-            dismiss();
-            window.location.href = '/emr/';
-        });
-
-        // Close on backdrop click
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) dismiss();
-        });
-
-        // Close on Escape
-        function onKey(e) {
-            if (e.key === 'Escape') dismiss();
-        }
-        document.addEventListener('keydown', onKey);
-
-        // Focus primary button
-        document.getElementById('bsnOnboardExplore').focus();
-    }
-
-    // Phase 3B.1.6: re-enabled to announce the new Sim EMR feature
-    // 2026-04-17: disabled per user request — was showing repeatedly for some
-    // users (likely browser localStorage being cleared). Leave function defined
-    // above so it can be re-enabled later if we wire up Firebase-profile
-    // persistence instead of localStorage for the dismissal flag.
-    // initOnboarding();
-
 })();
 
 /* =========================================================
@@ -1191,7 +1115,7 @@ window.bsnPurgeLocalUserData = function () {
 // ── Idle auto-logout (fallback for pages without their own timers) ─────────
 // The 30-minute inactivity logout security policy was originally implemented
 // inline on app, home and resources. This block gives every OTHER
-// authenticated page (emr, careplan, sbar, rotationlog, profile, clinical,
+// authenticated page (careplan, sbar, rotationlog, profile, clinical,
 // apa, ...) the same timeout. It self-disables on the three pages that still
 // carry their own timers so they never double up.
 (function () {
@@ -1217,7 +1141,7 @@ window.bsnPurgeLocalUserData = function () {
     // These pages ship their own inline idle/logout timers (their top-level
     // `const LOGOUT_TIMEOUT` is NOT a window property, so we can't feature-detect
     // it — skip by path so timers never double up). They still report their
-    // activity so fallback-timer tabs (emr, sbar, ...) see it.
+    // activity so fallback-timer tabs (sbar, careplan, ...) see it.
     var p = location.pathname;
     var INLINE_TIMER_PAGES = ['/app', '/home', '/resources'];
     if (INLINE_TIMER_PAGES.some(function (base) { return p === base || p === base + '/' || p.indexOf(base + '/') === 0; })) {
