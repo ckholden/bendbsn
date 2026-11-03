@@ -911,7 +911,7 @@
         if (v.recall != null && v.clock != null) total = v.total + ' — ' + v.label;
         else if (v.total != null) total = v.total + ' (incomplete — ' + (v.recall == null ? 'word recall' : 'clock drawing') + ' not scored)';
         L.inlineKv(MC.TOTAL_LABEL, total);
-        if (s.notes) { L.spacer(2); L.fieldBlock('Additional Notes', s.notes); }
+        if (s.notes) { L.spacer(2); L.fieldBlock('Additional Notes', s.notes); } L.para('Mini-Cog © S. Borson. All rights reserved.', { size: 7.5, style: 'italic', color: L.MUTED });
     };
 
     R_PDF.behavior = function (L, s) {
@@ -1407,7 +1407,7 @@
             : sc.label + (sc.cls === 'high' ? '\n(Get Up & Go not scored)' : '');
         rows.push([H.HIGH, '', 'Total Score', total]);
         L.table(['Risk Factor', 'Findings', 'Points', 'Score'], rows, scaleRow([46, 88, 16, 30], L.cw),
-            { groupRows: [groupAt], boldCols: [0], minRowH: 9 });
+            { groupRows: [groupAt], boldCols: [0], minRowH: 9 }); L.para('Hendrich II Fall Risk Model™ © AHI of Indiana, Inc. All rights reserved.', { size: 7.5, style: 'italic', color: L.MUTED });
     };
 
     R_PDF.references = function (L, s) {
@@ -1693,7 +1693,7 @@
         if (s >= 15) return { label: 'Moderately Severe (15–19)' };
         if (s >= 10) return { label: 'Moderate (10–14)' };
         if (s >= 5)  return { label: 'Mild (5–9)' };
-        return { label: 'None–Minimal (0–4)' };
+        return { label: 'Minimal (0–4)' };
     }
     function gad7SevPdf(s) {
         if (s >= 15) return { label: 'Severe (15–21)' };
@@ -1722,7 +1722,7 @@
     };
 
     R_PDF.cssrs = function (L, s) {
-        L.h1('C-SSRS — Suicide Severity Rating');
+        L.h1('C-SSRS — Suicide Severity Rating'); L.para('Items 1–5 ask about the past month.', { size: 8.5, style: 'italic', color: L.MUTED });
         const ans = s.answers || {};
         const Q = [
             ['q1', 'Wished you were dead / would not wake up?'],
@@ -1734,7 +1734,7 @@
         ];
         Q.forEach(function (q, idx) {
             const v = ans[q[0]];
-            L.inlineKv((idx + 1) + '. ' + q[1], v ? v.toUpperCase() : '—');
+            L.inlineKv((idx + 1) + '. ' + q[1], v ? v.toUpperCase() : '—'); if (q[0] === 'q6' && v === 'yes') L.para(s.action ? 'If yes: within the past 3 months? See Action / Notification.' : 'If yes: within the past 3 months? (not recorded)', { size: 8, style: 'italic', color: L.MUTED });
         });
         let triage = 'Not scored';
         if (ans.q6 === 'yes') triage = 'BEHAVIORAL — escalate immediately';

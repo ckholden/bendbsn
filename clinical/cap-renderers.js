@@ -150,7 +150,7 @@
         if (s >= 15) return { label: 'Moderately Severe (15–19)', cls: 'high' };
         if (s >= 10) return { label: 'Moderate (10–14)', cls: 'moderate' };
         if (s >= 5)  return { label: 'Mild (5–9)', cls: 'moderate' };
-        return { label: 'None–Minimal (0–4)', cls: 'low' };
+        return { label: 'Minimal (0–4)', cls: 'low' };
     }
 
     // GAD-7 — anxiety. 7 items, 0-3 each (0-21 total).
@@ -178,7 +178,8 @@
         { id: 'q3', text: 'Have you been thinking about how you might do this?' },
         { id: 'q4', text: 'Have you had these thoughts and had some intention of acting on them?' },
         { id: 'q5', text: 'Have you started to work out or worked out the details of how to kill yourself? Do you intend to carry out this plan?' },
-        { id: 'q6', text: 'Have you ever done anything, started to do anything, or prepared to do anything to end your life?' }
+        { id: 'q6', text: 'Have you ever done anything, started to do anything, or prepared to do anything to end your life?',
+          followUp: 'If yes: was this within the past 3 months? Record the answer under Action / Notification.' }
     ];
     function cssrsTriage(answers) {
         const a = answers || {};
@@ -828,7 +829,7 @@
                 '</div>' +
             '</div>' +
             '<div id="capMinicogScore"></div>' +
-            field('Additional observations / notes', 'notes', { rows: 3 })
+            field('Additional observations / notes', 'notes', { rows: 3 }) + '<p class="cap-fineprint" style="font-style:italic;">Mini-Cog © S. Borson. All rights reserved.</p>'
         );
         bindFields(rootEl, state, onChange);
         const recallSel = rootEl.querySelector('[data-cap-field="recall"]');
@@ -1733,7 +1734,7 @@
                 '<h4 style="margin:14px 0 6px;font-size:13px;color:var(--clx-text-primary);">' + esc(HENDRICH.GUG_TITLE) + '</h4>' +
                 '<div class="cap-morse-opts" role="radiogroup" aria-label="' + esc(HENDRICH.GUG_TITLE) + '">' + ugHtml + '</div>' +
                 scoreBlock(sc.scored ? sc.total : '—', 'Total Score', sc.label, sc.cls) +
-                '<p class="cap-fineprint">' + esc(HENDRICH.HIGH) + '</p>'
+                '<p class="cap-fineprint">' + esc(HENDRICH.HIGH) + '</p>' + '<p class="cap-fineprint" style="font-style:italic;">Hendrich II Fall Risk Model™ © AHI of Indiana, Inc. All rights reserved. (Hendrich, Bender and Nyhuis, 2003)</p>'
             );
             rootEl.querySelectorAll('input[type="checkbox"][data-hendrich]').forEach(function (cb) {
                 cb.addEventListener('change', function () {
@@ -2733,7 +2734,7 @@
         renderScored04(rootEl, state, onChange, {
             id: 'phq9',
             title: 'PHQ-9 — Depression Screening',
-            hint: 'Over the last 2 weeks, how often has the ' + who() + ' been bothered by the following? 0–4 None · 5–9 Mild · 10–14 Moderate · 15–19 Mod-Severe · 20+ Severe.',
+            hint: 'Over the last 2 weeks, how often has the ' + who() + ' been bothered by the following? 0–4 Minimal · 5–9 Mild · 10–14 Moderate · 15–19 Moderately Severe · 20+ Severe.',
             questions: PHQ9_QUESTIONS,
             optsList: PHQ9_OPTS,
             severityFn: phq9Severity,
@@ -2770,12 +2771,13 @@
                             '<span>No</span>' +
                         '</label>' +
                     '</div>' +
+                    (q.followUp && yesOn ? '<p class="cap-fineprint">' + esc(q.followUp) + '</p>' : '') +
                 '</div>';
             }).join('');
             const tri = cssrsTriage(state.answers);
             rootEl.innerHTML = panelHint(
                 'C-SSRS — Suicide Severity Rating',
-                'Six yes/no questions asked of the ' + who() + '. Use the most-severe positive answer to drive the triage level. Document immediately if any escalating answer is positive.',
+                'Six yes/no questions asked of the ' + who() + '. Questions 1–5 ask about the past month. Use the most-severe positive answer to drive the triage level. Document immediately if any escalating answer is positive.',
                 rowsHtml +
                 '<div class="cap-score-block ' + tri.cls + '" style="margin-top:14px;">' +
                     '<span class="cap-score-num">⚠</span>' +

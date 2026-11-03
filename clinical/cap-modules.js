@@ -711,7 +711,7 @@
         LEGEND: 'SEVERE RISK: Total score ≤9 · HIGH RISK: 10–12 · MODERATE RISK: 13–14 · MILD RISK: 15–18',
         HIGH_RISK: 'Total score of 12 or less represents HIGH RISK',
         FOOTNOTES: ['¹NPO: Nothing by mouth.', '²IV: Intravenously.', '³TPN: Total parenteral nutrition.'],
-        COPYRIGHT: 'Source: Barbara Braden and Nancy Bergstrom. Copyright, 1988. Reprinted with permission. Permission should be sought to use this tool at www.bradenscale.com',
+        COPYRIGHT: 'Source: Barbara Braden and Nancy Bergstrom. Copyright, 1988. Permission should be sought to use this tool at www.bradenscale.com',
         EVALUATOR: 'Evaluator signature/title',
         COLS: [
             { key:'a1', num:'1' }, { key:'a2', num:'2' }, { key:'a3', num:'3' }, { key:'a4', num:'4' }
