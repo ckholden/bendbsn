@@ -509,7 +509,7 @@
                     return x + (o ? ' (' + o.label + ')' : '');
                 }) });
             });
-            rows.push({ head: 'Total', cls: 'cap-sum-total', cells: each(function (col) { const s = CAP.scoreMorse(col.choices); return s.n ? String(s.total) : '—'; }) });
+            rows.push({ head: 'Total', cls: 'cap-sum-total', cells: each(function (col) { const s = CAP.scoreMorse(col.choices); return s.n ? s.total + (s.complete ? '' : ' (' + s.n + '/' + s.of + ')') : '—'; }) });
             rows.push({ head: 'Risk', cells: each(function (col) { return CAP.scoreMorse(col.choices).label; }) });
             rows.push({ head: MORSE.SIGNATURE, cells: each(function (col) { return col.signature || '—'; }) });
             return summaryTableHtml('Variables', cols, rows);
@@ -639,7 +639,7 @@
                     return x == null ? '—' : String(x);
                 }) });
             });
-            rows.push({ head: 'Total score', cls: 'cap-sum-total', cells: each(function (col) { const s = CAP.scoreBraden(col.choices); return s.n ? String(s.total) : '—'; }) });
+            rows.push({ head: 'Total score', cls: 'cap-sum-total', cells: each(function (col) { const s = CAP.scoreBraden(col.choices); return s.n ? s.total + (s.complete ? '' : ' (' + s.n + '/' + s.of + ')') : '—'; }) });
             rows.push({ head: 'Risk', cells: each(function (col) { return CAP.scoreBraden(col.choices).label; }) });
             rows.push({ head: BRADEN.EVALUATOR, cells: each(function (col) { return col.evaluator || '—'; }) });
             return summaryTableHtml('Risk factor', cols, rows);

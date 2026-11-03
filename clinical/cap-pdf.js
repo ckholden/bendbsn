@@ -805,8 +805,9 @@
             });
         });
         rows.push(['Total', '', ''].concat(cols.map(function (col) {
+            // A partial sum is not a score: incomplete prints its label only
             const sc = CAP.scoreMorse(col.choices);
-            return sc.n ? sc.total + '\n' + sc.label : 'Not scored';
+            return sc.complete ? sc.total + '\n' + sc.label : sc.label;
         })));
         rows.push([M.SIGNATURE, '', ''].concat(cols.map(function (col) { return col.signature || ''; })));
         L.table(['Variables', '', 'Score'].concat(M.COLS.map(function (c) { return c.label; })), rows,
@@ -840,7 +841,8 @@
         });
         rows.push(['TOTAL SCORE', B.HIGH_RISK, '', '', ''].concat(cols.map(function (col) {
             const sc = CAP.scoreBraden(col.choices);
-            return sc.n ? String(sc.total) : '';
+            // Too narrow for a label: the line under the table says Incomplete (n/6)
+            return sc.complete ? String(sc.total) : (sc.n ? '—' : '');
         })));
         L.table(['RISK FACTOR', 'SCORE/DESCRIPTION', '', '', ''].concat(B.COLS.map(function (c) { return c.num; })), rows,
             scaleRow([26, 41, 41, 41, 41, 15, 15, 15, 15], L.cw),
@@ -850,7 +852,7 @@
         L.spacer(2);
         L.para(B.COLS.map(function (c, i) {
             const sc = CAP.scoreBraden(cols[i].choices);
-            return 'Assess ' + c.num + ': ' + (sc.n ? 'Total ' + sc.total + ' — ' + sc.label : 'Not scored');
+            return 'Assess ' + c.num + ': ' + (sc.complete ? 'Total ' + sc.total + ' — ' + sc.label : sc.label);
         }).join('   ·   '), { size: 8.5, style: 'bold' });
         L.table(['ASSESS', 'DATE', B.EVALUATOR.toUpperCase(), 'ASSESS.', 'DATE', B.EVALUATOR.toUpperCase()], [
             ['1', pdfDate(cols[0].date), cols[0].evaluator, '3', pdfDate(cols[2].date), cols[2].evaluator],
@@ -1399,7 +1401,11 @@
             rows.push(['', o.label + (o.qualifier ? '\n' + o.qualifier : '') + (o.note ? '\n' + o.note : ''),
                 String(o.val), on ? L.cb(true) + ' ' + o.val : L.cb(false)]);
         });
-        rows.push([H.HIGH, '', 'Total Score', sc.scored ? sc.total + '\n' + sc.label : 'Not scored']);
+        // No total until Get Up & Go is scored; 5+ from the factors alone is
+        // already High Risk (the total can only rise), so that label prints
+        const total = sc.gug != null ? sc.total + '\n' + sc.label
+            : sc.label + (sc.cls === 'high' ? '\n(Get Up & Go not scored)' : '');
+        rows.push([H.HIGH, '', 'Total Score', total]);
         L.table(['Risk Factor', 'Findings', 'Points', 'Score'], rows, scaleRow([46, 88, 16, 30], L.cw),
             { groupRows: [groupAt], boldCols: [0], minRowH: 9 });
     };
