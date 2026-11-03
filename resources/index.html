@@ -1093,6 +1093,9 @@
         .lab-table tr:hover td { background: var(--clx-accent-subtle, #e0f2f8); }
         .lab-name { font-weight: 600; }
         .lab-range { color: var(--clx-text-secondary, #4a5568); }
+        .lab-table tr.lab-has-detail td { border-bottom: 0; padding-bottom: 2px; }
+        .lab-detail-row td { padding-top: 0; font-size: 11px; color: var(--clx-text-secondary, #4a5568); }
+        .lab-ref-source { font-size: 11px; color: var(--clx-text-secondary, #4a5568); margin: 8px 0 0; }
         .lab-unit { color: var(--clx-text-muted, #94a3b8); font-style: italic; }
         .lab-note-badge {
             display: inline-block;
@@ -1564,6 +1567,7 @@
                             <button class="lab-panel-chip" onclick="setLabPanel(this,'Iron')">Iron</button>
                         </div>
                         <div id="labTableContainer"></div>
+                        <p id="labRefSource" class="lab-ref-source"></p>
                     </div>
                 </div>
 
@@ -2441,6 +2445,10 @@
             </p>
 
             <h3 style="color: var(--clx-accent); font-size: 14px; margin: 20px 0 10px; border-bottom: 1px solid var(--clx-border); padding-bottom: 5px;">Laboratory Values</h3>
+
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
+                American Diabetes Association Professional Practice Committee. (2026). 2. Diagnosis and classification of diabetes: Standards of care in diabetes—2026. <em>Diabetes Care, 49</em>(Suppl. 1), S27–S49. https://doi.org/10.2337/dc26-S002
+            </p>
 
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 12px; padding-left: 20px; text-indent: -20px;">
                 Pagana, K. D., Pagana, T. J., & Pagana, T. N. (2022). <em>Mosby's manual of diagnostic and laboratory tests</em> (7th ed.). Elsevier.
@@ -3858,6 +3866,7 @@ Generated: ${new Date().toLocaleString()}`;
     </script>
 
 
+    <script src="/clinical/cap-lab-ref.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAmr2W8mekSPJ2pXM3gz1FvarfSBddpfLM",
@@ -3943,19 +3952,36 @@ Generated: ${new Date().toLocaleString()}`;
         });
 
         // ========== LAB VALUES REFERENCE ==========
+        // Rows built with labRefRow() read the shared textbook set in
+        // /clinical/cap-lab-ref.js: the ranges the Clinical Packet fills and
+        // flags with, so the two pages can't drift apart. The rest are written here.
+        const LAB_REF_SET = window.CAP_LAB_REF || null;
+        function labRefRow(name, key, opts) {
+            const ref = LAB_REF_SET ? (LAB_REF_SET.LAB_REF[key] || LAB_REF_SET.LAB_EXTRA_REF.find(e => e.key === key)) : null;
+            const row = Object.assign({ name: name }, opts || {});
+            if (!ref) return Object.assign(row, { range: '—', unit: '' });
+            const dash = t => String(t).replace(/(\d)-(?=[\d.])/g, '$1–');
+            const bySex = !!(ref.male || ref.female);
+            row.range = bySex ? dash(ref.male) + ' (M) / ' + dash(ref.female) + ' (F)' : dash(ref.range);
+            row.unit = String(ref.unit || '').replace('x10^3/uL', '×10³/mcL').replace('x10^6/uL', '×10⁶/mcL');
+            // badge for the short M/F tag; the range's own note goes on a line under it
+            if (!('note' in row)) row.note = bySex ? 'M/F' : '';
+            if (!('detail' in row) && ref.note) row.detail = dash(ref.note);
+            return row;
+        }
         const LAB_PANELS = [
             {
                 id: 'CBC', label: 'Complete Blood Count (CBC)',
                 values: [
-                    { name: 'WBC', range: '4,500–11,000', unit: '/mcL' },
-                    { name: 'RBC', range: '4.5–5.5 (M) / 4.0–5.0 (F)', unit: 'mil/mcL', note: 'M/F' },
-                    { name: 'Hemoglobin', range: '14–18 (M) / 12–16 (F)', unit: 'g/dL', note: 'M/F' },
-                    { name: 'Hematocrit', range: '40–54% (M) / 36–48% (F)', unit: '%', note: 'M/F' },
+                    labRefRow('WBC', 'wbc'),
+                    labRefRow('RBC', 'rbc'),
+                    labRefRow('Hemoglobin', 'hgb'),
+                    labRefRow('Hematocrit', 'hct'),
                     { name: 'MCV', range: '80–100', unit: 'fL' },
                     { name: 'MCH', range: '27–33', unit: 'pg' },
                     { name: 'MCHC', range: '33–37', unit: 'g/dL' },
                     { name: 'RDW', range: '11.5–14.5', unit: '%' },
-                    { name: 'Platelets', range: '150,000–400,000', unit: '/mcL' },
+                    labRefRow('Platelets', 'platelets'),
                     { name: 'Neutrophils', range: '55–70', unit: '%' },
                     { name: 'Lymphocytes', range: '20–40', unit: '%' },
                     { name: 'Monocytes', range: '2–8', unit: '%' },
@@ -3966,24 +3992,24 @@ Generated: ${new Date().toLocaleString()}`;
             {
                 id: 'CMP', label: 'Comprehensive Metabolic Panel (CMP)',
                 values: [
-                    { name: 'Sodium (Na)', range: '136–145', unit: 'mEq/L' },
-                    { name: 'Potassium (K)', range: '3.5–5.0', unit: 'mEq/L' },
-                    { name: 'Chloride (Cl)', range: '98–106', unit: 'mEq/L' },
-                    { name: 'CO2 / Bicarbonate', range: '23–29', unit: 'mEq/L' },
-                    { name: 'BUN', range: '7–20', unit: 'mg/dL' },
-                    { name: 'Creatinine', range: '0.7–1.3 (M) / 0.6–1.1 (F)', unit: 'mg/dL', note: 'M/F' },
+                    labRefRow('Sodium (Na)', 'na'),
+                    labRefRow('Potassium (K)', 'k'),
+                    labRefRow('Chloride (Cl)', 'cl'),
+                    labRefRow('CO2 / Bicarbonate', 'co2'),
+                    labRefRow('BUN', 'bun'),
+                    labRefRow('Creatinine', 'creatinine'),
                     { name: 'eGFR', range: '≥60', unit: 'mL/min/1.73m²' },
-                    { name: 'Glucose (fasting)', range: '70–100', unit: 'mg/dL' },
-                    { name: 'Calcium (Ca)', range: '8.5–10.5', unit: 'mg/dL' },
-                    { name: 'Magnesium (Mg)', range: '1.5–2.5', unit: 'mEq/L' },
-                    { name: 'Phosphorus', range: '2.5–4.5', unit: 'mg/dL' },
-                    { name: 'ALT (SGPT)', range: '7–40', unit: 'U/L' },
-                    { name: 'AST (SGOT)', range: '10–40', unit: 'U/L' },
+                    labRefRow('Glucose (fasting)', 'glucose', { detail: '100–125 prediabetes; 126 or higher diabetes (ADA 2026)' }),
+                    labRefRow('Calcium (Ca)', 'calcium'),
+                    labRefRow('Magnesium (Mg)', 'magnesium'),
+                    labRefRow('Phosphorus', 'phosphorus'),
+                    labRefRow('ALT (SGPT)', 'alt'),
+                    labRefRow('AST (SGOT)', 'ast'),
                     { name: 'ALP', range: '44–147', unit: 'U/L' },
                     { name: 'GGT', range: '8–61', unit: 'U/L' },
                     { name: 'Total Bilirubin', range: '0.2–1.2', unit: 'mg/dL' },
                     { name: 'Direct Bilirubin', range: '0–0.3', unit: 'mg/dL' },
-                    { name: 'Albumin', range: '3.5–5.0', unit: 'g/dL' },
+                    labRefRow('Albumin', 'albumin'),
                     { name: 'Total Protein', range: '6.5–8.3', unit: 'g/dL' }
                 ]
             },
@@ -4002,10 +4028,9 @@ Generated: ${new Date().toLocaleString()}`;
             {
                 id: 'Coag', label: 'Coagulation',
                 values: [
-                    { name: 'PT', range: '11–13.5', unit: 'seconds' },
-                    { name: 'INR', range: '0.8–1.1', unit: '', note: '2–3 warfarin goal' },
-                    { name: 'aPTT', range: '30–40', unit: 'seconds' },
-                    { name: 'PTT', range: '25–35', unit: 'seconds' },
+                    labRefRow('PT', 'pt'),
+                    labRefRow('INR', 'inr'),
+                    labRefRow('aPTT', 'ptt', { detail: 'Often reported as PTT' }),
                     { name: 'Fibrinogen', range: '200–400', unit: 'mg/dL' },
                     { name: 'D-Dimer', range: '<0.5', unit: 'mcg/mL FEU' },
                     { name: 'Anti-Xa (heparin)', range: '0.3–0.7 (therapeutic)', unit: 'U/mL' }
@@ -4014,9 +4039,10 @@ Generated: ${new Date().toLocaleString()}`;
             {
                 id: 'Cardiac', label: 'Cardiac Markers',
                 values: [
-                    { name: 'Troponin I', range: '<0.04', unit: 'ng/mL' },
-                    { name: 'Troponin T (hsTnT)', range: '<14', unit: 'ng/L' },
-                    { name: 'BNP', range: '<100', unit: 'pg/mL' },
+                    { name: 'Troponin I or T', range: 'Assay-specific', unit: 'ng/L (hs assays)',
+                      aka: 'Troponin I, Troponin T, hsTnT, hsTnI, hs-cTnT, hs-cTnI',
+                      detail: 'Normal is at or below the 99th percentile for the lab\'s assay; trend serial values (a rise or fall).' },
+                    labRefRow('BNP', 'bnp'),
                     { name: 'NT-proBNP (<75 yr)', range: '<125', unit: 'pg/mL' },
                     { name: 'NT-proBNP (>75 yr)', range: '<450', unit: 'pg/mL' },
                     { name: 'CK (CPK)', range: '30–170 (F) / 55–170 (M)', unit: 'U/L', note: 'M/F' },
@@ -4027,7 +4053,7 @@ Generated: ${new Date().toLocaleString()}`;
             {
                 id: 'Thyroid', label: 'Thyroid Function',
                 values: [
-                    { name: 'TSH', range: '0.4–4.0', unit: 'mIU/L' },
+                    labRefRow('TSH', 'tsh'),
                     { name: 'Free T4', range: '0.8–1.8', unit: 'ng/dL' },
                     { name: 'Total T4', range: '5.0–12.0', unit: 'mcg/dL' },
                     { name: 'Free T3', range: '2.3–4.2', unit: 'pg/mL' },
@@ -4038,7 +4064,7 @@ Generated: ${new Date().toLocaleString()}`;
             {
                 id: 'Lipids', label: 'Lipid Panel',
                 values: [
-                    { name: 'Total Cholesterol', range: '<200 (desirable)', unit: 'mg/dL' },
+                    labRefRow('Total Cholesterol', 'cholesterol'),
                     { name: 'LDL', range: '<100 (optimal) / <70 (high risk)', unit: 'mg/dL' },
                     { name: 'HDL', range: '>60 (protective); >40 (M) / >50 (F)', unit: 'mg/dL', note: 'Higher better' },
                     { name: 'Triglycerides', range: '<150', unit: 'mg/dL' },
@@ -4101,7 +4127,7 @@ Generated: ${new Date().toLocaleString()}`;
 
             for (const panel of panels) {
                 const filtered = q
-                    ? panel.values.filter(v => v.name.toLowerCase().includes(q))
+                    ? panel.values.filter(v => (v.name + ' ' + (v.aka || '')).toLowerCase().includes(q))
                     : panel.values;
                 if (!filtered.length) continue;
                 total += filtered.length;
@@ -4112,11 +4138,13 @@ Generated: ${new Date().toLocaleString()}`;
                 html += `<table class="lab-table"><tr><th>Test</th><th>Normal Range</th><th>Unit</th></tr>`;
                 for (const v of filtered) {
                     const noteHtml = v.note ? `<span class="lab-note-badge">${v.note}</span>` : '';
-                    html += `<tr>
+                    html += `<tr${v.detail ? ' class="lab-has-detail"' : ''}>
                         <td class="lab-name">${v.name}${noteHtml}</td>
                         <td class="lab-range">${v.range}</td>
                         <td class="lab-unit">${v.unit}</td>
                     </tr>`;
+                    // a note on its own full-width line, so it never widens the range column on a phone
+                    if (v.detail) html += `<tr class="lab-detail-row"><td colspan="3">${v.detail}</td></tr>`;
                 }
                 html += `</table></div>`;
             }
@@ -4128,7 +4156,12 @@ Generated: ${new Date().toLocaleString()}`;
         }
 
         // Initialize when page loads
-        window.addEventListener('load', function() { renderLabs(); });
+        window.addEventListener('load', function() {
+            renderLabs();
+            const src = document.getElementById('labRefSource');
+            if (src) src.textContent = LAB_REF_SET ? LAB_REF_SET.LAB_REF_SOURCE
+                : 'Some reference ranges did not load (shown as —). Reload the page to see them.';
+        });
 
         // ========== FIREBASE REFS & ESSENTIAL SERVICES ==========
         const bannedRef = database.ref('banned');
