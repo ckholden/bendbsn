@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://*.firebaseio.com https://cdn.emailjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://api.emailjs.com; img-src 'self' data: blob: https:;">
     <script>if(location.protocol!=='https:'&&location.hostname!=='localhost'){location.replace('https:'+location.href.substring(location.protocol.length));}</script>
     <script>if(localStorage.getItem('bendbsn_auth')!=='true'){window.location.href='/';}</script>
-    <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('bendbsn_theme')||'light');}catch(e){}</script>
+    <script>(function(){var t=null;try{t=localStorage.getItem('bendbsn_theme')}catch(e){}if(t!=='light'&&t!=='dark')t=(t==null&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t)})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0d1f2d">
@@ -54,7 +54,7 @@
             width: 72px; height: 72px;
             border-radius: 50%;
             background: var(--clx-accent);
-            color: #fff;
+            color: var(--clx-accent-text);
             font-size: 26px;
             font-weight: 700;
             display: flex;
@@ -141,7 +141,8 @@
         .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
         .toggle-track {
             position: absolute; inset: 0;
-            background: var(--clx-border-strong);
+            /* Off state: the field line, so the track and the white knob both read (3:1) */
+            background: var(--clx-border-field, var(--clx-border-strong));
             border-radius: 12px;
             cursor: pointer;
             transition: background 0.2s;
@@ -156,7 +157,7 @@
             transition: transform 0.2s;
         }
         .toggle-switch input:checked + .toggle-track { background: var(--clx-accent); }
-        .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); }
+        .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); background: var(--clx-accent-text); }
 
         /* My Phrases — compact 2-col grid on desktop, single col on phones */
         .phrase-grid {
@@ -495,14 +496,17 @@
         const database = firebase.database();
 
         const THEME_KEY = 'bendbsn_theme'; // matches shared/header.js
-        // The sidebar "Theme" button uses shared/header.js's toggleDarkMode (7-theme
+        // The sidebar "Theme" button uses shared/header.js's toggleDarkMode (Light/Dark
         // picker), and window.setTheme owns the sidebar icon + the Firebase sync.
         function syncDarkModeToggle() {
             const toggle = document.getElementById('darkModeToggle');
             if (toggle) toggle.checked = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
         }
         function initTheme() {
-            const t = localStorage.getItem(THEME_KEY) || 'light';
+            // Stored Light/Dark wins; a retired value shows Light; nothing stored follows the device
+            let t = null;
+            try { t = localStorage.getItem(THEME_KEY); } catch (e) {}
+            if (t !== 'light' && t !== 'dark') t = (t == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', t);
             syncDarkModeToggle();
         }

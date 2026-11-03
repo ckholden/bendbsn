@@ -5,38 +5,96 @@
    ========================================================= */
 
 /* =========================================================
-   TOKEN PALETTE — Light Mode
+   FONT — Bricolage Grotesque, self-hosted (SIL OFL 1.1, see
+   /shared/fonts/OFL.txt). Latin subset, variable: opsz 12-96,
+   wght 200-800. /shared/ is cache-first and served with a
+   1-day max-age, so a changed font file needs a new name (-v2).
+   ========================================================= */
+@font-face {
+    font-family: 'Bricolage Grotesque';
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url('/shared/fonts/bricolage-grotesque-v1-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Arial resized to Bricolage's body-text metrics (measured in Chromium at
+   13-15px), so text moves as little as possible when the font swaps in. */
+@font-face {
+    font-family: 'Bricolage Grotesque Fallback';
+    src: local('Arial'), local('ArialMT'), local('Helvetica');
+    size-adjust: 103%;
+    ascent-override: 90%;
+    descent-override: 26%;
+    line-gap-override: 0%;
+}
+
+/* =========================================================
+   TOKEN PALETTE — Light (C High Desert)
+   Snow ground, Basalt text and chrome, Juniper = the one action
+   colour, Rabbitbrush = "you are here" only (never a status).
+   Ratios: design-audit/c-build-plan.md section 7.
    ========================================================= */
 :root {
-    --clx-bg-canvas:      #e8edf2;
-    --clx-bg-surface:     #ffffff;
-    --clx-bg-surface-2:   #f5f8fa;
-    --clx-bg-surface-3:   #eef2f6;
-    --clx-bg-hover:       #e6edf5;
-    --clx-border:         #d1dce8;
-    --clx-border-strong:  #b0bec5;
-    --clx-text-primary:   #1a2532;
-    --clx-text-secondary: #4a5568;
-    --clx-text-muted:     #718096;
-    --clx-accent:         #0f7490;
-    --clx-accent-rgb:     15, 116, 144;
-    --clx-accent-hover:   #0c6478;
-    --clx-accent-subtle:  #e0f2f8;
-    --clx-accent-text:    #ffffff;
-    --clx-focus:          #0891b2;
-    /* Status colors */
-    --clx-success:        #059669;
-    --clx-success-bg:     #ecfdf5;
-    --clx-success-text:   #065f46;
-    --clx-warning:        #d97706;
-    --clx-warning-bg:     #fffbeb;
-    --clx-warning-text:   #92400e;
-    --clx-danger:         #dc2626;
-    --clx-danger-bg:      #fef2f2;
-    --clx-danger-text:    #991b1b;
-    --clx-info:           #0284c7;
-    --clx-info-bg:        #e0f2fe;
-    --clx-info-text:      #0c4a6e;
+    /* Type family */
+    --clx-font-sans:      'Bricolage Grotesque', 'Bricolage Grotesque Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --clx-font-display:   var(--clx-font-sans);   /* headings add opsz 96 */
+    --clx-font-mono:      ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+    /* Grounds and surfaces */
+    --clx-bg-canvas:      #FBFCFC;   /* Snow */
+    --clx-bg-surface:     #FFFFFF;
+    --clx-bg-surface-2:   #F3F6F4;
+    --clx-bg-surface-3:   #E6ECE8;
+    --clx-bg-hover:       #EEF2EF;
+    --clx-quiet:          #DDE5D9;   /* Sage: quiet tiles and notices */
+    --clx-quiet-text:     #3F4A45;   /* text on Sage, 7.15 */
+    /* Lines */
+    --clx-border:         #D3DAD6;   /* decorative rule, not a boundary */
+    --clx-border-strong:  #C9D3CD;
+    --clx-border-field:   #76807B;   /* field boundary: 3.97 Snow, 3.16 Sage */
+    /* Text */
+    --clx-text-primary:   #23282B;   /* Basalt */
+    --clx-text-secondary: #3F4A45;
+    --clx-text-muted:     #5A6560;   /* Ash */
+    /* Action (Juniper) */
+    --clx-accent:         #2F6B5F;
+    --clx-accent-rgb:     47, 107, 95;
+    --clx-accent-hover:   #26584E;
+    --clx-accent-subtle:  #E3EEEA;
+    --clx-accent-text:    #FFFFFF;   /* text on the action fill, 6.19 */
+    --clx-link:           #2F6B5F;   /* underlined in running text */
+    --clx-link-hover:     #23282B;
+    --clx-focus:          #3F8A7B;   /* 3px ring: 3.98 Snow, 3.64 on the header */
+    /* Chrome (site header) */
+    --clx-chrome-bg:      #23282B;
+    --clx-chrome-border:  #23282B;
+    --clx-chrome-text:    #FBFCFC;
+    --clx-chrome-muted:   #C9D3CD;
+    /* "You are here" (Rabbitbrush). The fill is 1.90 on Snow, so on light
+       grounds it always carries the 2px Basalt edge. */
+    --clx-current:        #E2B33C;
+    --clx-current-edge:   #23282B;
+    --clx-current-text:   #23282B;
+    /* Ridgeline progress: done 4px solid, remaining 2px dashed */
+    --clx-ridge-done:     #2F6B5F;
+    --clx-ridge-track:    #76807B;
+    /* Status. Base = text, icon and border colour (4.5:1 on every ground);
+       -bg + -text = the chip pair. Warning never appears as a solid fill. */
+    --clx-success:        #2F6B5F;
+    --clx-success-bg:     #E3EFEA;
+    --clx-success-text:   #1F4D44;
+    --clx-warning:        #A04500;
+    --clx-warning-bg:     #FCEDE4;
+    --clx-warning-text:   #7A3600;
+    --clx-danger:         #B42318;
+    --clx-danger-bg:      #FCEBE9;
+    --clx-danger-text:    #8C1D13;
+    --clx-danger-solid:       #B42318;   /* filled danger buttons, both themes */
+    --clx-danger-solid-hover: #8C1D13;
+    --clx-danger-solid-text:  #FFFFFF;   /* 6.57 */
+    --clx-info:           #2C5D8C;
+    --clx-info-bg:        #E6EEF7;
+    --clx-info-text:      #1C4266;
     /* Typography scale */
     --clx-type-xs:        10px;
     --clx-type-sm:        12px;
@@ -85,37 +143,60 @@
 }
 
 /* =========================================================
-   TOKEN PALETTE — Dark Mode
+   TOKEN PALETTE — Dark (C High Desert, Basalt-based)
+   Every pair passes AA. The action fill is light here, so text
+   on it must use --clx-accent-text (white would be 2.02:1).
+   Only Light and Dark exist: the warm, forest, ocean, sunset and
+   rose themes were retired in Nov 2026. A stored retired value
+   matches no block below, so it renders as Light.
+   :root only: the theme picker's own "Dark" button carries
+   data-theme="dark", and a bare selector repainted it dark.
    ========================================================= */
-[data-theme="dark"] {
-    --clx-bg-canvas:      #0d1117;
-    --clx-bg-surface:     #161b22;
-    --clx-bg-surface-2:   #1c2333;
-    --clx-bg-surface-3:   #212d3d;
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --clx-bg-canvas:      #1A1E20;
+    --clx-bg-surface:     #23282B;
+    --clx-bg-surface-2:   #2C3236;
+    --clx-bg-surface-3:   #333A3E;
     --clx-bg-hover:       var(--clx-bg-surface-3);
-    --clx-border:         #2d3a4a;
-    --clx-border-strong:  #3d4e5e;
-    --clx-text-primary:   #e2e8f0;
-    --clx-text-secondary: #94a3b8;
-    --clx-text-muted:     #64748b;
-    --clx-accent:         #22a8c4;
-    --clx-accent-rgb:     34, 168, 196;
-    --clx-accent-hover:   #2bbad8;
-    --clx-accent-subtle:  #0f2d36;
-    --clx-focus:          #22d3ee;
+    --clx-quiet:          #29342F;
+    --clx-quiet-text:     #B9C4BE;
+    --clx-border:         #3A4346;
+    --clx-border-strong:  #4A5457;
+    --clx-border-field:   #7F8A85;   /* 4.69 ground, 3.23 surface-3 */
+    --clx-text-primary:   #ECEFED;
+    --clx-text-secondary: #B9C4BE;
+    --clx-text-muted:     #AAB4AF;
+    --clx-accent:         #7CC4B2;
+    --clx-accent-rgb:     124, 196, 178;
+    --clx-accent-hover:   #93CCBE;
+    --clx-accent-subtle:  #1F3833;
+    --clx-accent-text:    #121517;   /* 9.07 on the action fill */
+    --clx-link:           #8ED0BF;
+    --clx-link-hover:     #ECEFED;
+    --clx-focus:          #9FD9CB;
+    --clx-chrome-bg:      #121517;
+    --clx-chrome-border:  #3A4346;   /* chrome is only 1.09 against the ground */
+    --clx-chrome-text:    #ECEFED;
+    --clx-chrome-muted:   #B4BEB9;
+    --clx-current:        #E2B33C;   /* 8.59 on the ground: no edge needed */
+    --clx-current-edge:   #23282B;
+    --clx-current-text:   #23282B;
+    --clx-ridge-done:     #7CC4B2;
+    --clx-ridge-track:    #7F8A85;
     /* Status colors — dark */
-    --clx-success:        #34d399;
-    --clx-success-bg:     #064e3b;
-    --clx-success-text:   #6ee7b7;
-    --clx-warning:        #fbbf24;
-    --clx-warning-bg:     #451a03;
-    --clx-warning-text:   #fcd34d;
-    --clx-danger:         #f87171;
-    --clx-danger-bg:      #450a0a;
-    --clx-danger-text:    #fca5a5;
-    --clx-info:           #38bdf8;
-    --clx-info-bg:        #0c2a3d;
-    --clx-info-text:      #7dd3fc;
+    --clx-success:        #7CC4B2;
+    --clx-success-bg:     #17302A;
+    --clx-success-text:   #A6DCCD;
+    --clx-warning:        #F59A62;   /* 1.11 vs Rabbitbrush: chip + icon + word only */
+    --clx-warning-bg:     #3A2414;
+    --clx-warning-text:   #F9C29C;
+    --clx-danger:         #FF8E80;
+    --clx-danger-bg:      #3A1C19;
+    --clx-danger-text:    #FFB3A9;
+    --clx-info:           #8DBBEB;
+    --clx-info-bg:        #172A3D;
+    --clx-info-text:      #B5D3F3;
     --clx-shadow-sm:  0 1px 2px rgba(0,0,0,0.20), 0 1px 3px rgba(0,0,0,0.24);
     --clx-shadow-md:  0 2px 4px rgba(0,0,0,0.24), 0 4px 8px rgba(0,0,0,0.24);
     --clx-shadow-lg:  0 4px 8px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.28);
@@ -123,161 +204,12 @@
 }
 
 /* =========================================================
-   TOKEN PALETTE — Warm (cream/paper)
-   ========================================================= */
-[data-theme="warm"] {
-    --clx-bg-canvas:      #f2ece0;
-    --clx-bg-surface:     #fdfaf4;
-    --clx-bg-surface-2:   #f5efe4;
-    --clx-bg-surface-3:   #ede7d8;
-    --clx-border:         #d4c8b4;
-    --clx-border-strong:  #b8a896;
-    --clx-text-primary:   #2c1f14;
-    --clx-text-secondary: #5d4a38;
-    --clx-text-muted:     #8b7265;
-    --clx-accent:         #0f7490;
-    --clx-accent-rgb:     15, 116, 144;
-    --clx-accent-hover:   #0c6478;
-    --clx-accent-subtle:  #e2f0ee;
-    --clx-accent-text:    #ffffff;
-    --clx-focus:          #0891b2;
-    /* status same as :root */
-}
-
-/* =========================================================
-   TOKEN PALETTE — Forest (sage/nature)
-   ========================================================= */
-[data-theme="forest"] {
-    --clx-bg-canvas:      #e8f0e8;
-    --clx-bg-surface:     #f4f8f4;
-    --clx-bg-surface-2:   #eaf2ea;
-    --clx-bg-surface-3:   #e2ece2;
-    --clx-border:         #b8cdb8;
-    --clx-border-strong:  #96b096;
-    --clx-text-primary:   #1a2d1a;
-    --clx-text-secondary: #3d5a3d;
-    --clx-text-muted:     #6b896b;
-    --clx-accent:         #2a7d46;
-    --clx-accent-rgb:     42, 125, 70;
-    --clx-accent-hover:   #1e6638;
-    --clx-accent-subtle:  #d4e8d8;
-    --clx-accent-text:    #ffffff;
-    --clx-focus:          #4caf50;
-    --clx-success:        #059669;
-    --clx-success-bg:     #dcfce7;
-    --clx-success-text:   #065f46;
-    --clx-warning:        #d97706;
-    --clx-warning-bg:     #fef9c3;
-    --clx-warning-text:   #92400e;
-    --clx-danger:         #dc2626;
-    --clx-danger-bg:      #fee2e2;
-    --clx-danger-text:    #991b1b;
-    --clx-info:           #0369a1;
-    --clx-info-bg:        #dbeafe;
-    --clx-info-text:      #1e3a8a;
-}
-
-/* =========================================================
-   TOKEN PALETTE — Ocean (steel blue)
-   ========================================================= */
-[data-theme="ocean"] {
-    --clx-bg-canvas:      #e8f0f5;
-    --clx-bg-surface:     #f4f8fc;
-    --clx-bg-surface-2:   #eaf2f8;
-    --clx-bg-surface-3:   #e0edf5;
-    --clx-border:         #b0cce0;
-    --clx-border-strong:  #8ab0cc;
-    --clx-text-primary:   #0d2640;
-    --clx-text-secondary: #2a4a6e;
-    --clx-text-muted:     #5578a0;
-    --clx-accent:         #0369a1;
-    --clx-accent-rgb:     3, 105, 161;
-    --clx-accent-hover:   #025d8e;
-    --clx-accent-subtle:  #dbeeff;
-    --clx-accent-text:    #ffffff;
-    --clx-focus:          #0ea5e9;
-    --clx-success:        #059669;
-    --clx-success-bg:     #ecfdf5;
-    --clx-success-text:   #065f46;
-    --clx-warning:        #d97706;
-    --clx-warning-bg:     #fffbeb;
-    --clx-warning-text:   #92400e;
-    --clx-danger:         #dc2626;
-    --clx-danger-bg:      #fef2f2;
-    --clx-danger-text:    #991b1b;
-    --clx-info:           #0369a1;
-    --clx-info-bg:        #e0f2fe;
-    --clx-info-text:      #0c4a6e;
-}
-
-/* =========================================================
-   TOKEN PALETTE — Sunset (lavender/violet)
-   ========================================================= */
-[data-theme="sunset"] {
-    --clx-bg-canvas:      #ece8f5;
-    --clx-bg-surface:     #f8f4fc;
-    --clx-bg-surface-2:   #f0ebf8;
-    --clx-bg-surface-3:   #e8e2f2;
-    --clx-border:         #c8b8dc;
-    --clx-border-strong:  #b09ac8;
-    --clx-text-primary:   #1e1040;
-    --clx-text-secondary: #4a356a;
-    --clx-text-muted:     #7a5e96;
-    --clx-accent:         #7c3aed;
-    --clx-accent-rgb:     124, 58, 237;
-    --clx-accent-hover:   #6d28d9;
-    --clx-accent-subtle:  #ede9fe;
-    --clx-accent-text:    #ffffff;
-    --clx-focus:          #a855f7;
-    --clx-success:        #059669;
-    --clx-success-bg:     #ecfdf5;
-    --clx-success-text:   #065f46;
-    --clx-warning:        #d97706;
-    --clx-warning-bg:     #fffbeb;
-    --clx-warning-text:   #92400e;
-    --clx-danger:         #dc2626;
-    --clx-danger-bg:      #fef2f2;
-    --clx-danger-text:    #991b1b;
-    --clx-info:           #7c3aed;
-    --clx-info-bg:        #ede9fe;
-    --clx-info-text:      #3730a3;
-}
-
-/* =========================================================
-   TOKEN PALETTE — Rose (dusty rose)
-   ========================================================= */
-[data-theme="rose"] {
-    --clx-bg-canvas:      #f5e8eb;
-    --clx-bg-surface:     #fcf4f6;
-    --clx-bg-surface-2:   #f8eef1;
-    --clx-bg-surface-3:   #f2e5e8;
-    --clx-border:         #e0bcca;
-    --clx-border-strong:  #cc9fb4;
-    --clx-text-primary:   #3d0a1e;
-    --clx-text-secondary: #7a3450;
-    --clx-text-muted:     #a86278;
-    --clx-accent:         #be123c;
-    --clx-accent-rgb:     190, 18, 60;
-    --clx-accent-hover:   #9f1239;
-    --clx-accent-subtle:  #ffe4e6;
-    --clx-accent-text:    #ffffff;
-    --clx-focus:          #f43f5e;
-    --clx-success:        #059669;
-    --clx-success-bg:     #ecfdf5;
-    --clx-success-text:   #065f46;
-    --clx-warning:        #d97706;
-    --clx-warning-bg:     #fffbeb;
-    --clx-warning-text:   #92400e;
-    --clx-danger:         #be123c;
-    --clx-danger-bg:      #fff1f2;
-    --clx-danger-text:    #881337;
-    --clx-info:           #0284c7;
-    --clx-info-bg:        #e0f2fe;
-    --clx-info-text:      #0c4a6e;
-}
-
-/* =========================================================
-   PAGE / BODY BACKGROUND
+   PAGE / BODY BACKGROUND AND TYPE FAMILY
+   `html body` outranks the page-level `body { font-family }` rules.
+   Form controls inherit (browsers give them their own font).
+   Headings use the display optical size. Elements that set their
+   own family (APA Times preview, SBAR Courier block, monospace
+   fields) keep it: nothing here sets a family below body.
    ========================================================= */
 body {
     background: var(--clx-bg-canvas) !important;
@@ -285,29 +217,38 @@ body {
     background-image: none !important;
     color: var(--clx-text-primary);
 }
+html body {
+    font-family: var(--clx-font-sans);
+}
+:where(button, input, select, textarea, optgroup) {
+    font-family: inherit;
+}
+:where(h1, h2, h3):not(.section-title):not(.h2t-section-title) {
+    font-variation-settings: 'opsz' 96;
+}
 
 /* =========================================================
    SITE HEADER — Recolor, Keep Structure
    ========================================================= */
 .site-header {
-    background: #0d1f2d !important;
-    border-bottom: 1px solid #1e3448 !important;
+    background: var(--clx-chrome-bg) !important;
+    border-bottom: 1px solid var(--clx-chrome-border) !important;
 }
 
 .header-btn {
-    border-color: rgba(255,255,255,0.12) !important;
-    color: rgba(255,255,255,0.82) !important;
+    border-color: rgba(255,255,255,0.16) !important;
+    color: var(--clx-chrome-muted) !important;
     transition: background 0.15s, border-color 0.15s !important;
 }
 
 .header-btn:hover {
-    background: rgba(34,168,196,0.18) !important;
-    border-color: rgba(34,168,196,0.4) !important;
-    color: #ffffff !important;
+    background: rgba(255,255,255,0.10) !important;
+    border-color: var(--clx-chrome-muted) !important;
+    color: var(--clx-chrome-text) !important;
 }
 
 .header-btn:focus-visible {
-    outline: 2px solid var(--clx-focus) !important;
+    outline: 3px solid var(--clx-focus) !important;
     outline-offset: 2px !important;
 }
 
@@ -388,7 +329,7 @@ button.btn-primary {
 button.btn-primary:hover {
     background: var(--clx-accent-hover) !important;
     border-color: var(--clx-accent-hover) !important;
-    box-shadow: 0 2px 6px rgba(15,116,144,0.25) !important;
+    box-shadow: 0 2px 6px rgba(var(--clx-accent-rgb), 0.25) !important;
 }
 
 /* Secondary / outline */
@@ -412,14 +353,15 @@ button.btn-outline:hover {
 /* Danger */
 .btn-danger,
 button.btn-danger {
-    background: var(--clx-danger) !important;
-    color: #ffffff !important;
-    border-color: var(--clx-danger) !important;
+    background: var(--clx-danger-solid) !important;
+    color: var(--clx-danger-solid-text) !important;
+    border-color: var(--clx-danger-solid) !important;
 }
 .btn-danger:hover,
 button.btn-danger:hover {
-    filter: brightness(0.92) !important;
-    box-shadow: 0 2px 6px rgba(220,38,38,0.25) !important;
+    background: var(--clx-danger-solid-hover) !important;
+    border-color: var(--clx-danger-solid-hover) !important;
+    box-shadow: 0 2px 6px rgba(180,35,24,0.25) !important;
 }
 
 /* Small buttons */
@@ -439,14 +381,27 @@ button.btn-sm {
     }
 }
 
-/* Focus visible — all interactive elements */
+/* Focus visible — all interactive elements. One ring colour per theme
+   (--clx-focus), 3px with a 2px gap. Never Rabbitbrush: that colour
+   means "you are here". tabindex="-1" containers (sheets, drawers that
+   receive focus in code) are left alone.
+   Date and time fields: Chromium moves focus to the inner day/month/year
+   segments and the calendar button, and on the button the field matches
+   neither :focus nor :focus-visible, only :focus-within. */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
-    outline: 2px solid var(--clx-focus) !important;
+textarea:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible,
+:where(input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"], input[type="week"]):focus-within {
+    outline: 3px solid var(--clx-focus) !important;
     outline-offset: 2px !important;
+}
+@media (forced-colors: active) {
+    :focus-visible { outline-color: Highlight !important; }
 }
 
 /* Disabled state for all interactive elements */
@@ -462,7 +417,7 @@ textarea:disabled,
 
 /* Base link styles */
 a {
-    color: var(--clx-accent);
+    color: var(--clx-link);
     text-decoration: none;
     transition: opacity var(--clx-transition-base, 0.15s ease);
 }
@@ -471,9 +426,20 @@ a:hover {
     opacity: 0.82;
 }
 a:focus-visible {
-    outline: 2px solid var(--clx-focus);
+    outline: 3px solid var(--clx-focus);
     outline-offset: 2px;
     border-radius: 2px;
+}
+/* Links inside running text are underlined: Juniper against Basalt body
+   text is only 2.40:1, so colour alone cannot mark them. Nav items,
+   buttons and cards (any link with a class) keep their own look. */
+:where(p, li, td, dd, blockquote, figcaption, small, .hint, .helper-text, .help-body, .help-panel, .clx-field-hint, .cap-modal-hint) a:not([class]):not(nav a):not(header a) {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+:where(p, li, td, dd, blockquote, figcaption, small, .hint, .helper-text, .help-body, .help-panel, .clx-field-hint, .cap-modal-hint) a:not([class]):not(nav a):not(header a):hover {
+    color: var(--clx-link-hover);
+    opacity: 1;
 }
 
 /* =========================================================
@@ -492,7 +458,7 @@ select,
 textarea {
     padding: 8px 12px !important;
     font-size: 13px !important;
-    border: 1px solid var(--clx-border) !important;
+    border: 1px solid var(--clx-border-field) !important;
     border-radius: 6px !important;
     background: var(--clx-bg-surface) !important;
     color: var(--clx-text-primary) !important;
@@ -510,10 +476,25 @@ input[type="tel"]:focus,
 input[type="date"]:focus,
 input[type="time"]:focus,
 select:focus,
-textarea:focus {
+textarea:focus,
+/* Dark copies outrank the dark field block below, which would otherwise
+   keep the field line on a focused field (a mouse-focused select shows
+   no ring, so the accent edge is its only focus cue). */
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="email"]:focus,
+[data-theme="dark"] input[type="password"]:focus,
+[data-theme="dark"] input[type="number"]:focus,
+[data-theme="dark"] input[type="search"]:focus,
+[data-theme="dark"] input[type="url"]:focus,
+[data-theme="dark"] input[type="tel"]:focus,
+[data-theme="dark"] input[type="date"]:focus,
+[data-theme="dark"] input[type="time"]:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+    /* The ring is the :focus-visible outline above. This rule used to
+       remove the outline (important), which hid keyboard focus on every field. */
     border-color: var(--clx-accent) !important;
-    outline: none !important;
-    box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.12) !important;
+    box-shadow: none !important;
 }
 
 input::placeholder,
@@ -534,13 +515,7 @@ textarea::placeholder {
 [data-theme="dark"] textarea {
     background: var(--clx-bg-surface-2) !important;
     color: var(--clx-text-primary) !important;
-    border-color: var(--clx-border) !important;
-}
-
-[data-theme="dark"] input:focus,
-[data-theme="dark"] select:focus,
-[data-theme="dark"] textarea:focus {
-    box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb), 0.15) !important;
+    border-color: var(--clx-border-field) !important;
 }
 
 /* iOS auto-zoom prevention — inputs must be ≥16px on touch devices */
@@ -785,19 +760,19 @@ h3.section-title,
 
 .bsn-confirm-modal .bsn-modal-input {
     background: var(--clx-bg-surface) !important;
-    border-color: var(--clx-border) !important;
+    border-color: var(--clx-border-field) !important;
     color: var(--clx-text-primary) !important;
     border-radius: 6px !important;
 }
 
 /* Neutral focus border (the !important border above would otherwise
-   beat header.css's :focus border); header.css adds the gray ring. */
+   beat header.css's :focus border); the ring is the :focus-visible outline. */
 .bsn-confirm-modal .bsn-modal-input:focus {
     border-color: var(--clx-text-muted) !important;
 }
 
-/* Modal buttons are styled only in shared/header.css (charcoal primary,
-   ghost-outline cancel, #dc2626 danger). The !important accent overrides
+/* Modal buttons are styled only in shared/header.css (Juniper primary,
+   ghost-outline cancel, solid danger red). The !important accent overrides
    that used to sit here hid that spec on every page and put white text on
    the light dark-mode danger red. Removed 2026-09-25. */
 
@@ -956,16 +931,39 @@ label {
    PRINT — Reset Clinical Styles
    ========================================================= */
 @media print {
-    :root {
+    /* Paper is white in both themes: Dark's light accent, link and
+       field colours would be too faint on it, and native controls would
+       print in their dark style. */
+    :root,
+    :root[data-theme="dark"] {
+        color-scheme: light;
         --clx-bg-canvas:     #ffffff;
         --clx-bg-surface:    #ffffff;
         --clx-bg-surface-2:  #f5f5f5;
         --clx-bg-surface-3:  #eeeeee;
         --clx-border:        #cccccc;
         --clx-border-strong: #999999;
+        --clx-border-field:  #76807B;
         --clx-text-primary:  #000000;
         --clx-text-secondary:#333333;
         --clx-text-muted:    #666666;
+        --clx-accent:        #2F6B5F;
+        --clx-accent-rgb:    47, 107, 95;
+        --clx-accent-text:   #FFFFFF;
+        --clx-link:          #2F6B5F;
+        --clx-link-hover:    #23282B;
+        --clx-success:       #2F6B5F;
+        --clx-success-bg:    #E3EFEA;
+        --clx-success-text:  #1F4D44;
+        --clx-warning:       #A04500;
+        --clx-warning-bg:    #FCEDE4;
+        --clx-warning-text:  #7A3600;
+        --clx-danger:        #B42318;
+        --clx-danger-bg:     #FCEBE9;
+        --clx-danger-text:   #8C1D13;
+        --clx-info:          #2C5D8C;
+        --clx-info-bg:       #E6EEF7;
+        --clx-info-text:     #1C4266;
     }
 
     body {

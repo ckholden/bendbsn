@@ -891,7 +891,10 @@ Your content will be exported with:
         // Must run synchronously, before /shared/header.js loads: header.js calls
         // setTheme(getTheme()) at load, which would otherwise persist 'light'.
         function initTheme() {
-            const saved = localStorage.getItem('bendbsn_theme') || 'light';
+            // Stored Light/Dark wins; a retired value shows Light; nothing stored follows the device
+            let saved = null;
+            try { saved = localStorage.getItem('bendbsn_theme'); } catch (e) {}
+            if (saved !== 'light' && saved !== 'dark') saved = (saved == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', saved);
         }
         initTheme();

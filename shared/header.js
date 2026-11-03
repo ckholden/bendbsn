@@ -348,20 +348,57 @@
 })();
 
 /* =========================================================
-   THEME SYSTEM (7 themes)
+   THEME SYSTEM (Light and Dark)
+   The warm, forest, ocean, sunset and rose themes were retired in
+   Nov 2026. A stored retired value (localStorage bendbsn_theme or
+   Firebase userProfiles/{uid}/theme) is SHOWN as Light but never
+   rewritten: nothing here writes unless the user picks a theme.
+   With nothing stored, the device setting (prefers-color-scheme)
+   decides, and that choice is never saved either. The pages' own
+   head/initTheme scripts use the same rule as bsnResolveTheme().
    ========================================================= */
 window._bsnDb  = null;
 window._bsnUid = null;
+
+function bsnNormTheme(t) { return t === 'dark' ? 'dark' : 'light'; }
+
+// Stored Light/Dark wins; a retired value shows Light; nothing stored
+// follows the device. Reads only.
+function bsnResolveTheme() {
+    var t = null;
+    try { t = localStorage.getItem('bendbsn_theme'); } catch (e) {}
+    if (t === 'light' || t === 'dark') return t;
+    return (t == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
 
 window.getTheme = function() {
     // Fall back to the stored preference: on pages that load header.js before
     // their own initTheme(), data-theme is not set yet.
     var t = document.documentElement.getAttribute('data-theme');
-    if (!t) { try { t = localStorage.getItem('bendbsn_theme'); } catch (e) {} }
-    return t || 'light';
+    return t ? bsnNormTheme(t) : bsnResolveTheme();
 };
 
+// Sidebar icon (sidebar-style pages) and header icon + label (header-style pages)
+function bsnSyncThemeIcons(name) {
+    var sidebarIcon = document.getElementById('sidebarThemeIcon');
+    if (sidebarIcon) sidebarIcon.textContent = name === 'dark' ? '🌙' : '🎨';
+    var hIcon = document.getElementById('themeMenuIcon');
+    var hText = document.getElementById('themeMenuText');
+    if (hIcon) hIcon.textContent = name === 'dark' ? '🌙' : '🎨';
+    if (hText) hText.textContent = name === 'dark' ? 'Dark Mode' : 'Theme';
+}
+
+// Picker buttons: active class + aria-pressed follow the shown theme
+function bsnSyncThemeOpts(name) {
+    document.querySelectorAll('.bsn-theme-opt').forEach(function(opt) {
+        var on = opt.dataset.theme === name;
+        opt.classList.toggle('active', on);
+        opt.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+}
+
 window.setTheme = function(name) {
+    name = bsnNormTheme(name);
     document.documentElement.setAttribute('data-theme', name);
     try { localStorage.setItem('bendbsn_theme', name); } catch (e) {}
     // Sync to Firebase. Pages that never call initThemeSync still save, so
@@ -382,18 +419,9 @@ window.setTheme = function(name) {
     var backdrop = document.getElementById('bsnThemeBackdrop');
     if (picker)   picker.style.display   = 'none';
     if (backdrop) backdrop.style.display = 'none';
-    // Update sidebar icon (sidebar-style pages)
-    var sidebarIcon = document.getElementById('sidebarThemeIcon');
-    if (sidebarIcon) sidebarIcon.textContent = name === 'dark' ? '🌙' : '🎨';
-    // Update header icon (header-style pages)
-    var hIcon = document.getElementById('themeMenuIcon');
-    var hText = document.getElementById('themeMenuText');
-    if (hIcon) hIcon.textContent = name === 'dark' ? '🌙' : '🎨';
-    if (hText) hText.textContent = name === 'dark' ? 'Dark Mode' : 'Theme';
+    bsnSyncThemeIcons(name);
     // Sync active state in picker
-    document.querySelectorAll('.bsn-theme-opt').forEach(function(opt) {
-        opt.classList.toggle('active', opt.dataset.theme === name);
-    });
+    bsnSyncThemeOpts(name);
 };
 
 // Called by each page after Firebase auth resolves — syncs theme across devices
@@ -403,13 +431,22 @@ window.initThemeSync = function(db, uid) {
     window._bsnUid = uid;
     db.ref('userProfiles/' + uid + '/theme').once('value', function(snap) {
         var fbTheme = snap.val();
-        if (fbTheme) {
+        if (fbTheme === 'light' || fbTheme === 'dark') {
             // Firebase wins — apply saved theme
             window.setTheme(fbTheme);
+        } else if (fbTheme) {
+            // Retired theme in Firebase: keep this device's own resolved
+            // theme (a retired value here too shows Light), write nothing back
+            var t = window.getTheme();
+            document.documentElement.setAttribute('data-theme', t);
+            bsnSyncThemeIcons(t);
+            bsnSyncThemeOpts(t);
         } else {
-            // First time: push current local theme to Firebase (if non-default)
-            var cur = window.getTheme();
-            if (cur !== 'light') db.ref('userProfiles/' + uid + '/theme').set(cur);
+            // First time: push only an explicit stored Dark. A Dark that came
+            // from the device setting (nothing stored) is not a saved choice.
+            var s = null;
+            try { s = localStorage.getItem('bendbsn_theme'); } catch (e) {}
+            if (s === 'dark') db.ref('userProfiles/' + uid + '/theme').set('dark');
         }
     });
 };
@@ -421,11 +458,7 @@ window.toggleThemePicker = function() {
     var open = picker.style.display === 'block';
     picker.style.display   = open ? 'none' : 'block';
     if (backdrop) backdrop.style.display = open ? 'none' : 'block';
-    if (!open) {
-        document.querySelectorAll('.bsn-theme-opt').forEach(function(opt) {
-            opt.classList.toggle('active', opt.dataset.theme === window.getTheme());
-        });
-    }
+    if (!open) bsnSyncThemeOpts(window.getTheme());
 };
 
 // Override per-page binary toggle — now opens picker
@@ -461,20 +494,13 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     // Picker overlay
     var picker = document.createElement('div');
     picker.id = 'bsnThemePicker';
+    picker.setAttribute('role', 'group');
+    picker.setAttribute('aria-label', 'Theme');
     picker.innerHTML =
-        '<div class="bsn-theme-picker-label">Neutral</div>' +
-        '<div class="bsn-theme-grid bsn-theme-grid-3">' +
-        '<button class="bsn-theme-opt" data-theme="light"  onclick="window.setTheme(\'light\')"><span class="bsn-swatch" style="background:#e8edf2;"></span>Light</button>' +
-        '<button class="bsn-theme-opt" data-theme="warm"   onclick="window.setTheme(\'warm\')"><span class="bsn-swatch" style="background:#f2ece0;"></span>Warm</button>' +
-        '<button class="bsn-theme-opt" data-theme="dark"   onclick="window.setTheme(\'dark\')"><span class="bsn-swatch" style="background:#161b22;border-color:rgba(255,255,255,0.2);"></span>Dark</button>' +
-        '</div>' +
-        '<div class="bsn-theme-divider"></div>' +
-        '<div class="bsn-theme-picker-label">Colored</div>' +
+        '<div class="bsn-theme-picker-label">Theme</div>' +
         '<div class="bsn-theme-grid">' +
-        '<button class="bsn-theme-opt" data-theme="forest" onclick="window.setTheme(\'forest\')"><span class="bsn-swatch" style="background:#e8f0e8;"></span>Forest</button>' +
-        '<button class="bsn-theme-opt" data-theme="ocean"  onclick="window.setTheme(\'ocean\')"><span class="bsn-swatch" style="background:#e8f0f5;"></span>Ocean</button>' +
-        '<button class="bsn-theme-opt" data-theme="sunset" onclick="window.setTheme(\'sunset\')"><span class="bsn-swatch" style="background:#ece8f5;"></span>Sunset</button>' +
-        '<button class="bsn-theme-opt" data-theme="rose"   onclick="window.setTheme(\'rose\')"><span class="bsn-swatch" style="background:#f5e8eb;"></span>Rose</button>' +
+        '<button type="button" class="bsn-theme-opt" data-theme="light" aria-pressed="false" onclick="window.setTheme(\'light\')"><span class="bsn-swatch bsn-swatch-light"></span>Light</button>' +
+        '<button type="button" class="bsn-theme-opt" data-theme="dark" aria-pressed="false" onclick="window.setTheme(\'dark\')"><span class="bsn-swatch bsn-swatch-dark"></span>Dark</button>' +
         '</div>';
     document.body.appendChild(picker);
 
@@ -483,15 +509,8 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     // whose initTheme() runs after header.js.
     var cur = window.getTheme();
     document.documentElement.setAttribute('data-theme', cur);
-    var si = document.getElementById('sidebarThemeIcon');
-    if (si) si.textContent = cur === 'dark' ? '🌙' : '🎨';
-    var hIcon = document.getElementById('themeMenuIcon');
-    var hText = document.getElementById('themeMenuText');
-    if (hIcon) hIcon.textContent = cur === 'dark' ? '🌙' : '🎨';
-    if (hText) hText.textContent = cur === 'dark' ? 'Dark Mode' : 'Theme';
-    document.querySelectorAll('.bsn-theme-opt').forEach(function(o) {
-        o.classList.toggle('active', o.dataset.theme === cur);
-    });
+    bsnSyncThemeIcons(cur);
+    bsnSyncThemeOpts(cur);
 })();
 
 // ===== IT TICKET / FEEDBACK MODAL =====

@@ -145,7 +145,7 @@
         }
         .dash-btn.primary {
             background: var(--clx-accent);
-            color: #fff;
+            color: var(--clx-accent-text);
             border-color: var(--clx-accent);
         }
         .dash-btn.primary:hover {
@@ -327,7 +327,7 @@
             border-radius: 6px;
             border: 1px solid var(--clx-accent);
             background: var(--clx-accent);
-            color: #fff;
+            color: var(--clx-accent-text);
             cursor: pointer;
             font-family: inherit;
         }
@@ -395,7 +395,7 @@
             border-radius: 10px;
             padding: 20px 24px;
             margin-bottom: 14px;
-            color: #fff;
+            color: var(--clx-accent-text);
         }
         .doc-hero-left { flex: 1; min-width: 0; }
         .doc-hero-label {
@@ -403,7 +403,7 @@
             font-weight: 700;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            opacity: 0.75;
+            opacity: 0.85;
             margin-bottom: 4px;
         }
         .doc-hero-title {
@@ -427,7 +427,7 @@
             font-weight: 700;
             border-radius: 7px;
             border: none;
-            background: #fff;
+            background: var(--clx-accent-text);
             color: var(--clx-accent, #0f7490);
             cursor: pointer;
             text-decoration: none;
@@ -448,12 +448,14 @@
             font-weight: 600;
             border-radius: 7px;
             border: 1.5px solid rgba(255,255,255,0.5);
+            border-color: color-mix(in srgb, var(--clx-accent-text) 50%, transparent);
             background: rgba(255,255,255,0.12);
-            color: #fff;
+            background: color-mix(in srgb, var(--clx-accent-text) 12%, transparent);
+            color: var(--clx-accent-text);
             cursor: pointer;
             font-family: inherit;
         }
-        .doc-hero-sec-btn:hover { background: rgba(255,255,255,0.2); }
+        .doc-hero-sec-btn:hover { background: rgba(255,255,255,0.2); background: color-mix(in srgb, var(--clx-accent-text) 20%, transparent); }
         .doc-hero-stat {
             text-align: center;
             flex-shrink: 0;
@@ -784,7 +786,7 @@
             <div style="font-size:60px;margin-bottom:16px;">🔒</div>
             <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
             <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
-            <button onclick="unlockScreen()" style="background:var(--clx-accent);color:white;border:none;padding:14px 40px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">🔓 Unlock</button>
+            <button onclick="unlockScreen()" style="background:var(--clx-accent);color:var(--clx-accent-text);border:none;padding:14px 40px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">🔓 Unlock</button>
         </div>
     </div>
 
@@ -941,7 +943,7 @@
                 <input type="text" name="name" required placeholder="Your name">
                 <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:700;color:var(--clx-text-secondary);">Message</label>
                 <textarea name="message" required placeholder="Describe your feedback…"></textarea>
-                <button type="submit" style="width:100%;padding:10px;background:var(--clx-accent);color:white;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Send Feedback</button>
+                <button type="submit" style="width:100%;padding:10px;background:var(--clx-accent);color:var(--clx-accent-text);border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Send Feedback</button>
             </form>
         </div>
     </div>
@@ -1238,7 +1240,10 @@
 
         // ========== THEME ==========
         function initTheme() {
-            const saved = localStorage.getItem('bendbsn_theme') || 'light';
+            // Stored Light/Dark wins; a retired value shows Light; nothing stored follows the device
+            let saved = null;
+            try { saved = localStorage.getItem('bendbsn_theme'); } catch (e) {}
+            if (saved !== 'light' && saved !== 'dark') saved = (saved == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
@@ -1688,7 +1693,7 @@
                         <p style="font-size:14px;color:var(--clx-text-secondary,#555);line-height:1.6;margin:0 0 20px;">${s.body}</p>
                         <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
                             <button onclick="window._onboardSkip()" style="background:none;border:none;color:var(--clx-text-muted,#999);font-size:13px;cursor:pointer;padding:8px 14px;">Skip tour</button>
-                            <button onclick="window._onboardNext()" style="background:var(--clx-accent,#1f4e79);color:white;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">${s.btn}</button>
+                            <button onclick="window._onboardNext()" style="background:var(--clx-accent,#1f4e79);color:var(--clx-accent-text);border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">${s.btn}</button>
                         </div>
                         <div style="margin-top:16px;display:flex;gap:6px;justify-content:center;">
                             ${steps.map((_,i) => `<div style="width:8px;height:8px;border-radius:50%;background:${i===step?'var(--clx-accent,#1f4e79)':'var(--clx-border,#ddd)'};"></div>`).join('')}

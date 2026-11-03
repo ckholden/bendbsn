@@ -36,6 +36,7 @@ const OFFLINE_URLS = [
     '/shared/rich-textarea.js',
     '/shared/smart-phrases.js',
     '/shared/affirmations.js',
+    '/shared/fonts/bricolage-grotesque-v1-latin.woff2',
     '/manifest.json',
     '/logo.svg',
     '/logo-dark.svg',

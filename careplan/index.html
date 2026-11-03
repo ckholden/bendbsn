@@ -491,7 +491,10 @@
         const database = firebase.database();
 
         function initTheme() {
-            const t = localStorage.getItem('bendbsn_theme') || 'light';
+            // Stored Light/Dark wins; a retired value shows Light; nothing stored follows the device
+            let t = null;
+            try { t = localStorage.getItem('bendbsn_theme'); } catch (e) {}
+            if (t !== 'light' && t !== 'dark') t = (t == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', t);
         }
         function toggleDarkMode() {

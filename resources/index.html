@@ -128,7 +128,7 @@
         }
         .resource-chip.active {
             background: var(--clx-accent, #0f7490);
-            color: #ffffff;
+            color: var(--clx-accent-text);
             border-color: var(--clx-accent, #0f7490);
         }
         .resource-card.hidden { display: none !important; }
@@ -248,7 +248,7 @@
         }
         .resource-empty-state .empty-suggestion:hover {
             background: var(--clx-accent, #0f7490);
-            color: #fff;
+            color: var(--clx-accent-text);
         }
 
         /* Collapsible card styles - Accordion layout */
@@ -357,12 +357,12 @@
         }
         .resource-card.collapsible .card-header:hover .expand-icon {
             background: var(--clx-accent, #0f7490);
-            color: #ffffff;
+            color: var(--clx-accent-text);
         }
         .resource-card.collapsible.expanded .card-header .expand-icon {
             transform: rotate(180deg);
             background: var(--clx-accent, #0f7490);
-            color: #ffffff;
+            color: var(--clx-accent-text);
         }
         .resource-card.collapsible .card-content {
             max-height: 0;
@@ -455,7 +455,7 @@
         .search-box button, .btn {
             padding: 10px 16px;
             background: var(--clx-accent);
-            color: white;
+            color: var(--clx-accent-text);
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -561,7 +561,7 @@
         }
         .resource-chip.active .chip-count {
             color: var(--clx-accent);
-            background: #fff;
+            background: var(--clx-accent-text);
         }
         .chip-count:empty { display: none; }
         .calc-result {
@@ -813,7 +813,7 @@
         }
         .timer-preset:hover {
             background: var(--accent);
-            color: white;
+            color: var(--clx-accent-text);
             border-color: var(--accent);
         }
         .active-timer {
@@ -876,7 +876,7 @@
         [data-theme="dark"] td { border-color: var(--border); }
         [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea { background: var(--bg-input); color: var(--text-primary); border-color: var(--border); }
         [data-theme="dark"] .resource-chip { background: var(--clx-bg-surface-2); border-color: var(--clx-border); color: var(--clx-text-secondary); }
-        [data-theme="dark"] .resource-chip.active { background: var(--clx-accent); color: #fff; border-color: var(--clx-accent); }
+        [data-theme="dark"] .resource-chip.active { background: var(--clx-accent); color: var(--clx-accent-text); border-color: var(--clx-accent); }
         [data-theme="dark"] .planner-input { background: #0f172a; border-color: #1f2937; color: var(--text-primary); }
 
         /* Lock screen */
@@ -1011,11 +1011,11 @@
 
         /* Focus visible styles for keyboard navigation */
         :focus-visible {
-            outline: 2px solid var(--accent);
+            outline: 3px solid var(--clx-focus);
             outline-offset: 2px;
         }
         button:focus-visible, a:focus-visible {
-            outline: 2px solid var(--accent);
+            outline: 3px solid var(--clx-focus);
             outline-offset: 2px;
         }
 
@@ -1059,7 +1059,7 @@
         }
         .lab-panel-chip.active {
             background: var(--clx-accent, #0f7490);
-            color: #fff;
+            color: var(--clx-accent-text);
             border-color: var(--clx-accent, #0f7490);
         }
         .lab-panel-section { margin-bottom: 14px; }
@@ -1099,8 +1099,8 @@
         .lab-unit { color: var(--clx-text-muted, #94a3b8); font-style: italic; }
         .lab-note-badge {
             display: inline-block;
-            background: #fef3c7;
-            color: #92400e;
+            background: var(--clx-warning-bg);
+            color: var(--clx-warning-text);
             border-radius: 4px;
             padding: 1px 5px;
             font-size: 10px;
@@ -1108,7 +1108,7 @@
             margin-left: 4px;
             vertical-align: middle;
         }
-        [data-theme="dark"] .lab-note-badge { background: #422006; color: #fbbf24; }
+        [data-theme="dark"] .lab-note-badge { background: var(--clx-warning-bg); color: var(--clx-warning-text); }
         .lab-no-results {
             text-align: center;
             color: var(--clx-text-muted, #94a3b8);
@@ -1213,7 +1213,7 @@
         .resource-navigator .search-box button {
             background: var(--clx-accent);
             border: none;
-            color: white;
+            color: var(--clx-accent-text);
             border-radius: 10px;
             padding: 11px 18px;
             transition: opacity 0.2s;
@@ -1244,7 +1244,7 @@
         }
         .resource-chip.active {
             background: var(--clx-accent) !important;
-            color: white !important;
+            color: var(--clx-accent-text) !important;
             border-color: var(--clx-accent) !important;
             font-weight: 600 !important;
         }
@@ -1298,12 +1298,12 @@
         }
         .resource-card.collapsible .card-header:hover .expand-icon {
             background: var(--clx-accent) !important;
-            color: white !important;
+            color: var(--clx-accent-text) !important;
         }
         .resource-card.collapsible.expanded .card-header .expand-icon {
             transform: rotate(180deg) !important;
             background: var(--clx-accent) !important;
-            color: white !important;
+            color: var(--clx-accent-text) !important;
         }
         .resource-card.collapsible .card-content {
             background: var(--clx-bg-surface) !important;
@@ -2552,7 +2552,10 @@
         })();
 
         function initTheme() {
-            const saved = localStorage.getItem('bendbsn_theme') || 'light';
+            // Stored Light/Dark wins; a retired value shows Light; nothing stored follows the device
+            let saved = null;
+            try { saved = localStorage.getItem('bendbsn_theme'); } catch (e) {}
+            if (saved !== 'light' && saved !== 'dark') saved = (saved == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
@@ -4587,7 +4590,7 @@ Generated: ${new Date().toLocaleString()}`;
 
     function pharmCardHtml(d) {
         return '<div class="pharm-card" data-search="' + escHtml(d.cls+' '+d.examples).toLowerCase() + '" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;overflow:hidden;">' +
-            '<div class="pharm-card-hd" style="background:var(--clx-accent);color:#fff;padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="togglePharmCard(this)">' +
+            '<div class="pharm-card-hd" style="background:var(--clx-accent);color:var(--clx-accent-text);padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="togglePharmCard(this)">' +
                 '<div><div style="font-size:12px;font-weight:700;">' + escHtml(d.cls) + '</div><div style="font-size:10px;opacity:.8;">Prototype: ' + escHtml(d.proto) + '</div></div>' +
                 '<span style="font-size:10px;">▼</span>' +
             '</div>' +
@@ -4724,7 +4727,7 @@ Generated: ${new Date().toLocaleString()}`;
 
     function mnemonicCardHtml(m) {
         const lettersHtml = m.letters.map(l => '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--clx-border);align-items:flex-start;">' +
-            '<span style="width:28px;height:22px;background:var(--clx-accent);color:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">' + escHtml(l[0]) + '</span>' +
+            '<span style="width:28px;height:22px;background:var(--clx-accent);color:var(--clx-accent-text);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">' + escHtml(l[0]) + '</span>' +
             '<span style="font-size:12px;color:var(--clx-text-primary);line-height:1.4;padding-top:2px;">' + escHtml(l[1]) + '</span>' +
         '</div>').join('');
         return '<div class="mnemonic-card" data-cat="' + escHtml(m.cat) + '" data-search="' + escHtml(m.name+' '+m.desc+' '+m.cat).toLowerCase() + '" style="background:var(--clx-bg-surface);border:1px solid var(--clx-border);border-radius:8px;overflow:hidden;">' +

@@ -3,14 +3,17 @@
    <textarea> is hidden but kept in the DOM as the canonical form value. */
 
 .rt-wrap {
-    border: 1px solid var(--clx-border, #d1dce8);
+    /* The editor's edge is a field boundary (3:1), not the decorative rule */
+    border: 1px solid var(--clx-border-field);
     border-radius: 6px;
     background: var(--clx-bg-surface, #fff);
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 .rt-wrap:focus-within {
-    border-color: var(--clx-accent, #0f7490);
-    box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.15);
+    /* the editor is a contenteditable div, so it gets the field ring here */
+    border-color: var(--clx-accent, #2F6B5F);
+    outline: 3px solid var(--clx-focus, #3F8A7B);
+    outline-offset: 2px;
 }
 
 .rt-toolbar {
@@ -19,8 +22,8 @@
     flex-wrap: wrap;
     gap: 2px;
     padding: 4px 6px;
-    border-bottom: 1px solid var(--clx-border, #d1dce8);
-    background: var(--clx-bg-surface-2, #f7f9fc);
+    border-bottom: 1px solid var(--clx-border, #D3DAD6);
+    background: var(--clx-bg-surface-2, #F3F6F4);
     border-radius: 6px 6px 0 0;
 }
 
@@ -34,7 +37,7 @@
     border: 1px solid transparent;
     border-radius: 4px;
     background: none;
-    color: var(--clx-text-secondary, #4a5568);
+    color: var(--clx-text-secondary, #3F4A45);
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
@@ -43,17 +46,17 @@
     transition: background 0.1s, color 0.1s;
 }
 .rt-btn:hover {
-    background: var(--clx-bg-hover, #e6edf5);
-    color: var(--clx-text-primary, #1a202c);
+    background: var(--clx-bg-hover, #EEF2EF);
+    color: var(--clx-text-primary, #23282B);
 }
 /* Toggle state: formatting at the caret (set by rich-textarea.js) */
 .rt-btn.active {
-    background: var(--clx-accent-subtle, #e0f2f8);
-    color: var(--clx-accent, #0f7490);
+    background: var(--clx-accent-subtle, #E3EEEA);
+    color: var(--clx-accent, #2F6B5F);
 }
 .rt-btn:active {
-    background: var(--clx-accent, #0f7490);
-    color: #fff;
+    background: var(--clx-accent, #2F6B5F);
+    color: var(--clx-accent-text);
 }
 .rt-btn-bold { font-weight: 800; }
 .rt-btn-italic { font-style: italic; }
@@ -62,7 +65,7 @@
 .rt-divider {
     width: 1px;
     height: 18px;
-    background: var(--clx-border, #d1dce8);
+    background: var(--clx-border, #D3DAD6);
     margin: 0 4px;
 }
 
@@ -73,7 +76,7 @@
     padding: 8px 10px;
     outline: none;
     background: transparent;
-    color: var(--clx-text-primary, #1a202c);
+    color: var(--clx-text-primary, #23282B);
     font-family: inherit;
     font-size: inherit;
     line-height: 1.5;
@@ -85,12 +88,17 @@
     /* Allow user to drag-resize the editor vertically */
     min-height: 3.5em;
 }
+/* The ring belongs to .rt-wrap (:focus-within). This outranks the page-level
+   `:focus-visible { outline }` rules, which would draw a second ring inside. */
+.rt-editor:focus-visible {
+    outline: none;
+}
 
 /* Placeholder — shown only when the editor is truly empty */
 .rt-editor[data-placeholder]:empty::before,
 .rt-editor[data-placeholder]:has(> br:only-child)::before {
     content: attr(data-placeholder);
-    color: var(--clx-text-muted, #718096);
+    color: var(--clx-text-muted, #5A6560);
     pointer-events: none;
     font-style: italic;
 }
@@ -113,7 +121,7 @@
 .rt-editor strong { font-weight: 700; }
 .rt-editor em { font-style: italic; }
 .rt-editor s,
-.rt-editor del { text-decoration: line-through; color: var(--clx-text-muted, #718096); }
+.rt-editor del { text-decoration: line-through; color: var(--clx-text-muted, #5A6560); }
 
 /* Mobile: slightly chunkier toolbar buttons for touch targets */
 @media (max-width: 480px) {
@@ -121,9 +129,9 @@
 }
 
 /* Dark mode */
-[data-theme="dark"] .rt-wrap { background: var(--clx-bg-surface, #1a202c); border-color: var(--clx-border, #2d3748); }
-[data-theme="dark"] .rt-toolbar { background: rgba(255, 255, 255, 0.03); border-bottom-color: var(--clx-border, #2d3748); }
-[data-theme="dark"] .rt-btn { color: var(--clx-text-secondary, #cbd5e0); }
+[data-theme="dark"] .rt-wrap { background: var(--clx-bg-surface, #23282B); border-color: var(--clx-border-field); }
+[data-theme="dark"] .rt-toolbar { background: rgba(255, 255, 255, 0.03); border-bottom-color: var(--clx-border, #3A4346); }
+[data-theme="dark"] .rt-btn { color: var(--clx-text-secondary, #B9C4BE); }
 [data-theme="dark"] .rt-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 [data-theme="dark"] .rt-btn.active { background: var(--clx-accent-subtle); color: var(--clx-accent); }
 /* The 'Default' swatch stores #111827; in dark mode show it as the normal
@@ -132,8 +140,7 @@
 [data-theme="dark"] .rt-editor font[color="#111827" i],
 [data-theme="dark"] .rt-editor span[style*="color:#111827"],
 [data-theme="dark"] .rt-editor span[style*="color: rgb(17, 24, 39)"] { color: inherit !important; }
-[data-theme="dark"] .rt-divider { background: var(--clx-border, #2d3748); }
-[data-theme="dark"] .rt-wrap:focus-within { box-shadow: 0 0 0 3px rgba(15, 116, 144, 0.35); }
+[data-theme="dark"] .rt-divider { background: var(--clx-border, #3A4346); }
 
 /* Color / highlight buttons — small "A" with a color bar underneath. */
 .rt-btn-color, .rt-btn-highlight {
@@ -160,19 +167,19 @@
     position: absolute;
     z-index: 10010;
     background: var(--clx-bg-surface, #fff);
-    border: 1px solid var(--clx-border, #d1dce8);
+    border: 1px solid var(--clx-border, #D3DAD6);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     padding: 8px;
     font-family: inherit;
     font-size: 13px;
-    color: var(--clx-text-primary, #1a202c);
+    color: var(--clx-text-primary, #23282B);
     min-width: 160px;
     max-width: 380px;
 }
 [data-theme="dark"] .rt-popover {
-    background: var(--clx-bg-surface, #1a202c);
-    border-color: var(--clx-border, #2d3748);
+    background: var(--clx-bg-surface, #23282B);
+    border-color: var(--clx-border, #3A4346);
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
 }
 
@@ -186,7 +193,7 @@
 .rt-swatch {
     width: 28px;
     height: 28px;
-    border: 1px solid var(--clx-border, #d1dce8);
+    border: 1px solid var(--clx-border, #D3DAD6);
     border-radius: 4px;
     cursor: pointer;
     padding: 0;
@@ -200,8 +207,8 @@
     background: linear-gradient(135deg, transparent 45%, #dc2626 47%, #dc2626 53%, transparent 55%) !important;
     background-color: #fff !important;
 }
-[data-theme="dark"] .rt-swatch { border-color: var(--clx-border, #2d3748); }
-[data-theme="dark"] .rt-swatch-default { border-color: var(--clx-text-muted, #64748b); }
+[data-theme="dark"] .rt-swatch { border-color: var(--clx-border, #3A4346); }
+[data-theme="dark"] .rt-swatch-default { border-color: var(--clx-text-muted, #AAB4AF); }
 
 /* Smart-phrase picker — slightly wider, scrollable list */
 .rt-popover-phrases {
@@ -214,7 +221,7 @@
 }
 .rt-pp-header {
     padding: 8px 10px;
-    border-bottom: 1px solid var(--clx-border, #d1dce8);
+    border-bottom: 1px solid var(--clx-border, #D3DAD6);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -223,16 +230,16 @@
 .rt-pp-search {
     flex: 1;
     padding: 4px 8px;
-    border: 1px solid var(--clx-border, #d1dce8);
+    border: 1px solid var(--clx-border, #D3DAD6);
     border-radius: 4px;
     font-size: 12px;
     font-family: inherit;
     background: var(--clx-bg-surface, #fff);
-    color: var(--clx-text-primary, #1a202c);
+    color: var(--clx-text-primary, #23282B);
 }
 [data-theme="dark"] .rt-pp-search {
     background: rgba(255,255,255,0.04);
-    border-color: var(--clx-border, #2d3748);
+    border-color: var(--clx-border, #3A4346);
 }
 .rt-pp-list {
     overflow-y: auto;
@@ -243,7 +250,7 @@
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--clx-text-muted, #718096);
+    color: var(--clx-text-muted, #5A6560);
     padding: 8px 12px 4px;
     font-weight: 700;
 }
@@ -255,20 +262,20 @@
     cursor: pointer;
     transition: background 0.1s;
 }
-.rt-pp-row:hover { background: var(--clx-bg-hover, #e6edf5); }
+.rt-pp-row:hover { background: var(--clx-bg-hover, #EEF2EF); }
 .rt-pp-shortcut {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-size: 11px;
-    color: var(--clx-accent, #0f7490);
+    color: var(--clx-accent, #2F6B5F);
     font-weight: 600;
-    background: rgba(15, 116, 144, 0.08);
+    background: rgba(var(--clx-accent-rgb, 47, 107, 95), 0.08);
     padding: 1px 5px;
     border-radius: 3px;
     flex-shrink: 0;
 }
 .rt-pp-text {
     flex: 1;
-    color: var(--clx-text-secondary, #4a5568);
+    color: var(--clx-text-secondary, #3F4A45);
     font-size: 12px;
     line-height: 1.4;
     overflow: hidden;
@@ -287,22 +294,22 @@
     border: none;
     cursor: pointer;
     padding: 2px 4px;
-    color: var(--clx-text-muted, #718096);
+    color: var(--clx-text-muted, #5A6560);
     font-size: 12px;
     border-radius: 3px;
 }
-.rt-pp-action:hover { background: rgba(0,0,0,0.06); color: var(--clx-text-primary, #1a202c); }
+.rt-pp-action:hover { background: rgba(0,0,0,0.06); color: var(--clx-text-primary, #23282B); }
 [data-theme="dark"] .rt-pp-action:hover { background: rgba(255,255,255,0.08); }
 .rt-pp-footer {
     padding: 8px 10px;
-    border-top: 1px solid var(--clx-border, #d1dce8);
+    border-top: 1px solid var(--clx-border, #D3DAD6);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 .rt-pp-add {
-    background: var(--clx-accent, #0f7490);
-    color: #fff;
+    background: var(--clx-accent, #2F6B5F);
+    color: var(--clx-accent-text);
     border: none;
     padding: 5px 10px;
     border-radius: 4px;
@@ -313,8 +320,8 @@
 .rt-pp-add:hover { filter: brightness(1.1); }
 .rt-pp-restore {
     background: transparent;
-    color: var(--clx-text-secondary, #4a5568);
-    border: 1px solid var(--clx-border, #d1dce8);
+    color: var(--clx-text-secondary, #3F4A45);
+    border: 1px solid var(--clx-border, #D3DAD6);
     padding: 4px 9px;
     border-radius: 4px;
     font-size: 11px;
@@ -322,14 +329,14 @@
     cursor: pointer;
 }
 .rt-pp-restore:hover {
-    background: var(--clx-accent-subtle, #e0f2f8);
-    color: var(--clx-accent, #0f7490);
-    border-color: var(--clx-accent, #0f7490);
+    background: var(--clx-accent-subtle, #E3EEEA);
+    color: var(--clx-accent, #2F6B5F);
+    border-color: var(--clx-accent, #2F6B5F);
 }
 .rt-pp-empty {
     padding: 18px 12px;
     text-align: center;
-    color: var(--clx-text-muted, #718096);
+    color: var(--clx-text-muted, #5A6560);
     font-size: 12px;
     font-style: italic;
 }
@@ -339,41 +346,41 @@
 .rt-pp-form label {
     font-size: 11px;
     font-weight: 600;
-    color: var(--clx-text-secondary, #4a5568);
+    color: var(--clx-text-secondary, #3F4A45);
 }
 .rt-pp-form input,
 .rt-pp-form textarea {
     width: 100%;
     padding: 6px 8px;
-    border: 1px solid var(--clx-border, #d1dce8);
+    border: 1px solid var(--clx-border, #D3DAD6);
     border-radius: 4px;
     font-size: 12px;
     font-family: inherit;
     background: var(--clx-bg-surface, #fff);
-    color: var(--clx-text-primary, #1a202c);
+    color: var(--clx-text-primary, #23282B);
     box-sizing: border-box;
     resize: vertical;
 }
 [data-theme="dark"] .rt-pp-form input,
 [data-theme="dark"] .rt-pp-form textarea {
     background: rgba(255,255,255,0.04);
-    border-color: var(--clx-border, #2d3748);
+    border-color: var(--clx-border, #3A4346);
 }
 .rt-pp-form-btns { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
 .rt-pp-form-btns button {
     padding: 5px 12px;
     border-radius: 4px;
-    border: 1px solid var(--clx-border, #d1dce8);
-    background: var(--clx-bg-surface-2, #f7f9fc);
-    color: var(--clx-text-primary, #1a202c);
+    border: 1px solid var(--clx-border, #D3DAD6);
+    background: var(--clx-bg-surface-2, #F3F6F4);
+    color: var(--clx-text-primary, #23282B);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
 }
 .rt-pp-form-btns button.primary {
-    background: var(--clx-accent, #0f7490);
-    color: #fff;
-    border-color: var(--clx-accent, #0f7490);
+    background: var(--clx-accent, #2F6B5F);
+    color: var(--clx-accent-text);
+    border-color: var(--clx-accent, #2F6B5F);
 }
 
 /* Print — hide the toolbar, keep the editor content */

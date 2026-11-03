@@ -35,7 +35,7 @@
     <script>
         // Apply the saved theme before first paint (no light flash for dark/colour themes);
         // initTheme() later only syncs the toggle icon.
-        try { document.documentElement.setAttribute('data-theme', localStorage.getItem('bendbsn_theme') || 'light'); } catch (e) {}
+        (function(){var t=null;try{t=localStorage.getItem('bendbsn_theme')}catch(e){}if(t!=='light'&&t!=='dark')t=(t==null&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t)})();
         if (localStorage.getItem('bendbsn_auth') !== 'true') {
             window.location.href = '/';
         }
@@ -61,7 +61,7 @@
             --nanda-bg: var(--clx-bg-surface-2);
             --nanda-border: var(--clx-border);
             --card-active-bg: var(--clx-accent);
-            --card-active-text: #ffffff;
+            --card-active-text: var(--clx-accent-text);
             /* Semantic colors */
             --shadow-light: rgba(0,0,0,0.1);
             --warning-bg: #fff5f5;
@@ -198,7 +198,7 @@
         .field-letter {
             width: 28px; height: 28px;
             background: var(--accent);
-            color: white;
+            color: var(--clx-accent-text);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -219,8 +219,8 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-pdf { background: var(--accent); color: white; }
-        .btn-word { background: var(--accent-light); color: white; }
+        .btn-pdf { background: var(--accent); color: var(--clx-accent-text); }
+        .btn-word { background: var(--accent-light); color: var(--clx-accent-text); }
         .btn-clear { background: var(--btn-clear-bg); color: var(--btn-clear-text); flex: 0.4; }
         .btn:hover { opacity: 0.88; }
         .warning-box {
@@ -274,7 +274,7 @@
         .selected-diagnoses { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .diagnosis-tag {
             background: var(--accent);
-            color: white;
+            color: var(--clx-accent-text);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
@@ -302,7 +302,7 @@
             color: var(--text-primary);
         }
         @media (hover: hover) {
-            .quick-fill:hover { background: var(--accent); color: white; border-color: var(--accent); }
+            .quick-fill:hover { background: var(--accent); color: var(--clx-accent-text); border-color: var(--accent); }
         }
         /* Quick-entry fields flagged by validation (half-entered BP, bad Taken-at time) */
         .vitals-panel input[aria-invalid="true"] { border-color: var(--clx-danger) !important; outline: 1px solid var(--clx-danger); outline-offset: -1px; }
@@ -448,7 +448,7 @@
             border-radius: 50%;
             border: none;
             background: var(--clx-accent, #0f7490);
-            color: white;
+            color: var(--clx-accent-text);
             font-size: 18px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             cursor: pointer;
@@ -735,7 +735,7 @@
         }
         .common-med-btn:hover {
             background: var(--clx-accent, #0f7490);
-            color: white;
+            color: var(--clx-accent-text);
         }
 
         /* Documented-by bar */
@@ -798,11 +798,11 @@
 
         /* Focus visible styles for keyboard navigation */
         :focus-visible {
-            outline: 2px solid var(--accent);
+            outline: 3px solid var(--clx-focus);
             outline-offset: 2px;
         }
         button:focus-visible, a:focus-visible, .note-type-card:focus-visible {
-            outline: 2px solid var(--accent);
+            outline: 3px solid var(--clx-focus);
             outline-offset: 2px;
         }
 
@@ -1279,7 +1279,7 @@
                     </div>
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
                         <button onclick="closeRoleChangeModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:1px solid var(--clx-border);border-radius:8px;background:var(--clx-bg-surface-2);color:var(--clx-text-primary);cursor:pointer;font-family:inherit;">Cancel</button>
-                        <button onclick="saveRoleFromModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;border-radius:8px;background:var(--clx-accent);color:white;cursor:pointer;font-family:inherit;">Save</button>
+                        <button onclick="saveRoleFromModal()" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;border-radius:8px;background:var(--clx-accent);color:var(--clx-accent-text);cursor:pointer;font-family:inherit;">Save</button>
                     </div>
                 </div>
             </div>
@@ -1322,7 +1322,7 @@
                 <div class="form-group">
                     <label>Patient Identifier (fictional) <span style="color:var(--clx-danger);" aria-hidden="true">*</span></label>
                     <input type="text" id="patientId" placeholder="e.g., Pt A / Room 302" onblur="checkPatientIdForRealName(this)">
-                    <div style="font-size:11px;color:var(--clx-text-secondary);margin-top:3px;">Do not enter real patient identifiers.</div>
+                    <div style="font-size:11px;color:var(--clx-text-secondary);margin-top:8px;">Do not enter real patient identifiers.</div>
                     <div id="patientIdHipaaTip" role="status" style="display:none;font-size:11px;color:var(--clx-warning-text);background:var(--clx-warning-bg);border:1px solid var(--clx-warning);border-radius:6px;padding:6px 8px;margin-top:6px;line-height:1.4;">
                         ⚠ That looks like a real name or honorific. Per HIPAA, please use a fictional ID like <code style="background:var(--clx-bg-surface);padding:1px 5px;border-radius:3px;">Pt A</code> or <code style="background:var(--clx-bg-surface);padding:1px 5px;border-radius:3px;">Room 302</code>. <a href="#" onclick="event.preventDefault();document.getElementById('patientIdHipaaTip').style.display='none';" style="color:inherit;text-decoration:underline;">dismiss</a>
                     </div>
@@ -3172,7 +3172,7 @@
                 <button type="button" onclick="closeTemplatesModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted);" aria-label="Close">&#215;</button>
             </div>
             <div style="display:flex;gap:8px;margin-bottom:12px;">
-                <button onclick="saveAsTemplate()" style="flex:1;padding:9px 14px;background:var(--clx-accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;font-family:inherit;">Save Current as Template</button>
+                <button onclick="saveAsTemplate()" style="flex:1;padding:9px 14px;background:var(--clx-accent);color:var(--clx-accent-text);border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;font-family:inherit;">Save Current as Template</button>
             </div>
             <div id="templatesList" style="flex:1;overflow-y:auto;min-height:100px;">
                 <p style="text-align:center;color:var(--clx-text-muted);padding:20px;font-size:13px;">No saved templates yet. Fill out a note and click "Save Current as Template".</p>
@@ -3250,7 +3250,7 @@
         <span style="font-weight:600;color:var(--clx-text-primary);letter-spacing:0.05em;">BendBSN</span>
         &nbsp;·&nbsp; Nursing Documentation Tool &nbsp;·&nbsp; Educational use only
         <div style="margin-top:8px;">
-            Help keep this free — <a href="https://venmo.com/ChristianKSHolden" target="_blank" rel="noopener" style="color:var(--clx-accent);text-decoration:none;">donate via Venmo</a>
+            Help keep this free — <a href="https://venmo.com/ChristianKSHolden" target="_blank" rel="noopener" style="color:var(--clx-link, var(--clx-accent));text-decoration:underline;text-underline-offset:0.15em;">donate via Venmo</a>
         </div>
     </footer>
 
@@ -3287,7 +3287,7 @@
         [data-theme="dark"] .cam-panel select {
             background: var(--bg-input) !important;
             color: var(--text-primary) !important;
-            border-color: var(--border-light) !important;
+            border-color: var(--clx-border-field, var(--border-light)) !important;
         }
         [data-theme="dark"] .lines-panel h3,
         [data-theme="dark"] .lines-panel label { color: var(--text-primary) !important; }
@@ -3398,7 +3398,10 @@
 
         // ========== DARK MODE ==========
         function initTheme() {
-            const saved = localStorage.getItem('bendbsn_theme') || 'light';
+            // Stored Light/Dark wins; a retired value shows Light; nothing stored follows the device
+            let saved = null;
+            try { saved = localStorage.getItem('bendbsn_theme'); } catch (e) {}
+            if (saved !== 'light' && saved !== 'dark') saved = (saved == null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon();
         }
@@ -3758,7 +3761,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                             <div style="flex: 1; min-width: 200px;">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap:wrap;">
-                                    <span style="background: var(--accent); color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${escapeHtml(noteTypeNames[doc.noteType] || doc.noteType || '')}</span>
+                                    <span style="background: var(--accent); color: var(--clx-accent-text); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${escapeHtml(noteTypeNames[doc.noteType] || doc.noteType || '')}</span>
                                     <span style="color: var(--text-secondary); font-size: 12px;">${dateStr} at ${timeStr}</span>
                                     ${_feedbackDocIds.has(doc.id) ? '<span style="background:#2e7d32;color:white;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;">📝 Feedback</span>' : ''}
                                 </div>
@@ -3768,7 +3771,7 @@
                                 ${doc.content && doc.content.unit ? `<div style="color: var(--text-secondary); font-size: 12px;">Unit: ${escapeHtml(doc.content.unit)}</div>` : ''}
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <button onclick="loadDocument('${doc.id}')" style="background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                <button onclick="loadDocument('${doc.id}')" style="background: var(--accent); color: var(--clx-accent-text); border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
                                     📥 Load
                                 </button>
                                 <button onclick="deleteDocument('${doc.id}')" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
@@ -10136,7 +10139,7 @@
                       legacy.length + ' template' + (legacy.length === 1 ? ' was' : 's were') + ' saved on this computer before templates became personal to each account. They may belong to another student: ' +
                       legacy.map(t => '<strong>' + escapeHtml(String(t.name || 'Unnamed')) + '</strong>').join(', ') + '.' +
                       '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
-                          '<button type="button" onclick="importLegacyTemplates()" style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--clx-accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;">Import into my templates</button>' +
+                          '<button type="button" onclick="importLegacyTemplates()" style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--clx-accent);color:var(--clx-accent-text);border:none;border-radius:6px;cursor:pointer;font-family:inherit;">Import into my templates</button>' +
                           '<button type="button" onclick="hideLegacyTemplates()" style="padding:6px 12px;font-size:12px;font-weight:600;background:none;color:var(--clx-text-primary);border:1px solid var(--clx-border);border-radius:6px;cursor:pointer;font-family:inherit;">Not mine</button>' +
                       '</div>' +
                   '</div>'
@@ -10152,7 +10155,7 @@
                         '<div style="font-size:13px;font-weight:600;color:var(--clx-text-primary);">' + (tpl.name || 'Unnamed').replace(/</g,'&lt;') + '</div>' +
                         '<div style="font-size:11px;color:var(--clx-text-muted);">' + escapeHtml(noteTypeLabel(tpl.noteType)) + ' · saved ' + date + '</div>' +
                     '</div>' +
-                    '<button onclick="loadTemplate(' + i + ')" style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--clx-accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;">Load</button>' +
+                    '<button onclick="loadTemplate(' + i + ')" style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--clx-accent);color:var(--clx-accent-text);border:none;border-radius:6px;cursor:pointer;font-family:inherit;">Load</button>' +
                     '<button onclick="deleteTemplate(' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--clx-text-muted);font-size:16px;padding:4px;border-radius:4px;font-family:inherit;" aria-label="Delete template">&#128465;</button>' +
                 '</div>';
             }).join('');
