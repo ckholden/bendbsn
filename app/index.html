@@ -5062,6 +5062,10 @@
             resolveInsertTarget(vitalsStr, 'vitals', clearVitalsFields);
         }
 
+        // Route as printed in the note: SUBQ (ISMP), while the stored option
+        // value stays "SubQ" so saved notes and drafts still load
+        function routeText(route) { return route === 'SubQ' ? 'SUBQ' : route; }
+
         // Insert formatted medication into the last active textarea
         function buildMedNarrative() {
             const name = document.getElementById('medName').value.trim();
@@ -5082,7 +5086,7 @@
 
             // Held / Refused
             if (adminStatus !== 'Given') {
-                parts.push(name + (dose ? ' ' + dose : '') + ' ' + route + ' — ' + adminStatus + '.');
+                parts.push(name + (dose ? ' ' + dose : '') + ' ' + routeText(route) + ' — ' + adminStatus + '.');
                 if (holdReason) parts.push('Reason: ' + holdReason + '.');
                 return parts.join(' ');
             }
@@ -5124,7 +5128,7 @@
                 // Standard med narrative
                 let s = name;
                 if (dose) s += ' ' + dose;
-                s += ' ' + route;
+                s += ' ' + routeText(route);
                 if (site) s += ' to ' + site;
                 s += ' administered';
                 if (time) s += ' at ' + time;
@@ -5661,7 +5665,7 @@
             let display = 'BG ' + val + ' mg/dL (' + timing + ') via ' + method;
             if (site) display += ' at ' + site;
             if (insulinType && units) {
-                display += '. Coverage: ' + insulinType + ' ' + units + ' units ' + route;
+                display += '. Coverage: ' + insulinType + ' ' + units + ' units ' + routeText(route);
                 if (injSite) display += ' to ' + injSite;
                 if (verified && verifyInit) display += '. Two-nurse verification by ' + verifyInit;
             }
