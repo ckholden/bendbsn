@@ -2,6 +2,7 @@
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onValueCreated } = require('firebase-functions/v2/database');
 const { logger } = require('firebase-functions');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
@@ -17,6 +18,10 @@ const WELCOME_REPLY_TO = 'hello@bendbsn.com';
 // WELCOME_DAILY_CAP, leaving room for test sends; anyone left over stays pending for the next run.
 const WELCOME_DAILY_CAP = 90;
 const WELCOME_SEND_GAP_MS = 700;
+// sendWelcomeEmailOnSignup waits this long after a profile is created, then re-reads it. While the
+// sign-up page still sends its own browser (EmailJS) welcome and sets welcomeEmailSent, this stops a
+// second email; once the page stops sending, every sign-up gets the Resend email after this delay.
+const WELCOME_SIGNUP_WAIT_MS = 20000;
 
 function welcomeEmailText(name, email) {
     return (
@@ -71,6 +76,8 @@ async function isRtdbAdmin(uid) {
  * Finds users in userProfiles whose welcomeEmailSent flag is not set and sends
  * them a welcome email through Resend. Marks welcomeEmailSent: true on success
  * so the email is never sent twice.
+ *
+ * Catch-up for sendWelcomeEmailOnSignup: picks up anyone whose sign-up send failed.
  *
  * Safety: only fires once per day, only touches users who have never gotten
  * a welcome email, and skips anyone already marked as sent. No random sends.
@@ -159,6 +166,58 @@ exports.sendDailyWelcomeEmails = onSchedule(
         logger.info(
             `sendDailyWelcomeEmails: complete — sent=${sent}, failed=${failed}`
         );
+    }
+);
+
+/**
+ * sendWelcomeEmailOnSignup
+ *
+ * Sends the welcome email through Resend when a new userProfiles/{uid} node is
+ * created, after WELCOME_SIGNUP_WAIT_MS. It uses the same rules as
+ * sendDailyWelcomeEmails (skips manual_ placeholders, profiles with no email,
+ * anyone already sent or marked welcomeEmailSkipped) and the same idempotency key
+ * (welcome-<uid>), so the daily job cannot send it a second time. On failure it
+ * leaves welcomeEmailSent false and the 07:00 run retries.
+ */
+exports.sendWelcomeEmailOnSignup = onValueCreated(
+    {
+        ref: '/userProfiles/{uid}',
+        instance: 'bendbsn-17377-default-rtdb',
+        secrets: [RESEND_API_KEY],
+        timeoutSeconds: 60
+    },
+    async (event) => {
+        const uid = event.params.uid;
+        if (uid.startsWith('manual_')) return;
+
+        await new Promise(r => setTimeout(r, WELCOME_SIGNUP_WAIT_MS));
+
+        const ref = admin.database().ref('userProfiles/' + uid);
+        const p = (await ref.once('value')).val();
+        if (!p || !p.email || p.welcomeEmailSent || p.welcomeEmailSkipped === true) {
+            logger.info(`sendWelcomeEmailOnSignup: nothing to send for uid=${uid}`);
+            return;
+        }
+
+        const name = p.displayName || p.email.split('@')[0];
+        try {
+            const result = await sendWelcomeEmail(RESEND_API_KEY.value(), {
+                name,
+                email: p.email,
+                idempotencyKey: `welcome-${uid}`
+            });
+            if (result.ok) {
+                await ref.update({ welcomeEmailSent: true });
+                logger.info(`sendWelcomeEmailOnSignup: sent to ${p.email} (resend id ${result.id})`);
+            } else {
+                logger.error(
+                    `sendWelcomeEmailOnSignup: Resend returned ${result.status} for ${p.email}: ${result.body};` +
+                    ' the daily run will retry'
+                );
+            }
+        } catch (err) {
+            logger.error(`sendWelcomeEmailOnSignup: exception for ${p.email}; the daily run will retry:`, err);
+        }
     }
 );
 
