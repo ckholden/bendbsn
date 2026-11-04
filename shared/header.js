@@ -73,74 +73,6 @@
         }
     }
 
-    // ── Hamburger Sidebar Toggle (tablet <900px) ─────────
-    if (!isLoginPage) {
-        var sidebar = document.querySelector('.clx-sidebar');
-        if (sidebar) {
-            // Create backdrop
-            var backdrop = document.createElement('div');
-            backdrop.className = 'clx-sidebar-backdrop';
-            document.body.appendChild(backdrop);
-
-            // Create hamburger button
-            var hamburger = document.createElement('button');
-            hamburger.className = 'clx-hamburger';
-            hamburger.setAttribute('aria-label', 'Open navigation');
-            hamburger.innerHTML = '&#9776;'; // ☰
-            var hdr = document.querySelector('.site-header');
-            if (hdr) {
-                // Insert after logo, before other elements
-                var logoLink = hdr.querySelector('.logo-link');
-                if (logoLink && logoLink.nextSibling) {
-                    hdr.insertBefore(hamburger, logoLink);
-                } else {
-                    hdr.appendChild(hamburger);
-                }
-            }
-
-            function openMobileSidebar() {
-                sidebar.classList.add('mobile-open');
-                backdrop.classList.add('visible');
-                hamburger.innerHTML = '&times;'; // ×
-                hamburger.setAttribute('aria-label', 'Close navigation');
-            }
-
-            function closeMobileSidebar() {
-                sidebar.classList.remove('mobile-open');
-                backdrop.classList.remove('visible');
-                hamburger.innerHTML = '&#9776;'; // ☰
-                hamburger.setAttribute('aria-label', 'Open navigation');
-            }
-
-            hamburger.addEventListener('click', function() {
-                if (sidebar.classList.contains('mobile-open')) {
-                    closeMobileSidebar();
-                } else {
-                    openMobileSidebar();
-                }
-            });
-
-            backdrop.addEventListener('click', closeMobileSidebar);
-
-            // Close sidebar when a nav item is clicked
-            sidebar.addEventListener('click', function(e) {
-                if (e.target.closest('.clx-sidebar-item') && window.innerWidth < 900) {
-                    closeMobileSidebar();
-                }
-            });
-
-            // Expose globally for other scripts
-            window.toggleMobileSidebar = function() {
-                if (sidebar.classList.contains('mobile-open')) {
-                    closeMobileSidebar();
-                } else {
-                    openMobileSidebar();
-                }
-            };
-            window.closeMobileSidebar = closeMobileSidebar;
-        }
-    }
-
     // close() of the confirm/prompt modal that is currently open, if any.
     // Replacing a modal goes through it so the old Escape listener is removed.
     var _bsnModalClose = null;
@@ -378,10 +310,9 @@ window.getTheme = function() {
     return t ? bsnNormTheme(t) : bsnResolveTheme();
 };
 
-// Sidebar icon (sidebar-style pages) and header icon + label (header-style pages)
+// Header icon + label (header-style pages). The shared nav's theme item
+// shows its state through aria-pressed instead (wireThemeItem below).
 function bsnSyncThemeIcons(name) {
-    var sidebarIcon = document.getElementById('sidebarThemeIcon');
-    if (sidebarIcon) sidebarIcon.textContent = name === 'dark' ? '🌙' : '🎨';
     var hIcon = document.getElementById('themeMenuIcon');
     var hText = document.getElementById('themeMenuText');
     if (hIcon) hIcon.textContent = name === 'dark' ? '🌙' : '🎨';
@@ -465,9 +396,9 @@ window.toggleThemePicker = function() {
 window.toggleDarkMode = function() { window.toggleThemePicker(); };
 
 (function injectThemePicker() {
-    // Support both sidebar-style (.clx-sidebar-item) and header-style (.header-btn) pages
-    var themeBtn = document.querySelector('.clx-sidebar-item[onclick*="toggleDarkMode"]') ||
-                   document.querySelector('.header-actions button[onclick*="toggleDarkMode"]');
+    // Header-style pages (.header-actions). Pages with the shared nav use
+    // the [data-action="theme"] switch instead (wireThemeItem below).
+    var themeBtn = document.querySelector('.header-actions button[onclick*="toggleDarkMode"]');
     if (!themeBtn) return;
 
     themeBtn.id = 'bsnThemeBtn';
@@ -479,10 +410,6 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
         e.preventDefault();
         window.toggleThemePicker();
     });
-
-    // Sidebar pages: update the label text ("Dark Mode" → "Theme")
-    var sidebarLabel = themeBtn.querySelector('.clx-sidebar-label');
-    if (sidebarLabel) sidebarLabel.textContent = 'Theme';
 
     // Backdrop (click-outside-to-close)
     var backdrop = document.createElement('div');
@@ -513,6 +440,39 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     bsnSyncThemeOpts(cur);
 })();
 
+// ===== THEME ITEM IN THE SHARED NAV (shared/nav.template.html) =====
+// [data-action="theme"] is a direct Light/Dark switch: one click flips the
+// theme through setTheme() (saved locally and to Firebase), and
+// aria-pressed="true" means Dark is showing. The flag tells shared/nav.js
+// not to toggle as well; nav.js only does it when an older cached
+// header.js is paired with the new nav on the first load after a deploy.
+(function wireThemeItem() {
+    window.__bsnThemeItemWired = true;
+    function syncThemeItems() {
+        var dark = window.getTheme() === 'dark';
+        document.querySelectorAll('[data-action="theme"]').forEach(function (b) {
+            b.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        });
+    }
+    document.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('[data-action="theme"]') : null;
+        if (!b) return;
+        e.preventDefault();
+        window.setTheme(window.getTheme() === 'dark' ? 'light' : 'dark');
+        syncThemeItems();
+    });
+    // Apply the resolved theme without saving it, as injectThemePicker()
+    // above does for header-style pages. /admin/ has no other code that
+    // applies it after its head script.
+    if (document.querySelector('[data-action="theme"]')) {
+        document.documentElement.setAttribute('data-theme', window.getTheme());
+    }
+    syncThemeItems();
+    if (window.MutationObserver) {
+        new MutationObserver(syncThemeItems).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+})();
+
 // ===== IT TICKET / FEEDBACK MODAL =====
 (function () {
     'use strict';
@@ -529,10 +489,10 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
 
     // ── Inject modal HTML ─────────────────────────────────
     var modalHtml = '<div id="itTicketModal" class="bsn-modal-overlay" style="display:none;z-index:9500;" onclick="if(event.target===this)closeTicketModal()">'
-        + '<div class="bsn-confirm-modal" style="max-width:480px;">'
+        + '<div class="bsn-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="itTicketTitle" style="max-width:480px;">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
-        + '<h2 style="font-size:16px;font-weight:700;margin:0;">Submit Feedback / Report</h2>'
-        + '<button onclick="closeTicketModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted,#718096);line-height:1;">&times;</button>'
+        + '<h2 id="itTicketTitle" style="font-size:16px;font-weight:700;margin:0;">Submit Feedback / Report</h2>'
+        + '<button onclick="closeTicketModal()" aria-label="Close" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted,#718096);line-height:1;">&times;</button>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">'
         + '<div>'
@@ -576,9 +536,13 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     });
 
     // ── Global functions ──────────────────────────────────
+    // Focus goes back to whatever had it when the dialog opened (the
+    // More button, when it was opened from the shared nav).
+    var _ticketReturnFocus = null;
     window.openTicketModal = function () {
         var modal = document.getElementById('itTicketModal');
         if (!modal) return;
+        if (modal.style.display === 'none') _ticketReturnFocus = document.activeElement;
         var cat = document.getElementById('itTicketCategory');
         var pri = document.getElementById('itTicketPriority');
         var msg = document.getElementById('itTicketMessage');
@@ -592,6 +556,11 @@ window.toggleDarkMode = function() { window.toggleThemePicker(); };
     window.closeTicketModal = function () {
         var modal = document.getElementById('itTicketModal');
         if (modal) modal.style.display = 'none';
+        var back = _ticketReturnFocus;
+        _ticketReturnFocus = null;
+        if (back && back !== document.body && document.contains(back) && typeof back.focus === 'function') {
+            try { back.focus(); } catch (e) {}
+        }
     };
 
     var _ticketSubmitting = false;

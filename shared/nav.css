@@ -1,0 +1,757 @@
+/* =========================================================
+   BendBSN shared navigation (C High Desert)
+   Markup: shared/nav.template.html, copied into pages by
+   scripts/sync-nav.mjs. Behaviour: shared/nav.js.
+
+   - 64em and up (1024px at the default 16px text size): Basalt top
+     bar (logo, 6 links, More, Profile).
+   - Below 64em: the header keeps only the logo; a bottom bar
+     (Home, Notes, Packet, Refs, More) is fixed to the bottom.
+   - One #clxMore panel: dropdown under More from 64em up, a sheet
+     above the bottom bar below that.
+   The switch is in em so a larger browser text size moves it up with
+   the text (WCAG 1.4.4): at 20px text the top bar starts at 1280px, so
+   the links never run under Profile. shared/nav.js, the --clx-botnav-h
+   rule in clinical-ui.css and app's --mab-b rule use the same 64em.
+   Rabbitbrush (--clx-current) means "you are here" and nothing else.
+
+   /shared/ is served cache-first, so the first load after a deploy
+   can pair this new file with an older clinical-ui.css. Every token
+   here therefore carries its light-theme value as a fallback.
+   Link this file AFTER the other shared stylesheets.
+   ========================================================= */
+
+/* Logo colours do not change with the theme (the badge always sits on Basalt). */
+.clx-logo {
+    --clx-logo-badge: #3F8A7B;
+    --clx-logo-sky:   #FBFCFC;
+    --clx-logo-cross: #E2B33C;
+}
+
+/* Site-wide alert and FYI banners (#alertBanner, #fyiBanner, inline in
+   each page) are fixed to the top of the window, and each page pushes
+   its content down 50px per banner while one shows (body.has-alert,
+   body.has-fyi). --clx-banner-offset is that total. Each banner is at
+   least 50px tall, so no page content shows through a gap between the
+   banners and the chrome under them; a message that wraps still grows
+   its banner.
+
+   --clx-sticky-top: where a page's own sticky element (the Resources
+   navigator, the RN Notes H2T progress bar) should stick, so it never
+   slides under the chrome: below the banners and, from 64em up, below
+   the sticky top bar too. Pages read it as var(--clx-sticky-top, 0px). */
+:root {
+    --clx-banner-offset: 0px;
+    --clx-sticky-top: 0px;
+}
+body {
+    --clx-sticky-top: var(--clx-banner-offset);
+}
+body.has-alert,
+body.has-fyi {
+    --clx-banner-offset: 50px;
+}
+body.has-alert.has-fyi {
+    --clx-banner-offset: 100px;
+}
+#alertBanner,
+#fyiBanner {
+    box-sizing: border-box;
+    min-height: 50px;
+    align-content: center;
+}
+:root:has(> body.has-alert),
+:root:has(> body.has-fyi) {
+    scroll-padding-top: 50px;
+}
+:root:has(> body.has-alert.has-fyi) {
+    scroll-padding-top: 100px;
+}
+
+/* Visually hidden, still read by screen readers */
+.clx-vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.clx-ico {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---------- Skip link: first focusable element on the page ---------- */
+.clx-skip {
+    position: absolute;
+    left: 8px;
+    top: -200px;
+    z-index: 950;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: var(--clx-bg-surface, #FFFFFF);
+    color: var(--clx-text-primary, #23282B);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: underline;
+    box-shadow: var(--clx-shadow-lg, 0 4px 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.10));
+}
+/* Focused: fixed in the window, under any alert/FYI banner and above
+   everything else (the banners are z-index 10000), wherever the page is
+   scrolled. */
+.clx-skip:focus {
+    position: fixed;
+    top: calc(var(--clx-banner-offset, 0px) + 8px);
+    z-index: 10001;
+    outline: 3px solid var(--clx-focus, #3F8A7B);
+    outline-offset: 2px;
+}
+/* The skip target is not a control: no ring around the whole page */
+.clx-main[tabindex="-1"]:focus {
+    outline: none;
+}
+
+/* ---------- Header (all widths) ---------- */
+.site-header.clx-topbar {
+    position: relative;
+    z-index: 900;
+    box-sizing: border-box;
+    height: var(--clx-header-h, 56px);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    background: var(--clx-chrome-bg, #23282B);
+    border-bottom: 1px solid var(--clx-chrome-border, #23282B);
+    color: var(--clx-chrome-text, #FBFCFC);
+    font-family: var(--clx-font-sans, 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif);
+}
+
+/* While More is open, lift the header (it holds the panel and its
+   backdrop) above page-level fixed bars, such as the RN Notes action
+   bar (1001-1003), that sit where the sheet opens. Toasts (10001) and
+   the shared modals (10002) stay on top. shared/nav.js sets the class. */
+.site-header.clx-topbar.clx-more-open {
+    z-index: 1010;
+}
+
+.clx-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    flex: none;
+    border-radius: 8px;
+    color: var(--clx-chrome-text, #FBFCFC);
+    text-decoration: none;
+}
+.clx-logo-mark {
+    width: 30px;
+    height: 30px;
+    flex: none;
+}
+.clx-logo-badge { fill: var(--clx-logo-badge); }
+.clx-logo-sky {
+    fill: none;
+    stroke: var(--clx-logo-sky);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+.clx-logo-cross { fill: var(--clx-logo-cross); }
+.clx-wordmark {
+    font-size: 1.375rem;
+    font-weight: 700;
+    font-variation-settings: 'opsz' 96;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Focus on the dark bar: the same ring colour passes on Basalt (3.64:1).
+   clinical-ui.css leaves the nav's links and buttons out of its global
+   ring rule, so these rules, and the inset ones below, apply. */
+.clx-topbar a:focus-visible,
+.clx-topbar button:focus-visible,
+.clx-botnav a:focus-visible,
+.clx-botnav button:focus-visible {
+    outline: 3px solid var(--clx-focus, #3F8A7B);
+    outline-offset: 2px;
+}
+
+/* ---------- Top bar links (shown from 1024px) ---------- */
+.clx-topnav {
+    display: none;
+    align-self: stretch;
+    align-items: stretch;
+    gap: 2px;
+    margin-left: 4px;
+    min-width: 0;
+    /* Safety net: if the links ever outgrow the bar, clip them here
+       rather than paint them under Profile. */
+    overflow: hidden;
+}
+.clx-toplink {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+    padding: 0 9px;
+    border: 0;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--clx-chrome-muted, #C9D3CD);
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.clx-toplink:hover {
+    color: var(--clx-chrome-text, #FBFCFC);
+}
+.clx-toplink[aria-current="page"],
+.clx-more-btn.clx-toplink[data-has-current] {
+    color: var(--clx-chrome-text, #FBFCFC);
+    font-weight: 700;
+    border-bottom-color: var(--clx-current, #E2B33C);
+}
+.clx-more-btn.clx-toplink[aria-expanded="true"] {
+    color: var(--clx-chrome-text, #FBFCFC);
+}
+/* The current link is bold. Each label reserves its bold width (a hidden
+   bold copy of data-label, 0px tall), so the links after it do not move
+   from page to page. */
+.clx-toptext {
+    display: inline-flex;
+    flex-direction: column;
+    text-align: center;
+}
+.clx-toptext::after {
+    content: attr(data-label);
+    content: attr(data-label) / "";
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+}
+.clx-chev {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--clx-transition-base, 0.15s ease);
+}
+.clx-more-btn[aria-expanded="true"] .clx-chev {
+    transform: rotate(180deg);
+}
+/* Inset rings on the bar items: the bar sits at the top edge of the
+   window (and the bottom bar at the bottom edge), where an outside ring
+   loses a side. */
+.clx-topbar a.clx-toplink:focus-visible,
+.clx-topbar button.clx-toplink:focus-visible,
+.clx-topbar a.clx-profile:focus-visible {
+    outline-offset: -3px;
+}
+
+/* Profile, far right of the top bar */
+.clx-profile {
+    display: none;
+    align-self: stretch;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    box-sizing: border-box;
+    padding: 0 4px;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    color: var(--clx-chrome-text, #FBFCFC);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    flex: none;
+}
+.clx-profile[aria-current="page"] {
+    font-weight: 700;
+    border-bottom-color: var(--clx-current, #E2B33C);
+}
+.clx-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--clx-chrome-muted, #C9D3CD);
+    color: var(--clx-chrome-bg, #23282B);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* ---------- More panel: shared item styles ---------- */
+.clx-more {
+    z-index: 920;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    background: var(--clx-bg-surface, #FFFFFF);
+    color: var(--clx-text-primary, #23282B);
+    border: 1px solid var(--clx-border, #D3DAD6);
+    box-shadow: var(--clx-shadow-lg, 0 4px 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.10));
+    font-family: var(--clx-font-sans, 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif);
+}
+.clx-more-group {
+    display: flex;
+    flex-direction: column;
+}
+.clx-more-group + .clx-more-group {
+    border-top: 1px solid var(--clx-border, #D3DAD6);
+    padding-top: 4px;
+}
+.clx-more-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--clx-text-primary, #23282B);
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.25;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+.clx-more-item > span:first-of-type {
+    flex: 1;
+}
+.clx-more-item .clx-ico {
+    color: var(--clx-text-secondary, #3F4A45);
+}
+.clx-more-item:hover {
+    background: var(--clx-bg-hover, #EEF2EF);
+}
+.clx-more .clx-more-item:focus-visible,
+.clx-more .clx-more-close:focus-visible {
+    outline: 3px solid var(--clx-focus, #3F8A7B);
+    outline-offset: -3px;
+}
+/* You are here: Rabbitbrush fill. It is 1.90:1 on white, so it carries
+   the 2px Basalt edge (--clx-current-edge). */
+.clx-more-item[aria-current="page"] {
+    background: var(--clx-current, #E2B33C);
+    color: var(--clx-current-text, #23282B);
+    box-shadow: inset 0 0 0 2px var(--clx-current-edge, #23282B);
+    font-weight: 700;
+}
+.clx-more-item[aria-current="page"] .clx-ico {
+    color: var(--clx-current-text, #23282B);
+}
+.clx-more[hidden],
+.clx-more-item[hidden],
+.clx-more-backdrop[hidden] {
+    display: none;
+}
+
+/* Theme item: a switch that shows the state (aria-pressed carries it) */
+.clx-switch {
+    position: relative;
+    flex: none;
+    box-sizing: border-box;
+    width: 36px;
+    height: 22px;
+    border-radius: 11px;
+    border: 2px solid var(--clx-border-field, #76807B);
+    background: var(--clx-bg-surface, #FFFFFF);
+    transition: background var(--clx-transition-base, 0.15s ease), border-color var(--clx-transition-base, 0.15s ease);
+}
+.clx-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--clx-border-field, #76807B);
+    transition: transform var(--clx-transition-base, 0.15s ease), background var(--clx-transition-base, 0.15s ease);
+}
+[data-action="theme"][aria-pressed="true"] .clx-switch {
+    background: var(--clx-accent, #2F6B5F);
+    border-color: var(--clx-accent, #2F6B5F);
+}
+[data-action="theme"][aria-pressed="true"] .clx-switch::after {
+    transform: translateX(14px);
+    background: var(--clx-accent-text, #FFFFFF);
+}
+
+/* Sheet header: only in the phone/tablet sheet */
+.clx-more-head {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 4px 4px 12px;
+}
+.clx-more-title {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    font-variation-settings: 'opsz' 96;
+}
+.clx-more-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--clx-text-secondary, #3F4A45);
+    cursor: pointer;
+}
+.clx-more-close:hover {
+    background: var(--clx-bg-hover, #EEF2EF);
+}
+.clx-more-backdrop {
+    position: fixed;
+    inset: 0 0 var(--clx-botnav-h, calc(48px + 1rem + env(safe-area-inset-bottom, 0px))) 0;
+    z-index: 910;
+    background: rgba(18, 21, 23, 0.4);
+}
+
+/* ---------- Bottom bar (1023px and down) ---------- */
+.clx-botnav {
+    display: none;
+}
+
+/* =========================================================
+   64em and up (1024px at 16px text): top bar
+   ========================================================= */
+@media (min-width: 64em) {
+    /* Sticky, and below the alert/FYI banners, or it would slide under
+       them on scroll. */
+    .site-header.clx-topbar {
+        position: sticky;
+        top: var(--clx-banner-offset, 0px);
+    }
+    body {
+        --clx-sticky-top: calc(var(--clx-header-h, 56px) + var(--clx-banner-offset));
+    }
+    /* No bottom bar here, so no clearance: this beats the old 60px some
+       page style blocks still give body for the retired mobile nav. */
+    body.clx-has-botnav {
+        padding-bottom: 0;
+    }
+    .clx-topnav,
+    .clx-profile {
+        display: flex;
+    }
+    .clx-more {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: var(--clx-more-x, auto);
+        right: auto;
+        width: 264px;
+        border-radius: 14px;
+    }
+    .clx-more-mobile,
+    .clx-more-backdrop {
+        display: none;
+    }
+    /* Focus scrolled into view must not hide under the sticky bar */
+    :root:has(.clx-topbar) {
+        scroll-padding-top: var(--clx-header-h, 56px);
+    }
+    :root:has(> body.has-alert .clx-topbar),
+    :root:has(> body.has-fyi .clx-topbar) {
+        scroll-padding-top: calc(var(--clx-header-h, 56px) + 50px);
+    }
+    :root:has(> body.has-alert.has-fyi .clx-topbar) {
+        scroll-padding-top: calc(var(--clx-header-h, 56px) + 100px);
+    }
+}
+
+/* =========================================================
+   Below 64em: logo-only header, bottom bar, More sheet
+   ========================================================= */
+@media (max-width: 63.99em) {
+    .site-header.clx-topbar {
+        padding: 0 16px;
+    }
+    body.clx-has-botnav {
+        padding-bottom: var(--clx-botnav-h, calc(48px + 1rem + env(safe-area-inset-bottom, 0px)));
+    }
+    :root:has(.clx-botnav) {
+        scroll-padding-bottom: var(--clx-botnav-h, calc(48px + 1rem + env(safe-area-inset-bottom, 0px)));
+    }
+
+    .clx-botnav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 900;
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        height: var(--clx-botnav-h, calc(48px + 1rem + env(safe-area-inset-bottom, 0px)));
+        padding: 0 max(4px, calc((100% - 600px) / 2)) env(safe-area-inset-bottom, 0px);
+        background: var(--clx-bg-surface, #FFFFFF);
+        border-top: 1px solid var(--clx-border, #D3DAD6);
+        box-shadow: 0 -2px 8px rgba(18, 21, 23, 0.06);
+        font-family: var(--clx-font-sans, 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif);
+    }
+    .clx-botlink {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-width: 0;
+        margin: 0;
+        padding: 4px 2px;
+        border: 0;
+        border-radius: 12px;
+        background: none;
+        color: var(--clx-text-secondary, #3F4A45);
+        font-family: inherit;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.2;
+        text-decoration: none;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .clx-botnav a.clx-botlink:focus-visible,
+    .clx-botnav button.clx-botlink:focus-visible {
+        outline-offset: -3px;
+    }
+    .clx-botpill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 56px;
+        height: 32px;
+        border-radius: 16px;
+        border: 2px solid transparent;
+        transition: background var(--clx-transition-fast, 0.10s ease);
+    }
+    .clx-botpill .clx-ico {
+        width: 22px;
+        height: 22px;
+    }
+    .clx-botlabel {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .clx-botlink:hover .clx-botpill,
+    .clx-more-btn.clx-botlink[aria-expanded="true"] .clx-botpill {
+        background: var(--clx-bg-hover, #EEF2EF);
+    }
+    .clx-botlink[aria-current="page"],
+    .clx-more-btn.clx-botlink[data-has-current] {
+        color: var(--clx-text-primary, #23282B);
+        font-weight: 700;
+    }
+    .clx-botlink[aria-current="page"] .clx-botpill,
+    .clx-more-btn.clx-botlink[data-has-current] .clx-botpill {
+        background: var(--clx-current, #E2B33C);
+        border-color: var(--clx-current-edge, #23282B);
+        color: var(--clx-current-text, #23282B);
+    }
+
+    /* The sheet */
+    .clx-more {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: var(--clx-botnav-h, calc(48px + 1rem + env(safe-area-inset-bottom, 0px)));
+        max-height: calc(100dvh - var(--clx-botnav-h, calc(48px + 1rem + env(safe-area-inset-bottom, 0px))) - 24px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 6px 8px 10px;
+        border-radius: 16px 16px 0 0;
+        border-bottom: 0;
+    }
+    .clx-more:not([hidden]) {
+        animation: clxSheetIn 0.16s ease-out;
+    }
+    .clx-more-head {
+        display: flex;
+    }
+    .clx-more-item {
+        min-height: 48px;
+    }
+    @media (min-width: 600px) {
+        .clx-more {
+            left: 0;
+            right: 0;
+            width: min(400px, calc(100% - 24px));
+            margin: 0 auto;
+            bottom: calc(var(--clx-botnav-h, calc(48px + 1rem + env(safe-area-inset-bottom, 0px))) + 8px);
+            border-radius: 16px;
+            border-bottom: 1px solid var(--clx-border, #D3DAD6);
+        }
+    }
+}
+
+@media (max-width: 600px) {
+    .site-header.clx-topbar {
+        height: var(--clx-header-h, 52px);
+        padding: 0 14px;
+    }
+    .clx-logo-mark {
+        width: 28px;
+        height: 28px;
+    }
+    .clx-wordmark {
+        font-size: 1.25rem;
+    }
+}
+
+@keyframes clxSheetIn {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .clx-more:not([hidden]) { animation: none; }
+    .clx-chev,
+    .clx-switch,
+    .clx-switch::after,
+    .clx-botpill { transition: none; }
+}
+
+/* Dark: the chrome (--clx-chrome-bg) is only 1.09:1 against the ground, so
+   the header relies on its --clx-chrome-border rule and the bottom bar on
+   its border-top; a shadow adds nothing on the dark ground. */
+:root[data-theme="dark"] .clx-botnav {
+    box-shadow: none;
+}
+:root[data-theme="dark"] .clx-more-backdrop {
+    background: rgba(0, 0, 0, 0.55);
+}
+
+/* Windows high contrast (forced colours). Left to the system, every
+   transparent border and pill edge is drawn in the text colour and the
+   Rabbitbrush fills are dropped, so "you are here" disappears. These
+   parts opt out of forcing and are painted with system colours instead:
+   the current item gets Highlight (an underline in the top bar, a filled
+   pill or row elsewhere), and nothing else gets an edge. */
+@media (forced-colors: active) {
+    .clx-toplink,
+    .clx-profile,
+    .clx-botpill,
+    .clx-more-item,
+    .clx-switch {
+        forced-color-adjust: none;
+        background: Canvas;
+        border-color: transparent;
+        box-shadow: none;
+    }
+    a.clx-toplink,
+    a.clx-toplink:hover,
+    a.clx-profile,
+    a.clx-more-item,
+    a.clx-more-item .clx-ico,
+    a.clx-botlink .clx-botpill {
+        color: LinkText;
+    }
+    button.clx-toplink,
+    button.clx-toplink:hover,
+    .clx-more-btn.clx-toplink[aria-expanded="true"],
+    button.clx-more-item,
+    button.clx-more-item .clx-ico,
+    button.clx-botlink .clx-botpill {
+        color: ButtonText;
+    }
+    .clx-more-item:hover,
+    .clx-botlink:hover .clx-botpill,
+    .clx-more-btn.clx-botlink[aria-expanded="true"] .clx-botpill {
+        background: Canvas;
+    }
+    /* You are here */
+    .clx-toplink[aria-current="page"],
+    .clx-profile[aria-current="page"] {
+        color: LinkText;
+        border-bottom-color: Highlight;
+    }
+    .clx-more-btn.clx-toplink[data-has-current] {
+        color: ButtonText;
+        border-bottom-color: Highlight;
+    }
+    .clx-botlink[aria-current="page"] .clx-botpill,
+    .clx-more-btn.clx-botlink[data-has-current] .clx-botpill,
+    .clx-more-item[aria-current="page"],
+    .clx-more-item[aria-current="page"] .clx-ico {
+        background: Highlight;
+        border-color: Highlight;
+        box-shadow: none;
+        color: HighlightText;
+    }
+    /* The focus ring is Highlight too: keep it outside a Highlight fill */
+    .clx-more .clx-more-item[aria-current="page"]:focus-visible {
+        outline-offset: 2px;
+    }
+    .clx-switch {
+        border-color: CanvasText;
+    }
+    .clx-switch::after {
+        background: CanvasText;
+    }
+    [data-action="theme"][aria-pressed="true"] .clx-switch {
+        background: Highlight;
+        border-color: Highlight;
+    }
+    [data-action="theme"][aria-pressed="true"] .clx-switch::after {
+        background: HighlightText;
+    }
+}
+
+@media print {
+    .clx-skip,
+    .clx-topbar,
+    .clx-botnav,
+    .clx-more,
+    .clx-more-backdrop {
+        display: none;
+    }
+    body.clx-has-botnav {
+        padding-bottom: 0;
+    }
+    /* No bottom bar on paper: fixed page bars that sit on it go to the edge */
+    :root {
+        --clx-botnav-h: 0px;
+    }
+}

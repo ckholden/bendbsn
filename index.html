@@ -670,10 +670,6 @@
                 // Send email notification to admin
                 await sendEmailNotification(name, email, email, 'new_registration', role);
 
-                // Send welcome email to new user; track success in Firebase for admin follow-up
-                const welcomeSent = await sendWelcomeEmail(name, email);
-                database.ref('userProfiles/' + user.uid).update({ welcomeEmailSent: welcomeSent }).catch(() => {});
-
                 // Remove any admin-created manual_ profile for this email (fire-and-forget)
                 cleanupManualProfile(email).catch(() => {});
 
@@ -1073,11 +1069,6 @@
                 fetch(API_URL + "&" + params.toString(), { mode: "no-cors" }).catch(() => {});
 
                 const name = user.displayName || user.email.split("@")[0];
-                // Await (bounded) so the flag is written before the page unloads.
-                try {
-                    const sent = await Promise.race([sendWelcomeEmail(name, user.email), new Promise(r => setTimeout(() => r(false), 4000))]);
-                    if (sent) await database.ref("userProfiles/" + user.uid).update({ welcomeEmailSent: true });
-                } catch (e) {}
                 sendEmailNotification(name, user.email, user.email, "new_registration", roleData.label).catch(() => {});
                 // Remove any admin-created manual_ profile for this email (fire-and-forget)
                 cleanupManualProfile(user.email).catch(() => {});
@@ -1197,30 +1188,6 @@
                 await Promise.all(deletions);
             } catch (e) {
                 console.warn('Manual profile cleanup failed:', e);
-            }
-        }
-
-        // Send welcome email to new user — returns true if sent, false if all methods failed
-        async function sendWelcomeEmail(name, email) {
-            if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') return false;
-
-            try {
-                const templateParams = {
-                    to_name: name,
-                    to_email: email,
-                    reply_to: email,
-                    login_link: 'https://bendbsn.com',
-                    message: `Your BendBSN account has been successfully created!\n\nPlease use your email address (${email}) and the password you created to login.\n\nClick the link below to login to your account.`
-                };
-
-                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
-                return true;
-            } catch (error) {
-                console.error('Failed to send welcome email:', error);
-                // No FormSubmit fallback: it only delivers to addresses that confirmed
-                // its activation email, which a new user's address never has. Returning
-                // false leaves welcomeEmailSent false so sendDailyWelcomeEmails retries.
-                return false;
             }
         }
 

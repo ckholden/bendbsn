@@ -117,11 +117,13 @@
 [data-theme="dark"] .toast-warning { border-left-color: var(--clx-warning); }
 [data-theme="dark"] .toast-info    { border-left-color: var(--clx-info); }
 
-/* Mobile: bottom center */
+/* Mobile: bottom center, 8px above the bottom bar (its height includes
+   the home-indicator area) and above any page bar that sits on it:
+   RN Notes sets --clx-toast-lift to its action bar's height. */
 @media (max-width: 480px) {
     #toastContainer {
         top: auto;
-        bottom: 72px;
+        bottom: calc(var(--clx-botnav-h, 64px) + var(--clx-toast-lift, 0px) + 8px);
         left: 12px;
         right: 12px;
         width: auto;

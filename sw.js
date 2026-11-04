@@ -1,6 +1,6 @@
 // BendBSN Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v235';
+const CACHE_VERSION = 'v236';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -37,6 +37,9 @@ const OFFLINE_URLS = [
     '/shared/smart-phrases.js',
     '/shared/affirmations.js',
     '/shared/fonts/bricolage-grotesque-v1-latin.woff2',
+    '/shared/nav.css',
+    '/shared/nav.js',
+    '/shared/nav.template.html',
     '/manifest.json',
     '/logo.svg',
     '/logo-dark.svg',

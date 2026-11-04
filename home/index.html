@@ -29,6 +29,8 @@
     <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <link rel="stylesheet" href="/shared/app-shell.css">
+    <link rel="stylesheet" href="/shared/nav.css">
+    <script src="/shared/nav.js" defer></script>
     <title>BendBSN — Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -585,13 +587,19 @@
             .dash-btn { min-height: 44px; }
         }
 
+        /* Push the page below the fixed alert/FYI banners while they show
+           (as /careplan/ and /sbar/ do), so they never cover the nav */
+        body.has-alert .site-header, body.has-fyi .site-header { margin-top: 50px; }
+        body.has-alert.has-fyi .site-header { margin-top: 100px; }
+
         /* PWA Install Banner */
         #pwaBanner {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            z-index: 1500;
+            /* just under the shared nav (900), so the More sheet opens over it */
+            z-index: 890;
             background: var(--clx-bg-surface, #fff);
             border-top: 1px solid var(--clx-border, #e2e8f0);
             box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
@@ -602,6 +610,10 @@
             animation: pwaBannerSlideUp 0.35s ease;
         }
         #pwaBanner.visible { display: flex; }
+        /* Sit on top of the bottom bar (shared/nav.css, below 64em) */
+        @media (max-width: 63.99em) {
+            #pwaBanner { bottom: var(--clx-botnav-h, calc(64px + env(safe-area-inset-bottom, 0px))); }
+        }
         #pwaBanner img { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
         #pwaBanner .pwa-banner-text { flex: 1; min-width: 0; }
         #pwaBanner .pwa-banner-title { font-weight: 600; font-size: 14px; color: var(--clx-text-primary, #1a2532); line-height: 1.3; }
@@ -683,92 +695,65 @@
         [data-theme="dark"] #iosModalGotIt { background: #f4f4f5; color: #18181b; }
     </style>
 </head>
-<body>
+<body class="clx-has-botnav">
     <!-- Site header -->
-    <header class="site-header">
-        <a href="/home/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo" onerror="this.src='/logo-mark.svg'"></a>
+    <!-- clx-nav:start -->
+    <!-- Written by scripts/sync-nav.mjs from shared/nav.template.html: edit the template, not this copy. Icons: Lucide, ISC licence (notice in the template). -->
+    <a class="clx-skip" href="#main">Skip to main content</a>
+    <header class="site-header clx-topbar">
+        <a href="/home/" class="logo-link clx-logo">
+            <svg class="clx-logo-mark" viewBox="0 0 48 48" width="30" height="30" aria-hidden="true" focusable="false"><circle class="clx-logo-badge" cx="24" cy="24" r="22"/><path class="clx-logo-sky" d="M6 33 L13 26 L17 29 L24 17 L30 26 L34 22 L42 33"/><rect class="clx-logo-cross" x="32.5" y="8" width="4" height="10" rx="1"/><rect class="clx-logo-cross" x="29.5" y="11" width="10" height="4" rx="1"/></svg>
+            <span class="clx-wordmark">BendBSN</span><span class="clx-vh"> home</span>
+        </a>
+        <nav class="clx-topnav" aria-label="Main">
+            <a class="clx-toplink" href="/home/" data-nav="home" aria-current="page"><span class="clx-toptext" data-label="Home">Home</span></a>
+            <a class="clx-toplink" href="/app/" data-nav="app"><span class="clx-toptext" data-label="RN Notes">RN Notes</span></a>
+            <a class="clx-toplink" href="/sbar/" data-nav="sbar"><span class="clx-toptext" data-label="SBAR Handoff">SBAR Handoff</span></a>
+            <a class="clx-toplink" href="/careplan/" data-nav="careplan"><span class="clx-toptext" data-label="Care Plans">Care Plans</span></a>
+            <a class="clx-toplink" href="/clinical/" data-nav="clinical"><span class="clx-toptext" data-label="Clinical Packet">Clinical Packet</span></a>
+            <a class="clx-toplink" href="/resources/" data-nav="resources"><span class="clx-toptext" data-label="Resources">Resources</span></a>
+            <button type="button" class="clx-toplink clx-more-btn" aria-expanded="false" aria-controls="clxMore"><span class="clx-toptext" data-label="More">More</span><svg class="clx-ico clx-chev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
+        </nav>
+        <div class="clx-more-backdrop" hidden></div>
+        <div id="clxMore" class="clx-more" hidden>
+            <div class="clx-more-head">
+                <span class="clx-more-title">More</span>
+                <button type="button" class="clx-more-close" data-action="close" aria-label="Close"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
+            <div class="clx-more-group">
+                <a class="clx-more-item clx-more-mobile" href="/sbar/" data-nav="sbar"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg><span>SBAR Handoff</span></a>
+                <a class="clx-more-item clx-more-mobile" href="/careplan/" data-nav="careplan"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg><span>Care Plans</span></a>
+                <a class="clx-more-item" href="/rotationlog/" data-nav="rotationlog"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><path d="M17.5 17.5 16 16.3V14"/><circle cx="16" cy="16" r="6"/></svg><span>Rotation Log</span></a>
+                <a class="clx-more-item" href="/apa/" id="apaMenuLink" data-nav="apa"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg><span>APA Generator</span></a>
+                <a class="clx-more-item clx-more-mobile" href="/profile/" data-nav="profile"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg><span>Profile</span></a>
+                <a class="clx-more-item" href="/admin/" data-nav="admin" data-admin hidden><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg><span>Admin</span></a>
+            </div>
+            <div class="clx-more-group">
+                <button type="button" class="clx-more-item" data-action="theme" aria-pressed="false"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Dark theme</span><span class="clx-switch" aria-hidden="true"></span></button>
+                <button type="button" class="clx-more-item" id="installPwaBtn" data-action="install" hidden><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg><span>Install app</span></button>
+                <button type="button" class="clx-more-item" data-action="feedback"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Feedback</span></button>
+                <button type="button" class="clx-more-item" data-action="lock"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Lock screen</span></button>
+                <button type="button" class="clx-more-item" data-action="logout"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span>Log out</span></button>
+            </div>
+        </div>
+        <a class="clx-profile" href="/profile/" data-nav="profile"><span class="clx-avatar" aria-hidden="true"><svg class="clx-ico" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="9" r="3.5"/><path d="M5.5 19.5v-.5a3.5 3.5 0 0 1 3.5-3.5h6a3.5 3.5 0 0 1 3.5 3.5v.5"/></svg></span><span class="clx-profile-label clx-toptext" data-label="Profile">Profile</span></a>
     </header>
+    <nav class="clx-botnav" aria-label="Main (bottom bar)">
+        <a class="clx-botlink" href="/home/" data-nav="home" aria-current="page"><span class="clx-botpill"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="clx-botlabel">Home</span></a>
+        <a class="clx-botlink" href="/app/" data-nav="app"><span class="clx-botpill"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span><span class="clx-botlabel">Notes</span></a>
+        <a class="clx-botlink" href="/clinical/" data-nav="clinical"><span class="clx-botpill"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span><span class="clx-botlabel">Packet</span></a>
+        <a class="clx-botlink" href="/resources/" data-nav="resources"><span class="clx-botpill"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span><span class="clx-botlabel">Refs</span></a>
+        <button type="button" class="clx-botlink clx-more-btn" aria-expanded="false" aria-controls="clxMore"><span class="clx-botpill"><svg class="clx-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg></span><span class="clx-botlabel">More</span></button>
+    </nav>
+    <!-- clx-nav:end -->
 
     <!-- Toast container -->
 
     <!-- App Shell -->
     <div class="clx-shell">
 
-    <!-- Left Sidebar (desktop only) -->
-    <aside class="clx-sidebar" id="appSidebar" role="navigation" aria-label="App navigation">
-        <div class="clx-sidebar-section">Home</div>
-        <a href="/home/" class="clx-sidebar-item active" data-page="home">
-            <span class="clx-sidebar-icon">&#127968;</span>
-            <span class="clx-sidebar-label">Home</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Documentation</div>
-        <a href="/app/" class="clx-sidebar-item" data-page="app">
-            <span class="clx-sidebar-icon">&#128221;</span>
-            <span class="clx-sidebar-label">RN Notes</span>
-        </a>
-        <a href="/sbar/" class="clx-sidebar-item" data-page="sbar">
-            <span class="clx-sidebar-icon">&#128222;</span>
-            <span class="clx-sidebar-label">SBAR Handoff</span>
-        </a>
-        <a href="/careplan/" class="clx-sidebar-item" data-page="careplan">
-            <span class="clx-sidebar-icon">&#128210;</span>
-            <span class="clx-sidebar-label">Care Plans</span>
-        </a>
-        <a href="/rotationlog/" class="clx-sidebar-item" data-page="rotationlog">
-            <span class="clx-sidebar-icon">&#128336;</span>
-            <span class="clx-sidebar-label">Rotation Log</span>
-        </a>
-        <a href="/clinical/" class="clx-sidebar-item" data-page="clinical">
-            <span class="clx-sidebar-icon">&#128203;</span>
-            <span class="clx-sidebar-label">Clinical Packet</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Reference</div>
-        <a href="/resources/" class="clx-sidebar-item" data-page="resources">
-            <span class="clx-sidebar-icon">&#128218;</span>
-            <span class="clx-sidebar-label">Resources</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Tools</div>
-        <a href="/apa/" id="apaMenuLink" class="clx-sidebar-item" data-page="apa">
-            <span class="clx-sidebar-icon">&#128196;</span>
-            <span class="clx-sidebar-label">APA Generator</span>
-        </a>
-
-        <div class="clx-sidebar-section" style="margin-top:8px;">Account</div>
-        <a href="/profile/" class="clx-sidebar-item" data-page="profile">
-            <span class="clx-sidebar-icon">&#128100;</span>
-            <span class="clx-sidebar-label">Profile</span>
-        </a>
-        <button class="clx-sidebar-item" onclick="toggleDarkMode()">
-            <span class="clx-sidebar-icon" id="sidebarThemeIcon">&#127769;</span>
-            <span class="clx-sidebar-label">Theme</span>
-        </button>
-        <button class="clx-sidebar-item" onclick="lockScreen()">
-            <span class="clx-sidebar-icon">&#128274;</span>
-            <span class="clx-sidebar-label">Lock</span>
-        </button>
-        <button class="clx-sidebar-item" id="installPwaBtn" onclick="showInstallPrompt()" style="display:none" aria-label="Install app">
-            <span class="clx-sidebar-icon">&#128241;</span>
-            <span class="clx-sidebar-label">Install App</span>
-        </button>
-        <button class="clx-sidebar-item" onclick="openTicketModal()">
-            <span class="clx-sidebar-icon">&#127915;</span>
-            <span class="clx-sidebar-label">Feedback</span>
-        </button>
-        <button class="clx-sidebar-item" onclick="logout()">
-            <span class="clx-sidebar-icon">&#128682;</span>
-            <span class="clx-sidebar-label">Logout</span>
-        </button>
-        <button class="clx-sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle sidebar">
-            <span class="clx-sidebar-icon" id="sidebarToggleIcon">&#9654;</span>
-            <span class="clx-sidebar-toggle-label">Expand</span>
-        </button>
-    </aside>
-
     <!-- Main content -->
-    <main class="clx-main" role="main">
+    <main class="clx-main" id="main" role="main" tabindex="-1">
 
     <!-- Alert / FYI banners -->
     <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;animation:softFlashAlert 2s ease-in-out infinite;">
@@ -876,14 +861,6 @@
     </div><!-- /dash-page -->
 
     </main><!-- /clx-main -->
-
-    <!-- Mobile bottom nav — visible only on small screens via app-shell.css -->
-        <nav class="clx-mobile-nav" aria-label="Mobile navigation">
-        <a href="/home/" class="clx-mobile-nav-item active" aria-label="Home"><span class="clx-mobile-nav-icon">&#127968;</span><span>Home</span></a>
-        <a href="/app/" class="clx-mobile-nav-item" aria-label="RN Notes"><span class="clx-mobile-nav-icon">&#128221;</span><span>Notes</span></a>
-        <a href="/clinical/" class="clx-mobile-nav-item" aria-label="Clinical Packet"><span class="clx-mobile-nav-icon">&#128203;</span><span>Packet</span></a>
-        <a href="/resources/" class="clx-mobile-nav-item" aria-label="Resources"><span class="clx-mobile-nav-icon">&#128218;</span><span>Refs</span></a>
-    </nav>
 
     <!-- PWA Install Banner -->
     <div id="pwaBanner" role="complementary" aria-label="Install app">
@@ -1258,10 +1235,8 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const icon = document.getElementById('themeMenuIcon');
             const text = document.getElementById('themeMenuText');
-            const sidebarIcon = document.getElementById('sidebarThemeIcon');
             if (icon) icon.textContent = isDark ? '☀️' : '🌙';
             if (text) text.textContent = 'Theme';
-            if (sidebarIcon) sidebarIcon.textContent = isDark ? '☀️' : '🌙';
         }
         initTheme();
 
@@ -1533,32 +1508,6 @@
 
         // Initialize reminders on load
         renderReminderList();
-
-        // ========== SIDEBAR ==========
-        (function initSidebar() {
-            document.body.classList.add('has-sidebar');
-            const sidebar = document.getElementById('appSidebar');
-            if (!sidebar) return;
-            if (localStorage.getItem('bendbsn_sidebar_collapsed') !== 'false') {
-                sidebar.classList.add('collapsed');
-                const icon = document.getElementById('sidebarToggleIcon');
-                if (icon) icon.textContent = '▶';
-            } else {
-                const label = document.querySelector('.clx-sidebar-toggle-label');
-                if (label) label.textContent = 'Collapse';
-            }
-        })();
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('appSidebar');
-            if (!sidebar) return;
-            const collapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('bendbsn_sidebar_collapsed', String(collapsed));
-            const icon = document.getElementById('sidebarToggleIcon');
-            if (icon) icon.textContent = collapsed ? '▶' : '◀';
-            const label = document.querySelector('.clx-sidebar-toggle-label');
-            if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
-        }
     </script>
     <script src="/shared/toast.js"></script>
     <script src="/shared/header.js"></script>
@@ -1616,7 +1565,6 @@
         function showPwaBanner() {
             var el = document.getElementById('pwaBanner');
             if (!el) return;
-            el.style.bottom = window.innerWidth <= 480 ? '56px' : '';
             el.classList.add('visible');
         }
 
