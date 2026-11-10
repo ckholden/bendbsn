@@ -10,15 +10,15 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="theme-color" content="#0d1f2d">
+    <meta name="theme-color" content="#23282B">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
-    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <!-- Preconnect hints for faster external resource loading -->
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
@@ -28,360 +28,681 @@
     <link rel="stylesheet" href="/shared/toast.css">
     <link rel="stylesheet" href="/shared/clinical-ui.css">
     <title>BendBSN — Nursing Documentation</title>
+    <meta name="description" content="Clinical documentation practice for nursing students: RN notes, SBAR handoffs, care plans and clinical packets.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="BendBSN">
+    <meta property="og:title" content="BendBSN — Nursing Documentation">
+    <meta property="og:description" content="Clinical documentation practice for nursing students: RN notes, SBAR handoffs, care plans and clinical packets.">
+    <meta property="og:url" content="https://bendbsn.com/">
+    <meta property="og:image" content="https://bendbsn.com/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The BendBSN badge, a mountain skyline with a gold cross, next to the words BendBSN and &quot;Clinical documentation practice for nursing students&quot;">
+    <meta name="twitter:card" content="summary_large_image">
     <!-- Firebase must load synchronously on login page for auth to work -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
+        /* =========================================================
+           Login, C High Desert (redesign push 11).
+           Colours, the type family, field lines and the focus ring come
+           from /shared/clinical-ui.css (linked above): light tokens on
+           :root, dark on :root[data-theme="dark"], which the head script
+           sets from bendbsn_theme or the device setting. Note that
+           clinical-ui.css forces the field padding, font size and radius
+           (important flag), so this page only adds height and width,
+           and sets label text size on an inner span (its label font
+           size is forced too, below 769px).
+           Only the page's own roles are defined here.
+           ========================================================= */
+        :root {
+            --login-hero-bg: var(--clx-accent, #2F6B5F);      /* Juniper */
+            --login-hero-ink: var(--clx-bg-canvas, #FBFCFC);  /* Snow: 6.02 on Juniper */
+            --login-ground: var(--clx-bg-canvas, #FBFCFC);    /* what the ridge meets */
+            --login-ridge-tone: #3F8A7B;                      /* desktop ridge, the badge-on-dark tone */
+            --login-control-h: 48px;
+            --login-gutter: 16px;
+        }
+        :root[data-theme="dark"] {
+            --login-hero-bg: var(--clx-accent-subtle, #1F3833);
+            --login-hero-ink: var(--clx-text-primary, #ECEFED);
+            --login-ridge-tone: #2B4A43;
+        }
+        /* clinical-ui.css paints the body with the surface colour up to 480px */
+        @media (max-width: 480px) {
+            :root { --login-ground: var(--clx-bg-surface, #FFFFFF); }
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
+            line-height: 1.45;
+            color: var(--clx-text-primary);
+        }
+        .site-header { padding-left: var(--login-gutter); padding-right: var(--login-gutter); }
+        .svg-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+        /* Layout: one column on phones (full bleed), a card from 600px,
+           two panels (hero left, form right) from 1024px. */
+        .login-main {
+            flex: 1 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
         }
         .login-container {
-            background: var(--clx-bg-surface, #ffffff);
-            border: 1px solid var(--clx-border, #d1dce8);
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Hero: a Juniper band whose lower edge is the BendBSN skyline
+           (the canonical path in icons/src/mark.svg, filled). */
+        .login-hero {
+            position: relative;
+            min-height: 120px;
+            padding: 20px var(--login-gutter) 52px;
+            background: var(--login-hero-bg);
+            color: var(--login-hero-ink);
             overflow: hidden;
+        }
+        .login-hero h1 {
+            max-width: 24ch;
+            font-size: 1.3125rem;
+            line-height: 1.15;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .login-hero-sub { display: none; }
+        .login-ridge {
+            position: absolute;
+            left: 0;
+            bottom: -1px;
+            display: block;
             width: 100%;
-            max-width: 420px;
+            height: 40px;
         }
-        .login-header {
-            background: var(--clx-accent, #0f7490);
-            color: var(--clx-accent-text);
-            padding: 32px 30px;
-            text-align: center;
-        }
-        .login-header h1 { font-size: 24px; margin-bottom: 6px; }
-        .login-header p { opacity: 0.88; font-size: 13px; }
-        .login-header .icon { font-size: 44px; margin-bottom: 12px; }
-        .login-form { padding: 32px 30px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: 600; color: var(--clx-text-primary, #1a2532); margin-bottom: 8px; font-size: 14px; }
-        input[type="text"], input[type="password"], input[type="email"] {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--clx-border, #d1dce8);
-            border-radius: 8px;
-            font-size: 16px;
-            font-family: inherit;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            background: var(--clx-bg-surface, #fff);
-            color: var(--clx-text-primary, #1a2532);
-        }
-        input:focus { outline: none; border-color: var(--clx-accent, #0f7490); box-shadow: 0 0 0 3px rgba(var(--clx-accent-rgb, 15, 116, 144), 0.12); background: var(--clx-bg-surface, #fff); }
-        .btn {
-            width: 100%;
-            padding: 14px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.15s;
-            background: var(--clx-accent, #0f7490);
-            color: var(--clx-accent-text);
-            margin-top: 8px;
-        }
-        .btn:hover { opacity: 0.88; }
-        .btn:active { opacity: 0.8; }
-        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .btn-secondary { background: var(--clx-bg-surface-2); color: var(--clx-text-primary); border: 1px solid var(--clx-border); margin-top: 8px; }
-        .btn-secondary:hover { opacity: 0.8; }
-        .error-message {
-            background: var(--clx-danger-bg); border: 1px solid rgba(220,38,38,0.25); color: var(--clx-danger); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 10px;
-            margin-bottom: 20px;
+        .login-ridge-fill { fill: var(--login-ground); }
+        .login-ridge-line {
             display: none;
+            fill: none;
+            stroke: var(--login-hero-ink);
+            stroke-width: 3;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
         }
-        .error-message.show { display: block; animation: shake 0.5s ease; }
+
+        /* Form panel */
+        .login-panel { padding: 20px var(--login-gutter) 8px; }
+        .login-panel h2 {
+            font-size: 1.3125rem;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .login-notice {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--clx-quiet);
+            color: var(--clx-quiet-text);
+            font-size: 0.9375rem;
+            line-height: 1.4;
+        }
+        .login-form { margin-top: 20px; }
+
+        /* Messages. Each pair sits in an always-present aria-live region,
+           so showing one is announced. Danger text with an icon; the icon
+           is a mask, because the page JS sets the message as textContent. */
+        .error-message,
         .success-message {
-            background: var(--clx-success-bg); border: 1px solid rgba(22,163,74,0.25); color: var(--clx-success); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 10px;
-            margin-bottom: 20px;
             display: none;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid currentColor;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            line-height: 1.4;
+            font-weight: 500;
         }
-        .success-message.show { display: block; }
+        .error-message {
+            background: var(--clx-danger-bg);
+            color: var(--clx-danger);
+            --login-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10' cy='10' r='8'/%3E%3Cpath d='M10 6v4.5M10 13.75v.01'/%3E%3C/svg%3E");
+        }
+        .success-message {
+            background: var(--clx-success-bg);
+            color: var(--clx-success-text);
+            --login-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='10' cy='10' r='8'/%3E%3Cpath d='M6.5 10.25l2.4 2.4 4.6-5'/%3E%3C/svg%3E");
+        }
+        .error-message::before,
+        .success-message::before {
+            content: '';
+            flex: none;
+            width: 20px;
+            height: 20px;
+            margin-top: 1px;
+            background: currentColor;
+            -webkit-mask: var(--login-icon) center / 20px 20px no-repeat;
+            mask: var(--login-icon) center / 20px 20px no-repeat;
+        }
+        /* The icon's alt text, so a screen reader hears "Error:" before the
+           message. Chrome only exposes alt text on non-empty content, hence
+           the zero-width space. Browsers without CSS alt text drop this
+           declaration and keep the plain '' above. */
+        .error-message::before { content: '\200B' / 'Error: '; }
+        .error-message.show,
+        .success-message.show { display: flex; margin-bottom: 16px; }
+        @media (prefers-reduced-motion: no-preference) {
+            .error-message.show { animation: shake 0.4s ease; }
+        }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
         }
-        .footer-text { text-align: center; color: var(--clx-text-muted); font-size: 12px; margin-top: 20px; }
-        .modal-body select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--clx-border);
-            border-radius: 8px;
-            font-size: 16px;
-            font-family: inherit;
-            background: var(--clx-bg-surface);
+
+        /* Fields */
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
             color: var(--clx-text-primary);
-            margin-bottom: 0;
         }
-        .class-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.08);
-            background: color-mix(in srgb, var(--clx-accent-text) 8%, transparent);
-            color: var(--clx-accent-text); padding: 4px 14px; border-radius: 20px;
-            font-size: 12px; font-weight: 600; margin-top: 8px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-color: color-mix(in srgb, var(--clx-accent-text) 30%, transparent);
+        .field-label { font-size: 0.9375rem; line-height: 1.3; }
+        .login-container input[type="email"],
+        .login-container input[type="password"],
+        .modal input[type="text"],
+        .modal input[type="email"],
+        .modal input[type="password"],
+        .modal select {
+            width: 100%;
+            min-height: var(--login-control-h);
         }
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px;
-            align-items: center; justify-content: center;
+        .field-hint {
+            margin-top: 6px;
+            font-size: 0.8125rem;
+            line-height: 1.4;
+            color: var(--clx-text-muted);
         }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: var(--clx-bg-surface, #fff);
-            border-radius: 12px; max-width: 450px; width: 100%;
-            max-height: 90vh; overflow-y: auto;
+        .check-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: var(--clx-text-secondary);
+            cursor: pointer;
         }
-        .modal-header {
-            background: var(--clx-accent, #0f7490);
-            color: var(--clx-accent-text); padding: 22px 25px; text-align: center; border-radius: 12px 12px 0 0;
+        .check-row span { font-size: 0.8125rem; line-height: 1.45; }
+        .check-row input {
+            flex: none;
+            width: 22px;
+            height: 22px;
+            margin-top: 1px;
+            accent-color: var(--clx-accent);
+            cursor: pointer;
         }
-        .modal-header h2 { margin: 0; font-size: 20px; }
-        .modal-body { padding: 24px 28px; }
-        .link-btn { background: none; border: none; color: var(--clx-accent, #0f7490); cursor: pointer; text-decoration: underline; font-size: 14px; }
-        .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .btn-google {
-            background: var(--clx-bg-surface);
-            color: var(--clx-text-primary, #1a2532);
-            border: 1px solid var(--clx-border, #d1dce8);
+        .check-row strong { color: var(--clx-text-primary); }
+        .check-row a {
+            color: var(--clx-link);
+            text-decoration: underline;
+            text-underline-offset: 0.15em;
+        }
+
+        /* Buttons. The page selectors outrank clinical-ui.css's button.btn.
+           Primary = Juniper fill (dark: the light action fill, dark text);
+           Google and Cancel = a surface button with the field line. */
+        .btn {
+            width: 100%;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .login-container .btn,
+        .modal .btn {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            font-size: 15px;
-            font-weight: 500;
-            margin-top: 8px;
+            min-height: var(--login-control-h);
+            padding: 10px 20px;
+            border: 1px solid var(--clx-accent);
+            border-radius: 10px;
+            background: var(--clx-accent);
+            color: var(--clx-accent-text);
+            font-size: 1.0625rem;
+            font-weight: 600;
+            line-height: 1.2;
         }
-        .btn-google:hover { background: var(--clx-bg-surface-2, #f5f8fa); opacity: 1; }
-        .btn-google svg { flex-shrink: 0; }
+        .login-container .btn:hover,
+        .modal .btn:hover {
+            background: var(--clx-accent-hover);
+            border-color: var(--clx-accent-hover);
+        }
+        .login-container .btn-google,
+        .modal .btn-google,
+        .modal .btn-quiet {
+            background: var(--clx-bg-surface);
+            border-color: var(--clx-border-field);
+            color: var(--clx-text-primary);
+            font-size: 1rem;
+        }
+        .login-container .btn-google:hover,
+        .modal .btn-google:hover,
+        .modal .btn-quiet:hover {
+            background: var(--clx-bg-hover);
+            border-color: var(--clx-text-muted);
+        }
+        .btn-google svg { flex: none; }
+        .loading {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .or-divider {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 16px 0;
-            color: var(--clx-text-muted, #888);
-            font-size: 13px;
+            margin: 16px 0 8px;
+            font-size: 0.8125rem;
+            color: var(--clx-text-muted);
         }
-        .or-divider::before, .or-divider::after {
+        .or-divider::before,
+        .or-divider::after {
             content: '';
             flex: 1;
             height: 1px;
-            background: var(--clx-border, #d1dce8);
+            background: var(--clx-border-strong);
+        }
+        .login-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 0 16px;
+            margin: 12px -8px 0;
+        }
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
+            padding: 0 8px;
+            border: none;
+            background: none;
+            color: var(--clx-link);
+            font-size: 0.9375rem;
+            font-weight: 500;
+            text-decoration: underline;
+            text-underline-offset: 0.15em;
+            cursor: pointer;
+        }
+        .link-btn:hover { color: var(--clx-link-hover); }
+
+        .login-footer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0 8px;
+            padding: 8px var(--login-gutter) 16px;
+            font-size: 0.8125rem;
+        }
+        .login-footer a {
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
+            padding: 0 8px;
+            color: var(--clx-text-muted);
+            text-decoration: underline;
+            text-underline-offset: 0.15em;
+        }
+        .login-footer a:hover { color: var(--clx-text-primary); opacity: 1; }
+
+        /* Card from 600px */
+        @media (min-width: 37.5em) {
+            :root {
+                --login-gutter: 24px;
+                --login-ground: var(--clx-bg-surface, #FFFFFF);
+            }
+            .login-main { justify-content: center; padding: 32px 24px; }
+            .login-container {
+                max-width: 480px;
+                background: var(--clx-bg-surface);
+                border: 1px solid var(--clx-border);
+                border-radius: 14px;
+                overflow: hidden;
+            }
+            .login-hero { min-height: 136px; padding: 28px 32px 60px; }
+            .login-ridge { height: 48px; }
+            .login-panel { padding: 24px 32px 16px; }
+        }
+        /* Two panels from 1024px (64em, the shared nav's switch) */
+        @media (min-width: 64em) {
+            :root { --login-control-h: 44px; }
+            .login-container {
+                max-width: 960px;
+                min-height: 560px;
+                flex-direction: row;
+            }
+            .login-hero {
+                flex: 0 0 44%;
+                padding: 48px 40px 172px;
+            }
+            .login-hero h1 {
+                font-size: 2.5rem;
+                line-height: 1.05;
+                letter-spacing: -0.02em;
+            }
+            .login-hero-sub {
+                display: block;
+                max-width: 34ch;
+                margin-top: 16px;
+                font-size: 1.0625rem;
+                line-height: 1.45;
+            }
+            .login-ridge { height: 136px; }
+            .login-ridge-fill { fill: var(--login-ridge-tone); }
+            .login-ridge-line { display: inline; }
+            .login-panel {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 48px 56px;
+            }
+            .login-panel-inner { width: 100%; max-width: 400px; }
+            .login-panel h2 { font-size: 1.75rem; line-height: 1.15; }
         }
 
-        /* PWA Install Banner */
+        /* Modals: registration, password reset, Google role */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            padding: 16px;
+            align-items: center;
+            justify-content: center;
+            background: rgba(18, 21, 23, 0.6);
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            width: 100%;
+            max-width: 440px;
+            max-height: calc(100vh - 32px);
+            max-height: calc(100dvh - 32px);
+            overflow-y: auto;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            border: 1px solid var(--clx-border);
+            border-radius: 14px;
+            box-shadow: var(--clx-shadow-xl);
+        }
+        .modal-header { padding: 24px 24px 0; }
+        .modal-header h2 {
+            font-size: 1.3125rem;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .modal-body { padding: 12px 24px 24px; }
+        .modal-intro {
+            margin-bottom: 16px;
+            font-size: 0.9375rem;
+            color: var(--clx-text-secondary);
+        }
+
+        /* PWA install banner */
         #pwaBanner {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             z-index: 1500;
-            background: var(--clx-bg-surface, #fff);
-            border-top: 1px solid var(--clx-border, #e2e8f0);
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
-            padding: 12px 16px;
             display: none;
             align-items: center;
-            gap: 12px;
-            animation: pwaBannerSlideUp 0.35s ease;
+            gap: 8px 12px;
+            padding: 12px 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            background: var(--clx-bg-surface);
+            border-top: 1px solid var(--clx-border);
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
         }
-        #pwaBanner.visible { display: flex; }
+        #pwaBanner.visible { display: flex; flex-wrap: wrap; }
         #pwaBanner img { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
-        #pwaBanner .pwa-banner-text { flex: 1; min-width: 0; }
-        #pwaBanner .pwa-banner-title { font-weight: 600; font-size: 14px; color: var(--clx-text-primary, #1a2532); line-height: 1.3; }
-        #pwaBanner .pwa-banner-sub { font-size: 12px; color: var(--clx-text-muted, #6b7280); margin-top: 2px; }
-        #pwaBanner .pwa-banner-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        /* The text keeps at least 10rem; when the iOS label ("Add to Home
+           Screen") leaves less, the buttons wrap to a second row. */
+        #pwaBanner .pwa-banner-text { flex: 1 1 10rem; min-width: 0; }
+        #pwaBanner .pwa-banner-title { font-weight: 600; font-size: 0.9375rem; line-height: 1.3; color: var(--clx-text-primary); }
+        #pwaBanner .pwa-banner-sub { margin-top: 2px; font-size: 0.8125rem; line-height: 1.35; color: var(--clx-text-muted); }
+        #pwaBanner .pwa-banner-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto; }
         #pwaBannerBtn {
-            padding: 8px 14px;
-            background: #18181b;
-            color: #fff;
+            min-height: 44px;
+            padding: 0 16px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            background: var(--clx-text-primary);   /* Basalt; Snow in dark */
+            color: var(--clx-bg-canvas);
+            font-size: 0.9375rem;
             font-weight: 600;
-            cursor: pointer;
             white-space: nowrap;
+            cursor: pointer;
         }
         #pwaBannerBtn:hover { opacity: 0.88; }
         #pwaBannerClose {
-            padding: 6px 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 10px;
             background: none;
-            border: 1px solid var(--clx-border, #e2e8f0);
-            border-radius: 6px;
-            font-size: 14px;
+            color: var(--clx-text-muted);
             cursor: pointer;
-            color: var(--clx-text-muted, #6b7280);
-            line-height: 1;
         }
-        #pwaBannerClose:hover { background: var(--clx-bg-surface-2, #f1f5f9); }
+        #pwaBannerClose:hover { background: var(--clx-bg-hover); color: var(--clx-text-primary); }
+        @media (max-width: 359px) {
+            #pwaBanner img { display: none; }
+        }
         @keyframes pwaBannerSlideUp {
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        [data-theme="dark"] #pwaBannerBtn { background: #f4f4f5; color: #18181b; }
 
-        /* iOS Install Guide Modal */
+        /* iOS install guide */
         #iosInstallModal {
             position: fixed;
             inset: 0;
             z-index: 10004;
-            background: rgba(0,0,0,0.5);
             display: none;
             align-items: flex-end;
             justify-content: center;
+            background: rgba(18, 21, 23, 0.6);
         }
         #iosInstallModal.open { display: flex; }
         .ios-modal-card {
-            background: var(--clx-bg-surface, #fff);
-            border-radius: 16px 16px 0 0;
-            padding: 24px 20px 32px;
             width: 100%;
             max-width: 480px;
-            animation: iosModalSlideUp 0.3s ease;
+            padding: 24px 20px;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+            border-radius: 14px 14px 0 0;
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
         }
         @keyframes iosModalSlideUp {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
         }
-        .ios-modal-card h3 { font-size: 17px; font-weight: 700; color: var(--clx-text-primary, #1a2532); margin-bottom: 4px; }
-        .ios-modal-sub { font-size: 13px; color: var(--clx-text-muted, #6b7280); margin-bottom: 20px; }
+        .ios-modal-card h3 { margin-bottom: 4px; font-size: 1.0625rem; font-weight: 700; }
+        .ios-modal-sub { margin-bottom: 20px; font-size: 0.8125rem; color: var(--clx-text-muted); }
         .ios-modal-step { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
         .ios-step-num {
-            width: 28px; height: 28px;
-            background: #18181b; color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700; flex-shrink: 0;
+            background: var(--clx-text-primary);
+            color: var(--clx-bg-canvas);
+            font-size: 0.8125rem;
+            font-weight: 700;
         }
-        .ios-step-text { font-size: 14px; color: var(--clx-text-primary, #1a2532); line-height: 1.5; padding-top: 4px; }
+        .ios-step-text { padding-top: 3px; font-size: 0.9375rem; line-height: 1.5; }
         .ios-step-text strong { font-weight: 600; }
         .ios-share-icon { display: inline-flex; vertical-align: middle; margin: 0 3px; }
         #iosModalGotIt {
-            width: 100%; margin-top: 8px; padding: 13px;
-            background: #18181b; color: #fff;
-            border: none; border-radius: 10px;
-            font-size: 15px; font-weight: 600; cursor: pointer;
+            width: 100%;
+            min-height: 48px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 10px;
+            background: var(--clx-text-primary);
+            color: var(--clx-bg-canvas);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
         }
         #iosModalGotIt:hover { opacity: 0.88; }
-        [data-theme="dark"] .ios-step-num { background: #f4f4f5; color: #18181b; }
-        [data-theme="dark"] #iosModalGotIt { background: #f4f4f5; color: #18181b; }
+
+        @media (prefers-reduced-motion: no-preference) {
+            #pwaBanner.visible { animation: pwaBannerSlideUp 0.35s ease; }
+            .ios-modal-card { animation: iosModalSlideUp 0.3s ease; }
+        }
+        @media (forced-colors: active) {
+            .error-message::before,
+            .success-message::before { forced-color-adjust: none; background: CanvasText; }
+            .login-hero { border-bottom: 1px solid CanvasText; }
+        }
     </style>
 </head>
 <body>
     <header class="site-header">
         <a href="/" class="logo-link"><img src="/logo-dark.svg" alt="BendBSN" class="site-logo"></a>
     </header>
-    <div class="login-container" id="loginContainer">
-        <div class="login-header">
-            <div class="icon"><img src="/logo-mark.svg" alt="BendBSN" style="width:80px;height:auto;margin-bottom:8px;"></div>
-            <h1>BendBSN Nursing Documentation</h1>
-            <p>Documentation generation tool & resources</p>
-            <div class="class-badge">BendBSN</div>
-            <p style="margin-top: 15px; font-size: 13px; color: var(--clx-accent-text);">New user? Click the registration link below to create an account.</p>
+    <main class="login-main">
+        <div class="login-container" id="loginContainer">
+            <div class="login-hero">
+                <h1>Clinical documentation practice for nursing students</h1>
+                <p class="login-hero-sub">Write RN notes, SBAR handoffs, care plans and clinical packets in the formats your program uses.</p>
+                <svg class="login-ridge" viewBox="0 -1 48 18" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="login-ridge-fill" d="M0 17 L0 16 L6 16 L13 9 L17 12 L24 0 L30 9 L34 5 L42 16 L48 16 L48 17 Z"/><path class="login-ridge-line" d="M0 16 L6 16 L13 9 L17 12 L24 0 L30 9 L34 5 L42 16 L48 16"/></svg>
+            </div>
+
+            <div class="login-panel">
+                <div class="login-panel-inner">
+                    <h2 id="signInTitle">Sign in to BendBSN</h2>
+                    <p class="login-notice">For education only. Use practice names, never real patient identifiers.</p>
+
+                    <form class="login-form" aria-labelledby="signInTitle" onsubmit="return handleLogin(event)">
+                        <div class="form-status" aria-live="assertive">
+                            <div class="error-message" id="errorMsg"></div>
+                            <div class="success-message" id="successMsg"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="username"><span class="field-label">Email</span></label>
+                            <input type="email" id="username" class="clx-field-lg" name="email" autocomplete="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password"><span class="field-label">Password</span></label>
+                            <input type="password" id="password" class="clx-field-lg" name="password" autocomplete="current-password" required>
+                        </div>
+
+                        <button type="submit" class="btn" id="loginBtn">Sign in</button>
+
+                        <div class="or-divider">or</div>
+
+                        <button type="button" class="btn btn-google" onclick="handleGoogleSignIn()">
+                            <svg width="20" height="20" aria-hidden="true" focusable="false"><use href="#gLogo"/></svg>
+                            Continue with Google
+                        </button>
+                    </form>
+
+                    <div class="login-links">
+                        <button type="button" class="link-btn" onclick="showRegisterModal()">Create an account</button>
+                        <button type="button" class="link-btn" onclick="showForgotPasswordModal()">Forgot password?</button>
+                    </div>
+                </div>
+            </div>
         </div>
+    </main>
 
-        <form class="login-form" onsubmit="return handleLogin(event)">
-            <div class="error-message" id="errorMsg">Invalid username or password.</div>
-            <div class="success-message" id="successMsg"></div>
+    <footer class="login-footer">
+        <a href="/tos/">Terms of Service</a>
+        <a href="/privacy/">Privacy Policy</a>
+    </footer>
 
-            <div class="form-group">
-                <label for="username">Email</label>
-                <input type="email" id="username" name="email" placeholder="Enter your email" autocomplete="email" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-            </div>
-
-            <button type="submit" class="btn" id="loginBtn">Sign In</button>
-
-            <div class="or-divider">or</div>
-
-            <button type="button" class="btn btn-google" onclick="handleGoogleSignIn()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
-                Continue with Google
-            </button>
-
-            <p style="text-align: center; margin-top: 15px;">
-                <button type="button" class="link-btn" onclick="showRegisterModal()">Don't have an account? Register here</button>
-            </p>
-
-            <p style="text-align: center; margin-top: 10px;">
-                <button type="button" class="link-btn" onclick="showForgotPasswordModal()">Forgot your password?</button>
-            </p>
-
-            <p class="footer-text">For nursing student use &nbsp;·&nbsp; <a href="/tos/" style="color:inherit;text-decoration:underline;">Terms</a> &nbsp;·&nbsp; <a href="/privacy/" style="color:inherit;text-decoration:underline;">Privacy</a></p>
-        </form>
-    </div>
+    <!-- Google "G", drawn once and reused by both Google buttons -->
+    <svg class="svg-sprite" aria-hidden="true" focusable="false">
+        <symbol id="gLogo" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></symbol>
+    </svg>
 
     <!-- Registration Modal -->
     <div class="modal" id="registerModal">
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="registerTitle">
             <div class="modal-header">
-                <h2>Create Your Account</h2>
+                <h2 id="registerTitle" tabindex="-1">Create an account</h2>
             </div>
             <div class="modal-body">
-                <div class="error-message" id="regErrorMsg"></div>
-                <div class="success-message" id="regSuccessMsg"></div>
+                <div class="form-status" aria-live="polite">
+                    <div class="error-message" id="regErrorMsg"></div>
+                    <div class="success-message" id="regSuccessMsg"></div>
+                </div>
 
-                <button type="button" class="btn btn-google" onclick="handleGoogleSignIn()" style="margin-bottom: 8px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
-                    Register with Google
+                <button type="button" class="btn btn-google" onclick="handleGoogleSignIn()">
+                    <svg width="20" height="20" aria-hidden="true" focusable="false"><use href="#gLogo"/></svg>
+                    Sign up with Google
                 </button>
-                <div class="or-divider">or register with email</div>
+                <div class="or-divider">or use your email</div>
 
                 <form onsubmit="return handleRegister(event)">
                     <div class="form-group">
-                        <label for="regName">Full Name</label>
-                        <input type="text" id="regName" placeholder="e.g. Jane Smith" required>
+                        <label for="regName"><span class="field-label">Full name</span></label>
+                        <input type="text" id="regName" class="clx-field-lg" placeholder="e.g. Jane Smith" autocomplete="name" required>
                     </div>
                     <div class="form-group">
-                        <label for="regRole">Role</label>
-                        <select id="regRole" required onchange="onRegRoleChange('reg')">
+                        <label for="regRole"><span class="field-label">Role</span></label>
+                        <select id="regRole" class="clx-field-lg" required onchange="onRegRoleChange('reg')">
                             <option value="" disabled selected>Select your role</option>
                         </select>
                     </div>
                     <div id="regYearRow" class="form-group" style="display:none;">
-                        <label for="regYear">Year Level</label>
-                        <select id="regYear"></select>
+                        <label for="regYear"><span class="field-label">Year level</span></label>
+                        <select id="regYear" class="clx-field-lg"></select>
                     </div>
                     <div class="form-group">
-                        <label for="regEmail">Email</label>
-                        <input type="email" id="regEmail" placeholder="your.email@example.com" required>
+                        <label for="regEmail"><span class="field-label">Email</span></label>
+                        <input type="email" id="regEmail" class="clx-field-lg" autocomplete="email" required>
                     </div>
                     <div class="form-group">
-                        <label for="regPassword">Password</label>
-                        <input type="password" id="regPassword" placeholder="Choose a password (min 6 characters)" required minlength="6">
-                        <p style="font-size: 11px; color: var(--clx-text-muted); margin-top: 6px; display: flex; align-items: center; gap: 5px;">
-                            <span style="color: #28a745;">&#128274;</span>
-                            Your password is securely encrypted and never stored in plain text.
-                        </p>
+                        <label for="regPassword"><span class="field-label">Password</span></label>
+                        <input type="password" id="regPassword" class="clx-field-lg" autocomplete="new-password" aria-describedby="regPasswordHint" required minlength="6">
+                        <p class="field-hint" id="regPasswordHint">Use at least 6 characters. Your password is encrypted and never stored in plain text.</p>
                     </div>
 
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: normal; font-size: 12px; color: var(--clx-text-secondary);">
-                            <input type="checkbox" id="regTermsAgree" required style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
-                            <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to the <a href="/tos/" target="_blank" style="color:var(--clx-accent);">Terms of Service</a> and <a href="/privacy/" target="_blank" style="color:var(--clx-accent);">Privacy Policy</a>.</span>
-                        </label>
-                    </div>
+                    <label class="check-row">
+                        <input type="checkbox" id="regTermsAgree" required>
+                        <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to the <a href="/tos/" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+                    </label>
 
-                    <button type="submit" class="btn" id="regBtn">Create Account</button>
-                    <button type="button" class="btn btn-secondary" onclick="hideRegisterModal()">Cancel</button>
+                    <button type="submit" class="btn" id="regBtn">Create account</button>
+                    <button type="button" class="btn btn-quiet" onclick="hideRegisterModal()">Cancel</button>
                 </form>
             </div>
         </div>
@@ -389,24 +710,26 @@
 
     <!-- Forgot Password Modal -->
     <div class="modal" id="forgotPasswordModal">
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="forgotTitle" aria-describedby="forgotIntro">
             <div class="modal-header">
-                <h2>Reset Password</h2>
+                <h2 id="forgotTitle">Reset your password</h2>
             </div>
             <div class="modal-body">
-                <p style="color: var(--clx-text-secondary); margin-bottom: 20px;">Enter the email on your account and we'll send you a link to reset your password.</p>
+                <p class="modal-intro" id="forgotIntro">Enter the email on your account and we'll send you a link to reset your password.</p>
 
-                <div class="error-message" id="forgotErrorMsg"></div>
-                <div class="success-message" id="forgotSuccessMsg"></div>
+                <div class="form-status" aria-live="polite">
+                    <div class="error-message" id="forgotErrorMsg"></div>
+                    <div class="success-message" id="forgotSuccessMsg"></div>
+                </div>
 
                 <form onsubmit="return handleForgotPassword(event)">
                     <div class="form-group">
-                        <label for="forgotEmail">Email Address</label>
-                        <input type="email" id="forgotEmail" placeholder="Enter your email address" required>
+                        <label for="forgotEmail"><span class="field-label">Email</span></label>
+                        <input type="email" id="forgotEmail" class="clx-field-lg" autocomplete="email" required>
                     </div>
 
-                    <button type="submit" class="btn" id="forgotBtn">Send Reset Email</button>
-                    <button type="button" class="btn btn-secondary" onclick="hideForgotPasswordModal()">Cancel</button>
+                    <button type="submit" class="btn" id="forgotBtn">Send reset email</button>
+                    <button type="button" class="btn btn-quiet" onclick="hideForgotPasswordModal()">Cancel</button>
                 </form>
             </div>
         </div>
@@ -415,34 +738,34 @@
 
     <!-- Google Role Selection Modal (for first-time Google users) -->
     <div class="modal" id="googleRoleModal">
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="googleRoleTitle" aria-describedby="googleRoleIntro">
             <div class="modal-header">
-                <h2>Almost there!</h2>
+                <h2 id="googleRoleTitle">One more step</h2>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 20px; color: var(--clx-text-secondary); font-size: 14px;">Welcome! Please tell us a bit about yourself to complete your account setup.</p>
-                <div class="error-message" id="googleRoleErrorMsg"></div>
+                <p class="modal-intro" id="googleRoleIntro">Choose your role to finish setting up your account.</p>
+                <div class="form-status" aria-live="polite">
+                    <div class="error-message" id="googleRoleErrorMsg"></div>
+                </div>
 
                 <div class="form-group">
-                    <label for="googleRRole">Role</label>
-                    <select id="googleRRole" required onchange="onRegRoleChange('googleR')">
+                    <label for="googleRRole"><span class="field-label">Role</span></label>
+                    <select id="googleRRole" class="clx-field-lg" required onchange="onRegRoleChange('googleR')">
                         <option value="" disabled selected>Select your role</option>
                     </select>
                 </div>
                 <div id="googleRYearRow" class="form-group" style="display:none;">
-                    <label for="googleRYear">Year Level</label>
-                    <select id="googleRYear"></select>
+                    <label for="googleRYear"><span class="field-label">Year level</span></label>
+                    <select id="googleRYear" class="clx-field-lg"></select>
                 </div>
 
-                <div style="margin-bottom: 20px;">
-                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: normal; font-size: 12px; color: var(--clx-text-secondary);">
-                        <input type="checkbox" id="googleTermsAgree" required style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
-                        <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to the <a href="/tos/" target="_blank" style="color:var(--clx-accent);">Terms of Service</a> and <a href="/privacy/" target="_blank" style="color:var(--clx-accent);">Privacy Policy</a>.</span>
-                    </label>
-                </div>
+                <label class="check-row">
+                    <input type="checkbox" id="googleTermsAgree" required>
+                    <span>I understand this tool is for <strong>educational purposes only</strong> and the developer is not liable for any outcomes. I agree to the <a href="/tos/" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+                </label>
 
-                <button type="button" class="btn" id="googleRoleBtn" onclick="submitGoogleRole()">Get Started</button>
-                <button type="button" class="btn btn-secondary" id="googleRoleCancelBtn" onclick="cancelGoogleRole()">Use a different account</button>
+                <button type="button" class="btn" id="googleRoleBtn" onclick="submitGoogleRole()">Finish setup</button>
+                <button type="button" class="btn btn-quiet" id="googleRoleCancelBtn" onclick="cancelGoogleRole()">Use a different account</button>
             </div>
         </div>
     </div>
@@ -578,7 +901,7 @@
 
                 let message;
                 if (error.code === 'auth/user-not-found') {
-                    message = 'No account found with this email. Please register first.';
+                    message = 'No account uses this email. Create an account first.';
                 } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
                     message = 'Incorrect password. Try again or reset your password.';
                 } else if (error.code === 'auth/invalid-email') {
@@ -590,7 +913,7 @@
                 } else if (isInfraFailure) {
                     message = "Can't reach the sign-in service right now — this is a connection problem, not your password. Please try again in a moment.";
                 } else {
-                    message = 'Invalid email or password.';
+                    message = 'Email or password is incorrect. Check both and try again.';
                 }
 
                 errorMsg.textContent = message;
@@ -598,7 +921,7 @@
                 document.getElementById('password').value = '';
                 document.getElementById('password').focus();
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = 'Sign In';
+                loginBtn.innerHTML = 'Sign in';
             }
 
             return false;
@@ -635,7 +958,7 @@
                 errorMsg.textContent = 'Password must be at least 6 characters.';
                 errorMsg.classList.add('show');
                 regBtn.disabled = false;
-                regBtn.innerHTML = 'Create Account';
+                regBtn.innerHTML = 'Create account';
                 return false;
             }
 
@@ -688,7 +1011,7 @@
                 console.error('Registration error:', error.code, error.message);
                 let message = 'Error creating account. Please try again.';
                 if (error.code === 'auth/email-already-in-use') {
-                    message = 'An account with this email already exists. Try logging in or reset your password.';
+                    message = 'An account with this email already exists. Sign in or reset your password.';
                 } else if (error.code === 'auth/invalid-email') {
                     message = 'Please enter a valid email address.';
                 } else if (error.code === 'auth/weak-password') {
@@ -703,7 +1026,7 @@
                 errorMsg.textContent = message;
                 errorMsg.classList.add('show');
                 regBtn.disabled = false;
-                regBtn.innerHTML = 'Create Account';
+                regBtn.innerHTML = 'Create account';
             }
 
             return false;
@@ -739,14 +1062,14 @@
                 // Send password reset email via Firebase
                 await auth.sendPasswordResetEmail(email);
 
-                successMsg.textContent = 'Password reset email sent! Check your inbox (and spam folder) for a link to reset your password.';
+                successMsg.textContent = 'Reset email sent. Check your inbox and spam folder for the link.';
                 successMsg.classList.add('show');
                 document.getElementById('forgotEmail').value = '';
 
             } catch (error) {
                 let message = 'Error sending reset email. Please try again.';
                 if (error.code === 'auth/user-not-found') {
-                    message = 'No account found with this email. Please register first.';
+                    message = 'No account uses this email. Create an account first.';
                 } else if (error.code === 'auth/invalid-email') {
                     message = 'Please enter a valid email address.';
                 }
@@ -755,7 +1078,7 @@
             }
 
             forgotBtn.disabled = false;
-            forgotBtn.innerHTML = 'Send Reset Email';
+            forgotBtn.innerHTML = 'Send reset email';
             return false;
         }
 
@@ -1091,7 +1414,7 @@
                 document.getElementById("googleRoleErrorMsg").textContent = "Error setting up account. Please try again.";
                 document.getElementById("googleRoleErrorMsg").classList.add("show");
                 btn.disabled = false;
-                btn.innerHTML = "Get Started";
+                btn.innerHTML = "Finish setup";
             }
         }
 
@@ -1333,14 +1656,14 @@
 
     <!-- PWA Install Banner -->
     <div id="pwaBanner" role="complementary" aria-label="Install app">
-        <img src="/apple-touch-icon.png" alt="BendBSN" width="40" height="40">
+        <img src="/apple-touch-icon.png" alt="" width="40" height="40">
         <div class="pwa-banner-text">
             <div class="pwa-banner-title">Install BendBSN</div>
-            <div class="pwa-banner-sub">Add to your home screen for quick access</div>
+            <div class="pwa-banner-sub">Add it to your home screen for quick access.</div>
         </div>
         <div class="pwa-banner-actions">
-            <button id="pwaBannerBtn" onclick="triggerPwaInstall()">Install</button>
-            <button id="pwaBannerClose" onclick="dismissPwaBanner()" aria-label="Dismiss">✕</button>
+            <button type="button" id="pwaBannerBtn" onclick="triggerPwaInstall()">Install</button>
+            <button type="button" id="pwaBannerClose" onclick="dismissPwaBanner()" aria-label="Dismiss"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
         </div>
     </div>
 
@@ -1348,10 +1671,10 @@
     <div id="iosInstallModal" role="dialog" aria-modal="true" aria-label="Install guide" onclick="if(event.target===this)closeIosModal()">
         <div class="ios-modal-card">
             <h3>Add to Home Screen</h3>
-            <p class="ios-modal-sub">Follow these steps to install BendBSN on your device</p>
+            <p class="ios-modal-sub">Follow these steps to install BendBSN on your device.</p>
             <div class="ios-modal-step">
                 <div class="ios-step-num">1</div>
-                <div class="ios-step-text">Tap the <strong>Share</strong> button <svg class="ios-share-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's toolbar</div>
+                <div class="ios-step-text">Tap the <strong>Share</strong> button <svg class="ios-share-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's toolbar</div>
             </div>
             <div class="ios-modal-step">
                 <div class="ios-step-num">2</div>
@@ -1361,7 +1684,7 @@
                 <div class="ios-step-num">3</div>
                 <div class="ios-step-text">Tap <strong>"Add"</strong> in the top right corner</div>
             </div>
-            <button id="iosModalGotIt" onclick="closeIosModal()">Got it!</button>
+            <button type="button" id="iosModalGotIt" onclick="closeIosModal()">Got it</button>
         </div>
     </div>
 
@@ -1408,12 +1731,12 @@
                 if (sessionStorage.getItem('bendbsn_force_logout') === '1') {
                     sessionStorage.removeItem('bendbsn_force_logout');
                     setTimeout(function () {
-                        if (window.showToast) showToast('You\u2019ve been signed out for a fresh update. Please log in again.', 'info', 6000);
+                        if (window.showToast) showToast('You\u2019ve been signed out for a fresh update. Please sign in again.', 'info', 6000);
                     }, 200);
                 } else if (sessionStorage.getItem('bendbsn_idle_logout') === '1') {
                     sessionStorage.removeItem('bendbsn_idle_logout');
                     setTimeout(function () {
-                        if (window.showToast) showToast('You were signed out after 30 minutes of inactivity. Please log in again.', 'info', 6000);
+                        if (window.showToast) showToast('You were signed out after 30 minutes of inactivity. Please sign in again.', 'info', 6000);
                     }, 200);
                 }
             } catch (e) {}
@@ -1462,6 +1785,127 @@
             if (modal) modal.classList.remove('open');
         };
         // ===== END PWA INSTALL BANNER =====
+    </script>
+
+    <script>
+        // ===== DIALOG FOCUS =====
+        // Create an account, Reset your password, the Google role step and
+        // the iOS install guide open and close through their own functions,
+        // which only set a class. This block watches that class and nothing
+        // else, so the sign-in, sign-up and Google code above is unchanged:
+        // - on open, focus moves into the dialog and the page behind it is inert;
+        // - Tab and Shift+Tab stay inside the dialog;
+        // - on close, focus goes back to the control that opened it.
+        (function () {
+            var DIALOGS = [
+                { id: 'registerModal', cls: 'show', first: 'registerTitle' },
+                { id: 'forgotPasswordModal', cls: 'show', first: 'forgotEmail' },
+                { id: 'googleRoleModal', cls: 'show', first: 'googleRRole' },
+                { id: 'iosInstallModal', cls: 'open', first: 'iosModalGotIt' }
+            ];
+            var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
+                'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+            var stack = [];    // open dialogs, oldest first: { d, el, opener }
+            var inerted = [];  // elements this block made inert
+            var lastOutside = null;
+
+            function el(d) { return document.getElementById(d.id); }
+            function isOpen(d) { var e = el(d); return !!e && e.classList.contains(d.cls); }
+            function inAnyDialog(node) { return DIALOGS.some(function (d) { var e = el(d); return !!e && e.contains(node); }); }
+            function usable(node) {
+                return !!node && node.isConnected && node.getClientRects().length > 0 && !node.closest('[inert]');
+            }
+            function tabbables(root) { return Array.prototype.filter.call(root.querySelectorAll(FOCUSABLE), usable); }
+
+            // The control that opens a dialog. Safari does not focus a button
+            // on click, so a press counts as well as focus.
+            function noteOutside(e) { var t = e.target; if (t && t.nodeType === 1 && !inAnyDialog(t)) lastOutside = t; }
+            document.addEventListener('focusin', noteOutside, true);
+            document.addEventListener('pointerdown', function (e) {
+                var t = e.target && e.target.closest ? e.target.closest('button, a[href], input, select, textarea') : null;
+                if (t && !inAnyDialog(t)) lastOutside = t;
+            }, true);
+
+            function setInert(top) {
+                inerted.forEach(function (n) { n.inert = false; });
+                inerted = [];
+                if (!top) return;
+                Array.prototype.forEach.call(document.body.children, function (n) {
+                    if (n === top || !(n instanceof HTMLElement) || n.inert ||
+                        n.tagName === 'SCRIPT' || n.id === 'toastContainer') return;
+                    n.inert = true;
+                    inerted.push(n);
+                });
+            }
+
+            function sync() {
+                var closed = stack.filter(function (s) { return !isOpen(s.d); });
+                stack = stack.filter(function (s) { return isOpen(s.d); });
+                var opened = [];
+                DIALOGS.forEach(function (d) {
+                    if (!isOpen(d) || stack.some(function (s) { return s.d === d; })) return;
+                    var box = el(d), a = document.activeElement;
+                    var opener = (a && a !== document.body && !box.contains(a)) ? a : lastOutside;
+                    var s = { d: d, el: box, opener: opener };
+                    stack.push(s);
+                    opened.push(s);
+                });
+                var top = stack.length ? stack[stack.length - 1] : null;
+                setInert(top ? top.el : null);
+
+                var a = document.activeElement;
+                if (top && opened.indexOf(top) !== -1) {
+                    if (top.el.contains(a)) return; // the open function already placed focus
+                    var target = document.getElementById(top.d.first);
+                    if (!usable(target)) target = tabbables(top.el)[0];
+                    if (target) target.focus();
+                    return;
+                }
+                if (!closed.length) return;
+                // Something closed: put focus back unless it is already somewhere visible.
+                if (a && a !== document.body && usable(a) && (!top || top.el.contains(a))) return;
+                var candidates = closed.reverse().map(function (s) { return s.opener; });
+                if (top) candidates.push(document.getElementById(top.d.first), tabbables(top.el)[0]);
+                else candidates.push(document.getElementById('username'));
+                for (var i = 0; i < candidates.length; i++) {
+                    var c = candidates[i];
+                    if (usable(c) && (!top || top.el.contains(c))) { c.focus(); return; }
+                }
+            }
+
+            var mo = new MutationObserver(sync);
+            DIALOGS.forEach(function (d) { var e = el(d); if (e) mo.observe(e, { attributes: true, attributeFilter: ['class'] }); });
+
+            document.addEventListener('keydown', function (e) {
+                if (!stack.length) return;
+                var top = stack[stack.length - 1];
+                if (e.key === 'Escape' && top.d.id === 'iosInstallModal') {
+                    // The page's Escape handler covers the .modal dialogs only.
+                    if (window.closeIosModal) window.closeIosModal();
+                    return;
+                }
+                if (e.key !== 'Tab') return;
+                var list = tabbables(top.el);
+                if (!list.length) { e.preventDefault(); return; }
+                var first = list[0], last = list[list.length - 1], a = document.activeElement;
+                if (!top.el.contains(a)) {
+                    e.preventDefault();
+                    (e.shiftKey ? last : first).focus();
+                } else if (list.indexOf(a) === -1) {
+                    // Focus is on the heading (tabindex -1): Tab moves on by itself.
+                    if (e.shiftKey) { e.preventDefault(); last.focus(); }
+                } else if (e.shiftKey && a === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && a === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            });
+
+            sync(); // a reload can reopen the Google role step before this runs
+        })();
+        // ===== END DIALOG FOCUS =====
     </script>
 </body>
 </html>

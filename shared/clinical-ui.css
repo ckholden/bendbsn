@@ -479,13 +479,33 @@ input[type="time"],
 select,
 textarea {
     padding: 8px 12px !important;
-    font-size: 13px !important;
     border: 1px solid var(--clx-border-field) !important;
-    border-radius: 6px !important;
     background: var(--clx-bg-surface) !important;
     color: var(--clx-text-primary) !important;
     box-shadow: none !important;
     transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+/* The old 13px text and 6px corners, for every field that has not opted
+   in to the C scale. A redesigned page adds .clx-field-lg to its fields
+   to get 16px text and 10px corners. :where() adds no specificity, so
+   these selectors weigh exactly what they did before the split. */
+input[type="text"]:where(:not(.clx-field-lg)),
+input[type="email"]:where(:not(.clx-field-lg)),
+input[type="password"]:where(:not(.clx-field-lg)),
+input[type="number"]:where(:not(.clx-field-lg)),
+input[type="search"]:where(:not(.clx-field-lg)),
+input[type="url"]:where(:not(.clx-field-lg)),
+input[type="tel"]:where(:not(.clx-field-lg)),
+input[type="date"]:where(:not(.clx-field-lg)),
+input[type="time"]:where(:not(.clx-field-lg)),
+select:where(:not(.clx-field-lg)),
+textarea:where(:not(.clx-field-lg)) {
+    font-size: 13px !important;
+    border-radius: 6px !important;
+}
+.clx-field-lg {
+    font-size: 1rem;
+    border-radius: 10px;
 }
 
 input[type="text"]:focus,

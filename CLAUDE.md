@@ -108,11 +108,18 @@ All 10 pages include:
 ```
 Header HTML is kept inline for instant render (no FOUC).
 
-### Branding
-- **Logo**: `/logo.png` — Cropped stethoscope + "BendBSN" text (794x238 RGBA PNG)
-- **Favicon**: `/favicon.png` — Stethoscope icon only (256x256), cache-busted `?v=3`
-- **No wordmark span** — Logo image contains the text; no `<span class="site-wordmark">`
-- Source file: `new logo.png` in parent directory (uncropped original 1536x1024)
+### Branding (C High Desert, Nov 2026)
+- **Mark**: a Juniper disc with a Snow skyline and a Rabbitbrush cross. The one canonical
+  skyline path lives in `icons/src/mark.svg`; `icons/src/mark-16.svg` is the 16 px optical variant.
+- **Wordmark**: `/logo.svg` (Basalt text, light grounds) and `/logo-dark.svg` (Snow text, the
+  Basalt header). The text is outlined to paths, because an `<img>` SVG cannot use web fonts.
+- **Icons**: `/favicon.svg` (adds a Snow ring on dark tabs), `/favicon.ico`, favicon PNGs,
+  `/apple-touch-icon.png`, `icons/icon-*.png` and maskable `android-chrome-*.png`, plus `/og-image.png`.
+- **Regenerate** from the SVG sources in `icons/src/`: run `python -I scripts/outline-wordmark.py`
+  (only when the wordmark, tagline or mark changed; needs fonttools + brotli), then
+  `node scripts/generate-assets.js` from the repo root (needs `sharp`). Both are deterministic.
+- `/logo.png` is now a PNG of the light wordmark. The old stethoscope art and its ChatGPT
+  source are retired.
 
 ### Docx Export CDN
 - **IMPORTANT**: Must use `build/index.umd.js` (NOT `build/index.js` which is ES module and won't expose `docx` global)

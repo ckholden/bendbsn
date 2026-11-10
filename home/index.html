@@ -11,15 +11,15 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#0d1f2d">
+    <meta name="theme-color" content="#23282B">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BendBSN">
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
-    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
@@ -31,540 +31,467 @@
     <link rel="stylesheet" href="/shared/app-shell.css">
     <link rel="stylesheet" href="/shared/nav.css">
     <script src="/shared/nav.js" defer></script>
-    <title>BendBSN — Dashboard</title>
+    <title>BendBSN — Home</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
+        /* =========================================================
+           HOME, C High Desert (plan push 12)
+           Colours come from the --clx-* tokens in /shared/clinical-ui.css,
+           so both themes follow them. The type, radius and spacing scales
+           below are the plan's section 7 values; type is in rem, so it
+           follows the browser's text size (15px UI text, 13px meta, 16px
+           in form fields so iOS does not zoom).
+           ========================================================= */
+        :root {
+            --home-type-xs:   0.75rem;    /* 12 */
+            --home-type-sm:   0.8125rem;  /* 13 */
+            --home-type-base: 0.9375rem;  /* 15 */
+            --home-type-field: 1rem;      /* 16 */
+            --home-type-lg:   1.0625rem;  /* 17 */
+            --home-type-xl:   1.3125rem;  /* 21 */
+            --home-type-2xl:  1.75rem;    /* 28 */
+            --home-type-3xl:  2.5rem;     /* 40 */
+            --home-radius-ctl:  10px;     /* buttons and fields */
+            --home-radius-card: 14px;
+        }
+
         /* ---- Base ---- */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: no-preference) {
+            html { scroll-behavior: smooth; }
+        }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
+            font-size: var(--home-type-base);
+            line-height: 1.5;
             background: var(--clx-bg-canvas);
             color: var(--clx-text-primary);
             min-height: 100vh;
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            padding-bottom: 60px;
+        }
+
+        .home-svg {
+            width: 20px;
+            height: 20px;
+            flex: none;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         /* ================================================
-           CONTEXT BAR
+           PAGE FRAME
+           .clx-main already pads 16px (12px below 900px,
+           0 8px below 480px); this adds the rest, so the
+           side gutter is 16px on phones.
         ================================================ */
-        .dash-context-bar {
-            background: var(--clx-bg-surface);
-            border-bottom: 1px solid var(--clx-border);
-            padding: 0 16px;
-            display: flex;
-            align-items: stretch;
-            gap: 0;
-            font-size: 13px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            flex-shrink: 0;
+        .home {
+            width: 100%;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 24px 16px 48px;
         }
-        .dash-context-bar::-webkit-scrollbar { display: none; }
+        @media (max-width: 899px) {
+            .home { padding: 16px 8px 32px; }
+        }
+        @media (max-width: 480px) {
+            .home { padding: 20px 8px 32px; }
+        }
 
-        .ctx-item {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 8px 16px;
-            border-right: 1px solid var(--clx-border);
-            white-space: nowrap;
+        /* ---- Greeting ---- */
+        .home-head { margin-bottom: 24px; }
+        .home-date {
+            font-size: var(--home-type-base);
+            color: var(--clx-text-muted);
+            margin-bottom: 4px;
+        }
+        .home-hello {
+            font-size: var(--home-type-3xl);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.015em;
+            color: var(--clx-text-primary);
+            /* A long or unbroken name wraps instead of widening the page */
+            overflow-wrap: anywhere;
+        }
+        @media (max-width: 700px) {
+            .home-head { margin-bottom: 20px; }
+            .home-hello { font-size: var(--home-type-2xl); line-height: 1.15; }
+        }
+
+        /* ---- Layout: one column, two from 64em (the nav breakpoint) ---- */
+        .home-grid,
+        .home-col {
+            display: grid;
+            gap: 16px;
+            align-content: start;
             min-width: 0;
         }
-        .ctx-item:last-child { border-right: none; }
-
-        .ctx-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--clx-text-muted);
-            margin-bottom: 1px;
+        @media (min-width: 64em) {
+            .home-grid {
+                grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+                gap: 24px;
+                align-items: start;
+            }
+            .home-col { gap: 24px; }
         }
-        .ctx-value {
-            font-size: 13px;
-            font-weight: 600;
+
+        /* ================================================
+           CARDS
+        ================================================ */
+        .home-card {
+            min-width: 0;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: var(--home-radius-card);
+            padding: 20px;
+        }
+        @media (max-width: 480px) {
+            .home-card { padding: 16px; }
+        }
+        .home-card-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .home-card-title {
+            font-size: var(--home-type-lg);
+            font-weight: 700;
+            line-height: 1.3;
             color: var(--clx-text-primary);
         }
-        .ctx-value.editable {
-            cursor: pointer;
-            border-bottom: 1px dashed var(--clx-border-strong);
+        .home-card-meta {
+            font-size: var(--home-type-sm);
+            color: var(--clx-text-muted);
+            white-space: nowrap;
         }
-        .ctx-value.editable:hover {
-            color: var(--clx-accent);
-            border-bottom-color: var(--clx-accent);
-        }
-        .ctx-value.accent { color: var(--clx-accent); }
-
-        /* ================================================
-           MAIN DASHBOARD AREA
-        ================================================ */
-        .dash-page {
-            max-width: 1100px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 14px 16px 16px;
-            flex: 1;
-        }
-
-        /* ================================================
-           ACTION ROW
-        ================================================ */
-        .dash-action-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-
-        .dash-btn {
+        .home-count {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            font-size: 13px;
+            justify-content: center;
+            min-width: 24px;
+            padding: 0 8px;
+            border-radius: 999px;
+            background: var(--clx-bg-surface-3);
+            color: var(--clx-text-secondary);
+            font-size: var(--home-type-sm);
             font-weight: 600;
-            border-radius: 6px;
-            border: 1px solid var(--clx-border);
-            background: var(--clx-bg-surface);
-            color: var(--clx-text-primary);
-            cursor: pointer;
+            line-height: 1.6;
+        }
+
+        /* ---- Buttons ---- */
+        .home-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 10px 20px;
+            border: 1px solid transparent;
+            border-radius: var(--home-radius-ctl);
+            font: inherit;
+            font-size: var(--home-type-base);
+            font-weight: 700;
+            line-height: 1.2;
+            text-align: center;
             text-decoration: none;
-            font-family: inherit;
-            white-space: nowrap;
+            cursor: pointer;
         }
-        .dash-btn:hover {
-            background: var(--clx-bg-surface-2);
-            border-color: var(--clx-border-strong);
-        }
-        .dash-btn.primary {
+        .home-btn-primary {
             background: var(--clx-accent);
-            color: var(--clx-accent-text);
             border-color: var(--clx-accent);
+            color: var(--clx-accent-text);
         }
-        .dash-btn.primary:hover {
+        .home-btn-primary:hover {
             background: var(--clx-accent-hover);
             border-color: var(--clx-accent-hover);
+            color: var(--clx-accent-text);
+            text-decoration: none;
+            opacity: 1;
         }
-        .dash-btn:focus-visible {
-            outline: 2px solid var(--clx-focus);
-            outline-offset: 2px;
-        }
-
-        /* ================================================
-           DASHBOARD GRID
-        ================================================ */
-        .dash-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        /* ================================================
-           PANELS
-        ================================================ */
-        .dash-panel {
+        .home-btn-secondary {
             background: var(--clx-bg-surface);
-            border: 1px solid var(--clx-border);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            border-color: var(--clx-border-field);
+            color: var(--clx-text-primary);
+        }
+        .home-btn-secondary:hover { background: var(--clx-bg-hover); }
+
+        /* ---- Start a note (Sage tile) ---- */
+        .home-start {
+            background: var(--clx-quiet);
+            border-color: var(--clx-quiet);
+            padding: 24px;
+        }
+        .home-start .home-card-title { font-size: var(--home-type-xl); margin-bottom: 4px; }
+        .home-start-text {
+            color: var(--clx-quiet-text);
+            max-width: 52ch;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 600px) {
+            .home-start { padding: 20px 16px; }
+            .home-start .home-btn { width: 100%; min-height: 48px; font-size: var(--home-type-field); }
         }
 
-        .dash-panel-hd {
-            background: var(--clx-bg-surface-2);
-            border-bottom: 1px solid var(--clx-border);
-            padding: 9px 14px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: var(--clx-text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        .dash-panel-bd {
-            flex: 1;
-            padding: 0;
-            overflow-y: auto;
-            max-height: 260px;
-        }
-
-        .dash-panel-ft {
-            border-top: 1px solid var(--clx-border);
-            padding: 8px 14px;
-            flex-shrink: 0;
-        }
-        .dash-panel-ft a {
-            font-size: 12px;
-            color: var(--clx-accent);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .dash-panel-ft a:hover { text-decoration: underline; }
-
-        .dash-empty {
-            padding: 20px 14px;
-            font-size: 13px;
-            color: var(--clx-text-muted);
-            text-align: center;
-        }
-
-        /* ---- Note items ---- */
-        .dash-note-item {
+        /* ---- Lists inside cards (recent notes, quick reference) ---- */
+        .home-list { list-style: none; }
+        .home-list > li + li { border-top: 1px solid var(--clx-border); }
+        .dash-note-item,
+        .dash-ref-link {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 9px 14px;
-            border-bottom: 1px solid var(--clx-border);
-            cursor: pointer;
+            gap: 12px;
+            min-height: 48px;
+            padding: 8px 0;
+            color: var(--clx-text-primary);
             text-decoration: none;
         }
-        .dash-note-item:last-child { border-bottom: none; }
-        .dash-note-item:hover { background: var(--clx-accent-subtle); }
-
+        .dash-note-item:hover,
+        .dash-ref-link:hover {
+            color: var(--clx-text-primary);
+            text-decoration: none;
+            opacity: 1;
+        }
+        .dash-note-item:hover .dash-note-name,
+        .dash-ref-link:hover {
+            color: var(--clx-link);
+            text-decoration: underline;
+            text-underline-offset: 0.15em;
+        }
+        /* Reference links read as links (Juniper, 6.19:1 on the card) */
+        .dash-ref-link { color: var(--clx-link); font-weight: 600; }
+        .dash-ref-link:hover { color: var(--clx-link-hover); }
         .dash-note-type {
-            font-size: 10px;
+            flex: none;
+            min-width: 48px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--clx-bg-surface-3);
+            color: var(--clx-text-secondary);
+            font-size: var(--home-type-xs);
             font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: var(--clx-accent-subtle);
-            color: var(--clx-accent);
+            line-height: 1.5;
+            text-align: center;
             white-space: nowrap;
-            flex-shrink: 0;
         }
         .dash-note-name {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--clx-text-primary);
             flex: 1;
             min-width: 0;
+            font-weight: 600;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         .dash-note-date {
-            font-size: 11px;
+            flex: none;
+            font-size: var(--home-type-sm);
             color: var(--clx-text-muted);
             white-space: nowrap;
-            flex-shrink: 0;
+        }
+        .dash-empty {
+            padding: 12px 0 8px;
+            color: var(--clx-text-muted);
         }
 
-        /* ---- Quick ref links ---- */
-        .dash-ref-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 14px;
-            border-bottom: 1px solid var(--clx-border);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--clx-text-primary);
-            text-decoration: none;
-        }
-        .dash-ref-link:last-child { border-bottom: none; }
-        .dash-ref-link:hover {
-            background: var(--clx-accent-subtle);
-            color: var(--clx-accent);
-        }
-        .dash-ref-link::before {
-            content: '→';
-            font-size: 11px;
-            color: var(--clx-text-muted);
-            flex-shrink: 0;
-        }
-
-        /* ---- Structured Reminders ---- */
-        .rem-add-row {
-            display: flex;
-            gap: 8px;
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--clx-border);
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .rem-input {
-            flex: 1 1 200px;
-            min-width: 140px;
-        }
-        /* Date needs room for "mm/dd/yyyy" plus the picker icon; the select
-           for "⚡ High" plus its arrow. Both may shrink no further. */
-        .rem-date {
-            flex: 0 0 auto;
-            width: 156px;
-            min-width: 156px;
-        }
-        .rem-sel {
-            flex: 0 0 auto;
-            width: 104px;
-            min-width: 104px;
-        }
-        @media (max-width: 480px) {
-            /* Text takes its own line; date, priority and Add share the next. */
-            .rem-input { flex-basis: 100%; }
-            .rem-date { flex: 1 1 140px; width: auto; }
-            .rem-sel { flex: 0 0 104px; }
-        }
-        @media (pointer: coarse) {
-            .rem-input, .rem-date, .rem-sel, .rem-add-btn { min-height: 44px; }
-        }
-        .rem-add-btn {
-            white-space: nowrap;
-            padding: 7px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 6px;
-            border: 1px solid var(--clx-accent);
-            background: var(--clx-accent);
-            color: var(--clx-accent-text);
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .rem-add-btn:hover { background: var(--clx-accent-hover); }
-        .rem-list {
-            flex: 1;
-            overflow-y: auto;
-            max-height: 240px;
-        }
-        .rem-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 12px;
-            border-bottom: 1px solid var(--clx-border);
-            font-size: 13px;
-        }
-        .rem-item:last-child { border-bottom: none; }
-        .rem-item.overdue { background: var(--clx-danger-bg); }
-        .rem-text {
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: var(--clx-text-primary);
-        }
-        .rem-due {
-            font-size: 11px;
-            color: var(--clx-text-muted);
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-        .rem-due.overdue { color: var(--clx-danger); font-weight: 600; }
-        .rem-due.today { color: var(--clx-warning); font-weight: 600; }
-        .rem-actions { display: flex; gap: 2px; flex-shrink: 0; }
-        .rem-del-btn {
-            background: none; border: none; cursor: pointer;
-            color: var(--clx-text-muted); font-size: 14px; padding: 2px 4px;
-            border-radius: 4px;
-        }
-        .rem-del-btn:hover { color: var(--clx-danger); background: var(--clx-danger-bg); }
-        .rem-email-btn {
-            background: none; border: none; cursor: pointer;
-            color: var(--clx-text-muted); font-size: 13px; padding: 2px 4px;
-            border-radius: 4px;
-        }
-        .rem-email-btn:hover { color: var(--clx-accent); background: var(--clx-accent-subtle); }
-        .rem-empty {
-            padding: 20px 14px;
-            font-size: 13px;
-            color: var(--clx-text-muted);
-            text-align: center;
-        }
-
-        /* ================================================
-           DOCUMENTATION HERO
-        ================================================ */
-        .doc-hero {
+        /* ---- Quick reference (disclosure) ---- */
+        .home-ref { padding-top: 8px; padding-bottom: 8px; }
+        .home-ref-toggle {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            background: var(--clx-accent, #0f7490);
-            border-radius: 10px;
-            padding: 20px 24px;
-            margin-bottom: 14px;
-            color: var(--clx-accent-text);
-        }
-        .doc-hero-left { flex: 1; min-width: 0; }
-        .doc-hero-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            opacity: 0.85;
-            margin-bottom: 4px;
-        }
-        .doc-hero-title {
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 4px;
-        }
-        .doc-hero-sub {
-            font-size: 13px;
-            opacity: 0.85;
-            margin-bottom: 14px;
-        }
-        .doc-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .doc-cta-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 700;
-            border-radius: 7px;
-            border: none;
-            background: var(--clx-accent-text);
-            color: var(--clx-accent, #0f7490);
+            gap: 12px;
+            width: 100%;
+            min-height: 44px;
+            padding: 0;
+            border: 0;
+            border-radius: var(--home-radius-ctl);
+            background: none;
+            color: inherit;
+            font: inherit;
+            text-align: left;
             cursor: pointer;
-            text-decoration: none;
-            font-family: inherit;
-            transition: transform 0.15s, box-shadow 0.15s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-        .doc-cta-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-        }
-        .doc-hero-sec-btn {
+        .home-ref-chev {
             display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 9px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 7px;
-            border: 1.5px solid rgba(255,255,255,0.5);
-            border-color: color-mix(in srgb, var(--clx-accent-text) 50%, transparent);
-            background: rgba(255,255,255,0.12);
-            background: color-mix(in srgb, var(--clx-accent-text) 12%, transparent);
-            color: var(--clx-accent-text);
-            cursor: pointer;
-            font-family: inherit;
+            color: var(--clx-text-muted);
         }
-        .doc-hero-sec-btn:hover { background: rgba(255,255,255,0.2); background: color-mix(in srgb, var(--clx-accent-text) 20%, transparent); }
-        .doc-hero-stat {
-            text-align: center;
-            flex-shrink: 0;
-        }
-        .doc-hero-num {
-            font-size: 36px;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .doc-hero-lbl {
-            font-size: 11px;
-            opacity: 0.8;
-            margin-top: 2px;
-        }
-        @media (max-width: 600px) {
-            .doc-hero { flex-direction: column; align-items: flex-start; }
-            .doc-hero-stat {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-top: 10px;
-            }
-            .doc-hero-num { font-size: 24px; }
-            .doc-hero-lbl { font-size: 12px; opacity: 0.8; }
-            .dash-grid { grid-template-columns: 1fr; }
-            .dash-panel-bd { max-height: 200px; }
-        }
-        @media (max-width: 480px) {
-            .dash-panel-hd { padding: 8px 12px; }
-            .tool-chip { padding: 8px 14px; min-height: 44px; }
-            /* App-like flush layout */
-            .container { padding: 0 8px !important; max-width: 100% !important; }
-            .dash-panel { border-radius: 0 !important; }
-            .hero-section { border-radius: 0 !important; margin-left: -8px; margin-right: -8px; }
-        }
+        .home-ref-toggle[aria-expanded="true"] .home-ref-chev { transform: rotate(180deg); }
+        .home-ref-toggle:hover .home-ref-chev { color: var(--clx-text-primary); }
+        #quickRefBody { margin-top: 4px; border-top: 1px solid var(--clx-border); }
+        #quickRefBody.panel-body-collapsed { display: none; }
 
         /* ================================================
-           TOOLS ROW
+           REMINDERS
+           The add form stacks in the narrow side column and
+           on phones, and sits on one row once its card is
+           640px wide (a container query: the card, not the
+           window, decides).
         ================================================ */
-        .tools-row {
+        .rem-card { container-type: inline-size; }
+        .rem-add {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 12px;
+            align-items: flex-end;
+            gap: 12px 8px;
+            padding: 4px 0 16px;
         }
-        .tool-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 6px 12px;
-            font-size: 12px;
+        .rem-field { min-width: 0; }
+        .rem-field-text { flex: 1 1 100%; }
+        .rem-field-date { flex: 1 1 150px; }
+        .rem-field-pri  { flex: 1 1 120px; }
+        .rem-add-btn    { flex: 1 1 100%; }
+        @container (min-width: 640px) {
+            .rem-field-text { flex: 1 1 200px; }
+            .rem-field-date { flex: 0 0 168px; }
+            .rem-field-pri  { flex: 0 0 136px; }
+            .rem-add-btn    { flex: 0 0 auto; }
+        }
+        .rem-add label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: var(--home-type-sm);
             font-weight: 600;
-            border-radius: 20px;
-            border: 1px solid var(--clx-border);
-            background: var(--clx-bg-surface);
             color: var(--clx-text-secondary);
-            text-decoration: none;
-            font-family: inherit;
-            cursor: pointer;
-            white-space: nowrap;
         }
-        .tool-chip:hover {
-            background: var(--clx-accent-subtle);
-            color: var(--clx-accent);
-            border-color: var(--clx-accent-subtle);
+        .rem-opt { font-weight: 400; color: var(--clx-text-muted); }
+        /* Beats the shared 13px field rule (important there): 16px so iOS
+           does not zoom, and the plan's 10px field radius. */
+        .rem-add input,
+        .rem-add select {
+            display: block;
+            width: 100%;
+            min-height: 44px;
+            font-size: var(--home-type-field) !important;
+            padding: 9px 12px !important;
+            border-radius: var(--home-radius-ctl) !important;
         }
 
-        /* Collapsible panel body */
-        .panel-body-collapsed { display: none !important; }
-
-        /* ================================================
-           MODALS (feedback)
-        ================================================ */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 10002;
+        .rem-list { list-style: none; border-top: 1px solid var(--clx-border); }
+        .rem-item {
             display: flex;
             align-items: center;
+            gap: 4px;
+            padding: 8px 0;
+        }
+        .rem-item + .rem-item { border-top: 1px solid var(--clx-border); }
+        .rem-body { flex: 1; min-width: 0; }
+        .rem-text {
+            display: block;
+            color: var(--clx-text-primary);
+            overflow-wrap: anywhere;
+        }
+        .rem-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 12px;
+            margin-top: 2px;
+            font-size: var(--home-type-sm);
+            color: var(--clx-text-muted);
+        }
+        .rem-due,
+        .rem-pri { white-space: nowrap; }
+        /* Status chips: an icon and a word, never colour alone */
+        .rem-due.overdue,
+        .rem-due.today {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+        .rem-due.overdue { background: var(--clx-danger-bg); color: var(--clx-danger-text); }
+        .rem-due.today { background: var(--clx-warning-bg); color: var(--clx-warning-text); }
+        .rem-due .home-svg { width: 14px; height: 14px; }
+        .rem-pri-high { color: var(--clx-text-primary); font-weight: 600; }
+        .rem-actions { display: flex; flex: none; }
+        .rem-icon-btn {
+            display: inline-flex;
+            align-items: center;
             justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: var(--home-radius-ctl);
+            background: none;
+            color: var(--clx-text-muted);
+            cursor: pointer;
         }
-        .modal-overlay.hidden { display: none; }
-        .modal-content {
-            background: var(--clx-bg-surface);
-            border: 1px solid var(--clx-border);
-            border-radius: 10px;
-            padding: 22px 24px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            color: var(--clx-text-primary);
+        .rem-email-btn:hover { background: var(--clx-bg-hover); color: var(--clx-text-primary); }
+        .rem-del-btn:hover { background: var(--clx-danger-bg); color: var(--clx-danger-text); }
+        .rem-empty {
+            padding: 12px 0 4px;
+            color: var(--clx-text-muted);
         }
-        .modal-content input,
-        .modal-content select,
-        .modal-content textarea {
-            width: 100%;
-            padding: 9px 12px;
-            border: 1px solid var(--clx-border);
-            border-radius: 6px;
-            font-size: 13px;
-            margin-bottom: 12px;
-            background: var(--clx-bg-surface);
-            color: var(--clx-text-primary);
-            font-family: inherit;
+
+        /* ================================================
+           ALERT / FYI BANNERS (announcements)
+           Fixed to the top of the window; shared/nav.css
+           makes each at least 50px tall, and the rules
+           below push the header down by that much.
+        ================================================ */
+        #alertBanner,
+        #fyiBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 16px;
+            font-size: var(--home-type-base);
+            font-weight: 600;
+            line-height: 1.4;
+            text-align: center;
+            overflow-wrap: anywhere;
         }
-        .modal-content textarea { min-height: 100px; resize: vertical; }
+        #alertBanner {
+            z-index: 10000;
+            background: var(--clx-danger-solid);
+            color: var(--clx-danger-solid-text);
+        }
+        #fyiBanner {
+            z-index: 9999;
+            background: var(--clx-info-bg);
+            color: var(--clx-info-text);
+            border-bottom: 1px solid var(--clx-info);
+        }
+        .home-banner-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 8px;
+            font-weight: 700;
+            vertical-align: -3px;
+        }
+        .home-banner-tag .home-svg { width: 18px; height: 18px; }
+        /* Phones: 13px and an icon-only tag (the word stays for screen
+           readers), so a one-line message still fits in one 50px row */
+        @media (max-width: 600px) {
+            #alertBanner, #fyiBanner { font-size: var(--home-type-sm); padding: 12px; }
+            .home-banner-tag { margin-right: 4px; }
+            .home-banner-word {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+                white-space: nowrap;
+            }
+        }
+        body.has-alert .site-header, body.has-fyi .site-header { margin-top: 50px; }
+        body.has-alert.has-fyi .site-header { margin-top: 100px; }
 
         /* ================================================
            LOCK SCREEN
@@ -573,26 +500,47 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: #0d1f2d;
+            background: var(--clx-chrome-bg, #23282B);
             z-index: 99999;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            padding: 24px;
         }
+        .home-lock {
+            text-align: center;
+            color: var(--clx-chrome-text);
+        }
+        .home-lock .home-svg {
+            width: 48px;
+            height: 48px;
+            stroke-width: 1.75;
+            margin-bottom: 16px;
+        }
+        .home-lock-title {
+            font-size: var(--home-type-2xl);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+        .home-lock-sub {
+            font-size: var(--home-type-base);
+            color: var(--clx-chrome-muted);
+            margin-bottom: 32px;
+        }
+        .home-lock-btn {
+            min-width: 160px;
+            min-height: 48px;
+            background: var(--clx-chrome-text);
+            border-color: var(--clx-chrome-text);
+            color: var(--clx-chrome-bg);
+            font-size: var(--home-type-field);
+        }
+        .home-lock-btn:hover { background: var(--clx-chrome-muted); border-color: var(--clx-chrome-muted); }
 
         /* ================================================
-           TOASTS
+           PWA INSTALL BANNER (phones; sits on the bottom bar)
         ================================================ */
-        @media (pointer: coarse) {
-            .dash-btn { min-height: 44px; }
-        }
-
-        /* Push the page below the fixed alert/FYI banners while they show
-           (as /careplan/ and /sbar/ do), so they never cover the nav */
-        body.has-alert .site-header, body.has-fyi .site-header { margin-top: 50px; }
-        body.has-alert.has-fyi .site-header { margin-top: 100px; }
-
-        /* PWA Install Banner */
         #pwaBanner {
             position: fixed;
             bottom: 0;
@@ -600,99 +548,161 @@
             right: 0;
             /* just under the shared nav (900), so the More sheet opens over it */
             z-index: 890;
-            background: var(--clx-bg-surface, #fff);
-            border-top: 1px solid var(--clx-border, #e2e8f0);
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
-            padding: 12px 16px;
+            background: var(--clx-bg-surface);
+            border-top: 1px solid var(--clx-border-strong);
+            padding: 12px 8px 12px 16px;
             display: none;
             align-items: center;
             gap: 12px;
-            animation: pwaBannerSlideUp 0.35s ease;
         }
         #pwaBanner.visible { display: flex; }
+        @media (prefers-reduced-motion: no-preference) {
+            #pwaBanner { animation: pwaBannerSlideUp 0.35s ease; }
+        }
         /* Sit on top of the bottom bar (shared/nav.css, below 64em) */
         @media (max-width: 63.99em) {
             #pwaBanner { bottom: var(--clx-botnav-h, calc(64px + env(safe-area-inset-bottom, 0px))); }
         }
-        #pwaBanner img { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
+        #pwaBanner img { width: 40px; height: 40px; border-radius: var(--home-radius-ctl); flex-shrink: 0; }
         #pwaBanner .pwa-banner-text { flex: 1; min-width: 0; }
-        #pwaBanner .pwa-banner-title { font-weight: 600; font-size: 14px; color: var(--clx-text-primary, #1a2532); line-height: 1.3; }
-        #pwaBanner .pwa-banner-sub { font-size: 12px; color: var(--clx-text-muted, #6b7280); margin-top: 2px; }
-        #pwaBanner .pwa-banner-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-        #pwaBannerBtn {
-            padding: 8px 14px;
-            background: #18181b;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        #pwaBannerBtn:hover { opacity: 0.88; }
+        #pwaBanner .pwa-banner-title { font-weight: 700; font-size: var(--home-type-base); color: var(--clx-text-primary); line-height: 1.3; }
+        #pwaBanner .pwa-banner-sub { font-size: var(--home-type-sm); color: var(--clx-text-muted); margin-top: 2px; }
+        #pwaBanner .pwa-banner-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        #pwaBannerBtn { padding: 10px 16px; white-space: nowrap; }
         #pwaBannerClose {
-            padding: 6px 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: var(--home-radius-ctl);
             background: none;
-            border: 1px solid var(--clx-border, #e2e8f0);
-            border-radius: 6px;
-            font-size: 14px;
+            color: var(--clx-text-muted);
             cursor: pointer;
-            color: var(--clx-text-muted, #6b7280);
-            line-height: 1;
         }
-        #pwaBannerClose:hover { background: var(--clx-bg-surface-2, #f1f5f9); }
+        #pwaBannerClose:hover { background: var(--clx-bg-hover); color: var(--clx-text-primary); }
         @keyframes pwaBannerSlideUp {
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        [data-theme="dark"] #pwaBannerBtn { background: #f4f4f5; color: #18181b; }
 
-        /* iOS Install Guide Modal */
+        /* ---- iOS install guide (bottom sheet) ---- */
         #iosInstallModal {
             position: fixed;
             inset: 0;
             z-index: 10004;
-            background: rgba(0,0,0,0.5);
+            background: rgba(18, 21, 23, 0.55);
             display: none;
             align-items: flex-end;
             justify-content: center;
         }
         #iosInstallModal.open { display: flex; }
         .ios-modal-card {
-            background: var(--clx-bg-surface, #fff);
-            border-radius: 16px 16px 0 0;
-            padding: 24px 20px 32px;
+            background: var(--clx-bg-surface);
+            border-radius: var(--home-radius-card) var(--home-radius-card) 0 0;
+            padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
             width: 100%;
             max-width: 480px;
-            animation: iosModalSlideUp 0.3s ease;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            .ios-modal-card { animation: iosModalSlideUp 0.3s ease; }
         }
         @keyframes iosModalSlideUp {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
         }
-        .ios-modal-card h3 { font-size: 17px; font-weight: 700; color: var(--clx-text-primary, #1a2532); margin-bottom: 4px; }
-        .ios-modal-sub { font-size: 13px; color: var(--clx-text-muted, #6b7280); margin-bottom: 20px; }
-        .ios-modal-step { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+        .ios-modal-card h2 { font-size: var(--home-type-xl); font-weight: 700; line-height: 1.25; color: var(--clx-text-primary); margin-bottom: 4px; }
+        .ios-modal-sub { font-size: var(--home-type-base); color: var(--clx-text-muted); margin-bottom: 20px; }
+        .ios-modal-steps { list-style: none; }
+        .ios-modal-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
         .ios-step-num {
             width: 28px; height: 28px;
-            background: #18181b; color: #fff;
+            background: var(--clx-text-primary);
+            color: var(--clx-bg-surface);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700; flex-shrink: 0;
+            font-size: var(--home-type-sm); font-weight: 700; flex-shrink: 0;
         }
-        .ios-step-text { font-size: 14px; color: var(--clx-text-primary, #1a2532); line-height: 1.5; padding-top: 4px; }
-        .ios-step-text strong { font-weight: 600; }
-        .ios-share-icon { display: inline-flex; vertical-align: middle; margin: 0 3px; }
-        #iosModalGotIt {
-            width: 100%; margin-top: 8px; padding: 13px;
-            background: #18181b; color: #fff;
-            border: none; border-radius: 10px;
-            font-size: 15px; font-weight: 600; cursor: pointer;
+        .ios-step-text { font-size: var(--home-type-base); color: var(--clx-text-primary); line-height: 1.5; padding-top: 2px; }
+        .ios-step-text strong { font-weight: 700; }
+        .ios-share-icon { display: inline-flex; vertical-align: middle; margin: 0 2px; }
+        #iosModalGotIt { width: 100%; min-height: 48px; margin-top: 8px; font-size: var(--home-type-field); }
+
+        /* ================================================
+           FIRST-VISIT TOUR (#onboardOverlay, built in JS)
+        ================================================ */
+        .home-tour {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(18, 21, 23, 0.6);
         }
-        #iosModalGotIt:hover { opacity: 0.88; }
-        [data-theme="dark"] .ios-step-num { background: #f4f4f5; color: #18181b; }
-        [data-theme="dark"] #iosModalGotIt { background: #f4f4f5; color: #18181b; }
+        .home-tour-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 28px 24px 24px;
+            border: 1px solid var(--clx-border);
+            border-radius: var(--home-radius-card);
+            background: var(--clx-bg-surface);
+            box-shadow: var(--clx-shadow-xl);
+            text-align: center;
+        }
+        .home-tour-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            margin-bottom: 12px;
+            border-radius: 50%;
+            background: var(--clx-quiet);
+            color: var(--clx-accent);
+        }
+        .home-tour-icon .home-svg { width: 28px; height: 28px; }
+        .home-tour-card h2 {
+            font-size: var(--home-type-xl);
+            font-weight: 700;
+            line-height: 1.25;
+            color: var(--clx-text-primary);
+            margin-bottom: 8px;
+        }
+        .home-tour-card p {
+            font-size: var(--home-type-base);
+            line-height: 1.6;
+            color: var(--clx-text-secondary);
+            margin-bottom: 20px;
+        }
+        .home-tour-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .home-tour-skip {
+            background: none;
+            border-color: transparent;
+            color: var(--clx-text-secondary);
+            font-weight: 600;
+        }
+        .home-tour-skip:hover { background: var(--clx-bg-hover); }
+        .home-tour-dots {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .home-tour-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--clx-border-strong);
+        }
+        .home-tour-dot.is-on { background: var(--clx-accent); }
     </style>
 </head>
 <body class="clx-has-botnav">
@@ -747,183 +757,157 @@
     </nav>
     <!-- clx-nav:end -->
 
-    <!-- Toast container -->
-
     <!-- App Shell -->
     <div class="clx-shell">
 
     <!-- Main content -->
     <main class="clx-main" id="main" role="main" tabindex="-1">
 
-    <!-- Alert / FYI banners -->
-    <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;animation:softFlashAlert 2s ease-in-out infinite;">
+    <!-- Alert / FYI banners (shown by setupAnnouncementListener) -->
+    <div id="alertBanner" role="status">
+        <span class="home-banner-tag"><svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span class="home-banner-word">Alert:</span></span>
         <span id="alertText"></span>
-        <span style="position:absolute;right:15px;font-size:11px;opacity:.8;">⚠ ALERT</span>
     </div>
-    <div id="fyiBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#d97706;color:#1a1a2e;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:9999;animation:softFlashFyi 2s ease-in-out infinite;">
+    <div id="fyiBanner" role="status">
+        <span class="home-banner-tag"><svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span class="home-banner-word">FYI:</span></span>
         <span id="fyiText"></span>
-        <span style="position:absolute;right:15px;font-size:11px;opacity:.7;">ℹ FYI</span>
     </div>
 
     <!-- Lock screen -->
-    <div id="lockScreenOverlay">
-        <div style="text-align:center;color:white;">
-            <div style="font-size:60px;margin-bottom:16px;">🔒</div>
-            <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
-            <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
-            <button onclick="unlockScreen()" style="background:var(--clx-accent);color:var(--clx-accent-text);border:none;padding:14px 40px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">🔓 Unlock</button>
+    <div id="lockScreenOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+        <div class="home-lock">
+            <svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <h2 class="home-lock-title" id="lockTitle">BendBSN</h2>
+            <p class="home-lock-sub">Screen locked</p>
+            <button type="button" id="lockUnlockBtn" class="home-btn home-lock-btn" onclick="unlockScreen()">Unlock</button>
         </div>
     </div>
 
-    <!-- Context bar -->
-    <div class="dash-context-bar" id="dashContextBar">
-        <div class="ctx-item">
-            <span class="ctx-label">Student</span>
-            <span class="ctx-value" id="ctxName">—</span>
-        </div>
-    </div>
+    <div class="home">
 
-    <!-- Dashboard -->
-    <div class="dash-page">
-
-        <!-- Documentation Hero -->
-        <div class="doc-hero">
-            <div class="doc-hero-left">
-                <div class="doc-hero-label">Nursing Documentation</div>
-                <div class="doc-hero-title">Start Documenting</div>
-                <div class="doc-hero-sub">Build a professional nursing note in minutes.</div>
-                <div class="doc-hero-actions">
-                    <a href="/app/" class="doc-cta-btn">📝 Start New Note</a>
-                </div>
-            </div>
-            <div class="doc-hero-stat">
-                <div class="doc-hero-num" id="docHeroNoteCount">—</div>
-                <div class="doc-hero-lbl">Notes Saved</div>
-            </div>
+        <!-- Greeting: a real first name only (paintGreeting) -->
+        <div class="home-head">
+            <p class="home-date" id="homeDate"></p>
+            <h1 class="home-hello"><span id="homeGreetWord">Hello</span><span id="homeGreetName" hidden>, <span id="ctxName"></span></span></h1>
         </div>
 
-        <!-- Recent Notes -->
-        <div class="dash-panel" style="margin-bottom:12px;">
-            <div class="dash-panel-hd">
-                Recent Notes
-                <a href="/app/" style="font-size:11px;color:var(--clx-accent);font-weight:600;text-decoration:none;margin-left:auto;">+ New Note</a>
-            </div>
-            <div class="dash-panel-bd" id="recentNotesList">
-                <div class="dash-empty">Loading notes…</div>
-            </div>
-        </div>
+        <div class="home-grid">
 
-        <!-- Collapsible reference + skills grid -->
-        <div class="dash-grid" style="margin-bottom:12px;">
+            <!-- Main column: start a note, recent notes -->
+            <div class="home-col">
 
-            <!-- Quick Reference (collapsible) -->
-            <div class="dash-panel">
-                <div class="dash-panel-hd" onclick="toggleHomePanel('quickRef')" style="cursor:pointer;user-select:none;">
-                    Quick Reference
-                    <span id="quickRefChev" style="font-size:11px;margin-left:auto;opacity:0.6;">▲</span>
-                </div>
-                <div class="dash-panel-bd" id="quickRefBody">
-                    <a class="dash-ref-link" href="/resources/#section-vital-signs">Vital Signs Reference</a>
-                    <a class="dash-ref-link" href="/resources/#labValuesCard">Lab Values</a>
-                    <a class="dash-ref-link" href="/resources/#section-dosage-calculator">Dosage Calculator</a>
-                    <a class="dash-ref-link" href="/resources/#section-iv-drip">IV Drip Rate</a>
-                    <a class="dash-ref-link" href="/resources/#section-gcs">Glasgow Coma Scale</a>
-                    <a class="dash-ref-link" href="/resources/#section-apgar">APGAR Score</a>
-                    <a class="dash-ref-link" href="/resources/#section-sbar-template">SBAR Template</a>
-                    <a class="dash-ref-link" href="/resources/#section-drug-lookup">Drug Lookup (RxNav)</a>
-                </div>
+                <section class="home-card home-start" aria-labelledby="homeStartTitle">
+                    <h2 class="home-card-title" id="homeStartTitle">New note</h2>
+                    <p class="home-start-text">Write a DAR, SOAP, head-to-toe or narrative note, or one of 6 other formats. You pick the format on the next screen.</p>
+                    <a class="home-btn home-btn-primary" href="/app/">Start a note</a>
+                </section>
+
+                <section class="home-card" aria-labelledby="homeRecentTitle">
+                    <div class="home-card-head">
+                        <h2 class="home-card-title" id="homeRecentTitle">Recent notes</h2>
+                        <span class="home-card-meta"><span id="docHeroNoteCount">—</span> saved</span>
+                    </div>
+                    <div id="recentNotesList">
+                        <p class="dash-empty">Loading notes…</p>
+                    </div>
+                </section>
+
             </div>
 
-        </div><!-- /dash-grid -->
+            <!-- Side column: reminders, quick reference -->
+            <div class="home-col">
 
-        <!-- Structured Reminders (full width) -->
-        <div class="dash-panel">
-            <div class="dash-panel-hd">
-                My Reminders
-                <span class="pill pill-neutral" id="reminderCount" style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:600;">0</span>
-            </div>
-            <div class="dash-panel-bd" style="max-height:none; flex:1; display:flex; flex-direction:column; padding:0;">
-                <div class="rem-add-row">
-                    <input id="remText" type="text" placeholder="New reminder…" class="rem-input"
-                        onkeydown="if(event.key==='Enter')addReminder()">
-                    <input id="remDue" type="date" class="rem-date">
-                    <select id="remPriority" class="rem-sel">
-                        <option value="med">Med</option>
-                        <option value="high">⚡ High</option>
-                        <option value="low">Low</option>
-                    </select>
-                    <button onclick="addReminder()" class="rem-add-btn">+ Add</button>
-                </div>
-                <div id="reminderList" class="rem-list"></div>
-            </div>
-        </div>
+                <section class="home-card rem-card" aria-labelledby="homeRemTitle">
+                    <div class="home-card-head">
+                        <h2 class="home-card-title" id="homeRemTitle">Reminders</h2>
+                        <span class="home-count"><span id="reminderCount">0</span><span class="clx-vh"> reminders</span></span>
+                    </div>
+                    <form class="rem-add" onsubmit="event.preventDefault(); addReminder();">
+                        <div class="rem-field rem-field-text">
+                            <label for="remText">New reminder</label>
+                            <input id="remText" type="text" class="rem-input" autocomplete="off">
+                        </div>
+                        <div class="rem-field rem-field-date">
+                            <label for="remDue">Due date <span class="rem-opt">(optional)</span></label>
+                            <input id="remDue" type="date" class="rem-date">
+                        </div>
+                        <div class="rem-field rem-field-pri">
+                            <label for="remPriority">Priority</label>
+                            <select id="remPriority" class="rem-sel">
+                                <option value="high">High</option>
+                                <option value="med" selected>Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="home-btn home-btn-secondary rem-add-btn">Add reminder</button>
+                    </form>
+                    <ul id="reminderList" class="rem-list" aria-label="Your reminders"></ul>
+                </section>
 
-    </div><!-- /dash-page -->
+                <section class="home-card home-ref" aria-labelledby="quickRefTitle">
+                    <h2 class="home-card-title" id="quickRefTitle">
+                        <button type="button" class="home-ref-toggle" id="quickRefToggle" aria-expanded="false" aria-controls="quickRefBody" onclick="toggleHomePanel('quickRef')">
+                            <span>Quick reference</span>
+                            <span class="home-ref-chev" id="quickRefChev" aria-hidden="true"><svg class="home-svg" viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"/></svg></span>
+                        </button>
+                    </h2>
+                    <ul class="home-list panel-body-collapsed" id="quickRefBody">
+                        <li><a class="dash-ref-link" href="/resources/#section-vital-signs">Vital signs reference</a></li>
+                        <li><a class="dash-ref-link" href="/resources/#labValuesCard">Lab values</a></li>
+                        <li><a class="dash-ref-link" href="/resources/#section-dosage-calculator">Dosage calculator</a></li>
+                        <li><a class="dash-ref-link" href="/resources/#section-iv-drip">IV drip rate</a></li>
+                        <li><a class="dash-ref-link" href="/resources/#section-gcs">Glasgow Coma Scale</a></li>
+                        <li><a class="dash-ref-link" href="/resources/#section-apgar">APGAR score</a></li>
+                        <li><a class="dash-ref-link" href="/resources/#section-sbar-template">SBAR template</a></li>
+                        <li><a class="dash-ref-link" href="/resources/#section-drug-lookup">Drug lookup (RxNav)</a></li>
+                    </ul>
+                </section>
+
+            </div>
+
+        </div><!-- /home-grid -->
+
+    </div><!-- /home -->
 
     </main><!-- /clx-main -->
 
     <!-- PWA Install Banner -->
     <div id="pwaBanner" role="complementary" aria-label="Install app">
-        <img src="/apple-touch-icon.png" alt="BendBSN" width="40" height="40">
+        <img src="/apple-touch-icon.png" alt="" width="40" height="40">
         <div class="pwa-banner-text">
             <div class="pwa-banner-title">Install BendBSN</div>
-            <div class="pwa-banner-sub">Add to your home screen for quick access</div>
+            <div class="pwa-banner-sub">Add it to your home screen for quick access.</div>
         </div>
         <div class="pwa-banner-actions">
-            <button id="pwaBannerBtn" onclick="triggerPwaInstall()">Install</button>
-            <button id="pwaBannerClose" onclick="dismissPwaBanner()" aria-label="Dismiss">✕</button>
+            <button type="button" id="pwaBannerBtn" class="home-btn home-btn-primary" onclick="triggerPwaInstall()">Install</button>
+            <button type="button" id="pwaBannerClose" onclick="dismissPwaBanner()" aria-label="Dismiss install banner"><svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
         </div>
     </div>
 
     <!-- iOS Install Guide Modal -->
-    <div id="iosInstallModal" role="dialog" aria-modal="true" aria-label="Install guide" onclick="if(event.target===this)closeIosModal()">
+    <div id="iosInstallModal" role="dialog" aria-modal="true" aria-labelledby="iosModalTitle" onclick="if(event.target===this)closeIosModal()">
         <div class="ios-modal-card">
-            <h3>Add to Home Screen</h3>
-            <p class="ios-modal-sub">Follow these steps to install BendBSN on your device</p>
-            <div class="ios-modal-step">
-                <div class="ios-step-num">1</div>
-                <div class="ios-step-text">Tap the <strong>Share</strong> button <svg class="ios-share-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's toolbar</div>
-            </div>
-            <div class="ios-modal-step">
-                <div class="ios-step-num">2</div>
-                <div class="ios-step-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div>
-            </div>
-            <div class="ios-modal-step">
-                <div class="ios-step-num">3</div>
-                <div class="ios-step-text">Tap <strong>"Add"</strong> in the top right corner</div>
-            </div>
-            <button id="iosModalGotIt" onclick="closeIosModal()">Got it!</button>
+            <h2 id="iosModalTitle">Add BendBSN to your home screen</h2>
+            <p class="ios-modal-sub">In Safari, follow these steps.</p>
+            <ol class="ios-modal-steps">
+                <li class="ios-modal-step">
+                    <span class="ios-step-num" aria-hidden="true">1</span>
+                    <span class="ios-step-text">Tap the <strong>Share</strong> button <svg class="ios-share-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in the toolbar.</span>
+                </li>
+                <li class="ios-modal-step">
+                    <span class="ios-step-num" aria-hidden="true">2</span>
+                    <span class="ios-step-text">Scroll down and tap <strong>Add to Home Screen</strong>.</span>
+                </li>
+                <li class="ios-modal-step">
+                    <span class="ios-step-num" aria-hidden="true">3</span>
+                    <span class="ios-step-text">Tap <strong>Add</strong> in the top-right corner.</span>
+                </li>
+            </ol>
+            <button type="button" id="iosModalGotIt" class="home-btn home-btn-primary" onclick="closeIosModal()">Got it</button>
         </div>
     </div>
 
     </div><!-- /clx-shell -->
-
-    <!-- Feedback Modal -->
-    <div id="feedbackModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
-        <div class="modal-content">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h2 style="font-size:16px;font-weight:700;">💡 Send Feedback</h2>
-                <button onclick="document.getElementById('feedbackModal').classList.add('hidden')" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--clx-text-muted);">&times;</button>
-            </div>
-            <form action="https://formsubmit.co/christiankholden@gmail.com" method="POST">
-                <input type="hidden" name="_subject" value="BendBSN Feedback">
-                <input type="hidden" name="_captcha" value="false">
-                <input type="hidden" name="_template" value="table">
-                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:700;color:var(--clx-text-secondary);">Type</label>
-                <select name="type" required>
-                    <option value="bug">🐛 Bug Report</option>
-                    <option value="feature">✨ Feature Request</option>
-                    <option value="phrase">💬 Phrase Suggestion</option>
-                    <option value="feedback" selected>📝 General Feedback</option>
-                </select>
-                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:700;color:var(--clx-text-secondary);">Name</label>
-                <input type="text" name="name" required placeholder="Your name">
-                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:700;color:var(--clx-text-secondary);">Message</label>
-                <textarea name="message" required placeholder="Describe your feedback…"></textarea>
-                <button type="submit" style="width:100%;padding:10px;background:var(--clx-accent);color:var(--clx-accent-text);border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Send Feedback</button>
-            </form>
-        </div>
-    </div>
 
     <script>
         // ========== FULLSCREEN ==========
@@ -1082,7 +1066,7 @@
                 localStorage.setItem('bendbsn_uid', currentUserUid);
                 localStorage.setItem('bendbsn_user', currentUsername);
                 localStorage.setItem('bendbsn_displayName', displayName);
-                document.getElementById('ctxName').textContent = displayName;
+                paintGreeting();
 
                 userProfilesRef.child(user.uid).once('value').then((snap) => {
                     const profile = snap.val();
@@ -1090,7 +1074,7 @@
                     if (profile && profile.displayName && profile.displayName !== displayName) {
                         displayName = profile.displayName;
                         localStorage.setItem('bendbsn_displayName', displayName);
-                        document.getElementById('ctxName').textContent = displayName;
+                        paintGreeting();
                     }
                     syncUserProfile(user);
                     if (profile && (profile.role_id === 'instructor' || profile.role === 'Instructor' || profile.role_label === 'Instructor')) {
@@ -1241,8 +1225,43 @@
         initTheme();
 
         // ========== LOCK ==========
-        function lockScreen() { document.getElementById('lockScreenOverlay').style.display = 'flex'; }
-        function unlockScreen() { document.getElementById('lockScreenOverlay').style.display = 'none'; }
+        // Focus moves to Unlock, then back to whatever had it (the More button
+        // when the nav's Lock screen item was used).
+        // While locked, the rest of the page is inert, so Tab and a screen
+        // reader cannot reach it behind the overlay.
+        let _lockReturnFocus = null;
+        let _lockInerted = [];
+        function setLockInert(on) {
+            _lockInerted.forEach(n => { n.inert = false; });
+            _lockInerted = [];
+            if (!on) return;
+            // Every sibling of the overlay and of each of its ancestors,
+            // since the overlay may sit inside <main>.
+            let node = document.getElementById('lockScreenOverlay');
+            while (node && node !== document.body && node.parentElement) {
+                Array.prototype.forEach.call(node.parentElement.children, n => {
+                    if (n === node || !(n instanceof HTMLElement) || n.inert ||
+                        n.tagName === 'SCRIPT' || n.id === 'toastContainer') return;
+                    n.inert = true;
+                    _lockInerted.push(n);
+                });
+                node = node.parentElement;
+            }
+        }
+        function lockScreen() {
+            _lockReturnFocus = document.activeElement;
+            document.getElementById('lockScreenOverlay').style.display = 'flex';
+            setLockInert(true);
+            const btn = document.getElementById('lockUnlockBtn');
+            if (btn) btn.focus();
+        }
+        function unlockScreen() {
+            document.getElementById('lockScreenOverlay').style.display = 'none';
+            setLockInert(false);
+            const back = _lockReturnFocus;
+            _lockReturnFocus = null;
+            if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
+        }
 
         // ========== LOGOUT ==========
         function logout(reason) {
@@ -1323,8 +1342,34 @@
             });
         }
 
-        // ========== CONTEXT BAR ==========
-        document.getElementById('ctxName').textContent = displayName || localStorage.getItem('bendbsn_displayName') || '—';
+        // ========== GREETING ==========
+        // Greets with a real first name only. Nothing is shown when the name is
+        // missing, a placeholder, or just the email address (or its local part,
+        // which syncUserProfile uses when there is no name).
+        function homeFirstName(name, email) {
+            name = String(name || '').trim();
+            if (!name || /^(anonymous|user|—)$/i.test(name) || name.indexOf('@') !== -1) return '';
+            const local = String(email || '').split('@')[0].toLowerCase();
+            if (local && name.toLowerCase() === local) return '';
+            return name.split(/\s+/)[0];
+        }
+        function paintGreeting() {
+            const now = new Date();
+            const h = now.getHours();
+            const word = (h >= 5 && h < 12) ? 'Good morning' : (h >= 12 && h < 17) ? 'Good afternoon' : 'Good evening';
+            let stored = '';
+            try { stored = localStorage.getItem('bendbsn_displayName') || ''; } catch (e) {}
+            const first = homeFirstName(displayName || stored, currentUsername);
+            const wordEl = document.getElementById('homeGreetWord');
+            const nameWrap = document.getElementById('homeGreetName');
+            const nameEl = document.getElementById('ctxName');
+            const dateEl = document.getElementById('homeDate');
+            if (wordEl) wordEl.textContent = word;
+            if (nameEl) nameEl.textContent = first;
+            if (nameWrap) nameWrap.hidden = !first;
+            if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        paintGreeting();
 
         // ========== RECENT NOTES ==========
         function sanitizeEmail(email) {
@@ -1347,24 +1392,30 @@
                 renderRecentNotes(docs);
             }).catch(() => renderRecentNotes([]));
         }
+        // Format names as RN Notes shows them on its format cards
+        const HOME_NOTE_TYPE_LABELS = {
+            dar: 'DAR', darp: 'DARP', soap: 'SOAP', sbar: 'SBAR', pie: 'PIE', h2t: 'H2T',
+            soapie: 'SOAPIE', narrative: 'Narrative', birp: 'BIRP', ipass: 'I-PASS'
+        };
         function renderRecentNotes(docs) {
             const el = document.getElementById('recentNotesList');
             if (!el) return;
             if (!docs.length) {
-                el.innerHTML = '<div class="dash-empty">No saved notes yet.<br><a href="/app/" style="color:var(--clx-accent);font-weight:600;">Start your first note →</a></div>';
+                el.innerHTML = '<p class="dash-empty">No saved notes yet. Notes you save in RN Notes show up here.</p>';
                 return;
             }
-            el.innerHTML = docs.map(doc => {
-                const name = doc.patientName || doc.name || 'Unnamed Note';
-                const type = doc.noteType || doc.type || '—';
+            el.innerHTML = '<ul class="home-list">' + docs.map(doc => {
+                const name = doc.patientName || doc.name || 'Unnamed note';
+                const rawType = String(doc.noteType || doc.type || '');
+                const type = HOME_NOTE_TYPE_LABELS[rawType.toLowerCase()] || rawType || 'Note';
                 const ts = doc.updatedAt || doc.createdAt || doc.savedAt;
                 const date = ts ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-                return `<a class="dash-note-item" href="/app/#doc=${escHtml(encodeURIComponent(doc.id))}" title="Open in Note Builder">
+                return `<li><a class="dash-note-item" href="/app/#doc=${escHtml(encodeURIComponent(doc.id))}">
                     <span class="dash-note-type">${escHtml(type)}</span>
                     <span class="dash-note-name">${escHtml(name)}</span>
                     <span class="dash-note-date">${escHtml(date)}</span>
-                </a>`;
-            }).join('');
+                </a></li>`;
+            }).join('') + '</ul>';
         }
         function escHtml(s) {
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1379,24 +1430,23 @@
             const s = loadPanelStates(); s[id] = open;
             localStorage.setItem(HOME_PANEL_KEY, JSON.stringify(s));
         }
+        // The heading's button is a disclosure: aria-expanded carries the state
+        // and turns the chevron (#quickRefChev) in CSS.
+        function setQuickRefOpen(open) {
+            const body = document.getElementById('quickRefBody');
+            const btn = document.getElementById('quickRefToggle');
+            if (body) body.classList.toggle('panel-body-collapsed', !open);
+            if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
         function toggleHomePanel(id) {
             const body = document.getElementById('quickRefBody');
-            const chev = document.getElementById('quickRefChev');
             if (!body) return;
-            const isOpen = !body.classList.contains('panel-body-collapsed');
-            body.classList.toggle('panel-body-collapsed', isOpen);
-            if (chev) chev.textContent = isOpen ? '▼' : '▲';
-            savePanelState(id, !isOpen);
+            const open = body.classList.contains('panel-body-collapsed');
+            setQuickRefOpen(open);
+            savePanelState(id, open);
         }
         // Restore panel states (default: collapsed)
-        (function() {
-            const states = loadPanelStates();
-            const isOpen = !!states['quickRef'];
-            const body = document.getElementById('quickRefBody');
-            const chev = document.getElementById('quickRefChev');
-            if (body) { body.classList.toggle('panel-body-collapsed', !isOpen); }
-            if (chev) chev.textContent = isOpen ? '▲' : '▼';
-        })();
+        setQuickRefOpen(!!loadPanelStates()['quickRef']);
 
         // ========== STRUCTURED REMINDERS ==========
         const REMINDERS_V2_KEY = 'bendbsn_home_reminders_v2';
@@ -1424,12 +1474,24 @@
         }
 
         function deleteReminder(id) {
+            // Keep keyboard focus in the list: the next Delete button, else the field
+            const list = document.getElementById('reminderList');
+            const before = list ? Array.prototype.slice.call(list.querySelectorAll('.rem-del-btn')) : [];
+            const at = before.indexOf(document.activeElement);
             const arr = loadRemindersData().filter(r => r.id !== id);
             saveRemindersData(arr);
             renderReminderList();
+            if (at !== -1 && list) {
+                const after = list.querySelectorAll('.rem-del-btn');
+                const target = after[Math.min(at, after.length - 1)] || document.getElementById('remText');
+                if (target) target.focus();
+            }
         }
 
         function emailReminder(rem) {
+            // Called with the reminder's id from the list (or a reminder object)
+            if (!rem || typeof rem !== 'object') rem = loadRemindersData().find(r => r.id === rem);
+            if (!rem) return;
             const userEmail = localStorage.getItem('bendbsn_user') || '';
             const subject = encodeURIComponent('Reminder: ' + rem.text);
             const body = encodeURIComponent('Due: ' + (rem.due ? formatRemDue(rem.due) : 'No due date') + '\n\nPriority: ' + rem.priority);
@@ -1458,10 +1520,29 @@
             return '';
         }
 
-        function getReminderPillClass(priority) {
-            if (priority === 'high') return 'pill-danger';
-            if (priority === 'low') return 'pill-info';
-            return 'pill-warning';
+        function getReminderPriorityLabel(priority) {
+            if (priority === 'high') return 'High priority';
+            if (priority === 'low') return 'Low priority';
+            if (priority === 'med' || !priority) return 'Medium priority';
+            const p = String(priority);
+            return p.charAt(0).toUpperCase() + p.slice(1) + ' priority';
+        }
+
+        // Second line of a reminder: due date and priority, 13px. Overdue and
+        // due-today are chips with an icon and a word, not colour alone.
+        const REM_ICON_OVERDUE = '<svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
+        const REM_ICON_TODAY = '<svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+        const REM_ICON_MAIL = '<svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>';
+        const REM_ICON_DELETE = '<svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
+        function remDueHtml(due) {
+            if (!due) return '<span class="rem-due">No due date</span>';
+            const label = formatRemDue(due);
+            const cls = getRemDueClass(due);
+            const date = new Date(due + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (cls === 'overdue') return '<span class="rem-due overdue">' + REM_ICON_OVERDUE + 'Overdue</span><span class="rem-due">Was due ' + escHtml(date) + '</span>';
+            if (cls === 'today') return '<span class="rem-due today">' + REM_ICON_TODAY + 'Due today</span>';
+            if (label === 'Tomorrow') return '<span class="rem-due">Due tomorrow</span>';
+            return '<span class="rem-due">Due ' + escHtml(label) + '</span>';
         }
 
         function renderReminderList() {
@@ -1485,24 +1566,23 @@
             });
             if (countEl) countEl.textContent = arr.length;
             if (!arr.length) {
-                el.innerHTML = '<div class="rem-empty">No reminders yet. Add one above!</div>';
+                el.innerHTML = '<li class="rem-empty">No reminders yet.</li>';
                 return;
             }
-            const today = new Date(); today.setHours(0,0,0,0);
             el.innerHTML = arr.map(rem => {
-                const dueLabel = formatRemDue(rem.due);
-                const dueClass = getRemDueClass(rem.due);
-                const isOverdue = dueClass === 'overdue';
-                const pillClass = getReminderPillClass(rem.priority);
-                return `<div class="rem-item${isOverdue ? ' overdue' : ''}">
-                    <span class="pill ${pillClass}" style="flex-shrink:0;font-size:9px;">${rem.priority}</span>
-                    <span class="rem-text" title="${escHtml(rem.text)}">${escHtml(rem.text)}</span>
-                    <span class="rem-due ${dueClass}">${escHtml(dueLabel)}</span>
-                    <div class="rem-actions">
-                        <button class="rem-email-btn" onclick="emailReminder(${JSON.stringify(rem).replace(/"/g,'&quot;')})" title="Email this reminder">✉</button>
-                        <button class="rem-del-btn" onclick="deleteReminder(${rem.id})" title="Delete reminder" aria-label="Close">×</button>
+                const isOverdue = getRemDueClass(rem.due) === 'overdue';
+                const idArg = escHtml(JSON.stringify(rem.id));
+                const text = escHtml(rem.text);
+                return `<li class="rem-item${isOverdue ? ' overdue' : ''}">
+                    <div class="rem-body">
+                        <span class="rem-text">${text}</span>
+                        <span class="rem-meta">${remDueHtml(rem.due)}<span class="rem-pri${rem.priority === 'high' ? ' rem-pri-high' : ''}">${escHtml(getReminderPriorityLabel(rem.priority))}</span></span>
                     </div>
-                </div>`;
+                    <div class="rem-actions">
+                        <button type="button" class="rem-icon-btn rem-email-btn" onclick="emailReminder(${idArg})" title="Email this reminder" aria-label="Email reminder: ${text}">${REM_ICON_MAIL}</button>
+                        <button type="button" class="rem-icon-btn rem-del-btn" onclick="deleteReminder(${idArg})" title="Delete reminder" aria-label="Delete reminder: ${text}">${REM_ICON_DELETE}</button>
+                    </div>
+                </li>`;
             }).join('');
         }
 
@@ -1577,10 +1657,16 @@
             triggerPwaInstall();
         }
 
+        var _iosModalReturnFocus = null;
         window.triggerPwaInstall = function() {
             var modal = document.getElementById('iosInstallModal');
             if (_pwaBannerPlatform === 'ios') {
-                if (modal) modal.classList.add('open');
+                if (modal) {
+                    _iosModalReturnFocus = document.activeElement;
+                    modal.classList.add('open');
+                    var gotIt = document.getElementById('iosModalGotIt');
+                    if (gotIt) gotIt.focus();
+                }
             } else if (_deferredInstallPrompt) {
                 _deferredInstallPrompt.prompt();
                 _deferredInstallPrompt.userChoice.then(function(choice) {
@@ -1597,32 +1683,40 @@
 
         window.closeIosModal = function() {
             var modal = document.getElementById('iosInstallModal');
-            if (modal) modal.classList.remove('open');
+            if (!modal || !modal.classList.contains('open')) return;
+            modal.classList.remove('open');
+            var back = _iosModalReturnFocus;
+            _iosModalReturnFocus = null;
+            if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
         };
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') window.closeIosModal();
+        });
         // ===== END PWA INSTALL BANNER =====
 
         // ===== ONBOARDING TOUR =====
         (function() {
             if (localStorage.getItem('bendbsn_onboarded') === 'true') return;
 
+            const ICON = (d) => '<svg class="home-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + d + '</svg>';
             const steps = [
                 {
-                    icon: '📒',
-                    title: 'Welcome to BendBSN!',
-                    body: 'Your all-in-one nursing education companion. Let\'s take a quick 3-step tour so you know where everything lives.',
-                    btn: 'Next →'
+                    icon: ICON('<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+                    title: 'Welcome to BendBSN',
+                    body: 'Your nursing education companion. This 3-step tour shows where everything is.',
+                    btn: 'Next'
                 },
                 {
-                    icon: '📋',
-                    title: 'RN Notes — Your Documentation Hub',
-                    body: 'Tap <strong>RN Notes</strong> in the bottom nav to open the note generator. Build Head-to-Toe assessments, SOAP, DAR, SBAR, and more — then export to Word or PDF.',
-                    btn: 'Next →'
+                    icon: ICON('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>'),
+                    title: 'RN Notes: your documentation hub',
+                    body: 'Open <strong>RN Notes</strong> from the main menu to write a note. Build head-to-toe assessments, SOAP, DAR, SBAR and more, then export to Word or PDF.',
+                    btn: 'Next'
                 },
                 {
-                    icon: '📚',
-                    title: 'Resources — References & Calculators',
-                    body: '<strong>Resources</strong> has drug cards, disease fast cards, ECG reference, lab values, and clinical calculators — all offline.',
-                    btn: 'Get Started 🎉'
+                    icon: ICON('<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>'),
+                    title: 'Resources: references and calculators',
+                    body: '<strong>Resources</strong> has drug cards, disease fast cards, an ECG reference, lab values and clinical calculators. They all work offline.',
+                    btn: 'Get started'
                 }
             ];
 
@@ -1630,23 +1724,32 @@
 
             const overlay = document.createElement('div');
             overlay.id = 'onboardOverlay';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            overlay.className = 'home-tour';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-labelledby', 'onboardTitle');
+            overlay.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') window._onboardSkip();
+            });
 
             function render() {
                 const s = steps[step];
                 overlay.innerHTML = `
-                    <div style="background:var(--clx-bg-surface,#fff);border-radius:16px;max-width:420px;width:100%;padding:30px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-                        <div style="font-size:48px;margin-bottom:12px;">${s.icon}</div>
-                        <h2 style="margin:0 0 10px;font-size:18px;color:var(--clx-text-primary,#111);">${s.title}</h2>
-                        <p style="font-size:14px;color:var(--clx-text-secondary,#555);line-height:1.6;margin:0 0 20px;">${s.body}</p>
-                        <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
-                            <button onclick="window._onboardSkip()" style="background:none;border:none;color:var(--clx-text-muted,#999);font-size:13px;cursor:pointer;padding:8px 14px;">Skip tour</button>
-                            <button onclick="window._onboardNext()" style="background:var(--clx-accent,#1f4e79);color:var(--clx-accent-text);border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">${s.btn}</button>
+                    <div class="home-tour-card">
+                        <div class="home-tour-icon">${s.icon}</div>
+                        <h2 id="onboardTitle">${s.title}</h2>
+                        <p>${s.body}</p>
+                        <div class="home-tour-actions">
+                            <button type="button" class="home-btn home-tour-skip" onclick="window._onboardSkip()">Skip tour</button>
+                            <button type="button" class="home-btn home-btn-primary" id="onboardNextBtn" onclick="window._onboardNext()">${s.btn}</button>
                         </div>
-                        <div style="margin-top:16px;display:flex;gap:6px;justify-content:center;">
-                            ${steps.map((_,i) => `<div style="width:8px;height:8px;border-radius:50%;background:${i===step?'var(--clx-accent,#1f4e79)':'var(--clx-border,#ddd)'};"></div>`).join('')}
+                        <p class="clx-vh">Step ${step + 1} of ${steps.length}</p>
+                        <div class="home-tour-dots" aria-hidden="true">
+                            ${steps.map((_,i) => `<span class="home-tour-dot${i===step?' is-on':''}"></span>`).join('')}
                         </div>
                     </div>`;
+                const next = overlay.querySelector('#onboardNextBtn');
+                if (next && overlay.isConnected) next.focus();
             }
 
             window._onboardNext = function() {
@@ -1666,6 +1769,8 @@
 
             render();
             document.body.appendChild(overlay);
+            const firstNext = overlay.querySelector('#onboardNextBtn');
+            if (firstNext) firstNext.focus();
         })();
         // ===== END ONBOARDING TOUR =====
     </script>

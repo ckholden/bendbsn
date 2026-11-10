@@ -8,12 +8,12 @@
     <script>(function(){var t=null;try{t=localStorage.getItem('bendbsn_theme')}catch(e){}if(t!=='light'&&t!=='dark')t=(t==null&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t)})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#0d1f2d">
+    <meta name="theme-color" content="#23282B">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
-    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/shared/header.css">
     <link rel="stylesheet" href="/shared/toast.css">
@@ -29,218 +29,470 @@
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
+            font-size: var(--clx-type-base);
             background: var(--clx-bg-canvas);
             color: var(--clx-text-primary);
             min-height: 100vh;
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            padding-bottom: 60px;
         }
-        .prof-page { max-width: 800px; margin: 0 auto; padding: 16px; flex: 1; }
 
-        /* Avatar hero */
+        /* Page scale from design-audit/c-build-plan.md section 7: UI text 15,
+           H1 40 (28 on phones), fields 16 so iOS does not zoom.
+           Selected = Basalt fill, Snow text and a check (the inverse in Dark,
+           where Basalt is the surface). Never Rabbitbrush: that means "you are here". */
+        .prof-page,
+        #lockScreenOverlay {
+            --p-type-xs: 12px;
+            --p-type-sm: 13px;
+            --p-type-base: 15px;
+            --p-type-lg: 17px;
+            --p-type-xl: 21px;
+            --p-type-2xl: 28px;
+            --p-type-3xl: 40px;
+            --p-radius: 10px;
+            --p-radius-card: 14px;
+            --p-sel-bg: var(--clx-text-primary);
+            --p-sel-text: var(--clx-bg-canvas);
+        }
+        .prof-page {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 32px 16px 48px;
+            font-size: var(--p-type-base);
+            line-height: 1.5;
+        }
+        .prof-title {
+            font-size: var(--p-type-3xl);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+        }
+
+        /* Account card */
         .prof-hero {
-            background: var(--clx-bg-surface);
-            border: 1px solid var(--clx-border);
-            border-radius: 12px;
-            padding: 24px;
             display: flex;
             align-items: center;
             gap: 20px;
-            margin-bottom: 16px;
+            padding: 24px;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: var(--p-radius-card);
         }
         .prof-avatar {
             width: 72px; height: 72px;
-            border-radius: 50%;
-            background: var(--clx-accent);
-            color: var(--clx-accent-text);
-            font-size: 26px;
-            font-weight: 700;
+            flex: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
+            border-radius: 50%;
+            background: var(--clx-quiet);
+            color: var(--clx-text-primary);
+            font-size: var(--p-type-2xl);
+            font-weight: 700;
+            font-variation-settings: 'opsz' 96;
+            letter-spacing: 0.02em;
+            box-shadow: inset 0 0 0 1px var(--clx-border);
         }
         .prof-hero-info { flex: 1; min-width: 0; }
-        .prof-name { font-size: 20px; font-weight: 700; color: var(--clx-text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .prof-email { font-size: 13px; color: var(--clx-text-muted); margin-top: 3px; }
-        .prof-meta { font-size: 12px; color: var(--clx-text-muted); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 12px; }
-        .prof-meta-item { display: flex; align-items: center; gap: 4px; }
+        .prof-name { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+        .prof-name-text {
+            min-width: 0;
+            font-size: var(--p-type-2xl);
+            line-height: 1.15;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            overflow-wrap: anywhere;
+        }
+        .prof-name-edit { display: none; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .prof-email { margin-top: 4px; color: var(--clx-text-secondary); overflow-wrap: anywhere; }
+        .prof-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 16px;
+            margin-top: 12px;
+            font-size: var(--p-type-sm);
+            color: var(--clx-text-muted);
+        }
+        .prof-since:empty { display: none; }
         .prof-role-badge {
             display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            background: var(--clx-accent-subtle);
-            color: var(--clx-accent);
-        }
-
-        /* Edit name */
-        .prof-name-edit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .prof-name-input {
-            padding: 5px 10px;
-            border: 1px solid var(--clx-border);
-            border-radius: 6px;
-            font-size: 16px;
+            padding: 3px 12px;
+            border-radius: 999px;
+            background: var(--clx-quiet);
+            color: var(--clx-quiet-text);
             font-weight: 600;
-            background: var(--clx-bg-surface);
-            color: var(--clx-text-primary);
-            font-family: inherit;
-            flex: 1 1 180px;
+        }
+
+        /* Counts: Sage tiles like the RN Notes vitals strip. Not "stat-"
+           class names: clinical-ui.css squares off [class*="stat-"] on phones. */
+        .prof-counts {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin: 12px 0 40px;
+        }
+        .prof-count {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
             min-width: 0;
-            max-width: 280px;
-        }
-        .prof-name-input:focus { outline: none; border-color: var(--clx-accent); box-shadow: 0 0 0 2px var(--clx-accent-subtle); }
-        .prof-edit-btn { background: none; border: 1px solid var(--clx-border); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--clx-accent); font-family: inherit; font-weight: 600; }
-        .prof-edit-btn:hover { background: var(--clx-accent-subtle); }
-        .prof-edit-btn.danger { color: var(--clx-danger); border-color: var(--clx-danger); border-color: color-mix(in srgb, var(--clx-danger) 45%, transparent); }
-        .prof-edit-btn.danger:hover { background: var(--clx-danger-bg); }
-        .phrases-toggle:focus-visible { outline: 2px solid var(--clx-focus); outline-offset: -2px; }
-
-        /* Stats grid */
-        .prof-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-        .prof-stat-card { background: var(--clx-bg-surface); border: 1px solid var(--clx-border); border-radius: 10px; padding: 14px 16px; text-align: center; text-decoration: none; transition: border-color 0.15s, background 0.15s; }
-        .prof-stat-card:hover { background: var(--clx-accent-subtle); border-color: var(--clx-accent); }
-        .prof-stat-num { font-size: 28px; font-weight: 800; color: var(--clx-accent); line-height: 1; }
-        .prof-stat-label { font-size: 11px; color: var(--clx-text-muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-
-        /* Settings card */
-        .prof-card { background: var(--clx-bg-surface); border: 1px solid var(--clx-border); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
-        .prof-card-hd { background: var(--clx-bg-surface-2); border-bottom: 1px solid var(--clx-border); padding: 10px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--clx-text-muted); }
-        .prof-card-bd { padding: 14px 16px; }
-
-        /* Quick links */
-        .prof-link-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .prof-link-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 12px;
-            border: 1px solid var(--clx-border);
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
+            padding: 12px 16px;
+            border: 1px solid transparent;
+            border-radius: var(--p-radius);
+            background: var(--clx-quiet);
             color: var(--clx-text-primary);
+            text-decoration: none;
+        }
+        .prof-count:hover { border-color: var(--clx-accent); text-decoration: none; opacity: 1; }
+        .prof-count-label { font-size: var(--p-type-sm); color: var(--clx-quiet-text); }
+        .prof-count-num {
+            font-size: var(--p-type-2xl);
+            line-height: 1.1;
+            font-weight: 700;
+            font-variation-settings: 'opsz' 96;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Sections: a heading over one group of rows */
+        .prof-section { margin-bottom: 32px; }
+        .prof-section-title {
+            font-size: var(--p-type-xl);
+            line-height: 1.25;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .prof-group {
+            padding: 0 20px;
             background: var(--clx-bg-surface);
-            transition: background 0.15s, border-color 0.15s;
+            border: 1px solid var(--clx-border);
+            border-radius: var(--p-radius-card);
         }
-        .prof-link-item:hover { background: var(--clx-accent-subtle); border-color: var(--clx-accent); color: var(--clx-accent); }
-        .prof-link-icon { font-size: 18px; }
+        .prof-setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--clx-border);
+        }
+        .prof-setting-row:last-child { border-bottom: none; }
+        .prof-setting-text { flex: 1 1 200px; min-width: 0; }
+        /* A row whose control is one button keeps it on the right at every width */
+        .prof-setting-row.is-action { flex-wrap: nowrap; }
+        .prof-setting-row.is-action .prof-setting-text { flex-basis: 0; }
+        .prof-setting-label { display: block; font-size: var(--p-type-base); font-weight: 600; color: var(--clx-text-primary); }
+        .prof-setting-sub { margin-top: 2px; font-size: var(--p-type-sm); color: var(--clx-text-muted); }
 
-        /* Setting row */
-        .prof-setting-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--clx-border); }
-        .prof-select { padding: 5px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); font-family: inherit; cursor: pointer; min-width: 150px; max-width: 100%; }
-        .prof-setting-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .prof-setting-label { font-size: 13px; font-weight: 500; color: var(--clx-text-primary); }
-        .prof-setting-sub { font-size: 11px; color: var(--clx-text-muted); margin-top: 1px; }
-        .prof-toggle { display: flex; align-items: center; gap: 8px; }
+        /* Fields. clinical-ui.css forces 13px and 6px corners on every field. */
+        .prof-page .prof-select,
+        .prof-page .prof-name-input,
+        .prof-page .phrase-add-input {
+            min-height: 44px;
+            font-size: 1rem !important;
+            border-radius: var(--p-radius) !important;
+        }
+        .prof-select { min-width: 240px; max-width: 100%; cursor: pointer; }
+        .prof-name-input { flex: 1 1 200px; min-width: 0; max-width: 320px; font-weight: 600; }
+        .phrase-add-input { width: 100%; }
+        .phrase-add-input.mono { font-family: var(--clx-font-mono); }
 
-        /* Toggle switch */
-        .toggle-switch { position: relative; width: 42px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
-        .toggle-track {
-            position: absolute; inset: 0;
-            /* Off state: the field line, so the track and the white knob both read (3:1) */
-            background: var(--clx-border-field, var(--clx-border-strong));
-            border-radius: 12px;
+        /* Buttons */
+        .prof-edit-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 40px;
+            padding: 0 16px;
+            border: 1px solid var(--clx-border-field);
+            border-radius: var(--p-radius);
+            background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
+            font-size: var(--p-type-base);
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        .toggle-track::before {
-            content: '';
-            position: absolute;
-            width: 18px; height: 18px;
-            left: 3px; top: 3px;
-            background: #fff;
-            border-radius: 50%;
-            transition: transform 0.2s;
-        }
-        .toggle-switch input:checked + .toggle-track { background: var(--clx-accent); }
-        .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); background: var(--clx-accent-text); }
+        .prof-edit-btn:hover { background: var(--clx-bg-hover); }
+        .prof-edit-btn.primary { background: var(--clx-accent); border-color: var(--clx-accent); color: var(--clx-accent-text); }
+        .prof-edit-btn.primary:hover { background: var(--clx-accent-hover); border-color: var(--clx-accent-hover); }
+        .prof-edit-btn.quiet { background: none; border-color: transparent; color: var(--clx-text-secondary); }
+        .prof-edit-btn.quiet:hover { background: var(--clx-bg-hover); color: var(--clx-text-primary); }
+        .prof-edit-btn.danger { color: var(--clx-danger); border-color: var(--clx-danger); }
+        .prof-edit-btn.danger:hover { background: var(--clx-danger-bg); }
+        .prof-name .prof-edit-btn { min-height: 36px; padding: 0 12px; font-size: var(--p-type-sm); }
 
-        /* My Phrases — compact 2-col grid on desktop, single col on phones */
+        /* Theme: two-option segmented control (native radios, arrow keys work) */
+        .prof-seg {
+            display: inline-flex;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid var(--clx-border-field);
+            border-radius: var(--p-radius);
+            background: var(--clx-bg-surface);
+        }
+        .prof-seg-opt { position: relative; display: flex; cursor: pointer; }
+        /* The real radio covers its option, invisible; clicks reach the label */
+        .prof-seg-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; pointer-events: none; }
+        .prof-seg-face {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 104px;
+            min-height: 38px;
+            padding: 0 14px;
+            border-radius: 7px;
+            font-size: var(--p-type-base);
+            font-weight: 600;
+            color: var(--clx-text-primary);
+            transition: background var(--clx-transition-fast), color var(--clx-transition-fast);
+        }
+        .prof-seg-opt:hover .prof-seg-face { background: var(--clx-bg-hover); }
+        .prof-seg-check {
+            width: 16px; height: 16px;
+            flex: none;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            visibility: hidden;
+        }
+        .prof-seg-input:checked + .prof-seg-face { background: var(--p-sel-bg); color: var(--p-sel-text); }
+        .prof-seg-input:checked + .prof-seg-face .prof-seg-check { visibility: visible; }
+        .prof-seg-input:focus-visible + .prof-seg-face { outline: 3px solid var(--clx-focus); outline-offset: 2px; }
+
+        /* Smart phrases: the heading is the disclosure button */
+        .prof-phrases-hd { font-size: inherit; }
+        .prof-disclosure {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            min-height: 60px;
+            padding: 12px 20px;
+            background: var(--clx-bg-surface);
+            border: 1px solid var(--clx-border);
+            border-radius: var(--p-radius-card);
+            color: var(--clx-text-primary);
+            text-align: left;
+            cursor: pointer;
+        }
+        .prof-disclosure:hover { background: var(--clx-bg-hover); }
+        .prof-disclosure[aria-expanded="true"] { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .prof-disclosure-title { flex: 1; min-width: 0; font-size: var(--p-type-xl); font-weight: 700; font-variation-settings: 'opsz' 96; }
+        .prof-disclosure-count { font-size: var(--p-type-sm); font-weight: 500; color: var(--clx-text-muted); }
+        .prof-chev { display: flex; flex: none; }
+        .prof-chev svg {
+            width: 20px; height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform var(--clx-transition-base);
+        }
+        .prof-disclosure[aria-expanded="true"] .prof-chev svg { transform: rotate(180deg); }
+        .prof-phrases-body {
+            padding: 16px 20px 20px;
+            border-top: none;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+        .phrase-intro { max-width: 64ch; margin-bottom: 16px; font-size: var(--p-type-sm); color: var(--clx-text-secondary); }
+        .phrase-code {
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: var(--clx-bg-surface-2);
+            font-family: var(--clx-font-mono);
+            font-size: var(--p-type-xs);
+        }
+
+        /* Add-phrase form: fields wrap onto a second line instead of squeezing */
+        .phrase-add-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: var(--clx-bg-surface-2);
+            border-radius: var(--p-radius);
+        }
+        .phrase-add-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .phrase-add-field.shortcut { flex: 0 1 160px; min-width: 120px; }
+        .phrase-add-field.text { flex: 1 1 220px; }
+        .phrase-add-field label { font-size: var(--p-type-sm); font-weight: 600; color: var(--clx-text-secondary); }
+        .phrase-add-btn { min-height: 44px; }
+
+        /* Phrase list: 2 columns on wide screens, 1 on phones */
         .phrase-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 4px;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+            gap: 2px 16px;
         }
         .phrase-cat {
             grid-column: 1 / -1;
-            font-size: 10px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.06em;
-            color: var(--clx-text-muted);
-            margin-top: 10px; padding-bottom: 2px;
+            margin-top: 16px;
+            padding-bottom: 4px;
             border-bottom: 1px solid var(--clx-border);
+            font-size: var(--p-type-sm);
+            font-weight: 700;
+            color: var(--clx-text-secondary);
         }
         .phrase-cat:first-child { margin-top: 0; }
+        .phrase-cat-count { font-weight: 500; color: var(--clx-text-muted); }
         .phrase-row {
-            display: flex; align-items: center; gap: 6px;
-            padding: 4px 6px; border-radius: 5px;
-            background: transparent;
-            transition: background 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            padding: 4px 6px;
+            border-radius: 6px;
         }
-        .phrase-row:hover { background: var(--clx-bg-surface-2); }
+        .phrase-row:hover { background: var(--clx-bg-hover); }
         .phrase-shortcut {
-            font-family: monospace; font-size: 11px; font-weight: 700;
-            color: var(--clx-accent); background: var(--clx-accent-subtle);
-            padding: 1px 6px; border-radius: 3px; flex-shrink: 0;
-            min-width: 64px; text-align: left;
+            flex-shrink: 0;
+            min-width: 72px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--clx-accent-subtle);
+            color: var(--clx-accent);
+            font-family: var(--clx-font-mono);
+            font-size: var(--p-type-xs);
+            font-weight: 700;
+            text-align: left;
         }
         .phrase-expansion {
-            flex: 1; min-width: 0;
-            font-size: 12px; color: var(--clx-text-secondary);
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-            padding: 1px 4px; border-radius: 3px;
-            outline: 1px solid transparent;
-            transition: outline-color 0.15s, background 0.15s;
+            flex: 1;
+            min-width: 0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: var(--p-type-sm);
+            color: var(--clx-text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .phrase-expansion:focus {
             white-space: normal;
-            outline-color: var(--clx-accent);
+            outline: 2px solid var(--clx-focus);
+            outline-offset: 1px;
             background: var(--clx-bg-surface);
+            color: var(--clx-text-primary);
         }
+        /* Row delete (x): quiet until pointed at, so 50+ rows are not a column of red */
         .phrase-row .prof-edit-btn {
-            opacity: 0; padding: 2px 8px !important; font-size: 10px !important;
-            height: auto !important; min-width: 0;
-            transition: opacity 0.1s;
+            min-height: 28px;
+            min-width: 28px;
+            padding: 0 8px;
+            border-color: transparent;
+            background: none;
+            color: var(--clx-text-muted);
+            font-size: var(--p-type-lg);
+            line-height: 1;
+            opacity: 0;
         }
+        .phrase-row .prof-edit-btn:hover { background: var(--clx-danger-bg); color: var(--clx-danger); }
         .phrase-row:hover .prof-edit-btn,
         .phrase-row:focus-within .prof-edit-btn { opacity: 1; }
+        .phrase-foot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--clx-border);
+        }
+        .phrase-foot-text, .phrase-empty { font-size: var(--p-type-sm); color: var(--clx-text-muted); }
+        .phrase-empty { padding: 6px 0; }
 
-        /* Add-phrase form: fields wrap onto a second line instead of squeezing */
-        .phrase-add-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; padding: 10px; background: var(--clx-bg-surface-2); border: 1px solid var(--clx-border); border-radius: 8px; margin-bottom: 14px; }
-        .phrase-add-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-        .phrase-add-field.shortcut { flex: 0 1 150px; min-width: 120px; }
-        .phrase-add-field.text { flex: 1 1 220px; }
-        .phrase-add-field label { font-size: 10px; font-weight: 600; color: var(--clx-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .phrase-add-input { width: 100%; padding: 6px 10px; border: 1px solid var(--clx-border); border-radius: 6px; font-size: 13px; background: var(--clx-bg-surface); color: var(--clx-text-primary); font-family: inherit; }
-        .phrase-add-input.mono { font-family: monospace; }
-        .phrase-add-input:focus, .prof-select:focus { outline: none; border-color: var(--clx-accent); box-shadow: 0 0 0 2px var(--clx-accent-subtle); }
-        .phrase-add-btn { padding: 6px 14px; font-size: 13px; min-height: 32px; align-self: flex-end; }
+        /* Legacy announcement banner (nothing on this page shows it today) */
+        #alertBanner {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 10000;
+            padding: 10px 20px;
+            background: var(--clx-danger-solid);
+            color: var(--clx-danger-solid-text);
+            text-align: center;
+            font-weight: 600;
+        }
 
         /* Lock screen: privacy overlay — the session stays signed in (same as /home/, /app/, /sbar/) */
-        #lockScreenOverlay { display: none; position: fixed; inset: 0; background: #0d1f2d; z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
+        #lockScreenOverlay {
+            --p-mark-badge: #3F8A7B;
+            --p-mark-sky: #FBFCFC;
+            --p-mark-cross: #E2B33C;
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 24px;
+            background: var(--clx-chrome-bg, #23282B);
+            color: var(--clx-chrome-text, #FBFCFC);
+        }
+        .prof-lock { max-width: 360px; text-align: center; }
+        .prof-lock-mark { display: block; width: 64px; height: 64px; margin: 0 auto 20px; }
+        .prof-lock-mark .mk-badge { fill: var(--p-mark-badge); }
+        .prof-lock-mark .mk-sky { fill: none; stroke: var(--p-mark-sky); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+        .prof-lock-mark .mk-cross { fill: var(--p-mark-cross); }
+        .prof-lock-title { margin-bottom: 8px; font-size: var(--p-type-2xl); line-height: 1.15; font-weight: 700; }
+        .prof-lock-sub { margin-bottom: 28px; font-size: var(--p-type-base); color: var(--clx-chrome-muted, #C9D3CD); }
+        .prof-lock-btn {
+            min-height: 48px;
+            padding: 0 32px;
+            border: 0;
+            border-radius: var(--p-radius);
+            background: var(--clx-chrome-text, #FBFCFC);
+            color: var(--clx-chrome-bg, #23282B);
+            font-size: var(--p-type-base);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .prof-lock-btn:hover { background: var(--clx-chrome-muted, #C9D3CD); }
 
         /* Touch: 44px targets, and row actions can't rely on hover */
         @media (pointer: coarse) {
-            .prof-edit-btn, .prof-select, .prof-name-input, .phrase-add-input, .phrase-add-btn { min-height: 44px; }
+            .prof-edit-btn, .prof-name .prof-edit-btn, .prof-seg-face { min-height: 44px; }
             .phrase-row .prof-edit-btn { opacity: 1; min-height: 44px; min-width: 44px; }
         }
+        @media (prefers-reduced-motion: reduce) {
+            .prof-seg-face, .prof-chev svg { transition: none; }
+        }
 
-        @media (max-width: 500px) {
-            .prof-hero { flex-direction: column; text-align: center; }
-            .prof-name-edit { justify-content: center; }
-            .prof-name-input { flex-basis: 100%; max-width: none; }
-            .prof-stats-grid { grid-template-columns: 1fr 1fr; }
-            .prof-link-grid { grid-template-columns: 1fr; }
+        @media (max-width: 700px) {
+            .prof-page { padding-top: 20px; }
+            .prof-title { font-size: var(--p-type-2xl); margin-bottom: 16px; }
+            .prof-hero { gap: 16px; padding: 20px; }
+            .prof-avatar { width: 56px; height: 56px; font-size: var(--p-type-xl); }
+            .prof-name-text { font-size: var(--p-type-xl); }
+            .prof-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 32px; }
         }
         @media (max-width: 480px) {
+            .prof-group { padding: 0 16px; }
+            .prof-hero { padding: 16px; }
+            .prof-phrases-body { padding: 16px; }
+            .prof-disclosure { padding: 12px 16px; }
+            .prof-disclosure-title { font-size: var(--p-type-lg); }
+            .prof-select, .prof-seg { width: 100%; }
+            .prof-seg-opt { flex: 1; }
+            .prof-seg-face { width: 100%; min-width: 0; }
             .phrase-add-field.shortcut, .phrase-add-field.text { flex: 1 1 100%; }
-            .phrase-add-btn { width: 100%; justify-content: center; }
-            .prof-select { width: 100%; }
+            .phrase-add-btn { width: 100%; }
         }
     </style>
 </head>
@@ -297,79 +549,68 @@
 
     <div class="clx-shell">
     <main class="clx-main" id="main" role="main" tabindex="-1">
-    <div id="alertBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px 20px;text-align:center;font-weight:600;font-size:13px;z-index:10000;"><span id="alertText"></span></div>
+    <div id="alertBanner"><span id="alertText"></span></div>
 
     <div class="prof-page">
 
-        <!-- Hero / Avatar card -->
-        <div class="prof-hero">
-            <div class="prof-avatar" id="profAvatar">?</div>
+        <h1 class="clx-page-title prof-title">Profile</h1>
+
+        <!-- Account card -->
+        <section class="prof-hero" aria-labelledby="profDisplayName">
+            <div class="prof-avatar" id="profAvatar" aria-hidden="true">?</div>
             <div class="prof-hero-info">
                 <div class="prof-name" id="profNameWrap">
-                    <span id="profDisplayName">Loading…</span>
-                    <button class="prof-edit-btn" onclick="startEditName()">Edit</button>
+                    <h2 class="prof-name-text" id="profDisplayName">Loading…</h2>
+                    <button type="button" class="prof-edit-btn" onclick="startEditName()">Edit name</button>
                 </div>
-                <div class="prof-name-edit" id="profNameEdit" style="display:none;">
-                    <input type="text" class="prof-name-input" id="profNameInput" placeholder="Display name">
-                    <button class="prof-edit-btn" onclick="saveDisplayName()">Save</button>
-                    <button class="prof-edit-btn" onclick="cancelEditName()" style="color:var(--clx-text-muted);">Cancel</button>
+                <div class="prof-name-edit" id="profNameEdit">
+                    <label for="profNameInput" class="clx-vh">Display name</label>
+                    <input type="text" class="prof-name-input" id="profNameInput" placeholder="Display name" autocomplete="name">
+                    <button type="button" class="prof-edit-btn primary" onclick="saveDisplayName()">Save</button>
+                    <button type="button" class="prof-edit-btn quiet" onclick="cancelEditName()">Cancel</button>
                 </div>
                 <div class="prof-email" id="profEmail">—</div>
                 <div class="prof-meta">
-                    <div class="prof-meta-item"><span class="prof-role-badge" id="profRoleBadge">—</span></div>
-                    <div class="prof-meta-item" id="profMemberSince">Member since: —</div>
+                    <span class="prof-role-badge" id="profRoleBadge">—</span>
+                    <span class="prof-since" id="profMemberSince"></span>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Stats -->
-        <div class="prof-stats-grid">
-            <a href="/app/" class="prof-stat-card">
-                <div class="prof-stat-num" id="statNotes">—</div>
-                <div class="prof-stat-label">Saved Notes</div>
+        <!-- Counts (each opens its tool) -->
+        <div class="prof-counts">
+            <a href="/app/" class="prof-count">
+                <span class="prof-count-label">Saved notes</span>
+                <span class="prof-count-num" id="statNotes">—</span>
             </a>
-            <a href="/careplan/" class="prof-stat-card">
-                <div class="prof-stat-num" id="statCarePlans">—</div>
-                <div class="prof-stat-label">Care Plans</div>
+            <a href="/careplan/" class="prof-count">
+                <span class="prof-count-label">Care plans</span>
+                <span class="prof-count-num" id="statCarePlans">—</span>
             </a>
-            <a href="/sbar/" class="prof-stat-card">
-                <div class="prof-stat-num" id="statSbars">—</div>
-                <div class="prof-stat-label">SBAR Reports</div>
+            <a href="/sbar/" class="prof-count">
+                <span class="prof-count-label">SBAR reports</span>
+                <span class="prof-count-num" id="statSbars">—</span>
             </a>
-            <a href="/rotationlog/" class="prof-stat-card">
-                <div class="prof-stat-num" id="statHours">—</div>
-                <div class="prof-stat-label">Rotation Hours</div>
+            <a href="/rotationlog/" class="prof-count">
+                <span class="prof-count-label">Rotation hours</span>
+                <span class="prof-count-num" id="statHours">—</span>
             </a>
-        </div>
-
-        <!-- Quick Links -->
-        <div class="prof-card">
-            <div class="prof-card-hd">Quick Access</div>
-            <div class="prof-card-bd">
-                <div class="prof-link-grid">
-                    <a href="/app/" class="prof-link-item"><span class="prof-link-icon">📝</span>RN Notes</a>
-                    <a href="/careplan/" class="prof-link-item"><span class="prof-link-icon">📒</span>Care Plans</a>
-                    <a href="/sbar/" class="prof-link-item"><span class="prof-link-icon">📋</span>SBAR Handoff</a>
-                    <a href="/rotationlog/" class="prof-link-item"><span class="prof-link-icon">🕐</span>Rotation Log</a>
-                    <a href="/resources/" class="prof-link-item"><span class="prof-link-icon">📚</span>Resources</a>
-                </div>
-            </div>
         </div>
 
         <!-- Preferences -->
-        <div class="prof-card">
-            <div class="prof-card-hd">Preferences</div>
-            <div class="prof-card-bd">
+        <section class="prof-section" aria-labelledby="prefsTitle">
+            <h2 class="prof-section-title" id="prefsTitle">Preferences</h2>
+            <div class="prof-group">
                 <div class="prof-setting-row">
-                    <div>
-                        <div class="prof-setting-label">Student Year / Role</div>
-                        <div class="prof-setting-sub">Updates your credential badge throughout the app</div>
+                    <div class="prof-setting-text">
+                        <label for="roleSelect"><span class="prof-setting-label">Year or role</span></label>
+                        <div class="prof-setting-sub" id="roleHint">Sets the credential shown with your name across BendBSN.</div>
                     </div>
-                    <select id="roleSelect" class="prof-select" onchange="saveRole(this.value)" aria-label="Student year or role">
-                        <option value="Student Nurse Year 1">SN1 — Year 1</option>
-                        <option value="Student Nurse Year 2">SN2 — Year 2</option>
-                        <option value="Student Nurse Year 3">SN3 — Year 3</option>
-                        <option value="Student Nurse Year 4">SN4 — Year 4</option>
+                    <select id="roleSelect" class="prof-select" onchange="saveRole(this.value)" aria-describedby="roleHint">
+                        <option value="Student Nurse Year 1">Student nurse, year 1</option>
+                        <option value="Student Nurse Year 2">Student nurse, year 2</option>
+                        <option value="Student Nurse Year 3">Student nurse, year 3</option>
+                        <option value="Student Nurse Year 4">Student nurse, year 4</option>
                         <option value="RN">RN</option>
                         <option value="BSN RN">BSN RN</option>
                         <option value="LPN">LPN</option>
@@ -377,79 +618,86 @@
                     </select>
                 </div>
                 <div class="prof-setting-row">
-                    <div>
-                        <div class="prof-setting-label">Dark Mode</div>
-                        <div class="prof-setting-sub">Switch between light and dark themes</div>
+                    <div class="prof-setting-text">
+                        <span class="prof-setting-label" id="themeLabel">Theme</span>
+                        <div class="prof-setting-sub" id="themeHint">Saved to your account, so it follows you to every device.</div>
                     </div>
-                    <div class="prof-toggle">
-                        <label class="toggle-switch" aria-label="Toggle dark mode">
-                            <input type="checkbox" id="darkModeToggle" onchange="toggleDarkModeFromProfile(this.checked)">
-                            <span class="toggle-track"></span>
+                    <!-- Native radios: never data-action="theme" or .bsn-theme-opt (shared/header.js acts on both) -->
+                    <div class="prof-seg" role="radiogroup" aria-labelledby="themeLabel" aria-describedby="themeHint">
+                        <label class="prof-seg-opt">
+                            <input class="prof-seg-input" type="radio" name="profTheme" value="light" id="themeLightOpt">
+                            <span class="prof-seg-face"><svg class="prof-seg-check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Light</span>
+                        </label>
+                        <label class="prof-seg-opt">
+                            <input class="prof-seg-input" type="radio" name="profTheme" value="dark" id="darkModeToggle">
+                            <span class="prof-seg-face"><svg class="prof-seg-check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Dark</span>
                         </label>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Account -->
-        <div class="prof-card">
-            <div class="prof-card-hd">Account</div>
-            <div class="prof-card-bd">
-                <div class="prof-setting-row">
-                    <div>
-                        <div class="prof-setting-label">Lock Screen</div>
-                        <div class="prof-setting-sub">Quickly lock your session without logging out</div>
+        <section class="prof-section" aria-labelledby="accountTitle">
+            <h2 class="prof-section-title" id="accountTitle">Account</h2>
+            <div class="prof-group">
+                <div class="prof-setting-row is-action">
+                    <div class="prof-setting-text">
+                        <span class="prof-setting-label">Lock screen</span>
+                        <div class="prof-setting-sub">Hide this page until you unlock it. You stay signed in.</div>
                     </div>
-                    <button class="prof-edit-btn" onclick="lockScreen()">Lock</button>
+                    <button type="button" class="prof-edit-btn" onclick="lockScreen()">Lock</button>
                 </div>
-                <div class="prof-setting-row">
-                    <div>
-                        <div class="prof-setting-label">Logout</div>
-                        <div class="prof-setting-sub">End your session and return to login</div>
+                <div class="prof-setting-row is-action">
+                    <div class="prof-setting-text">
+                        <span class="prof-setting-label">Log out</span>
+                        <div class="prof-setting-sub">Sign out of BendBSN on this device.</div>
                     </div>
-                    <button class="prof-edit-btn danger" onclick="logout()">Logout</button>
+                    <button type="button" class="prof-edit-btn danger" onclick="logout()">Log out</button>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Smart Phrases -->
-        <div class="prof-card">
-            <div class="prof-card-hd phrases-toggle" id="phrasesToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="myPhrasesBody" onclick="toggleMyPhrases()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMyPhrases();}" style="cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none;">
-                <span style="flex:1;">My Smart Phrases</span>
-                <span id="phrasesCount" style="font-size:11px;font-weight:500;color:var(--clx-text-muted);text-transform:none;letter-spacing:0;"></span>
-                <span id="phrasesToggleIcon" aria-hidden="true" style="font-size:13px;color:var(--clx-text-muted);transition:transform 0.2s;">▶</span>
-            </div>
-            <div class="prof-card-bd" id="myPhrasesBody" style="display:none;">
-                <p style="font-size:12px;color:var(--clx-text-muted);margin-bottom:10px;">Type a shortcut (e.g. <code style="background:var(--clx-bg-surface-2);padding:1px 5px;border-radius:4px;">.vs</code>) in any note field and it auto-expands. Global phrases from your instructor are always available.</p>
+        <section class="prof-section">
+            <h2 class="prof-phrases-hd">
+                <button type="button" class="prof-disclosure phrases-toggle" id="phrasesToggle" aria-expanded="false" aria-controls="myPhrasesBody" onclick="toggleMyPhrases()">
+                    <span class="prof-disclosure-title">Smart phrases</span>
+                    <span class="prof-disclosure-count" id="phrasesCount"></span>
+                    <span class="prof-chev" id="phrasesToggleIcon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"/></svg></span>
+                </button>
+            </h2>
+            <div class="prof-group prof-phrases-body" id="myPhrasesBody" style="display:none;">
+                <p class="phrase-intro">Type a shortcut such as <code class="phrase-code">.vs</code> in any note field and it expands to the full text. Phrases from your instructor are always available.</p>
 
                 <!-- Add form on top so it's always one click away -->
                 <div class="phrase-add-form">
                     <div class="phrase-add-field shortcut">
                         <label for="newPhraseShortcut">Shortcut</label>
-                        <input id="newPhraseShortcut" type="text" class="phrase-add-input mono" placeholder=".myshortcut">
+                        <input id="newPhraseShortcut" type="text" class="phrase-add-input mono" placeholder=".myshortcut" autocomplete="off">
                     </div>
                     <div class="phrase-add-field text">
-                        <label for="newPhraseText">Expansion text</label>
-                        <input id="newPhraseText" type="text" class="phrase-add-input" placeholder="Text that replaces the shortcut">
+                        <label for="newPhraseText">Expands to</label>
+                        <input id="newPhraseText" type="text" class="phrase-add-input" placeholder="Text that replaces the shortcut" autocomplete="off">
                     </div>
-                    <button class="prof-edit-btn phrase-add-btn" onclick="addMyPhrase()">+ Add</button>
+                    <button type="button" class="prof-edit-btn primary phrase-add-btn" onclick="addMyPhrase()">Add phrase</button>
                 </div>
 
                 <div id="myPhrasesList"></div>
             </div>
-        </div>
+        </section>
 
     </div><!-- /prof-page -->
     </main>
     </div><!-- /clx-shell -->
 
     <!-- Lock screen (privacy overlay; the session stays signed in) -->
-    <div id="lockScreenOverlay" role="dialog" aria-modal="true" aria-label="Portal locked">
-        <div style="text-align:center;color:#fff;">
-            <div style="font-size:60px;margin-bottom:16px;">&#128274;</div>
-            <h1 style="font-size:28px;margin-bottom:8px;">BendBSN</h1>
-            <p style="font-size:15px;opacity:.7;margin-bottom:32px;">Portal Locked</p>
-            <button type="button" id="unlockScreenBtn" onclick="unlockScreen()" style="background:var(--clx-accent);color:var(--clx-accent-text);border:none;padding:14px 40px;min-height:44px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">&#128275; Unlock</button>
+    <div id="lockScreenOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle" aria-describedby="lockSub">
+        <div class="prof-lock">
+            <svg class="prof-lock-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle class="mk-badge" cx="24" cy="24" r="22"/><path class="mk-sky" d="M6 33 L13 26 L17 29 L24 17 L30 26 L34 22 L42 33"/><rect class="mk-cross" x="33" y="8" width="3" height="10" rx="1"/><rect class="mk-cross" x="29.5" y="11.5" width="10" height="3" rx="1"/></svg>
+            <h2 class="prof-lock-title" id="lockTitle">Screen locked</h2>
+            <p class="prof-lock-sub" id="lockSub">You're still signed in. Unlock to keep working.</p>
+            <button type="button" id="unlockScreenBtn" class="prof-lock-btn" onclick="unlockScreen()">Unlock</button>
         </div>
     </div>
 
@@ -475,9 +723,14 @@
         const THEME_KEY = 'bendbsn_theme'; // matches shared/header.js
         // The Theme item in More is wired by shared/header.js, and window.setTheme
         // owns the saved value + the Firebase sync.
+        // The picker is two radios: #darkModeToggle is the Dark one, so
+        // `.checked` still means "Dark is showing".
         function syncDarkModeToggle() {
+            const dark = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
             const toggle = document.getElementById('darkModeToggle');
-            if (toggle) toggle.checked = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+            const light = document.getElementById('themeLightOpt');
+            if (toggle) toggle.checked = dark;
+            if (light) light.checked = !dark;
         }
         function initTheme() {
             // Stored Light/Dark wins; a retired value shows Light; nothing stored follows the device
@@ -498,7 +751,12 @@
             syncDarkModeToggle();
         }
         initTheme();
-        // Keep the switch in step with the theme picker and initThemeSync (Firebase wins)
+        document.querySelectorAll('input[name="profTheme"]').forEach(function (r) {
+            r.addEventListener('change', function () {
+                if (this.checked) toggleDarkModeFromProfile(this.value === 'dark');
+            });
+        });
+        // Keep the picker in step with the nav's theme item and initThemeSync (Firebase wins)
         new MutationObserver(syncDarkModeToggle).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
         // ── Auth state — resolved before any click is possible ──
@@ -519,19 +777,46 @@
         // Lock is a privacy overlay (same as /home/, /app/, /sbar/): it keeps the
         // session. Removing bendbsn_auth did nothing — the login page saw the live
         // Firebase session and bounced straight back to /home/.
+        // While locked, the rest of the page is inert, so Tab and a screen
+        // reader cannot reach it behind the overlay. Unlock gives focus back.
+        let _lockInerted = [];
+        let _lockReturnFocus = null;
+        function setLockInert(on) {
+            _lockInerted.forEach(n => { n.inert = false; });
+            _lockInerted = [];
+            if (!on) return;
+            // Every sibling of the overlay and of each of its ancestors,
+            // since the overlay may sit inside <main>.
+            let node = document.getElementById('lockScreenOverlay');
+            while (node && node !== document.body && node.parentElement) {
+                Array.prototype.forEach.call(node.parentElement.children, n => {
+                    if (n === node || !(n instanceof HTMLElement) || n.inert ||
+                        n.tagName === 'SCRIPT' || n.id === 'toastContainer') return;
+                    n.inert = true;
+                    _lockInerted.push(n);
+                });
+                node = node.parentElement;
+            }
+        }
         function lockScreen() {
             const o = document.getElementById('lockScreenOverlay');
             if (!o) return;
+            _lockReturnFocus = document.activeElement;
             o.style.display = 'flex';
+            setLockInert(true);
             const b = document.getElementById('unlockScreenBtn');
             if (b) b.focus();
         }
         function unlockScreen() {
             const o = document.getElementById('lockScreenOverlay');
             if (o) o.style.display = 'none';
+            setLockInert(false);
+            const back = _lockReturnFocus;
+            _lockReturnFocus = null;
+            if (back && back !== document.body && typeof back.focus === 'function' && document.contains(back)) back.focus();
         }
         function logout() {
-            showConfirmModal('Logout', 'Are you sure you want to logout?', function() {
+            showConfirmModal('Log out?', 'You will need to sign in again to use BendBSN on this device.', function() {
                 // Push any pending inline phrase edit first (the phrase cache is cleared below)
                 // Bounded like login's history write: an offline RTDB set() never settles
                 let flushPhrases;
@@ -551,7 +836,7 @@
                     try { if (typeof window.bsnPurgeLocalUserData === 'function') window.bsnPurgeLocalUserData(); } catch (e) {}
                     window.location.href = '/';
                 });
-            }, { confirmText: 'Logout', danger: true });
+            }, { confirmText: 'Log out', danger: true });
         }
 
         function escapeHtml(s) {
@@ -559,13 +844,7 @@
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
-        // Avatar color based on display name
-        function getAvatarColor(name) {
-            const colors = ['#0f7490','#7c3aed','#059669','#d97706','#dc2626','#0891b2','#6d28d9','#065f46'];
-            let h = 0;
-            for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % colors.length;
-            return colors[h];
-        }
+        // Avatar: initials on the Sage disc (colour comes from the page CSS)
         function getInitials(name) {
             const parts = name.trim().split(/\s+/);
             if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
@@ -616,7 +895,7 @@
                 }
                 if (profile.createdAt) {
                     const d = new Date(profile.createdAt);
-                    sinceEl.textContent = 'Member since: ' + d.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+                    sinceEl.textContent = 'Member since ' + d.toLocaleDateString('en-US', {month:'long', year:'numeric'});
                 }
             }).catch(() => {});
 
@@ -660,7 +939,6 @@
         function showDisplayName(name) {
             document.getElementById('profDisplayName').textContent = name;
             const avatarEl = document.getElementById('profAvatar');
-            avatarEl.style.background = getAvatarColor(name);
             avatarEl.textContent = getInitials(name);
         }
         function applyDisplayName(name) {
@@ -791,26 +1069,25 @@
             }
         }
 
-        // Show "(N phrases)" in the collapsible header so the count is
+        // Show "N phrases" in the collapsible header so the count is
         // visible even when the panel is closed.
         function updatePhrasesCount() {
             const el = document.getElementById('phrasesCount');
             if (!el) return;
             const all = window.getAllSmartPhrases ? window.getAllSmartPhrases() : {};
             const n = Object.keys(all).length;
-            el.textContent = n === 0 ? '' : '(' + n + ' phrase' + (n === 1 ? '' : 's') + ')';
+            el.textContent = n === 0 ? '' : n + ' phrase' + (n === 1 ? '' : 's');
         }
 
         // Collapsible panel — default collapsed so the page stays compact.
         // Preference persists in localStorage so it remembers per-device.
         const PHRASES_OPEN_KEY = 'bendbsn_profile_phrases_open';
+        // The chevron (#phrasesToggleIcon) turns with aria-expanded in CSS.
         function toggleMyPhrases() {
             const body = document.getElementById('myPhrasesBody');
-            const icon = document.getElementById('phrasesToggleIcon');
             if (!body) return;
             const opening = body.style.display === 'none';
             body.style.display = opening ? 'block' : 'none';
-            if (icon) icon.textContent = opening ? '▼' : '▶';
             const header = document.getElementById('phrasesToggle');
             if (header) header.setAttribute('aria-expanded', String(opening));
             try { localStorage.setItem(PHRASES_OPEN_KEY, opening ? '1' : '0'); } catch (e) {}
@@ -820,10 +1097,8 @@
             try {
                 if (localStorage.getItem(PHRASES_OPEN_KEY) === '1') {
                     const body = document.getElementById('myPhrasesBody');
-                    const icon = document.getElementById('phrasesToggleIcon');
                     const header = document.getElementById('phrasesToggle');
                     if (body) body.style.display = 'block';
-                    if (icon) icon.textContent = '▼';
                     if (header) header.setAttribute('aria-expanded', 'true');
                 }
             } catch (e) {}
@@ -837,7 +1112,7 @@
             })());
             const keys = Object.keys(phrases);
             if (!keys.length) {
-                list.innerHTML = '<div style="color:var(--clx-text-muted);font-size:13px;padding:6px 0;">No phrases yet. Add one below.</div>';
+                list.innerHTML = '<div class="phrase-empty">No phrases yet. Add your first one above.</div>';
                 return;
             }
 
@@ -856,7 +1131,7 @@
             const renderRow = (k) => `
                 <div class="phrase-row">
                     <code class="phrase-shortcut">${escapeHtml(k)}</code>
-                    <span class="phrase-expansion" contenteditable="true" spellcheck="false" data-shortcut="${escapeHtml(k)}" oninput="onPhraseEditInline(this)" title="${escapeHtml(phrases[k])}">${escapeHtml(phrases[k])}</span>
+                    <span class="phrase-expansion" contenteditable="true" role="textbox" aria-label="Expansion for ${escapeHtml(k)}" spellcheck="false" data-shortcut="${escapeHtml(k)}" oninput="onPhraseEditInline(this)" title="${escapeHtml(phrases[k])}">${escapeHtml(phrases[k])}</span>
                     <button type="button" class="prof-edit-btn danger phrase-del" data-shortcut="${escapeHtml(k)}" title="Delete phrase" aria-label="Delete phrase ${escapeHtml(k)}">\u00d7</button>
                 </div>`;
 
@@ -865,19 +1140,19 @@
             cats.forEach(c => {
                 const keysInCat = grouped[c.name];
                 if (!keysInCat.length) return;
-                html += `<div class="phrase-cat">${c.name} <span style="opacity:0.5;font-weight:500;">(${keysInCat.length})</span></div>`;
+                html += `<div class="phrase-cat">${c.name} <span class="phrase-cat-count">(${keysInCat.length})</span></div>`;
                 html += keysInCat.map(renderRow).join('');
             });
             if (grouped['My Phrases'].length) {
-                html += `<div class="phrase-cat">My Phrases <span style="opacity:0.5;font-weight:500;">(${grouped['My Phrases'].length})</span></div>`;
+                html += `<div class="phrase-cat">My phrases <span class="phrase-cat-count">(${grouped['My Phrases'].length})</span></div>`;
                 html += grouped['My Phrases'].map(renderRow).join('');
             }
             html += '</div>';
 
             // Restore-defaults footer
-            html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--clx-border);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:11px;color:var(--clx-text-muted);">${keys.length} phrase${keys.length === 1 ? '' : 's'} \u00b7 hover any row to edit or delete</span>
-                <button class="prof-edit-btn" onclick="restoreDefaultPhrases()" style="font-size:11px;">\u21ba Restore defaults</button>
+            html += `<div class="phrase-foot">
+                <span class="phrase-foot-text">${keys.length} phrase${keys.length === 1 ? '' : 's'}. Click or tap a phrase to edit it.</span>
+                <button type="button" class="prof-edit-btn" onclick="restoreDefaultPhrases()">Restore defaults</button>
             </div>`;
             list.innerHTML = html;
         }

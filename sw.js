@@ -1,6 +1,6 @@
 // BendBSN Service Worker
 // Version-based cache name for proper cache invalidation
-const CACHE_VERSION = 'v236';
+const CACHE_VERSION = 'v237';
 const CACHE_NAME = `bendbsn-${CACHE_VERSION}`;
 
 // Development mode - set to true to bypass all caching
@@ -44,6 +44,7 @@ const OFFLINE_URLS = [
     '/logo.svg',
     '/logo-dark.svg',
     '/logo-mark.svg',
+    '/favicon.svg',
     '/favicon.ico',
     '/favicon-32x32.png',
     '/favicon-16x16.png',
